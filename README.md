@@ -1,4 +1,4 @@
- #Femto Emacs
+#Femto Emacs
 Femto is an extended version of Atto Emacs.
 
 > A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing left to take away.
