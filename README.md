@@ -91,6 +91,7 @@ Atto was based on the public domain code of Anthony Howe's editor (commonly know
 
     C-<spacebar> Set mark at current position.
 
+    ^X^B  List Buffers
     ^X^C  Exit. Any unsaved files will require confirmation.
     ^X^F  Find file; read into a new buffer created from filename.
     ^X^S  Save current buffer to disk, using the buffer's filename as the name of
