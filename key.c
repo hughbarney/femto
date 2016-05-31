@@ -75,7 +75,8 @@ keymap_t keymap[] = {
 	{"C-x k kill-buffer        ", "\x18\x6B", killbuffer },
 	{"C-x C-n next-buffer      ", "\x18\x0E", next_buffer },
 	{"C-x n next-buffer        ", "\x18\x6E", next_buffer },
-	
+
+	{"C-x C-b list-buffers     ", "\x18\x02", list_buffers },
 	{"C-x C-f find-file        ", "\x18\x06", readfile },
 	{"C-x C-s save-buffer      ", "\x18\x13", savebuffer },  
 	{"C-x C-w write-file       ", "\x18\x17", writefile },  /* write and prompt for name */

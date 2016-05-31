@@ -132,3 +132,35 @@ int modified_buffers()
 
 	return FALSE;
 }
+
+void list_buffers()
+{
+	buffer_t *bp;
+	buffer_t *list_bp;
+	char mod_ch, over_ch;
+	
+	list_bp = find_buffer(str_buffers, TRUE);
+	strcpy(list_bp->b_bname, str_buffers);
+
+	disassociate_b(curwp); /* we are leaving the old buffer for a new one */
+	curbp = list_bp;
+	associate_b2w(curbp, curwp);
+	clear_buffer(); /* throw away previous content */
+
+	//             12 1234567 12345678901234567
+	insert_string("CO    Size Buffer           File\n");
+	insert_string("-- ------- ------           ----\n");
+		
+	bp = bheadp;
+	while (bp != NULL) {
+		if (bp != list_bp) {
+			mod_ch  = ((bp->b_flags & B_MODIFIED) ? '*' : ' ');
+			over_ch = ((bp->b_flags & B_OVERWRITE) ? 'O' : ' ');
+			sprintf(temp, "%c%c %7d %-16s %s\n",  mod_ch, over_ch, bp->b_size, bp->b_bname, bp->b_fname);
+			insert_string(temp);
+		}
+		bp = bp->b_next;
+	}
+
+	curbp->b_flags &= ~B_MODIFIED; /* set as not modified so that we dont get prompted to save */
+}

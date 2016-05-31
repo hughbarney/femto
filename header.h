@@ -17,7 +17,7 @@
 #undef _
 #define _(x)    x
 
-#define VERSION	 "femto 1.0, Public Domain, May 2016, by Hugh Barney,  No warranty."
+#define VERSION	 "femto 1.1, Public Domain, May 2016, by Hugh Barney,  No warranty."
 #define EXIT_OK         0               /* Success */
 #define EXIT_ERROR      1               /* Unknown error. */
 #define EXIT_USAGE      2               /* Usage */
@@ -132,7 +132,7 @@ extern msg_t m_ok;
 extern msg_t m_version;
 extern msg_t m_alloc;
 extern msg_t m_toobig;
-extern msg_t m_scrap;
+extern msg_t m_empty;
 extern msg_t m_stat;
 extern msg_t m_open;
 extern msg_t m_close;
@@ -165,6 +165,7 @@ extern msg_t str_no;
 extern msg_t str_scratch;
 extern msg_t str_output;
 extern msg_t str_shell_cmd;
+extern msg_t str_buffers;
 
 extern void fatal _((msg_t));
 extern void msg _((msg_t, ...));
@@ -204,6 +205,7 @@ extern void left _((void));
 extern void lnbegin _((void));
 extern void lnend _((void));
 extern void paste _((void));
+extern void insert_string(char *);
 extern void pgdown _((void));
 extern void pgup _((void));
 extern void quit _((void));
@@ -220,6 +222,8 @@ extern void wleft _((void));
 extern void wright _((void));
 extern void writefile _((void));
 extern void savebuffer _((void));
+extern void clear_buffer(void);
+extern void list_buffers(void);
 extern void debug(char *, ...);
 extern void debug_stats(char *);
 extern void showpos(void);

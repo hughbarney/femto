@@ -129,12 +129,17 @@ int save(char *fn)
 	return (TRUE);
 }
 
-int load_file(char *fn)
+void clear_buffer()
 {
 	/* reset the gap, make it the whole buffer */
 	curbp->b_gap = curbp->b_buf;
 	curbp->b_egap = curbp->b_ebuf;
 	top();
+}
+
+int load_file(char *fn)
+{
+	clear_buffer();
 	return insert_file(fn, FALSE);
 }
 

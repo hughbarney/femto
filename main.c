@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 			(key_return->func)();
 		else
 			insert();
-		/* debug_stats("main loop:"); */
+		debug_stats("main loop:");
 	}
 	if (scrap != NULL)
 		free(scrap);

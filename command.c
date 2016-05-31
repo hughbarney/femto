@@ -339,15 +339,22 @@ void copy_cut(int cut)
 
 void paste()
 {
+	insert_string((char *)scrap);
+}
+
+void insert_string(char *str)
+{
+	int len = strlen(str);
+	
 	if(curbp->b_flags & B_OVERWRITE)
 		return;
-	if (nscrap <= 0) {
-		msg(m_scrap);
-	} else if (nscrap < curbp->b_egap - curbp->b_gap || growgap(curbp, nscrap)) {
+	if (len <= 0) {
+		msg(m_empty);
+	} else if (len < curbp->b_egap - curbp->b_gap || growgap(curbp, len)) {
 		curbp->b_point = movegap(curbp, curbp->b_point);
 		undoset();
-		memcpy(curbp->b_gap, scrap, nscrap * sizeof (char_t));
-		curbp->b_gap += nscrap;
+		memcpy(curbp->b_gap, str, len * sizeof (char_t));
+		curbp->b_gap += len;
 		curbp->b_point = pos(curbp, curbp->b_egap);
 		curbp->b_flags |= B_MODIFIED;
 	}
@@ -407,7 +414,7 @@ void shell_command(char *command)
 	sprintf(sys_command, "%s > %s 2>&1", command, output_file);	
 	result = system(sys_command);
 
-	bp = find_buffer(output_file, TRUE);
+	bp = find_buffer(str_output, TRUE);
 	disassociate_b(curwp); /* we are leaving the old buffer for a new one */
 	curbp = bp;
 	associate_b2w(curbp, curwp);
