@@ -58,7 +58,7 @@ void redraw()
 
 void left()
 {
-	int n = prev_char_size();
+	int n = prev_utf8_char_size();
 	
 	while (0 < curbp->b_point && n-- > 0)
 		--curbp->b_point;
@@ -159,7 +159,7 @@ void insert()
 
 void backsp()
 {
-	int n = prev_char_size();
+	int n = prev_utf8_char_size();
 	curbp->b_point = movegap(curbp, curbp->b_point);
 	undoset();
 	if (curbp->b_buf < curbp->b_gap) {
