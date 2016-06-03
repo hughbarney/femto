@@ -92,7 +92,7 @@ point_t lncolumn(buffer_t *bp, point_t offset, int column)
 void display(window_t *wp, int flag)
 {
 	char_t *p;
-	int i, j, k;
+	int i, j, k, nch;
 	buffer_t *bp = wp->w_bufp;
 
 	/* find start of screen, handle scroll up off page or top of file  */
@@ -128,10 +128,16 @@ void display(window_t *wp, int flag)
 			bp->b_col = j;
 		}
 		p = ptr(bp, bp->b_epage);
+		nch = 1;
 		if (wp->w_top + wp->w_rows <= i || bp->b_ebuf <= p) /* maxline */
 			break;
 		if (*p != '\r') {
-			if (isprint(*p) || *p == '\t' || *p == '\n') {
+			nch = utf8_size(*p);
+			if ( nch > 1) {
+				j++;
+				display_utf8(bp, *p, nch);
+			}
+			else if (isprint(*p) || *p == '\t' || *p == '\n') {
 				j += *p == '\t' ? 8-(j&7) : 1;
 				addch(*p);
 			} else {
@@ -146,7 +152,7 @@ void display(window_t *wp, int flag)
 				j = 0;
 			++i;
 		}
-		++bp->b_epage;
+		bp->b_epage = bp->b_epage + nch;
 	}
 
 	/* replacement for clrtobot() to bottom of window */
@@ -166,11 +172,38 @@ void display(window_t *wp, int flag)
 	wp->w_update = FALSE;
 }
 
+/* work out number of bytes based on first byte */
+int utf8_size(char_t c)
+{
+	if (c >= 192 && c < 224) {
+		return 2; // 2 top bits set mean 2 byte utf8 char
+	} else if (c >= 224 && c < 240) {
+		return 3; // 3 top bits set mean 3 byte utf8 char
+	} else if (c >= 240) {
+		return 4; // 4 top bits set mean 4 byte utf8 char
+	}
+
+	return 1; /* if in doubt it is 1 */
+}
+
+void display_utf8(buffer_t *bp, char_t c, int n)
+{
+	char sbuf[6];
+	int i = 0;
+	
+	for (i=0; i<n; i++) {
+		sbuf[i] = *ptr(bp, bp->b_epage + i);
+	}
+	sbuf[n] = '\0';	
+	addstr(sbuf);
+}
+
 void modeline(window_t *wp)
 {
 	int i;
 	char lch, mch, och;
-	
+
+	/* n = utf8_size(*(ptr(wp->w_bufp, wp->w_bufp->b_point))); */
 	standout();
 	move(wp->w_top + wp->w_rows, 0);
 	lch = (wp == curwp ? '=' : '-');
@@ -179,6 +212,9 @@ void modeline(window_t *wp)
 
 	/* debug version */
 	/* sprintf(temp, "%c%c%c Femto: %c%c %s %s  T%dR%d Pt%ld Pg%ld Pe%ld r%dc%d B%d",  lch,och,mch,lch,lch, wp->w_name, get_buffer_name(wp->w_bufp), wp->w_top, wp->w_rows, wp->w_point, wp->w_bufp->b_page, wp->w_bufp->b_epage, wp->w_bufp->b_row, wp->w_bufp->b_col, wp->w_bufp->b_cnt); */
+
+	/* sprintf(temp, "%c%c%c Femto: %c%c %s %s  T%dR%d Pt%ld Pg%ld Pe%ld r%dc%d B%d N%d",  lch,och,mch,lch,lch, wp->w_name, get_buffer_name(wp->w_bufp), wp->w_top, wp->w_rows, wp->w_point, wp->w_bufp->b_page, wp->w_bufp->b_epage, wp->w_bufp->b_row, wp->w_bufp->b_col, wp->w_bufp->b_cnt, n); */
+	
 	sprintf(temp, "%c%c%c Femto: %c%c %s",  lch,och,mch,lch,lch, get_buffer_name(wp->w_bufp));
 	addstr(temp);
 

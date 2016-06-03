@@ -3,6 +3,7 @@
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 
+#include <locale.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <assert.h>
@@ -17,7 +18,7 @@
 #undef _
 #define _(x)    x
 
-#define VERSION	 "femto 1.1, Public Domain, May 2016, by Hugh Barney,  No warranty."
+#define VERSION	 "femto 1.2, Public Domain, June 2016, by Hugh Barney,  No warranty."
 #define EXIT_OK         0               /* Success */
 #define EXIT_ERROR      1               /* Unknown error. */
 #define EXIT_USAGE      2               /* Usage */
@@ -170,6 +171,9 @@ extern msg_t str_buffers;
 extern void fatal _((msg_t));
 extern void msg _((msg_t, ...));
 extern void display (window_t *, int);
+extern int utf8_size(char_t);
+extern int prev_utf8_char_size(void);
+extern void display_utf8(buffer_t *, char_t, int);
 extern void dispmsg(void);
 extern void modeline(window_t *);
 extern point_t lnstart (buffer_t *, point_t);

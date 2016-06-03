@@ -1,7 +1,4 @@
-/*
- * complete.c, Femto Emacs, Hugh Barney, Public Domain, 2016
- * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
- */
+/* complete.c, Femto Emacs, Hugh Barney, Public Domain, 2016 */
 
 #include "header.h"
 
@@ -70,6 +67,7 @@ int getfilename(char *prompt, char *buf, int nbuf)
 				strcat(sys_command, output_file);
 				strcat(sys_command, " 2>&1");
 				result = system(sys_command);
+				result++; /* stop compiler warning about not used */
 				fp = fopen(output_file, "r");
 				nskip = 0;
 			}

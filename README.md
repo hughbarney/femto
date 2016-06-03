@@ -27,6 +27,9 @@ An extended Atto would therefore be called Femto (10 to the power of minus 15).
 Femto is based on the Atto codebase [0] (as of Atto 1.6)
 Atto was based on the public domain code of Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]).
 
+## Femto v1.2 3 June 2016
+* Added UTF8 support
+
 ## Femto v1.1 31 May 2016
 * Added list-buffers C-x C-b
 * fixed problem of opening up multiple output windows
@@ -146,6 +149,7 @@ Generally, the procedure for copying or moving text is:
 ##Building on Ubuntu
 
 When building on Ubuntu you will need to install the libcurses dev package.
+NOTE: As of Femto 1.2 you will also need the libncursesw (wide) library
 
 $ sudo apt-get install apt-file
 $ apt-file update
@@ -155,7 +159,7 @@ $ apt-file search curses.h
 
 libncurses5-dev: /usr/include/curses.h
 
-$ sudo apt-get install libncurses5-dev
+$ sudo apt-get install libncurses5-dev libncursesw5-dev
 
 
 ##Future Enhancements

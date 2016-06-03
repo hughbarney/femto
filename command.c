@@ -58,14 +58,28 @@ void redraw()
 
 void left()
 {
-	if (0 < curbp->b_point)
+	int n = prev_char_size();
+	
+	while (0 < curbp->b_point && n-- > 0)
 		--curbp->b_point;
 }
 
 void right()
 {
-	if (curbp->b_point < pos(curbp, curbp->b_ebuf))
+	int n = utf8_size(*ptr(curbp,curbp->b_point));
+	
+	while ((curbp->b_point < pos(curbp, curbp->b_ebuf)) && n-- > 0)
 		++curbp->b_point;
+}
+
+/* look back 2,3,4 chars and determine utf8 size otherwise default to 1 byte */
+int prev_utf8_char_size()
+{
+	int n;
+	for (n=2;n<5;n++)
+		if (0 < curbp->b_point - n && (utf8_size(*(ptr(curbp, curbp->b_point - n))) == n))
+			return n;
+	return 1;
 }
 
 void up()
@@ -145,10 +159,11 @@ void insert()
 
 void backsp()
 {
+	int n = prev_char_size();
 	curbp->b_point = movegap(curbp, curbp->b_point);
 	undoset();
 	if (curbp->b_buf < curbp->b_gap) {
-		--curbp->b_gap;
+		curbp->b_gap -= n; /* increase start of gap by size of char */
 		curbp->b_flags |= B_MODIFIED;
 	}
 	curbp->b_point = pos(curbp, curbp->b_egap);
@@ -159,7 +174,8 @@ void delete()
 	curbp->b_point = movegap(curbp, curbp->b_point);
 	undoset();
 	if (curbp->b_egap < curbp->b_ebuf) {
-		curbp->b_point = pos(curbp, ++curbp->b_egap);
+		curbp->b_egap += utf8_size(*(ptr(curbp, curbp->b_point)));
+		curbp->b_point = pos(curbp, curbp->b_egap);
 		curbp->b_flags |= B_MODIFIED;
 	}
 }

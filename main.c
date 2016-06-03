@@ -3,7 +3,6 @@
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 
-#include <string.h>
 #include "header.h"
 
 int main(int argc, char **argv)
@@ -16,6 +15,8 @@ int main(int argc, char **argv)
 	while (0 <= i && prog_name[i] != '\\' && prog_name[i] != '/')
 		--i;
 	prog_name += i+1;
+
+	setlocale(LC_ALL, ""); /* required for 3,4 byte UTF8 chars */
 
 	if (initscr() == NULL)
 		fatal(f_initscr);
@@ -53,7 +54,7 @@ int main(int argc, char **argv)
 			(key_return->func)();
 		else
 			insert();
-		debug_stats("main loop:");
+		/* debug_stats("main loop:"); */
 	}
 	if (scrap != NULL)
 		free(scrap);

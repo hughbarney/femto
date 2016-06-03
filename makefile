@@ -7,7 +7,7 @@ CFLAGS  = -O -Wall
 
 LD      = cc
 LDFLAGS =
-LIBS    = -lcurses -ltermcap
+LIBS    = -lncursesw -ltermcap
 
 CP      = cp
 MV      = mv
