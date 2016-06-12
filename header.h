@@ -18,7 +18,7 @@
 #undef _
 #define _(x)    x
 
-#define VERSION	 "femto 1.2, Public Domain, June 2016, by Hugh Barney,  No warranty."
+#define VERSION	 "femto 1.3, Public Domain, June 2016, by Hugh Barney,  No warranty."
 #define EXIT_OK         0               /* Success */
 #define EXIT_ERROR      1               /* Unknown error. */
 #define EXIT_USAGE      2               /* Usage */
@@ -139,6 +139,8 @@ extern msg_t m_open;
 extern msg_t m_close;
 extern msg_t m_read;
 extern msg_t m_write;
+extern msg_t m_copied;
+extern msg_t m_cut;
 extern msg_t m_badname;
 extern msg_t m_saved;
 extern msg_t m_loaded;

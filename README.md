@@ -27,6 +27,10 @@ An extended Atto would therefore be called Femto (10 to the power of minus 15).
 Femto is based on the Atto codebase [0] (as of Atto 1.6)
 Atto was based on the public domain code of Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]).
 
+## Femto v1.3 12 June 2016
+* Fixed defect with paste command introduced in v1.1
+* Added messages on copy and cut to show how many bytes
+
 ## Femto v1.2 3 June 2016
 * Added UTF8 support
 

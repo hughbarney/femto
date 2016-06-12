@@ -337,18 +337,21 @@ void copy_cut(int cut)
 		(void) movegap(curbp, curbp->b_mark);
 		nscrap = curbp->b_point - curbp->b_mark;
 	}
-	if ((scrap = (char_t*) malloc(nscrap)) == NULL) {
+	if ((scrap = (char_t*) malloc(nscrap + 1)) == NULL) {
 		msg(m_alloc);
 	} else {
 		undoset();
 		(void) memcpy(scrap, p, nscrap * sizeof (char_t));
+		*(scrap + nscrap) = '\0';  /* null terminate for insert_string */
 		if (cut) {
 			curbp->b_egap += nscrap; /* if cut expand gap down */
 			block();
 			curbp->b_point = pos(curbp, curbp->b_egap); /* set point to after region */
 			curbp->b_flags |= B_MODIFIED;
+			msg(m_cut, nscrap);
 		} else {
 			block(); /* can maybe do without */
+			msg(m_copied, nscrap);
 		}
 	}
 }

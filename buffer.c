@@ -138,6 +138,9 @@ void list_buffers()
 	buffer_t *bp;
 	buffer_t *list_bp;
 	char mod_ch, over_ch;
+	char blank[] = " ";
+	char *bn;
+	char *fn;
 	
 	list_bp = find_buffer(str_buffers, TRUE);
 	strcpy(list_bp->b_bname, str_buffers);
@@ -147,7 +150,7 @@ void list_buffers()
 	associate_b2w(curbp, curwp);
 	clear_buffer(); /* throw away previous content */
 
-	//             12 1234567 12345678901234567
+	/*             12 1234567 12345678901234567 */
 	insert_string("CO    Size Buffer           File\n");
 	insert_string("-- ------- ------           ----\n");
 		
@@ -156,7 +159,9 @@ void list_buffers()
 		if (bp != list_bp) {
 			mod_ch  = ((bp->b_flags & B_MODIFIED) ? '*' : ' ');
 			over_ch = ((bp->b_flags & B_OVERWRITE) ? 'O' : ' ');
-			sprintf(temp, "%c%c %7d %-16s %s\n",  mod_ch, over_ch, bp->b_size, bp->b_bname, bp->b_fname);
+			bn = (bp->b_bname[0] != '\0' ? bp->b_bname : blank);
+			fn = (bp->b_fname[0] != '\0' ? bp->b_fname : blank);
+			sprintf(temp, "%c%c %7d %-16s %s\n",  mod_ch, over_ch, bp->b_size, bn, fn);
 			insert_string(temp);
 		}
 		bp = bp->b_next;
