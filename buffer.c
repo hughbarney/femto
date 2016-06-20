@@ -20,6 +20,7 @@ void buffer_init(buffer_t *bp)
 	bp->b_gap = NULL;
 	bp->b_egap = NULL;
 	bp->b_next = NULL;
+	bp->b_bname[0] = '\0';
 	bp->b_fname[0] = '\0';
 }
 

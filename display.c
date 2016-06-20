@@ -204,7 +204,7 @@ void modeline(window_t *wp)
 	char lch, mch, och;
 
 	/* n = utf8_size(*(ptr(wp->w_bufp, wp->w_bufp->b_point))); */
-	standout();
+	attron(COLOR_PAIR(2));
 	move(wp->w_top + wp->w_rows, 0);
 	lch = (wp == curwp ? '=' : '-');
 	mch = ((wp->w_bufp->b_flags & B_MODIFIED) ? '*' : lch);
@@ -220,7 +220,7 @@ void modeline(window_t *wp)
 
 	for (i = strlen(temp) + 1; i <= COLS; i++)
 		addch(lch);
-	standend();
+	attron(COLOR_PAIR(1));
 }
 
 void dispmsg()

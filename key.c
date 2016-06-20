@@ -52,6 +52,15 @@ keymap_t keymap[] = {
 	{"esc F forward-word       ", "\x1B\x46", wright },
 	{"esc G gotoline           ", "\x1B\x47", gotoline },
 	{"esc R query-replace      ", "\x1B\x52", query_replace },
+
+	/* these are not standard emacs bindings but I like them on the ALT key */
+	{"esc c copy               ", "\x1B\x63", copy },
+	{"esc d killtoeol          ", "\x1B\x64", killtoeol },
+	{"esc i paste              ", "\x1B\x69", paste },
+	{"esc k killtoeol          ", "\x1B\x6B", killtoeol },
+	{"esc m set-mark           ", "\x1B\x6D", iblock },
+	{"esc n next-buffer        ", "\x1B\x6E", next_buffer },
+	{"esc o delete-other-windows", "\x1B\x6F", delete_other_windows },
                 
 	{"C-space set-mark         ", "\x00", iblock },  /* ctrl-space */
 	{"esc @ set-mark           ", "\x1B\x40", iblock },  /* esc-@ */
