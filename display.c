@@ -89,6 +89,23 @@ point_t lncolumn(buffer_t *bp, point_t offset, int column)
 	return (offset);
 }
 
+void display_char(buffer_t *bp, char_t *p)
+{
+	if ((ptr(bp, bp->b_mark) == p) && (bp->b_mark != NOMARK)) {
+		addch(*p | A_REVERSE);
+	} else if (pos(bp,p) == bp->b_point && bp->b_paren != NOPAREN) {
+		attron(COLOR_PAIR(3));
+		addch(*p);
+		attron(COLOR_PAIR(1));
+	} else if (bp->b_paren != NOPAREN && pos(bp,p) == bp->b_paren) { 
+		attron(COLOR_PAIR(3));
+		addch(*p);
+		attron(COLOR_PAIR(1));
+	} else {
+		addch(*p);
+	}
+}
+
 void display(window_t *wp, int flag)
 {
 	char_t *p;
@@ -139,7 +156,7 @@ void display(window_t *wp, int flag)
 			}
 			else if (isprint(*p) || *p == '\t' || *p == '\n') {
 				j += *p == '\t' ? 8-(j&7) : 1;
-				addch(*p);
+				display_char(bp, p);
 			} else {
 				const char *ctrl = unctrl(*p);
 				j += (int) strlen(ctrl);

@@ -26,10 +26,11 @@ int main(int argc, char **argv)
 	idlok(stdscr, TRUE);
 
         start_color();
-	init_pair(1,COLOR_BLACK,COLOR_WHITE);
-	init_pair(2,COLOR_WHITE,COLOR_BLUE);
+	init_pair(1,COLOR_BLACK,COLOR_WHITE);  /* normal screen */
+	init_pair(2,COLOR_WHITE,COLOR_BLUE);   /* modeline */
+	init_pair(3, COLOR_WHITE, COLOR_CYAN); /* brace highlight */
 	bkgd((chtype) (' ' | COLOR_PAIR(1)));
-		
+
 	if (1 < argc) {
 		curbp = find_buffer(argv[1], TRUE);
 		(void) insert_file(argv[1], FALSE);
@@ -59,8 +60,11 @@ int main(int argc, char **argv)
 			(key_return->func)();
 		else
 			insert();
+
 		/* debug_stats("main loop:"); */
+		match_parens();
 	}
+	
 	if (scrap != NULL)
 		free(scrap);
 

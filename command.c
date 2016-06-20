@@ -223,6 +223,8 @@ void readfile()
 		if (bp != NULL && bp->b_fname[0] == '\0') {
 			if (!load_file(temp)) {
 				msg(m_newfile, temp);
+				if (!growgap(curbp, CHUNK))
+					fatal(f_alloc);
 			}
 			strncpy(curbp->b_fname, temp, NAME_MAX);
 			curbp->b_fname[NAME_MAX] = '\0'; /* truncate if required */
@@ -411,6 +413,82 @@ char* get_temp_file()
 	}
 
 	return temp_file;
+}
+
+void match_parens()
+{
+	buffer_t *bp = curwp->w_bufp;
+	char p = *ptr(bp, bp->b_point);
+
+	switch(p) {
+	case '{':
+		match_paren_forwards(bp, '{', '}');
+		break;
+	case '[':
+		match_paren_forwards(bp, '[', ']');
+		break;
+	case '(':
+		match_paren_forwards(bp, '(', ')');
+		break;
+	case '}':
+		match_paren_backwards(bp, '{', '}');
+		break;
+	case ']':
+		match_paren_backwards(bp, '[', ']');
+		break;
+	case ')':
+		match_paren_backwards(bp, '(', ')');
+		break;
+	default:
+		bp->b_paren = NOPAREN;
+		break;
+	}
+}
+
+void match_paren_forwards(buffer_t *bp, char open_paren, char close_paren)
+{
+	int lcount = 0;
+	int rcount = 0;
+	point_t end = pos(bp, bp->b_ebuf);
+	point_t position = bp->b_point;
+	char c;
+
+	while (position <= end) {
+		c = *ptr(bp, position);
+		if (c == open_paren)
+			lcount++;
+		if (c == close_paren)
+			rcount++;
+		if (lcount == rcount && lcount > 0) {
+			bp->b_paren = position;
+			return;
+		}
+		position++;
+	}
+	bp->b_paren = NOPAREN;
+}
+
+void match_paren_backwards(buffer_t *bp, char open_paren, char close_paren)
+{
+	int lcount = 0;
+	int rcount = 0;
+	point_t start = 0;
+	point_t position = bp->b_point;
+	char c;
+
+	while (position >= start) {
+		c = *ptr(bp, position);
+		if (c == open_paren)
+			lcount++;
+		if (c == close_paren)
+			rcount++;
+		if (lcount == rcount && lcount > 0) {
+			bp->b_paren = position;
+			return;
+		}
+		position--;
+	}
+	bp->b_paren = NOPAREN;
 }
 
 void i_shell_command()

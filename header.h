@@ -18,7 +18,7 @@
 #undef _
 #define _(x)    x
 
-#define VERSION	 "femto 1.4, Public Domain, June 2016, by Hugh Barney,  No warranty."
+#define VERSION	 "femto 1.5, Public Domain, June 2016, by Hugh Barney,  No warranty."
 #define EXIT_OK         0               /* Success */
 #define EXIT_ERROR      1               /* Unknown error. */
 #define EXIT_USAGE      2               /* Usage */
@@ -27,6 +27,7 @@
 #define B_OVERWRITE	0x02		/* overwite mode */
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
+#define NOPAREN         -1
 #define CHUNK           8096L
 #define K_BUFFER_LENGTH 256
 #define TEMPBUF         512
@@ -58,6 +59,7 @@ typedef struct buffer_t
 	struct buffer_t *b_next;  /* Link to next buffer_t */
 	point_t b_mark;	     	  /* the mark */
 	point_t b_point;          /* the point */
+	point_t b_paren;          /* matching paren to the point */
 	point_t b_cpoint;         /* the original current point, used for mutliple window displaying */
 	point_t b_page;           /* start of page */
 	point_t b_epage;          /* end of page */
@@ -172,6 +174,7 @@ extern msg_t str_buffers;
 
 extern void fatal _((msg_t));
 extern void msg _((msg_t, ...));
+extern void display_char(buffer_t *, char_t *);
 extern void display (window_t *, int);
 extern int utf8_size(char_t);
 extern int prev_utf8_char_size(void);
@@ -268,3 +271,6 @@ extern void display_prompt_and_response(char *, char *);
 extern void shell_command(char *);
 extern void i_shell_command(void);
 extern char* get_temp_file(void);
+extern void match_parens(void);
+extern void match_paren_forwards(buffer_t *, char, char);
+extern void match_paren_backwards(buffer_t *, char, char);
