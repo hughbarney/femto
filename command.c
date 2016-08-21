@@ -273,6 +273,8 @@ void killbuffer()
 		/* create a scratch buffer */
 		bp = find_buffer(str_scratch, TRUE);
 		strcpy(bp->b_bname, str_scratch);
+		if (!growgap(bp, MIN_GAP_EXPAND))
+			fatal(f_alloc);
 	}
 
 	next_buffer();
