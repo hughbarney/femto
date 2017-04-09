@@ -1,17 +1,23 @@
-#Femto Emacs
+# Femto Emacs
 Femto is an extended version of Atto Emacs.
 
 > A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing left to take away.
 > -- <cite>Antoine de Saint-Exupery</cite>
 
-##Goals of Femto Emacs
+## Goals of Femto Emacs
 * To extend Atto Emacs with filename completion, dired, buffer menu and the ability to run a shell command.
 * Provide a rich level of functionality in the smallest amount of code
 * Femto Emacs will eventually have it own lisp extension languauge.
 * Be easy to understand without extensive study (to encourage further experimentation).
 
+## IMPORTANT NOTE - THIS BRANCH IS NOT MAINTAINED
 
-##Why the name Femto?
+This branch was an intermediary project in order to seed the work done on FemtoEmacs.  As such this branch is no longer maintained and I plan to only put bug fixes into Atto or FemtoEmacs.
+
+ https://github.com/FemtoEmacs/Femto-Emacs
+ https://github.com/hughbarney/Femto-Emacs
+
+## Why the name Femto?
 Femto is an extended version of Atto Emacs.
 
 In Defining Atto as the lowest functional Emacs I have had to consider the essential feature set that makes Emacs, 'Emacs'.  I have defined this point as a basic Emacs command set and key bindings; the ability to edit multiple files (buffers), and switch between them; edit the buffers in mutliple windows, cut, copy and paste; forward and reverse searching and a replace function. The proviso being that all this will fit in less than 2000 lines of C.
@@ -23,7 +29,7 @@ Atto means 10 to the power of minus 18.
 An extended Atto would therefore be called Femto (10 to the power of minus 15).
 
 
-##Derivation
+## Derivation
 Femto is based on the Atto codebase [0] (as of Atto 1.6)
 Atto was based on the public domain code of Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]).
 
@@ -51,7 +57,7 @@ Atto was based on the public domain code of Anthony Howe's editor (commonly know
 * Added filename completion (use TAB to complete)
 * Added shell-command (C-x @), output is read into a buffer
 
-##Comparisons with Other Emacs Implementations
+## Comparisons with Other Emacs Implementations
 
     Editor         Binary   BinSize     KLOC  Files
 
@@ -72,7 +78,7 @@ Atto was based on the public domain code of Anthony Howe's editor (commonly know
 
 
 
-##Femto Key Bindings
+## Femto Key Bindings
     C-A   begining-of-line
     C-B   backward-character
     C-D   delete-char
@@ -137,7 +143,7 @@ Atto was based on the public domain code of Anthony Howe's editor (commonly know
     Ctrk+Left    Page Down
     Ctrl+Right   Page Up
 
-###Copying and moving
+### Copying and moving
     C-<spacebar> Set mark at current position
     ^W   Delete region
     ^Y   Yank back kill buffer at cursor
@@ -150,7 +156,7 @@ Generally, the procedure for copying or moving text is:
 2. Delete it (with ^W) or copy it (with M-W) into the kill buffer.
 3. Move the cursor to the desired location and yank it back (with ^Y).
 
-###Searching
+### Searching
     C-S or C-R enters the search prompt, where you type the search string
     BACKSPACE - will reduce the search string, any other character will extend it
     C-S at the search prompt will search forward, will wrap at end of the buffer
@@ -158,7 +164,7 @@ Generally, the procedure for copying or moving text is:
     ESC will escape from the search prompt and return to the point of the match
     C-G abort the search and return to point before the search started
 
-##Building on Ubuntu
+## Building on Ubuntu (using UTF8 support in ncurse / ncursesw)
 
 When building on Ubuntu you will need to install the libcurses dev package.
 NOTE: As of Femto 1.2 you will also need the libncursesw (wide) library
@@ -174,21 +180,21 @@ libncurses5-dev: /usr/include/curses.h
 $ sudo apt-get install libncurses5-dev libncursesw5-dev
 
 
-##Future Enhancements
+## Future Enhancements
 
 The following enhancements are envisaged.
 * A buffer menu facility
 * Directory and file manegement (Dired) functionality.
 * A Lisp or Scheme based extension languauge.
 
-##Known Issues
+## Known Issues
 	Goto-line will fail to go to the very last line.  This is a special case that could easily be fixed.
 
-##Copying
+## Copying
   Femto code is released to the public domain.
   hughbarney@gmail.com May 2016
 
-##References
+## References
     [0] Atto Emacs - https://github.com/hughbarney/atto
     [1] Perfect Emacs - https://github.com/hughbarney/pEmacs
     [2] Anthony's Editor - https://github.com/hughbarney/Anthony-s-Editor
