@@ -29,12 +29,12 @@ point_t segstart(buffer_t *bp, point_t start, point_t finish)
 		p = ptr(bp, scan);
 		if (*p == '\n') {
 			c = 0;
-			start = scan+1;
+			start = scan + 1;
 		} else if (COLS <= c) {
 			c = 0;
 			start = scan;
 		}
-		++scan;
+		scan += utf8_size(*ptr(bp,scan));
 		c += *p == '\t' ? 8 - (c & 7) : 1;
 	}
 	return (c < COLS ? start : finish);
@@ -51,7 +51,7 @@ point_t segnext(buffer_t *bp, point_t start, point_t finish)
 		p = ptr(bp, scan);
 		if (bp->b_ebuf <= p || COLS <= c)
 			break;
-		++scan;
+		scan += utf8_size(*ptr(bp,scan));
 		if (*p == '\n')
 			break;
 		c += *p == '\t' ? 8 - (c & 7) : 1;
@@ -84,7 +84,7 @@ point_t lncolumn(buffer_t *bp, point_t offset, int column)
 	char_t *p;
 	while ((p = ptr(bp, offset)) < bp->b_ebuf && *p != '\n' && c < column) {
 		c += *p == '\t' ? 8 - (c & 7) : 1;
-		++offset;
+		offset += utf8_size(*ptr(bp,offset));
 	}
 	return (offset);
 }

@@ -34,6 +34,15 @@ An extended Atto would therefore be called Femto (10 to the power of minus 15).
 Femto is based on the Atto codebase [0] (as of Atto 1.6)
 Atto was based on the public domain code of Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]).
 
+## Femto 1.8 12 April 2016
+* fixed UTF8 support so that it moves up and down lines, correctly maintaining column
+
+## Femto 1.7 22 August 2016
+* fixed bug when pasting any empty clipboard
+
+## Femto 1.6 21 August 2016
+* fixed defect with killbuffer when creating a new scratch buffer
+
 ## Femto 1.5 20 June 2016
 * Added automatic matching of parenthesis {}() and []
 * Fixed bug where a new file created when file not found did not have a buffer created
