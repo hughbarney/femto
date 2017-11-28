@@ -14,8 +14,8 @@ keymap_t keymap[] = {
 
 	{"C-a beginning-of-line    ", "\x01", lnbegin },
 	{"C-e end-of-line          ", "\x05", lnend },
-	{"home beginning-of-line   ", "\x1B\x4F\x48", lnbegin }, /* home key */
-	{"end end-of-line          ", "\x1B\x4F\x46", lnend }, /* end key */
+	{"home beginning-of-line   ", "\x1B\x5B\x48", lnbegin }, /* home key */
+	{"end end-of-line          ", "\x1B\x5B\x46", lnend }, /* end key */
 
 	{"C-b                      ", "\x02", left },
 	{"C-f                      ", "\x06", right },
