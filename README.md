@@ -19,11 +19,17 @@ This branch was an intermediary project in order to seed the work done on FemtoE
  https://github.com/hughbarney/Femto-Emacs
 
 ## Why the name Femto?
+
+The small Emacs naming scheme appears to use sub-unit prefixes in decending order with each further reduction of functionality. The Nano and Pico Emacs editors have been around for a while.
+
+Nano means 10 to the power of minus 9
+Pico means 10 to the power of minus 12
+Femto means 10 to power of minus 15
+Atto means 10 to power of minus 18
+
+In Defining Atto as the lowest functional Emacs I have had to consider the essential feature set that makes Emacs, 'Emacs'. I have defined this point as a basic Emacs command set and key bindings; the ability to edit multiple files (buffers), and switch between them; edit the buffers in mutliple windows, cut, copy and paste; forward and reverse searching, a replace function and basic syntax hilighting. The proviso being that all this will fit in less than 2000 lines of C.
+
 Femto is an extended version of Atto Emacs.
-
-In Defining Atto as the lowest functional Emacs I have had to consider the essential feature set that makes Emacs, 'Emacs'.  I have defined this point as a basic Emacs command set and key bindings; the ability to edit multiple files (buffers), and switch between them; edit the buffers in mutliple windows, cut, copy and paste; forward and reverse searching and a replace function. The proviso being that all this will fit in less than 2000 lines of C.
-
-The small Emacs naming scheme appears to use sub-unit prefixes in decending order with each further reduction of functionality.
 
 Atto means 10 to the power of minus 18.
 
