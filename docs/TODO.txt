@@ -1,0 +1,27 @@
+
+
+FIXES
+=====
+
+fix compile warning around stdup define _XOPEN_SOURCE 500
+file headers changed to reference 'femto'
+removed old undoset code
+added undo functionality, set global_undo_mode = 1, so undo active by default
+added Atto style basic syntax highlighting
+added in atto fixes for UTF8
+
+[ TODO ] fix loading multiple files of same name different paths
+
+
+
+THE REAL STUFF
+==============
+
+add tiny_lisp support
+
+add keyboard setting etc
+
+load startup file
+
+load femto.rc file
+

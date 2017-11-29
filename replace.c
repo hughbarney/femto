@@ -1,4 +1,4 @@
-/* replace.c, Femto Emacs, Hugh Barney, Public Domain, 2016 */
+/* replace.c, femto, Hugh Barney, Public Domain, 2017 */
 
 #include <string.h>
 #include "header.h"
@@ -17,16 +17,16 @@ void query_replace(void)
 
 	searchtext[0] = '\0';
 	replace[0] = '\0';
-	
-	if (!getinput(m_replace, (char*)searchtext, STRBUF_M))
+
+	if (!getinput(m_replace, (char*)searchtext, STRBUF_M, F_CLEAR))
 		return;
 
-	if (!getinput(m_with, (char*)replace, STRBUF_M))
+	if (!getinput(m_with, (char*)replace, STRBUF_M, F_CLEAR))
 		return;
 
 	slen = strlen(searchtext);
 	rlen = strlen(replace);
-	
+
 	/* build query replace question string */
 	sprintf(question, m_qreplace, searchtext, replace);
 
@@ -48,7 +48,7 @@ void query_replace(void)
 		if (ask == TRUE) {
 			msg(question);
 			clrtoeol();
-			
+
 		qprompt:
 			display(curwp, TRUE);
 			c = getch();
@@ -56,15 +56,15 @@ void query_replace(void)
 			switch (c) {
 			case 'y': /* yes, substitute */
 				break;
-			
+
 			case 'n': /* no, find next */
 				curbp->b_point = found; /* set to end of search string */
 				continue;
-			
+
 			case '!': /* yes/stop asking, do the lot */
 				ask = FALSE;
 				break;
-			
+
 			case 0x1B: /* esc */
 				flushinp(); /* discard any escape sequence without writing in buffer */
 			case 'q': /* controlled exit */
@@ -75,7 +75,7 @@ void query_replace(void)
 				goto qprompt;
 			}
 		}
-		
+
 		if (rlen > slen) {
 			movegap(curbp, found);
 			/*check enough space in gap left */
@@ -88,13 +88,13 @@ void query_replace(void)
 			/* stretch gap left by s - r, no need to worry about space */
 			curbp->b_gap = curbp->b_gap - (slen - rlen);
 		} else {
-			/* if rlen = slen, we just overwrite the chars, no need to move gap */		
+			/* if rlen = slen, we just overwrite the chars, no need to move gap */
 		}
 
 		/* now just overwrite the chars at point in the buffer */
 		l_point = curbp->b_point;
 		memcpy(ptr(curbp, curbp->b_point), replace, rlen * sizeof (char_t));
-		curbp->b_flags |= B_MODIFIED;
+		add_mode(curbp, B_MODIFIED);
 		curbp->b_point = found - (slen - rlen); /* end of replcement */
 		numsub++;
 	}

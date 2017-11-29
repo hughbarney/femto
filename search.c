@@ -1,20 +1,18 @@
 /*
- * search.c, Femto Emacs, Hugh Barney, Public Domain, 2016
+ * search.c, femto, Hugh Barney, Public Domain, 2017
  * Simple forward and reverse search.
  */
 
 #include "header.h"
 
-#define FWD_SEARCH 1
-#define REV_SEARCH 2
-
 void search()
 {
-	int cpos = 0;	
+	int cpos = 0;
 	int c;
 	point_t o_point = curbp->b_point;
 	point_t found;
 
+	searchtext[0] = '\0';
 	display_prompt_and_response(m_sprompt, searchtext);
 	cpos = strlen(searchtext);
 
@@ -43,7 +41,7 @@ void search()
 			found = search_backwards(searchtext);
 			display_search_result(found, REV_SEARCH, m_sprompt, searchtext);
 			break;
-			
+
 		case 0x7f: /* del, erase */
 		case 0x08: /* backspace */
 			if (cpos == 0)
@@ -52,7 +50,7 @@ void search()
 			display_prompt_and_response(m_sprompt, searchtext);
 			break;
 
-		default:	
+		default:
 			if (cpos < STRBUF_M - 1) {
 				searchtext[cpos++] = c;
 				searchtext[cpos] = '\0';
@@ -60,6 +58,14 @@ void search()
 			}
 			break;
 		}
+	}
+}
+
+void move_to_search_result(point_t found)
+{
+	if (found != -1) {
+		curbp->b_point = found;
+		display(curwp, TRUE);
 	}
 }
 
@@ -100,14 +106,14 @@ point_t search_backwards(char *stext)
 {
 	point_t p,pp;
 	char* s;
-	
+
 	if (0 == strlen(stext))
 		return curbp->b_point;
 
 	for (p=curbp->b_point; p > 0; p--) {
 		for (s=stext, pp=p; *s == *(ptr(curbp, pp)) && *s != '\0' && pp > 0; s++, pp++)
 			;
-		
+
 		if (*s == '\0') {
 			if (p > 0)
 				p--;

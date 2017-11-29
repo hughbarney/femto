@@ -1,5 +1,5 @@
 /*
- * gap.c, Femto Emacs, Hugh Barney, Public Domain, 2016
+ * gap.c, femto, Hugh Barney, Public Domain, 2017
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 
@@ -11,7 +11,7 @@ int growgap(buffer_t *bp, point_t n)
 {
 	char_t *new;
 	point_t buflen, newlen, xgap, xegap;
-		
+
 	assert(bp->b_buf <= bp->b_gap);
 	assert(bp->b_gap <= bp->b_egap);
 	assert(bp->b_egap <= bp->b_ebuf);
@@ -19,7 +19,7 @@ int growgap(buffer_t *bp, point_t n)
 	xgap = bp->b_gap - bp->b_buf;
 	xegap = bp->b_egap - bp->b_buf;
 	buflen = bp->b_ebuf - bp->b_buf;
-    
+
 	/* reduce number of reallocs by growing by a minimum amount */
 	n = (n < MIN_GAP_EXPAND ? MIN_GAP_EXPAND : n);
 	newlen = buflen + n * sizeof (char_t);
@@ -28,7 +28,7 @@ int growgap(buffer_t *bp, point_t n)
 		if (newlen < 0 || MAX_SIZE_T < newlen)
 			fatal(f_alloc);
 		new = (char_t*) malloc((size_t) newlen);
-		if (new == NULL)			
+		if (new == NULL)
 			fatal(f_alloc);	/* Cannot edit a file without a buffer. */
 	} else {
 		if (newlen < 0 || MAX_SIZE_T < newlen) {
@@ -46,7 +46,7 @@ int growgap(buffer_t *bp, point_t n)
 	 * extension to the end of the gap.
 	 */
 	bp->b_buf = new;
-	bp->b_gap = bp->b_buf + xgap;      
+	bp->b_gap = bp->b_buf + xgap;
 	bp->b_ebuf = bp->b_buf + buflen;
 	bp->b_egap = bp->b_buf + newlen;
 	while (xegap < buflen--)
@@ -100,11 +100,11 @@ int posix_file(char *fn)
 	return (TRUE);
 }
 
-int save(char *fn)
+int save_buffer(buffer_t *bp, char *fn)
 {
 	FILE *fp;
 	point_t length;
-		
+
 	if (!posix_file(fn)) {
 		msg(m_badname);
 		return (FALSE);
@@ -114,9 +114,9 @@ int save(char *fn)
 		msg(m_open, fn);
 		return (FALSE);
 	}
-	(void) movegap(curbp, (point_t) 0);
-	length = (point_t) (curbp->b_ebuf - curbp->b_egap);
-	if (fwrite(curbp->b_egap, sizeof (char), (size_t) length, fp) != length) {
+	(void) movegap(bp, (point_t) 0);
+	length = (point_t) (bp->b_ebuf - bp->b_egap);
+	if (fwrite(bp->b_egap, sizeof (char), (size_t) length, fp) != length) {
 		msg(m_write, fn);
 		return (FALSE);
 	}
@@ -124,17 +124,15 @@ int save(char *fn)
 		msg(m_close, fn);
 		return (FALSE);
 	}
-	curbp->b_flags &= ~B_MODIFIED;
-	msg(m_saved, fn, pos(curbp, curbp->b_ebuf));
+	delete_mode(bp, B_MODIFIED);
+	msg(m_saved, fn, pos(bp, bp->b_ebuf));
 	return (TRUE);
 }
 
 void clear_buffer()
 {
-	/* reset the gap, make it the whole buffer */
-	curbp->b_gap = curbp->b_buf;
-	curbp->b_egap = curbp->b_ebuf;
-	top();
+	zero_buffer(curbp);
+	beginning_of_buffer();
 }
 
 int load_file(char *fn)
@@ -165,7 +163,6 @@ int insert_file(char *fn, int modflag)
 		return (FALSE);
 	}
 	curbp->b_point = movegap(curbp, curbp->b_point);
-	undoset();
 	curbp->b_gap += len = fread(curbp->b_gap, sizeof (char), (size_t) sb.st_size, fp);
 
 	if (fclose(fp) != 0) {
@@ -177,28 +174,6 @@ int insert_file(char *fn, int modflag)
 	return (TRUE);
 }
 
-/* Record a new undo location */
-void undoset()
-{
-	curbp->b_ubuf.u_point = curbp->b_point;
-	curbp->b_ubuf.u_gap = curbp->b_gap - curbp->b_buf;
-	curbp->b_ubuf.u_egap = curbp->b_egap - curbp->b_buf;
-}
-
-/* Undo */
-void undo()
-{
-	undo_t tmp;
-	memcpy(&tmp, &(curbp->b_ubuf), sizeof (undo_t));
-	undoset();
-	curbp->b_point = tmp.u_point;
-	curbp->b_gap = curbp->b_buf + tmp.u_gap;
-	curbp->b_egap = curbp->b_buf + tmp.u_egap;
-	curbp->b_flags |= B_MODIFIED;
-}
-
-/* additional support funtions not in original gap.c */
-
 /* find the point for start of line ln */
 point_t line_to_point(int ln)
 {
@@ -209,7 +184,7 @@ point_t line_to_point(int ln)
 		if ( *(ptr(curbp, p)) == '\n') {
 			if (--ln == 0)
 				return start;
-			if (p + 1 < end_p) 
+			if (p + 1 < end_p)
 				start = p + 1;
 		}
 	}
@@ -222,20 +197,20 @@ void get_line_stats(int *curline, int *lastline)
 	point_t end_p = pos(curbp, curbp->b_ebuf);
 	point_t p;
 	int line;
-    
+
 	*curline = -1;
-    
+
 	for (p=0, line=0; p < end_p; p++) {
 		line += (*(ptr(curbp,p)) == '\n') ? 1 : 0;
 		*lastline = line;
-        
+
 		if (*curline == -1 && p == curbp->b_point) {
 			*curline = (*(ptr(curbp,p)) == '\n') ? line : line + 1;
 		}
 	}
 
 	*lastline = *lastline + 1;
-	
+
 	if (curbp->b_point == end_p)
 		*curline = *lastline;
 }

@@ -4,59 +4,69 @@
 
 CC      = cc
 CFLAGS  = -O -Wall
-
 LD      = cc
-LDFLAGS =
+LDFLAGS = -o
 LIBS    = -lncursesw
-
 CP      = cp
 MV      = mv
 RM      = rm
 
-E       =
-O       = .o
+OBJ     = command.o display.o complete.o data.o gap.o key.o search.o buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o main.o
 
-OBJ     = complete$(O) command$(O) data$(O) display$(O) gap$(O) key$(O) search$(O) buffer$(O) replace$(O) window$(O) main$(O)
+femto: $(OBJ)
+	$(LD) $(LDFLAGS) femto $(OBJ) $(LIBS)
 
-femto$(E) : $(OBJ)
-	$(LD) $(LDFLAGS) -o femto$(E) $(OBJ) $(LIBS)
-
-complete$(O): complete.c header.h
+complete.o: complete.c header.h
 	$(CC) $(CFLAGS) -c complete.c
 
-command$(O): command.c header.h
+command.o: command.c header.h
 	$(CC) $(CFLAGS) -c command.c
 
-data$(O): data.c header.h
+data.o: data.c header.h
 	$(CC) $(CFLAGS) -c data.c
 
-display$(O): display.c header.h
+display.o: display.c header.h
 	$(CC) $(CFLAGS) -c display.c
 
-gap$(O): gap.c header.h
+gap.o: gap.c header.h
 	$(CC) $(CFLAGS) -c gap.c
 
-key$(O): key.c header.h
+key.o: key.c header.h
 	$(CC) $(CFLAGS) -c key.c
 
-search$(O): search.c header.h
+search.o: search.c header.h
 	$(CC) $(CFLAGS) -c search.c
 
-replace$(O): replace.c header.h
+replace.o: replace.c header.h
 	$(CC) $(CFLAGS) -c replace.c
 
-window$(O): window.c header.h
+window.o: window.c header.h
 	$(CC) $(CFLAGS) -c window.c
 
-buffer$(O): buffer.c header.h
+buffer.o: buffer.c header.h
 	$(CC) $(CFLAGS) -c buffer.c
 
-main$(O): main.c header.h
+undo.o: undo.c header.h
+	$(CC) $(CFLAGS) -c undo.c
+
+funcmap.o: funcmap.c header.h
+	$(CC) $(CFLAGS) -c funcmap.c
+
+utils.o: utils.c header.h
+	$(CC) $(CFLAGS) -c utils.c
+
+hilite.o: hilite.c header.h
+	$(CC) $(CFLAGS) -c hilite.c
+
+
+main.o: main.c header.h
 	$(CC) $(CFLAGS) -c main.c
 
+
+
 clean:
-	-$(RM) $(OBJ) femto$(E)
+	-$(RM) $(OBJ) femto
 
 install:
-	-$(MV) femto$(E) $(HOME)/$(HOSTNAME)/bin
+	-$(MV) femto $(HOME)/$(HOSTNAME)/bin
 

@@ -1,5 +1,5 @@
 /*
- * display.c, Femto Emacs, Hugh Barney, Public Domain, 2016
+ * display.c, femto, Hugh Barney, Public Domain, 2017
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 
@@ -91,19 +91,13 @@ point_t lncolumn(buffer_t *bp, point_t offset, int column)
 
 void display_char(buffer_t *bp, char_t *p)
 {
-	if ((ptr(bp, bp->b_mark) == p) && (bp->b_mark != NOMARK)) {
-		addch(*p | A_REVERSE);
-	} else if (pos(bp,p) == bp->b_point && bp->b_paren != NOPAREN) {
-		attron(COLOR_PAIR(3));
-		addch(*p);
-		attron(COLOR_PAIR(1));
-	} else if (bp->b_paren != NOPAREN && pos(bp,p) == bp->b_paren) { 
-		attron(COLOR_PAIR(3));
-		addch(*p);
-		attron(COLOR_PAIR(1));
-	} else {
-		addch(*p);
-	}
+        if ( (ptr(bp, bp->b_mark) == p) && (bp->b_mark != NOMARK)) {
+                addch(*p | A_REVERSE);
+		return;
+        } else if (bp->b_paren != NOPAREN && pos(bp,p) == bp->b_paren) {
+                attron(COLOR_PAIR(ID_BRACE));
+        }
+	addch(*p);
 }
 
 void display(window_t *wp, int flag)
@@ -111,7 +105,8 @@ void display(window_t *wp, int flag)
 	char_t *p;
 	int i, j, k, nch;
 	buffer_t *bp = wp->w_bufp;
-
+	int token_type = ID_DEFAULT;
+	
 	/* find start of screen, handle scroll up off page or top of file  */
 	/* point is always within b_page and b_epage */
 	if (bp->b_point < bp->b_page)
@@ -137,7 +132,9 @@ void display(window_t *wp, int flag)
 	i = wp->w_top;
 	j = 0;
 	bp->b_epage = bp->b_page;
-	/* paint screen from top of page until we hit maxline */ 
+	set_parse_state(bp, bp->b_epage); /* are we in a multline comment ? */
+
+	/* paint screen from top of page until we hit maxline */
 	while (1) {
 		/* reached point - store the cursor position */
 		if (bp->b_point == bp->b_epage) {
@@ -151,11 +148,15 @@ void display(window_t *wp, int flag)
 		if (*p != '\r') {
 			nch = utf8_size(*p);
 			if ( nch > 1) {
-				j++;
+				wchar_t c;
+				/* reset if invalid multi-byte character */
+				if (mbtowc(&c, (char*)p, 6) < 0) mbtowc(NULL, NULL, 0); 
+				j += wcwidth(c) < 0 ? 1 : wcwidth(c);
 				display_utf8(bp, *p, nch);
-			}
-			else if (isprint(*p) || *p == '\t' || *p == '\n') {
+			} else if (isprint(*p) || *p == '\t' || *p == '\n') {
 				j += *p == '\t' ? 8-(j&7) : 1;
+				token_type = parse_text(bp, bp->b_epage);
+				attron(COLOR_PAIR(token_type));
 				display_char(bp, p);
 			} else {
 				const char *ctrl = unctrl(*p);
@@ -189,29 +190,15 @@ void display(window_t *wp, int flag)
 	wp->w_update = FALSE;
 }
 
-/* work out number of bytes based on first byte */
-int utf8_size(char_t c)
-{
-	if (c >= 192 && c < 224) {
-		return 2; // 2 top bits set mean 2 byte utf8 char
-	} else if (c >= 224 && c < 240) {
-		return 3; // 3 top bits set mean 3 byte utf8 char
-	} else if (c >= 240) {
-		return 4; // 4 top bits set mean 4 byte utf8 char
-	}
-
-	return 1; /* if in doubt it is 1 */
-}
-
 void display_utf8(buffer_t *bp, char_t c, int n)
 {
 	char sbuf[6];
 	int i = 0;
-	
+
 	for (i=0; i<n; i++) {
 		sbuf[i] = *ptr(bp, bp->b_epage + i);
 	}
-	sbuf[n] = '\0';	
+	sbuf[n] = '\0';
 	addstr(sbuf);
 }
 
@@ -219,25 +206,21 @@ void modeline(window_t *wp)
 {
 	int i;
 	char lch, mch, och;
+	static char modeline[256];
 
 	/* n = utf8_size(*(ptr(wp->w_bufp, wp->w_bufp->b_point))); */
-	attron(COLOR_PAIR(2));
+	attron(COLOR_PAIR(ID_MODELINE));
 	move(wp->w_top + wp->w_rows, 0);
 	lch = (wp == curwp ? '=' : '-');
 	mch = ((wp->w_bufp->b_flags & B_MODIFIED) ? '*' : lch);
 	och = ((wp->w_bufp->b_flags & B_OVERWRITE) ? 'O' : lch);
 
-	/* debug version */
-	/* sprintf(temp, "%c%c%c Femto: %c%c %s %s  T%dR%d Pt%ld Pg%ld Pe%ld r%dc%d B%d",  lch,och,mch,lch,lch, wp->w_name, get_buffer_name(wp->w_bufp), wp->w_top, wp->w_rows, wp->w_point, wp->w_bufp->b_page, wp->w_bufp->b_epage, wp->w_bufp->b_row, wp->w_bufp->b_col, wp->w_bufp->b_cnt); */
+	sprintf(modeline, "%c%c%c Femto: %c%c %s",  lch,och,mch,lch,lch, get_buffer_name(wp->w_bufp));
+	addstr(modeline);
 
-	/* sprintf(temp, "%c%c%c Femto: %c%c %s %s  T%dR%d Pt%ld Pg%ld Pe%ld r%dc%d B%d N%d",  lch,och,mch,lch,lch, wp->w_name, get_buffer_name(wp->w_bufp), wp->w_top, wp->w_rows, wp->w_point, wp->w_bufp->b_page, wp->w_bufp->b_epage, wp->w_bufp->b_row, wp->w_bufp->b_col, wp->w_bufp->b_cnt, n); */
-	
-	sprintf(temp, "%c%c%c Femto: %c%c %s",  lch,och,mch,lch,lch, get_buffer_name(wp->w_bufp));
-	addstr(temp);
-
-	for (i = strlen(temp) + 1; i <= COLS; i++)
+	for (i = strlen(modeline) + 1; i <= COLS; i++)
 		addch(lch);
-	attron(COLOR_PAIR(1));
+	attron(COLOR_PAIR(ID_SYMBOL));
 }
 
 void dispmsg()
@@ -247,6 +230,14 @@ void dispmsg()
 		addstr(msgline);
 		msgflag = FALSE;
 	}
+	clrtoeol();
+}
+
+void clear_message_line()
+{
+	ZERO_STRING(msgline);
+	msgflag = FALSE;
+	move(MSGLINE, 0);
 	clrtoeol();
 }
 
@@ -260,13 +251,13 @@ void display_prompt_and_response(char *prompt, char *response)
 }
 
 void update_display()
-{   
+{
 	window_t *wp;
 	buffer_t *bp;
 
 	bp = curwp->w_bufp;
 	bp->b_cpoint = bp->b_point; /* cpoint only ever set here */
-	
+
 	/* only one window */
 	if (wheadp->w_next == NULL) {
 		display(curwp, TRUE);
@@ -276,7 +267,7 @@ void update_display()
 	}
 
 	display(curwp, FALSE); /* this is key, we must call our win first to get accurate page and epage etc */
-	
+
 	/* never curwp,  but same buffer in different window or update flag set*/
 	for (wp=wheadp; wp != NULL; wp = wp->w_next) {
 		if (wp != curwp && (wp->w_bufp == bp || wp->w_update)) {
@@ -300,7 +291,7 @@ void w2b(window_t *w)
 	w->w_bufp->b_epage = w->w_epage;
 	w->w_bufp->b_row = w->w_row;
 	w->w_bufp->b_col = w->w_col;
-	
+
 	/* fixup pointers in other windows of the same buffer, if size of edit text changed */
 	if (w->w_bufp->b_point > w->w_bufp->b_cpoint) {
 		w->w_bufp->b_point += (w->w_bufp->b_size - w->w_bufp->b_psize);
@@ -317,4 +308,20 @@ void b2w(window_t *w)
 	w->w_row = w->w_bufp->b_row;
 	w->w_col = w->w_bufp->b_col;
 	w->w_bufp->b_size = (w->w_bufp->b_ebuf - w->w_bufp->b_buf) - (w->w_bufp->b_egap - w->w_bufp->b_gap);
+}
+
+/*
+ * save buffer data on all windows that reference this buffer
+ * special behaviour for where we want to see updates in real time
+ * (for example *messages* buffer)
+ */
+void b2w_all_windows(buffer_t *bp)
+{
+	window_t *wp;
+
+	for (wp=wheadp; wp != NULL; wp = wp->w_next) {
+		if (wp->w_bufp == bp) {
+			b2w(wp);
+		}
+	}
 }

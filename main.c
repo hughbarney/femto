@@ -1,5 +1,5 @@
 /*
- * main.c, Femto Emacs, Hugh Barney, Public Domain, 2016
+ * main.c, femto, Hugh Barney, Public Domain, 2017
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 
@@ -7,36 +7,32 @@
 
 int main(int argc, char **argv)
 {
-	int i;
-		
-	/* Find basename. */
-	prog_name = *argv;
-	i = strlen(prog_name);
-	while (0 <= i && prog_name[i] != '\\' && prog_name[i] != '/')
-		--i;
-	prog_name += i+1;
-
-	setlocale(LC_ALL, ""); /* required for 3,4 byte UTF8 chars */
-
-	if (initscr() == NULL)
-		fatal(f_initscr);
-
+	setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
+	if (initscr() == NULL) fatal(f_initscr);
 	raw();
 	noecho();
 	idlok(stdscr, TRUE);
 
-        start_color();
-	init_pair(1,COLOR_BLACK,COLOR_WHITE);  /* normal screen */
-	init_pair(2,COLOR_WHITE,COLOR_BLUE);   /* modeline */
-	init_pair(3, COLOR_BLACK, COLOR_CYAN); /* brace highlight */
-	bkgd((chtype) (' ' | COLOR_PAIR(1)));
-
+	start_color();
+	init_pair(ID_DEFAULT, COLOR_CYAN, COLOR_BLACK);          /* alpha */
+	init_pair(ID_SYMBOL, COLOR_WHITE, COLOR_BLACK);          /* non alpha, non digit */
+	init_pair(ID_MODELINE, COLOR_BLACK, COLOR_WHITE);        /* modeline */
+	init_pair(ID_DIGITS, COLOR_YELLOW, COLOR_BLACK);         /* digits */
+	init_pair(ID_BLOCK_COMMENT, COLOR_GREEN, COLOR_BLACK);   /* block comments */
+	init_pair(ID_LINE_COMMENT, COLOR_GREEN, COLOR_BLACK);    /* line comments */
+	init_pair(ID_SINGLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* single quoted strings */
+	init_pair(ID_DOUBLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* double quoted strings */
+	init_pair(ID_BRACE, COLOR_BLACK, COLOR_CYAN);            /* brace highlight */
+	
 	if (1 < argc) {
-		curbp = find_buffer(argv[1], TRUE);
-		(void) insert_file(argv[1], FALSE);
+		char bname[NBUFN];
+		char fname[NAME_MAX + 1];
 		/* Save filename irregardless of load() success. */
-		strncpy(curbp->b_fname, argv[1], NAME_MAX);
-		curbp->b_fname[NAME_MAX] = '\0'; /* force truncation */
+		safe_strncpy(fname, argv[1], NAME_MAX);
+		make_buffer_name(bname, fname);
+		curbp = find_buffer(bname, TRUE);
+		(void)insert_file(fname, FALSE);
+		strcpy(curbp->b_fname, fname);
 	} else {
 		curbp = find_buffer(str_scratch, TRUE);
 		strncpy(curbp->b_bname, str_scratch, STRBUF_S);
@@ -46,37 +42,41 @@ int main(int argc, char **argv)
 	one_window(curwp);
 	associate_b2w(curbp, curwp);
 
-	if (!growgap(curbp, CHUNK))
-		fatal(f_alloc);
-
-	top();
+	beginning_of_buffer();
 	key_map = keymap;
 
 	while (!done) {
 		update_display();
-		input = getkey(key_map, &key_return);
+		input = get_key(key_map, &key_return);
 
-		if (key_return != NULL)
+		if (key_return != NULL) {
 			(key_return->func)();
-		else
-			insert();
+		} else {
+			/*
+			 * if first char of input is a control char then
+			 * key is not bound, except TAB and NEWLINE
+			 */
+			if (*input > 31 || *input == 0x0A || *input == 0x09)
+				insert();
+                        else {
+				flushinp(); /* discard without writing in buffer */
+				msg(str_not_bound);
+			}
+		}
 
 		/* debug_stats("main loop:"); */
 		match_parens();
 	}
-	
-	if (scrap != NULL)
-		free(scrap);
 
+	if (scrap != NULL) free(scrap);
 	move(LINES-1, 0);
 	refresh();
 	noraw();
 	endwin();
-
-	return (EXIT_OK);
+	return 0;
 }
 
-void fatal(msg_t m)
+void fatal(char *msg)
 {
 	if (curscr != NULL) {
 		move(LINES-1, 0);
@@ -84,17 +84,11 @@ void fatal(msg_t m)
 		endwin();
 		putchar('\n');
 	}
-	fprintf(stderr, m, prog_name);
-	if (m == f_ok)
-		exit(EXIT_OK);
-	if (m == f_error)
-		exit(EXIT_ERROR);
-	if (m == f_usage)
-		exit(EXIT_USAGE);
-	exit(EXIT_FAIL);
+	fprintf(stderr, msg, PROG_NAME);
+	exit(1);
 }
 
-void msg(msg_t m, ...)
+void msg(char *m, ...)
 {
 	va_list args;
 	va_start(args, m);

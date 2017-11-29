@@ -34,6 +34,15 @@ An extended Atto would therefore be called Femto (10 to the power of minus 15).
 Femto is based on the Atto codebase [0] (as of Atto 1.6)
 Atto was based on the public domain code of Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]).
 
+## Femto 2.0 29 November 2017
+* brought up to date with FemtoEmacs undo, Atto highlighting, Atto UTF8 fixes
+* fix compile warning around stdup define _XOPEN_SOURCE 500
+* file headers changed to reference 'femto'
+* removed old undoset code
+* added undo functionality, set global_undo_mode = 1, so undo active by default
+* added Atto style basic syntax highlighting
+* added in atto fixes for UTF8, wide character display
+
 ## Femto 1.8 12 April 2016
 * fixed UTF8 support so that it moves up and down lines, correctly maintaining column
 
@@ -94,20 +103,20 @@ Atto was based on the public domain code of Anthony Howe's editor (commonly know
     C-D   delete-char
     C-E   end-of-line
     C-F   forward Character
-	C-G	  Abort (at prompts)
+    C-G	  Abort (at prompts)
     C-H   backspace
-	C-I   handle-tab
+    C-I   handle-tab
     C-J   newline
     C-K   kill-to-eol
     C-L   refresh display
     C-M   Carrage Return
     C-N   next line
     C-P   previous line
-	C-R   search-backwards
-	C-S	  search-forwards
+    C-R   search-backwards
+    C-S	  search-forwards
     C-U   Undo
     C-V   Page Down
-	C-W   Kill Region (Cut)
+    C-W   Kill Region (Cut)
     C-X   CTRL-X command prefix
     C-Y   Yank (Paste)
 
@@ -131,13 +140,12 @@ Atto was based on the public domain code of Anthony Howe's editor (commonly know
 	      and the result is displayed in the *output* buffer
     ^Xi   Insert file at point
     ^X=   Show Character at position
-	^X^N  next-buffer
-	^Xn   next-buffer
-	^Xk   kill-buffer
-
+    ^X^N  next-buffer
+    ^Xn   next-buffer
+    ^Xk   kill-buffer
     ^X1   delete-other-windows
-	^X2   split-window
-	^Xo   other-window
+    ^X2   split-window
+    ^Xo   other-window
 
     Home  Beginning-of-line
     End   End-of-line
