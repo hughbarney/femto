@@ -135,7 +135,7 @@ void clear_buffer()
 	beginning_of_buffer();
 }
 
-int load_file(char *fn)
+int e_load_file(char *fn)
 {
 	clear_buffer();
 	return insert_file(fn, FALSE);

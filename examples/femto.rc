@@ -1,0 +1,181 @@
+;; -*-Lisp-*-
+;;
+;; FEMTO an extended Atto Emacs with a tiny lisp extension language
+;; hughbarney AT googlemail.com
+;;
+;; The editor provides only basic buffer movement and edit functions
+;; everything else is done by extending the user interface using the
+;; lisp extension language. Functions can be bound to keys using set-key.
+;; For example: (set-key "c-k" "(kill-to-eol)")
+;; 
+;; place femto.rc in your home direcory and it is run when femto starts up.
+;;
+
+;; concatenate a list of strings
+(defmacro concat args
+  (cond
+    ((null args) "")
+    ((null (cdr args)) (car args))
+    (t (list (quote string.append) (car args) (cons (quote concat) (cdr args)))) ))
+
+;; return filename relative to the homedir
+(defun home(fn)
+  (concat (os.getenv "HOME") "/" fn))
+
+;; the user should modify this value to where they wish to store scripts and extensions
+(setq script_dir (home "src/femto/examples/"))
+
+(defun load_script(fn)
+  (load (concat script_dir fn)))
+
+(defun repeat (n func)  
+  (cond ((> n 0) (func) (repeat (- n 1) func))))
+
+;; shrink string by dropping off last char
+(defun shrink(s)
+  (cond
+    ((< (string.length s) 2) "")
+    (t (string.substring s 0 (- (string.length s) 2)))  ))
+
+;; some keystroke checks that we will use later
+(defun is_ctl_g(k)
+  (eq k (ascii 7)))
+
+(defun is_escape(k)
+  (eq k (ascii 27)))
+
+(defun is_backspace(k)
+  (or (eq k (ascii 8)) (eq k (ascii 127))))
+
+(defun is_ctl_s(k)
+  (eq k (ascii 19)))
+
+(defun is_control_char(k)
+  (and (>= (ascii->number k) 0) (<= (ascii->number k) 31)))
+
+
+;; prompt for string and return response, handle backspace, cr and c-g
+(defun input(q response)
+  (prompt q response)
+  (setq key (getch))
+  (cond
+    ((eq key "\n") response)
+    ((is_ctl_g key) "")
+    ((is_backspace key) (input q (shrink response)))
+    ((is_control_char key) (input q response))
+    (t (input q (string.append response key)))  ))
+
+;;
+;; duplicate a line
+;;
+(defun duplicate_line()
+  (beginning-of-line)
+  (set-mark)
+  (next-line)
+  (beginning-of-line)
+  (copy-region)
+  (yank)
+  (previous-line))
+
+;; kill to end of line, uses if and progn
+(defun kill-to-eol()
+  (if (eq "\n" (get-char))
+    (progn
+      (delete))
+    (progn
+      (set-mark)
+      (end-of-line)
+      (kill-region))))
+
+;; prompt for a keystroke then show its name
+(defun describe-key()
+  (prompt "Describe Key: " "")
+  (setq key (get-key))
+  (cond
+    ((not (eq key "")) (message key))
+    (t (message (concat (get-key-name) " runs command " (get-key-funcname))))))
+
+;; goto the line requested
+;; (does not check for stupid responses yet)
+(defun i_gotoline()
+ (setq line (input "Goto line: " ""))
+ (cond
+   ((eq line "") "")
+   (t (gotoline (string->number line))) ))
+
+(defun gotoline(ln)
+  (beginning-of-buffer)
+  (repeat (- ln 1) next-line))
+
+;;
+;; GNU Emacs style lisp interaction.
+;; Place cursor behind an s-expression, type C-] and the
+;; block will be evaluated.
+;;
+
+;; find the end of the s-expression and set cursor on next cell
+(defun find_end_p()
+  (setq k (get-char))
+  (cond 
+    ((eq 0 (get-point)) -1)
+    ((eq ")" k) (forward-char) (get-point))
+    ((or (eq "" k) (eq " " k) (eq "\t" k) (eq "\n" k)) (backward-char) (find_end_p))
+    (t -1) ))
+
+;; find the start of the s-expression
+;; assumes start is always in first character of line
+;; this means comments and strings dont need to be handled
+(defun find_start_p()
+  (beginning-of-line)
+  (setq kyy (get-char))
+  (cond 
+    ((and (eq 0 (get-point)) (not (eq kyy "("))) -1) 
+    ((eq kyy "(") (get-point))
+    (t (previous-line) (find_start_p)) ))
+
+;;
+;; find the start and end of the s-expression
+;; set the mark and the start and point at the end
+;; call eval-block
+(defun find_and_eval_sexp()
+  (setq o_point (get-point))
+  (setq lb_count 0)
+  (setq rb_count 0)
+  (setq start_p -1)
+  (setq end_p (find_end_p))
+  (if (> end_p -1) (setq start_p (find_start_p)))
+  (if (and (> start_p -1) (> end_p -1))
+  (progn
+    (set-point start_p)
+    (set-mark)
+    (set-point end_p)
+    (eval-block))
+  (progn
+    (set-point o_point)
+    (if (eq -1 start_p) (message "could not find start of s-expression"))
+    (if (eq -1 end_p) (message "could not find end of s-expression"))) ))
+
+;; run our naughts and crosses game
+(defun run_oxo()
+  (load_script "oxo.lsp")
+  (oxo))
+
+;;
+;;  Key Bindings 
+;;
+
+(set-key "esc-a" "(duplicate_line)")
+(set-key "esc-g" "(i_gotoline)")
+(set-key "c-k" "(kill-to-eol)")
+(set-key "c-x ?" "(describe-key)")
+(set-key "c-]" "(find_and_eval_sexp)")
+
+;; core dumps ??
+(set-key "c-x c-o" "(run_oxo)")
+
+;; does not overwite internal command apropos (maybe we should allow this)
+(set-key "esc-a" "(duplicate_line)")
+
+;; will return nil as key binding esc-# does not exist
+(set-key "esc-#" "(zipp)")
+

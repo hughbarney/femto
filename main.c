@@ -7,6 +7,10 @@
 
 int main(int argc, char **argv)
 {
+	setup_keys();
+	(void)init_lisp();
+	load_config();
+
 	setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
 	if (initscr() == NULL) fatal(f_initscr);
 	raw();
@@ -43,14 +47,14 @@ int main(int argc, char **argv)
 	associate_b2w(curbp, curwp);
 
 	beginning_of_buffer();
-	key_map = keymap;
+	//key_map = keymap;
 
 	while (!done) {
 		update_display();
-		input = get_key(key_map, &key_return);
+		input = get_key(khead, &key_return);
 
 		if (key_return != NULL) {
-			(key_return->func)();
+			(key_return->k_func)();
 		} else {
 			/*
 			 * if first char of input is a control char then
@@ -79,12 +83,13 @@ int main(int argc, char **argv)
 void fatal(char *msg)
 {
 	if (curscr != NULL) {
-		move(LINES-1, 0);
-		refresh();
+		//move(LINES-1, 0);
+		//refresh();
+		noraw();
 		endwin();
-		putchar('\n');
+		//putchar('\n');
 	}
-	fprintf(stderr, msg, PROG_NAME);
+	printf("\n%s %s:\n%s\n", E_NAME, E_VERSION, msg);
 	exit(1);
 }
 
@@ -95,6 +100,29 @@ void msg(char *m, ...)
 	(void) vsprintf(msgline, m, args);
 	va_end(args);
 	msgflag = TRUE;
+}
+
+void load_config()
+{
+	char fname[300];
+	char *output;
+	int fd;
+
+	reset_output_stream();
+	(void)snprintf(fname, 300, "%s/%s", getenv("HOME"), E_INITFILE);
+
+	if ((fd = open(fname, O_RDONLY)) == -1)
+		fatal("failed to open " E_INITFILE " in HOME directory");
+
+	reset_output_stream();
+	output = load_file(fd);
+	assert(output != NULL);
+	close(fd);
+
+	/* all exceptions start with the word error: */
+	if (NULL != strstr(output, "error:"))
+		fatal(output);
+	reset_output_stream();
 }
 
 void debug(char *format, ...)

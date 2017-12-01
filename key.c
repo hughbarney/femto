@@ -5,21 +5,22 @@
 
 #include "header.h"
 
+/* XXX needs to be tested agains keylist */
+
 /* name, function */
 command_t commands[] = {
         {"apropos", apropos_command},
-	{"backspace", backsp},
+	{"backspace", backspace},
 	{"backward-character", left},
 	{"backward-page", backward_page},
 	{"backward-word", backward_word},
 	{"beginning-of-buffer", beginning_of_buffer},
 	{"beginning-of-line", lnbegin},
 	{"clear-message-line", clear_message_line},
-	{"copy-region", copy},
+	{"copy-region", copy_region},
 	{"cursor-position", showpos},
-	{"delete-left", backsp},
+	{"delete-left", backspace},
 	{"delete-other-windows", delete_other_windows},
-	{"describe-key", i_describe_key},
 	{"discard-undo-history", discard_undo_history},
 	{"end-of-buffer", end_of_buffer},
 	{"end-of-line", lnend},
@@ -35,7 +36,7 @@ command_t commands[] = {
 	{"insert-file", insertfile},
 	{"kill-buffer", killbuffer},
 	{"kill-line", killtoeol},
-	{"kill-region", cut},
+	{"kill-region", kill_region},
 	{"list-bindings", list_bindings},
 	{"list-buffers", list_buffers},
 	{"list-undo", list_undos},
@@ -57,144 +58,187 @@ command_t commands[] = {
 	{"toggle-overwrite-mode", toggle_overwrite_mode},
 	{"undo", undo_command},
 	{"write-file", writefile},
-	{"yank", paste},
+	{"yank", yank},
 	{NULL, NULL }
 };
 
-/* desc, keys, func */
-keymap_t keymap[] = {
-	{"backspace", "backspace"             , "\x7f", backsp },
-	{"C-a",       "beginning-of-line"     , "\x01", lnbegin },
-	{"C-b",       "backward-character"    , "\x02", left },
-	{"C-d",       "forward-delete-char"   , "\x04", delete },
-	{"C-e",       "end-of-line"           , "\x05", lnend },
-	{"C-f",       "forward-character"     , "\x06", right },
-	{"C-h",       "backspace"             , "\x08", backsp },
-	{"C-k",       "kill-line"             , "\x0B", killtoeol },
-	{"C-l",       "refresh"               , "\x0C", redraw },
-	{"C-n",       "next-line"             , "\x0E", down },
-	{"C-o",       "user-defined-function" , "\x0F", keyboardDefinition},
-	{"C-p",       "previous-line"         , "\x10", up },
-	{"C-q",       "user-defined-function" , "\x11", keyboardDefinition},
-	{"C-r",       "search-backward"       , "\x12", search },
-	{"C-space",   "set-mark"              , "\x00", i_set_mark },
-	{"C-s",       "search-forward"        , "\x13", search },
-	{"C-t",       "user-defined-function" , "\x14", keyboardDefinition },
-	{"C-u",       "undo"                  , "\x15", undo_command },
-	{"C-v",       "forward-page"          , "\x16", forward_page },
-	{"C-w",       "kill-region"           , "\x17", cut},
-	{"C-y",       "yank"                  , "\x19", paste},
-	{"C-z",       "user-defined-function" , "\x1A", keyboardDefinition},
+keymap_t *new_key(char *name, char *bytes)
+{
+	keymap_t *kp = (keymap_t *)malloc(sizeof(keymap_t));
+	assert(kp != NULL);
 
-	{"C-x 1",     "delete-other-windows"  , "\x18\x31", delete_other_windows },
-	{"C-x 2",     "split-window"          , "\x18\x32", split_window },
+ 	strncpy(kp->k_name, name, MAX_KNAME);
+	strncpy(kp->k_bytes, bytes, MAX_KBYTES);
+	kp->k_name[MAX_KNAME] ='\0';
+	kp->k_bytes[MAX_KBYTES] ='\0';
+	kp->k_func = user_func;
+	strcpy(kp->k_funcname, E_NOT_BOUND);
+	kp->k_next = NULL;
+	return kp;
+}
 
-	{"C-x C-a",   "user-defined-function" , "\x18\x01", keyboardDefinition },
-	{"C-x C-b",   "user-defined-function" , "\x18\x02", keyboardDefinition },
-	{"C-x C-c",   "exit"                  , "\x18\x03", quit_ask },
-	{"C-x C-b",   "user-defined-function" , "\x18\x02", keyboardDefinition },
-	{"C-x C-d",   "user-defined-function" , "\x18\x04", keyboardDefinition },
-	{"C-x C-e",   "user-defined-function" , "\x18\x05", keyboardDefinition },
-	{"C-x C-f",   "find-file"             , "\x18\x06", i_readfile },
-	{"C-x C-g",   "user-defined-function" , "\x18\x07", keyboardDefinition },
-	{"C-x C-h",   "user-defined-function" , "\x18\x08", keyboardDefinition },
-	{"C-x C-i",   "user-defined-function" , "\x18\x09", keyboardDefinition },
-	{"C-x C-j",   "user-defined-function" , "\x18\x0A", keyboardDefinition },
-	{"C-x C-k",   "user-defined-function" , "\x18\x0B", keyboardDefinition },
-	{"C-x C-l",   "user-defined-function" , "\x18\x0C", keyboardDefinition },
-	{"C-x C-m",   "user-defined-function" , "\x18\x0D", keyboardDefinition },
-	{"C-x C-n",   "next-buffer"           , "\x18\x0E", next_buffer },
-	{"C-x C-o",   "user-defined-function" , "\x18\x0F", keyboardDefinition },
-	{"C-x C-p",   "user-defined-function" , "\x18\x10", keyboardDefinition },
-	{"C-x C-q",   "user-defined-function" , "\x18\x11", keyboardDefinition },
-	{"C-x C-r",   "user-defined-function" , "\x18\x12", keyboardDefinition },
-	{"C-x C-s",   "save-buffer"           , "\x18\x13", savebuffer },
-	{"C-x C-t",   "user-defined-function" , "\x18\x14", keyboardDefinition },
-	{"C-x C-u",   "user-defined-function" , "\x18\x15", keyboardDefinition },
-	{"C-x C-v",   "user-defined-function" , "\x18\x16", keyboardDefinition },
-	{"C-x C-w",   "write-file"            , "\x18\x17", writefile },
-	{"C-x C-y",   "user-defined-function" , "\x18\x18", keyboardDefinition },
-	{"C-x C-z",   "user-defined-function" , "\x18\x19", keyboardDefinition },
-	{"C-x =",     "cursor-position"       , "\x18\x3D", showpos },
-	{"C-x ?",     "describe-key"          , "\x18\x3F", i_describe_key },
-	{"C-x !",     "next-grep"             , "\x18\x21", keyboardDefinition },
-	{"C-x b",     "list-buffers"          , "\x18\x62", list_buffers },
-	{"C-x i",     "insert-file"           , "\x18\x69", insertfile },
-	{"C-x k",     "kill-buffer"           , "\x18\x6B", killbuffer },
-	{"C-x n",     "next-buffer"           , "\x18\x6E", next_buffer },
-	{"C-x o",     "other-window"          , "\x18\x6F", other_window },
-	{"C-x @",     "shell-command"         , "\x18\x40", i_shell_command },
-	{"DEL",       "forward-delete-char"   , "\x1B\x5B\x33\x7E", delete },
-	{"down",      "next-line"             , "\x1B\x5B\x42", down },
-	{"end",       "end-of-line"           , "\x1B\x4F\x46", lnend },
-        {"esc a",     "apropos"               , "\x1B\x61", apropos_command },
-	{"esc B",     "backward-word"         , "\x1B\x42", backward_word },
-	{"esc b",     "backward-word"         , "\x1B\x62", backward_word },
-	{"esc <",     "beginning-of-buffer"   , "\x1B\x3C", beginning_of_buffer},
-	{"esc c",     "copy-region"           , "\x1B\x63", copy },
-	{"esc d",     "kill-line"             , "\x1B\x64", killtoeol },
-	{"esc down",  "end-of-buffer"         , "\x1B\x1B\x5B\x42", end_of_buffer },
-	{"esc end",   "end-of-buffer"         , "\x1B\x1B\x4F\x46", end_of_buffer },
-	{"esc >",     "end-of-buffer"         , "\x1B\x3E", end_of_buffer },
-	{"esc esc",   "show-version"          , "\x1B\x1B", version },
-	{"esc ]",     "eval-block"            , "\x1B\x5D", eval_block },
-	{"esc ;",     "exec-lisp-command"     , "\x1B\x3B", repl },
-	{"esc F",     "forward-word"          , "\x1B\x46", forward_word },
-	{"esc f",     "forward-word"          , "\x1B\x66", forward_word },
-	{"esc G",     "goto-line"             , "\x1B\x47", i_gotoline },
-	{"esc g",     "goto-line"             , "\x1B\x67", i_gotoline },
-	{"esc home",  "beginning-of-buffer"   , "\x1B\x1B\x4F\x48", beginning_of_buffer},
-	{"esc i",     "yank"                  , "\x1B\x69", paste },
-	{"esc k",     "kill-region"           , "\x1B\x6B", cut },
-	{"esc l",     "list-bindings"         , "\x1B\x6C", list_bindings },
-	{"esc m",     "set-mark"              , "\x1B\x6D", i_set_mark },
-	{"esc n",     "next-buffer"           , "\x1B\x6E", next_buffer },
-	{"esc o",     "delete-other-windows"  , "\x1B\x6F", delete_other_windows },
-	{"esc R",     "query-replace"         , "\x1B\x52", query_replace },
-	{"esc r",     "query-replace"         , "\x1B\x72", query_replace },
-	{"esc @",     "set-mark"              , "\x1B\x40", i_set_mark },
-	{"esc up",    "beginning-of-buffer"   , "\x1B\x1B\x5B\x41", beginning_of_buffer},
-	{"esc V",     "backward-page"         , "\x1B\x56", backward_page },
-	{"esc v",     "backward-page"         , "\x1B\x76", backward_page },
-	{"esc W",     "copy-region"           , "\x1B\x57", copy},
-	{"esc w",     "copy-region"           , "\x1B\x77", copy},
-	{"esc x",     "execute-command"       , "\x1B\x78", execute_command },
-	{"home",      "beginning-of-line"     , "\x1B\x4F\x48", lnbegin },
-	{"INS",       "toggle-overwrite-mode" , "\x1B\x5B\x32\x7E", toggle_overwrite_mode },
-	{"left",      "backward-character"    , "\x1B\x5B\x44", left },
-	{"PgDn",      "forward-page"          , "\x1B\x5B\x36\x7E", forward_page },
-	{"PgUp",      "backward-page"         , "\x1B\x5B\x35\x7E", backward_page },
-        {"resize",    "resize-terminal"       , "\x9A", resize_terminal },
-	{"right",     "forward-character"     , "\x1B\x5B\x43", right },
-	{"up",        "previous-line"         , "\x1B\x5B\x41", up },
-        {"C-c a",     "user-defined-function" , "\x03\x61", keyboardDefinition },	
-        {"C-c b",     "user-defined-function" , "\x03\x62", keyboardDefinition },
-        {"C-c c",     "user-defined-function" , "\x03\x63", keyboardDefinition },
-        {"C-c d",     "user-defined-function" , "\x03\x64", keyboardDefinition },
-        {"C-c e",     "user-defined-function" , "\x03\x65", keyboardDefinition },
-        {"C-c f",     "user-defined-function" , "\x03\x66", keyboardDefinition },
-        {"C-c g",     "user-defined-function" , "\x03\x67", keyboardDefinition },
-        {"C-c h",     "user-defined-function" , "\x03\x68", keyboardDefinition },
-        {"C-c i",     "user-defined-function" , "\x03\x69", keyboardDefinition },
-        {"C-c j",     "user-defined-function" , "\x03\x6A", keyboardDefinition },
-        {"C-c k",     "user-defined-function" , "\x03\x6B", keyboardDefinition },
-        {"C-c l",     "user-defined-function" , "\x03\x6C", keyboardDefinition },
-        {"C-c m",     "user-defined-function" , "\x03\x6D", keyboardDefinition },
-        {"C-c n",     "user-defined-function" , "\x03\x6E", keyboardDefinition },
-        {"C-c o",     "user-defined-function" , "\x03\x6F", keyboardDefinition },
-        {"C-c p",     "user-defined-function" , "\x03\x70", keyboardDefinition },
-        {"C-c q",     "user-defined-function" , "\x03\x71", keyboardDefinition },
-        {"C-c r",     "user-defined-function" , "\x03\x72", keyboardDefinition },
-        {"C-c s",     "user-defined-function" , "\x03\x73", keyboardDefinition },
-        {"C-c t",     "user-defined-function" , "\x03\x74", keyboardDefinition },
-        {"C-c u",     "user-defined-function" , "\x03\x75", keyboardDefinition },
-        {"C-c v",     "user-defined-function" , "\x03\x76", keyboardDefinition },
-        {"C-c w",     "user-defined-function" , "\x03\x77", keyboardDefinition },
-        {"C-c x",     "user-defined-function" , "\x03\x78", keyboardDefinition },
-        {"C-c y",     "user-defined-function" , "\x03\x79", keyboardDefinition },
-        {"C-c z",     "user-defined-function" , "\x03\x7A", keyboardDefinition },
-	{NULL, NULL, NULL, NULL }
-};
+/* note, no check if name already exists */
+void make_key(char *name, char *bytes)
+{
+	keymap_t *kp = new_key(name, bytes);
+	ktail->k_next = kp;
+	ktail = kp;
+}
+
+void create_keys()
+{
+	char ch;
+	char ctrx_map[] = "c-x c-|";
+	char ctrl_map[] = "c-|";
+	char esc_map[] = "esc-|";
+	char ctrx_bytes[] = "\x18\x01";
+	char ctrl_bytes[] = "\x01";
+	char esc_bytes[] = "\x1B\x61";
+
+	assert(khead == NULL);
+	khead = ktail = new_key("c-space", "\x00");
+
+	/* control-a to z */
+	for (ch = 1; ch <= 26; ch++) {
+		if (ch == 9 || ch == 10 || ch == 24) continue;  /* skip tab, linefeed, ctrl-x */
+		ctrl_map[2] = ch + 96;   /* ASCII a is 97 */
+		ctrl_bytes[0] = ch;
+		make_key(ctrl_map, ctrl_bytes);
+	}
+
+	/* esc-a to z */
+	for (ch = 1; ch <= 26; ch++) {
+		esc_map[4] = ch + 96;
+		esc_bytes[1] = ch + 96;
+		make_key(esc_map, esc_bytes);
+	}
+
+	/* control-x control-a to z */
+	for (ch = 1; ch <= 26; ch++) {
+		ctrx_map[6] = ch + 96;
+		ctrx_bytes[1] = ch;
+		make_key(ctrx_map, ctrx_bytes);
+	}
+
+	//make_key("c-x ?", "\x18\x3F");
+}
+
+int set_key_internal(char *name, char *funcname, char *bytes, void (*func)(void))
+{
+	keymap_t *kp;
+	
+	for (kp = khead; kp->k_next != NULL; kp = kp->k_next) {
+		if (0 == strcmp(kp->k_name, name)) {
+			strncpy(kp->k_funcname, funcname, MAX_KFUNC);
+			kp->k_funcname[MAX_KFUNC] ='\0';
+			if (func != NULL)  /* dont set if its a user_func */
+				kp->k_func = func;
+			return 1;
+		}
+	}
+
+	/* not found, create it and add onto the tail */
+	if (func != NULL) {
+		kp = new_key(name, bytes);
+		strncpy(kp->k_funcname, funcname, MAX_KFUNC);
+		kp->k_funcname[MAX_KFUNC] ='\0';
+		kp->k_func = func;
+		ktail->k_next = kp;
+		ktail = kp;
+		return 1;
+	}
+	return 0;
+}
+
+int set_key(char *name, char *funcname)
+{
+	return set_key_internal(name, funcname, "", NULL);
+}
+
+void setup_keys()
+{
+	create_keys();
+        set_key_internal("c-a",     "(beginning-of-line)"     , "\x01", lnbegin);
+	set_key_internal("c-b",     "(backward-char)"         , "\x02", left);
+	set_key_internal("c-d",     "(delete)"                , "\x04", delete);
+	set_key_internal("c-e",     "(end-of-line)"           , "\x05", lnend);
+	set_key_internal("c-f",     "(forward-char)"          , "\x06", right);
+	set_key_internal("c-n",     "(next-line)"             , "\x0E", down);
+	set_key_internal("c-p",     "(previous-line)"         , "\x10", up);
+	set_key_internal("c-h",     "(backspace)"             , "\x08", backspace);
+	set_key_internal("c-k",     "(kill-line)"             , "\x0B", killtoeol);
+	set_key_internal("c-l",     "(refresh)"               , "\x0C", redraw);
+	set_key_internal("c-n",     "(next-line)"             , "\x0E", down);
+	set_key_internal("c-p",     "(previous-line)"         , "\x10", up);
+	set_key_internal("c-r",     "(search-backward)"       , "\x12", search);
+	set_key_internal("c-s",     "(search-forward)"        , "\x13", search);
+	set_key_internal("c-u",     "(undo)"                  , "\x15", undo_command);
+	set_key_internal("c-v",     "(forward-page)"          , "\x16", forward_page);
+	set_key_internal("c-w",     "(kill-region)"           , "\x17", kill_region);
+	set_key_internal("c-y",     "(yank)"                  , "\x19", yank);
+
+        set_key_internal("esc-a",   "(apropos)"               , "\x1B\x61", apropos_command);
+	set_key_internal("esc-b",   "(backward-word)"         , "\x1B\x62", backward_word);
+	set_key_internal("esc-c",   "(copy-region)"           , "\x1B\x63", copy_region);
+	set_key_internal("esc-d",   "(kill-line)"             , "\x1B\x64", killtoeol);
+	set_key_internal("esc-f",   "(forward-word)"          , "\x1B\x66", forward_word);
+	set_key_internal("esc-g",   "(goto-line)"             , "\x1B\x67", i_gotoline);
+	set_key_internal("esc-i",   "(yank)"                  , "\x1B\x69", yank);
+	set_key_internal("esc-k",   "(kill-region)"           , "\x1B\x6B", kill_region);
+	set_key_internal("esc-l",   "(list-bindings)"         , "\x1B\x6C", list_bindings);
+	set_key_internal("esc-m",   "(set-mark)"              , "\x1B\x6D", i_set_mark);
+	set_key_internal("esc-n",   "(next-buffer)"           , "\x1B\x6E", next_buffer);
+	set_key_internal("esc-o",   "(delete-other-windows)"  , "\x1B\x6F", delete_other_windows);
+	set_key_internal("esc-r",   "(query-replace)"         , "\x1B\x72", query_replace);
+	set_key_internal("esc-v",   "(page-up)"               , "\x1B\x76", backward_page);
+	set_key_internal("esc-w",   "(copy-region)"           , "\x1B\x77", copy_region);
+	set_key_internal("esc-x",   "(execute-command)"       , "\x1B\x78", execute_command);
+	
+	set_key_internal("esc-down",  "(end-of-buffer)"       , "\x1B\x1B\x5B\x42", end_of_buffer);
+	set_key_internal("esc-end",   "(end-of-buffer)"       , "\x1B\x1B\x4F\x46", end_of_buffer);
+	set_key_internal("esc-esc",   "(show-version)"        , "\x1B\x1B", version);
+	set_key_internal("esc-home",  "(beginning-of-buffer)" , "\x1B\x1B\x4F\x48", beginning_of_buffer);
+	set_key_internal("esc-@",     "(set-mark)"            , "\x1B\x40", i_set_mark);
+	set_key_internal("esc-up",    "(beginning-of-buffer)" , "\x1B\x1B\x5B\x41", beginning_of_buffer);
+	set_key_internal("esc-@",     "(set-mark)"            , "\x1B\x40", i_set_mark);
+	set_key_internal("esc-<",     "(beginning-of-buffer)" , "\x1B\x3C", beginning_of_buffer);
+	set_key_internal("esc->",     "(end-of-buffer)"       , "\x1B\x3E", end_of_buffer);
+	set_key_internal("esc-]",     "(eval-block)"          , "\x1B\x5D", eval_block);
+	set_key_internal("esc-;",     "(exec-lisp-command)"   , "\x1B\x3B", repl);
+
+	set_key_internal("up ",     "(previous-line)",       "\x1B\x5B\x41", up);
+	set_key_internal("down",    "(next-line)",           "\x1B\x5B\x42", down);
+	set_key_internal("left",    "(backward-character)",  "\x1B\x5B\x44", left);
+	set_key_internal("right",   "(forward-character)",   "\x1B\x5B\x43", right);
+	set_key_internal("home",    "(beginning-of-line)",   "\x1B\x4F\x48", lnbegin);
+	set_key_internal("end",     "(end-of-line)",         "\x1B\x4F\x46", lnend);
+	set_key_internal("del",     "(delete)",              "\x1B\x5B\x33\x7E", delete);
+	set_key_internal("ins",     "(toggle-overwrite-mode)" , "\x1B\x5B\x32\x7E", toggle_overwrite_mode);
+	set_key_internal("pgup",    "(page-up)",             "\x1B\x5B\x35\x7E", backward_page);
+	set_key_internal("pgdn",    "(page-down)",           "\x1B\x5B\x36\x7E", forward_page);
+	set_key_internal("backspace","(backspace)",          "\x7f", backspace);
+
+	set_key_internal("c-x c-c", "(exit)"                  , "\x18\x03", quit_ask);
+	set_key_internal("c-x c-f", "(find-file)"             , "\x18\x06", i_readfile);  
+	set_key_internal("c-x c-n", "(next-buffer"            , "\x18\x0E", next_buffer);
+	set_key_internal("c-x c-s", "(save-buffer)",         "\x18\x13", savebuffer);  
+	set_key_internal("c-x c-w", "(write-file)"            , "\x18\x17", writefile);
+	set_key_internal("c-x 1",     "(delete-other-windows)"  , "\x18\x31", delete_other_windows);
+	set_key_internal("c-x 2",     "(split-window)"          , "\x18\x32", split_window);
+	set_key_internal("c-x =",     "(cursor-position)"       , "\x18\x3D", showpos);
+	set_key_internal("c-x ?",     "(user-func)"             , "\x18\x3F", user_func);
+	set_key_internal("c-x b",     "(list-buffers)"          , "\x18\x62", list_buffers);
+	set_key_internal("c-x i",     "(insert-file)"           , "\x18\x69", insertfile);
+	set_key_internal("c-x k",     "(kill-buffer)"           , "\x18\x6B", killbuffer);
+	set_key_internal("c-x n",     "(next-buffer)"           , "\x18\x6E", next_buffer);
+	set_key_internal("c-x o",     "(other-window)"          , "\x18\x6F", other_window);
+	set_key_internal("c-x @",     "(shell-command)"         , "\x18\x40", i_shell_command);
+	
+	set_key_internal("c-space", "(set-mark)",            "\x00", i_set_mark);
+	set_key_internal("c-]",     E_NOT_BOUND,             "\x1D", user_func);
+	set_key_internal("resize",  "(resize)",              "\x9A", resize_terminal);
+}
+
 
 char_t *get_key(keymap_t *keys, keymap_t **key_return)
 {
@@ -220,10 +264,13 @@ char_t *get_key(keymap_t *keys, keymap_t **key_return)
 		*record = '\0';
 
 		/* if recorded bytes match any multi-byte sequence... */
-		for (k = keys, submatch = 0; k->key_bytes != NULL; ++k) {
+		for (k = keys, submatch = 0; k != NULL; k = k->k_next) {
 			char_t *p, *q;
 
-			for (p = buffer, q = (char_t *)k->key_bytes; *p == *q; ++p, ++q) {
+			if (k->k_func == NULL) continue;
+			assert(k->k_bytes != NULL);
+
+			for (p = buffer, q = (char_t *)k->k_bytes; *p == *q; ++p, ++q) {
 			        /* an exact match */
 				if (*q == '\0' && *p == '\0') {
 	    				record = buffer;
@@ -244,23 +291,21 @@ char_t *get_key(keymap_t *keys, keymap_t **key_return)
 }
 
 /* wrapper to simplify call and dependancies in the interface code */
-char *fe_get_input_key()
+char *get_input_key()
 {
-	return (char *)get_key(key_map, &key_return);
+	return (char *)get_key(khead, &key_return);
 }
 
 /* the name of the bound function of this key */
-char *get_key_binding()
+char *get_key_funcname()
 {
-	assert(key_return != NULL);
-	return key_return->key_desc;
+	return (key_return != NULL ? key_return->k_funcname : "");
 }
 
 /* the name of the last key */
 char *get_key_name()
 {
-	assert(key_return != NULL);
-	return key_return->key_name;
+	return (key_return != NULL ? key_return->k_name : "");
 }
 
 int getinput(char *prompt, char *buf, int nbuf, int flag)

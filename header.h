@@ -10,6 +10,8 @@
 #include <curses.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <ctype.h>
 #include <limits.h>
 #include <string.h>
@@ -17,12 +19,13 @@
 #include <wchar.h>
 int mkstemp(char *);
 
-#define VERSION	 "femto 2.0, Public Domain, 2017"
-#define PROG_NAME "femto"
-#define EXIT_OK         0               /* Success */
-#define EXIT_ERROR      1               /* Unknown error. */
-#define EXIT_USAGE      2               /* Usage */
-#define EXIT_FAIL       3               /* Known failure. */
+#define E_NAME          "femto"
+#define E_VERSION       "2.1"
+#define E_LABEL         "Femto:"
+#define E_NOT_BOUND	"<not bound>"
+#define E_INITFILE      "femto.rc"
+#define VERSION	        "femto 2.1, Public Domain, Nov 2017, by Hugh Barney,  No warranty."
+#define PROG_NAME       "femto"
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
 #define NOPAREN         -1
@@ -33,6 +36,9 @@ int mkstemp(char *);
 #define STRBUF_M        64
 #define STRBUF_S        16
 #define NBUFN           17              /* size of buffer name 16 chars + null terminator */
+#define MAX_KNAME       12
+#define MAX_KBYTES      12
+#define MAX_KFUNC       30
 #define LISP_IN_OUT     2048
 #define MIN_GAP_EXPAND  512
 #define FWD_SEARCH      1
@@ -90,10 +96,11 @@ typedef struct string_list_t
 } string_list_t;
 
 typedef struct keymap_t {
-	char *key_name;                 /* key name */
-	char *key_desc;                 /* name of bound function */
-	char *key_bytes;		/* the string of bytes when this key is pressed */
-	void (*func)(void);
+	char k_name[MAX_KNAME + 1];       /* name of key eg "c-c c-f" */
+	char k_bytes[MAX_KNAME + 1];      /* bytes of key sequence */
+	char k_funcname[MAX_KFUNC + 1];   /* name of function, eg (forward-char) */
+	void (*k_func)(void);             /* function pointer */
+	struct keymap_t *k_next;          /* link to next keymap_t */
 } keymap_t;
 
 typedef struct command_t {
@@ -179,10 +186,10 @@ extern char response_buf[];     /* Temporary buffer. */
 extern char searchtext[];
 extern char replace[];
 extern char lisp_query[];
-extern char *prog_name;         /* Name used to invoke editor. */
-extern keymap_t *key_map;       /* Command key mappings. */
-extern keymap_t keymap[];
+//extern char *prog_name;         /* Name used to invoke editor. */
 extern keymap_t *key_return;    /* Command key return */
+extern keymap_t *khead;
+extern keymap_t *ktail;
 extern command_t commands[];
 
 /* fatal() messages. */
@@ -262,19 +269,26 @@ extern point_t segstart(buffer_t *, point_t, point_t);
 extern point_t segnext(buffer_t *, point_t, point_t);
 extern point_t upup(buffer_t *, point_t);
 extern point_t dndn(buffer_t *, point_t);
+
 extern char_t *get_key(keymap_t *, keymap_t **);
-extern char *fe_get_input_key(void);
+extern keymap_t *new_key(char *, char *);
+extern void make_key(char *, char *);
+extern void create_keys();
+extern int set_key_internal(char *, char *, char *, void (*)(void));
+extern int set_key(char *, char *);
+extern void setup_keys();
+
 extern int growgap(buffer_t *, point_t);
 extern point_t movegap(buffer_t *, point_t);
 extern point_t pos(buffer_t *, char_t *);
 extern char_t *ptr(buffer_t *, point_t);
 extern int posix_file(char *);
 extern int save_buffer(buffer_t *,char *);
-extern int load_file(char *);
+extern int e_load_file(char *);
 extern int insert_file(char *, int);
 extern void append_string(buffer_t *, char *);
 extern void undo(void);
-extern void backsp(void);
+extern void backspace(void);
 extern void set_mark(void);
 extern void unmark(void);
 extern int check_region(void);
@@ -284,7 +298,7 @@ extern void toggle_overwrite_mode(void);
 extern void down(void);
 extern void insert(void);
 extern void insert_at(void);
-extern void paste(void);
+extern void yank(void);
 extern void quit(void);
 extern int yesno(int);
 extern void quit_ask(void);
@@ -301,12 +315,12 @@ extern void zero_buffer(buffer_t *);
 extern point_t document_size(buffer_t *);
 extern int buffer_is_empty(buffer_t *);
 extern void debug(char *, ...);
+extern void load_config(void);
 extern void log_debug_message(char *, ...);
 extern void debug_stats(char *);
 extern void showpos(void);
 extern void killtoeol(void);
 extern void i_gotoline(void);
-extern void i_describe_key(void);
 extern void goto_line(int);
 extern void search(void);
 extern void query_replace(void);
@@ -314,7 +328,10 @@ extern point_t line_to_point(int);
 extern void update_search_prompt(char *, char *);
 extern void display_search_result(point_t, int, char *, char *);
 extern void move_to_search_result(point_t);
-extern buffer_t* find_buffer(char *, int);
+extern point_t search_forward_curbp(point_t, char *);
+extern point_t search_forward2(buffer_t *, point_t, char *);
+
+extern buffer_t *find_buffer(char *, int);
 extern buffer_t *find_buffer_by_fname(char *);
 extern void add_mode(buffer_t *, buffer_flags_t);
 extern void delete_mode(buffer_t *, buffer_flags_t);
@@ -350,19 +367,15 @@ extern char* get_temp_file(void);
 extern void match_parens(void);
 extern void match_paren_forwards(buffer_t *, char, char);
 extern void match_paren_backwards(buffer_t *, char, char);
-extern int init_lisp(int);
-extern char *call_lisp(char *);
 
-extern int scan_for_keywords(char_t *, int *);
-extern void scan_for_block_comments(char_t *, int *, int *);
-extern void scan_for_line_comments(char_t *, int *);
-extern void scan_for_end_line_comments(char_t *, int *);
-extern void scan_for_end_comments(char_t *, int *, int *);
-extern void setLanguage(char* extension, int *);
-extern void keyboardDefinition(void);
-extern void run_kill_hook(char *);
-extern void chkPar(void);
-extern char *whatKey;
+//extern int scan_for_keywords(char_t *, int *);
+//extern void scan_for_block_comments(char_t *, int *, int *);
+//extern void scan_for_line_comments(char_t *, int *);
+//extern void scan_for_end_line_comments(char_t *, int *);
+//extern void scan_for_end_comments(char_t *, int *, int *);
+//extern void setLanguage(char* extension, int *);
+//extern void keyboardDefinition(void);
+//extern void chkPar(void);
 extern void repl(void);
 extern void eval_block();
 extern void execute_command();
@@ -392,6 +405,7 @@ extern char *get_undo_type_name(undo_tt *);
 extern void discard_buffer_undo_history(buffer_t *);
 extern int get_buf_utf8_size(char_t *, int);
 extern void debug_undo(char *, undo_tt *, buffer_t *);
+extern void user_func(void);
 
 extern void insert_string(char *);
 extern void left(void);
@@ -405,11 +419,11 @@ extern void backward_word(void);
 extern void forward_word(void);
 extern void backward_page(void);
 extern void forward_page(void);
-extern void copy(void);
+extern void copy_region(void);
 extern void delete_other_windows(void);
 extern void other_window(void);
 extern void goto_line(int line);
-extern void cut(void);
+extern void kill_region(void);
 extern void list_buffers(void);
 extern void down(void);
 extern void up(void);
@@ -423,9 +437,6 @@ extern void eval_block(void);
 extern char *get_version_string(void);
 extern int count_buffers(void);
 extern void update_display(void);
-extern char *fe_get_input_key(void);
-extern char *get_key_binding(void);
-extern char *get_key_name(void);
 extern int delete_buffer_byname(char *);
 extern int select_buffer(char *);
 extern int save_buffer_byname(char *);
@@ -445,3 +456,9 @@ extern char *rename_current_buffer(char *);
 extern void readfile(char *);
 extern void set_parse_state(buffer_t *, point_t);
 extern int parse_text(buffer_t *, point_t);
+
+/* lisp.c */
+extern void reset_output_stream(void);
+extern int init_lisp();
+extern char *call_lisp(char *);
+extern char *load_file(int);

@@ -16,11 +16,12 @@ char msgline[TEMPBUF];
 char response_buf[TEMPBUF];
 char searchtext[STRBUF_M];
 char replace[STRBUF_M];
-char *prog_name;
+//char *prog_name;
 char lisp_query[LISP_IN_OUT];
 
 keymap_t *key_return;
-keymap_t *key_map;
+keymap_t *khead = NULL;
+keymap_t *ktail = NULL;
 
 buffer_t *curbp;			/* current buffer */
 buffer_t *bheadp;			/* head of list of buffers */

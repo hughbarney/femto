@@ -102,7 +102,7 @@ undo_tt *execute_undo(undo_tt *up)
 	case UNDO_T_INSERT:
 		curbp->b_point = up->u_point - (len - curbp->b_ucnt);
 		before = curbp->b_point;
-		backsp();
+		backspace();
 		after = curbp->b_point;
 		/*
 		 * we could have backspaced over a multibyte UTF8 char so we need
@@ -192,7 +192,7 @@ undo_tt *execute_undo(undo_tt *up)
 	case UNDO_T_YANK:
 		curbp->b_point = up->u_point;
 		curbp->b_mark  = up->u_point + strlen((char *)up->u_string);
-		cut();
+		kill_region();
 		break;
 	}
 
@@ -252,14 +252,13 @@ void undo_command()
  */
 int get_undo_again()
 {
-	input = get_key(key_map, &key_return);
+	input = get_key(khead, &key_return);
 
 	if (key_return != NULL) {
-		whatKey= key_return->key_name;
-		if (key_return->func == undo_command) {
+		if (key_return->k_func == undo_command) {
 			return TRUE;
 		} else {
-			(key_return->func)();
+			(key_return->k_func)();
 			return FALSE;
 		}
 	} else {

@@ -10,18 +10,40 @@ added undo functionality, set global_undo_mode = 1, so undo active by default
 added Atto style basic syntax highlighting
 added in atto fixes for UTF8
 
-[ TODO ] fix loading multiple files of same name different paths
-
-
-
 THE REAL STUFF
 ==============
-
 add tiny_lisp support
-
 add keyboard setting etc
-
 load startup file
-
 load femto.rc file
+
+
+
+
+LISP INTERACTION
+================
+esc-]      eval-block built in
+esc-;      repl       built in
+ctrl-]     user-defined
+
+
+TESTS
+=====
+test all keyboard keys
+test all command lists
+run command list check
+fix oxo.lsp failure
+
+
+(defun sq (n)
+  (* n n))
+
+(sq 3)
+9
+
+(message "Hello sasdasdfasffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+t
+
+(setq b "hh")
+"hh"
 

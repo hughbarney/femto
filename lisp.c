@@ -34,9 +34,6 @@
 #include <unistd.h>
 #include <curses.h>
 
-//#define LISP_SRC
-//#include "header.h"
-
 typedef long point_t;
 
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
@@ -1040,6 +1037,8 @@ extern char *get_key_name(void);
 extern char *get_key_funcname(void);
 extern void display_prompt_and_response(char *, char *);
 extern void msg(char *,...);
+extern void debug(char *,...);
+extern void log_message(char *);
 extern void insert_string(char *);
 
 Object *e_get_char(Object **args, GC_PARAM) { return newStringWithLength(get_char(), 1, GC_ROOTS); }
@@ -1275,6 +1274,20 @@ Object *e_message(Object ** args, GC_PARAM)
 	return t;
 }
 
+Object *e_log_message(Object ** args, GC_PARAM)
+{
+	ONE_STRING_ARG();
+	log_message(first->string);
+	return t;
+}
+
+Object *e_debug(Object ** args, GC_PARAM)
+{
+	ONE_STRING_ARG();
+	debug(first->string);
+	return t;
+}
+
 Object *e_insert_string(Object ** args, GC_PARAM)
 {
 	ONE_STRING_ARG();
@@ -1399,6 +1412,8 @@ Primitive primitives[] = {
 	{"os.getenv", 1, 1, os_getenv},
 
 	{"message", 1, 1, e_message},
+	{"log-message", 1, 1, e_log_message},
+	{"debug", 1, 1, e_debug},
 	{"insert-string", 1, 1, e_insert_string},
 	{"set-point", 1, 1, e_set_point},
 	{"get-point", 0, 0, e_get_point},

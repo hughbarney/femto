@@ -218,7 +218,7 @@ void insert_at()
 	add_mode(curbp, B_MODIFIED);
 }
 
-void backsp()
+void backspace()
 {
 	char_t the_char[7]; /* the deleted char, allow 6 unsigned chars plus a null */
 	int n = prev_utf8_char_size();
@@ -306,7 +306,7 @@ void readfile(char *fname)
 
 	/* load the file if not already loaded */
 	if (bp != NULL && bp->b_fname[0] == '\0') {
-		if (!load_file(fname)) {
+		if (!e_load_file(fname)) {
 			msg(m_newfile, fname);
 		}
 		safe_strncpy(curbp->b_fname, fname, NAME_MAX);
@@ -351,7 +351,6 @@ void writefile()
 void killbuffer()
 {
 	buffer_t *kill_bp = curbp;
-	buffer_t *bp;
 	int bcount = count_buffers();
 
 	/* do nothing if only buffer left is the scratch buffer */
@@ -367,8 +366,7 @@ void killbuffer()
 
 	/* create a scratch buffer */
 	if (bcount == 1) {
-		bp = find_buffer(str_scratch, TRUE);
-		assert(bp != NULL); /* stops the compiler complaining */
+		(void)find_buffer(str_scratch, TRUE);
 	}
 
 	next_buffer();
@@ -426,12 +424,12 @@ int i_check_region()
 	return TRUE;
 }
 
-void copy() {
+void copy_region() {
 	if (i_check_region() == FALSE) return;
 	copy_cut(FALSE);
 }
 
-void cut() {
+void kill_region() {
 	if (i_check_region() == FALSE) return;
 	copy_cut(TRUE);
 }
@@ -471,7 +469,6 @@ void copy_cut(int cut)
 			curbp->b_egap += nscrap; /* if cut expand gap down */
 			curbp->b_point = pos(curbp, curbp->b_egap); /* set point to after region */
 			add_mode(curbp, B_MODIFIED);
-			run_kill_hook(curbp->b_bname);
 			msg(m_cut, nscrap);
 		} else {
 			msg(m_copied, nscrap);
@@ -496,7 +493,7 @@ void set_scrap(unsigned char *ptr)
 	scrap = ptr;
 }
 
-void paste()
+void yank()
 {
 	insert_string((char *)scrap);
 }
@@ -684,19 +681,6 @@ void match_paren_backwards(buffer_t *bp, char open_paren, char close_paren)
 	bp->b_paren = NOPAREN;
 }
 
-void i_describe_key()
-{
-	mvaddstr(MSGLINE, 0, "Describe key ");
-	clrtoeol();
-
-	input = get_key(key_map, &key_return);
-
-	if (key_return != NULL)
-		msg("%s runs the command '%s'", key_return->key_name, key_return->key_desc);
-	else
-		msg("self insert %s", input);
-}
-
 void i_shell_command()
 {
 	if (getinput(str_shell_cmd, (char*)response_buf, NAME_MAX, F_CLEAR))
@@ -720,7 +704,7 @@ void shell_command(char *command)
 	curbp = bp;
 	associate_b2w(curbp, curwp);
 
-	load_file(output_file);
+	e_load_file(output_file);
 	msg(""); /* clear the msg line, dont display temp filename */
 	safe_strncpy(curbp->b_bname, str_output, NBUFN);
 }
@@ -744,36 +728,35 @@ char *get_version_string()
 	return m_version;
 }
 
-/*
-static char *wrp=
-"(trycatch (let ((b (buffer))) \
-   (with-output-to b (princ %s)) \
-   (io.tostring! b)) (lambda(x) x ))";
-*/
-
-char *whatKey= "";
-
-/* Keyboard Definition is done by user in Lisp */
-void keyboardDefinition()
-{
-	char key_cmd[80];
-	sprintf(key_cmd, "(keyboard \"%s\")", whatKey);
-	//(void)call_lisp(key_cmd);
-}
-
-/* call user defined kill-hook procedure */
-void run_kill_hook(char *bufname)
-{
-	char cmd[80];
-	sprintf(cmd, "(kill-hook \"%s\")", bufname);
-	//(void)call_lisp(cmd);
-}
-
 void log_debug(char *s)
 {
 	debug(s);
 }
 
+void resize_terminal()
+{
+	one_window(curwp);
+}
+
+/* return char at current point */
+char *get_char()
+{
+	static char ch[2] = "\0\0";
+	ch[0] = (char)*(ptr(curbp, curbp->b_point));
+	return ch;
+}
+
+void set_point(point_t p)
+{
+	if (p < 0 || p > pos(curbp, curbp->b_ebuf)) return;
+	curbp->b_point = p;
+}
+
+/* return point in current buffer */
+point_t get_point()
+{
+	return curbp->b_point;
+}
 
 /*
  * execute a lisp command type in atthe command prompt >
@@ -792,8 +775,7 @@ void repl()
 	buffer_t *bp;
 
 	if (getinput("> ", lisp_query, TEMPBUF, F_CLEAR)) {
-		//output = call_lisp(lisp_query);
-		output = "ERR";
+		output = call_lisp(lisp_query);
 
 		if (strlen(output) < 60) {
 			msg(output);
@@ -806,58 +788,47 @@ void repl()
 }
 
 /*
- * evaluate a block of lisp code encased between a start ( and end )
- *
+ * evaluate a block between mark and point
  */
-void eval_block() {
-	point_t temp;
-	point_t found;
+void eval_block()
+{
+	char *output;
 
-	char p = *ptr(curbp, curbp->b_point);
-
-	/* if not sat on ( or ) then search for an end of a block behind the cursor */
-	if (p != '(' && p != ')') {
-		found = search_backwards(")");
-		if (found == -1) {
-			msg("No block behind cursor");
-			return;
-		} else {
-			move_to_search_result(found);
-			right();
-			match_parens();
-		}
-	}
-
-	if (curbp->b_paren == -1) {
-		msg("No block detected");
+	if (curbp->b_mark == NOMARK || curbp->b_mark >= curbp->b_point) {
+		msg("no block defined");
 		return;
 	}
 
-	curbp->b_mark = curbp->b_paren;
-
-	/* if at start of block goto the end of block */
-	if (curbp->b_point < curbp->b_paren) {
-		temp = curbp->b_mark;
-		curbp->b_mark =	curbp->b_point;
-		curbp->b_point = temp;
-	}
-
-	right(); /* if we have a matching brace we should always be able to move to right */
-	copy();
+	copy_region();
 	assert(scrap != NULL);
- 	//char *output = call_lisp((char *)scrap);
- 	char *output = "ERR_EVAL_BLOCK";
+	assert(strlen(scrap) > 0);
 
+	reset_output_stream();
+	output = call_lisp((char *)scrap);
 	insert_string("\n");
 	insert_string(output);
-	insert_string("\n");
-
-	/* later we will avoid using mark/point to grab the block */
-	clear_message_line();
+	reset_output_stream();
 }
 
-void resize_terminal()
+void user_func()
 {
-	one_window(curwp);
-}
+	char *output;
+	
+	assert(key_return != NULL);
+	if (0 == strcmp(key_return->k_funcname, E_NOT_BOUND)) {
+		msg(E_NOT_BOUND);
+		return;
+	}
 
+	reset_output_stream();
+	output = call_lisp(key_return->k_funcname);
+
+	/* show errors on message line */
+	if (NULL != strstr(output, "error:")) {
+		char buf[81];
+		strncpy(buf, output, 80);
+		buf[80] ='\0';
+		msg(buf);
+	}	
+	reset_output_stream();
+}

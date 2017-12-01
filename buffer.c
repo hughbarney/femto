@@ -54,7 +54,7 @@ int buffer_is_empty(buffer_t *bp)
  * structure associated with it. If the buffer is not found and the
  * "cflag" is TRUE, create it.
  */
-buffer_t *find_buffer (char *bname, int cflag)
+buffer_t *find_buffer(char *bname, int cflag)
 {
 	buffer_t *bp = NULL;
 	buffer_t *sb = NULL;
