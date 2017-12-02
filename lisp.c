@@ -1028,6 +1028,10 @@ DEFINE_EDITOR_FUNC(backward_page)
 DEFINE_EDITOR_FUNC(save_buffer)
 DEFINE_EDITOR_FUNC(quit)
 DEFINE_EDITOR_FUNC(eval_block)
+DEFINE_EDITOR_FUNC(delete_other_windows)
+DEFINE_EDITOR_FUNC(list_buffers)
+DEFINE_EDITOR_FUNC(split_window)
+DEFINE_EDITOR_FUNC(other_window)
 
 
 extern int set_key(char *, char *);
@@ -1035,6 +1039,8 @@ extern char *get_char(void);
 extern char *get_input_key(void);
 extern char *get_key_name(void);
 extern char *get_key_funcname(void);
+extern char *get_clipboard(void);
+extern int count_buffers(void);
 extern void display_prompt_and_response(char *, char *);
 extern void msg(char *,...);
 extern void debug(char *,...);
@@ -1045,6 +1051,8 @@ Object *e_get_char(Object **args, GC_PARAM) { return newStringWithLength(get_cha
 Object *e_get_key(Object **args, GC_PARAM) { return newString(get_input_key(), GC_ROOTS); }
 Object *e_get_key_name(Object **args, GC_PARAM) { return newString(get_key_name(), GC_ROOTS); }
 Object *e_get_key_funcname(Object **args, GC_PARAM) { return newString(get_key_funcname(), GC_ROOTS); }
+Object *e_get_clipboard(Object **args, GC_PARAM) { return newString(get_clipboard(), GC_ROOTS); }
+Object *e_get_buffer_count(Object **args, GC_PARAM) { return newNumber(count_buffers(), GC_ROOTS); }
 
 #define TWO_STRING_ARGS()                                    \
 	Object *first = (*args)->car;                        \
@@ -1446,6 +1454,12 @@ Primitive primitives[] = {
 	{"page-down", 0, 0, e_forward_page},
 	{"page-up", 0, 0, e_backward_page},
 	{"save-buffer", 0, 0, e_save_buffer},
+	{"delete-other-windows", 0, 0, e_delete_other_windows},
+	{"list-buffers", 0, 0, e_list_buffers},
+	{"split-window", 0, 0, e_split_window},
+	{"other-window", 0, 0, e_other_window},
+	{"get-clipboard", 0, 0, e_get_clipboard},
+	{"get-buffer-count", 0, 0, e_get_buffer_count},
 	{"exit", 0, 0, e_quit}
 };
 

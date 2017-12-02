@@ -21,23 +21,23 @@
 ;;
 ;; The following Editor functions are need to implement a buffer menu
 ;;
-;; Y (gotoline 10)
-;; Y (update-display)
-;; Y (message "msg")
-;; Y (beginning-of-line)
-;; Y (forward-char)
-;; Y (set-mark)
-;; Y (copy-region)
-;; Y (get-key-funcname)
+;; (gotoline 10)
+;; (update-display)
+;; (message "msg")
+;; (beginning-of-line)
+;; (forward-char)
+;; (set-mark)
+;; (copy-region)
+;; (get-key-funcname)
 ;; 
-;; - (delete-other-windows)
-;; - (list-buffers)
-;; - (split-window)
-;; - (other-window)
-;; - (get-clipboard)
+;; (delete-other-windows)
+;; (list-buffers)
+;; (split-window)
+;; (other-window)
+;; (get-clipboard)
 ;; 
 ;; - (save-buffer bufm-buf)
-;; - (get-buffer-count)
+;; (get-buffer-count)
 ;; - (search-forward "str")
 ;; - (select-buffer "*scratch*"))
 ;; 

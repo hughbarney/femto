@@ -477,6 +477,15 @@ void copy_cut(int cut)
 	}
 }
 
+/* safe interface to clipboard so we dont pass a NULL pointer to lisp */
+char *get_clipboard()
+{
+	static char empty_string[] = "";
+
+	if (scrap == NULL) return empty_string;
+	return (char *)scrap;
+}
+
 unsigned char *get_scrap()
 {
 	return scrap;
