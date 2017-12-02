@@ -160,6 +160,10 @@
   (load_script "oxo.lsp")
   (oxo))
 
+(defun run_test()
+  (load_script "test.lsp")
+  (hello_func))
+
 ;;
 ;;  Key Bindings 
 ;;
@@ -172,6 +176,7 @@
 
 ;; core dumps ??
 (set-key "c-x c-o" "(run_oxo)")
+(set-key "c-x c-p" "(oxo)")
 
 ;; does not overwite internal command apropos (maybe we should allow this)
 (set-key "esc-a" "(duplicate_line)")

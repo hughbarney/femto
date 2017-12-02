@@ -1017,7 +1017,7 @@ DEFINE_EDITOR_FUNC(down)
 DEFINE_EDITOR_FUNC(lnbegin)
 DEFINE_EDITOR_FUNC(lnend)
 DEFINE_EDITOR_FUNC(yank)
-DEFINE_EDITOR_FUNC(display)
+DEFINE_EDITOR_FUNC(update_display)
 DEFINE_EDITOR_FUNC(copy_region)
 DEFINE_EDITOR_FUNC(set_mark)
 DEFINE_EDITOR_FUNC(kill_region)
@@ -1426,7 +1426,7 @@ Primitive primitives[] = {
 	{"get-key-funcname", 0, 0, e_get_key_funcname},
 	{"getch", 0, 0, e_getch},
 	{"search-forward", 2, 2, e_search_forward},
-	{"display", 0, 0, e_display},
+	{"update-display", 0, 0, e_update_display},
 	{"refresh", 0, 0, e_refresh},
 
 	{"beginning-of-buffer", 0, 0, e_beginning_of_buffer},
@@ -1864,18 +1864,19 @@ char *call_lisp(char *input)
 	assert(input != NULL);
 	Stream is = { .type = STREAM_TYPE_STRING };
 
-	//debug("call_lisp()\n");
+	//debug("START: call_lisp() '%s'\n", input);
 	set_input_stream_buffer(&is, input);
 	call_lisp_body(theEnv, theRoot, &is);
-	//debug("call_lisp() done\n");
+	//debug("END: call_lisp() '%s'\n", input);
 	return ostream.buffer;
 }
 
 char *load_file(int infd)
 {
-	//debug("load_file fd=%d\n", infd);
+	//debug("START: load_file fd=%d\n", infd);
 	Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
 	set_stream_file(&input_stream, infd);
 	load_file_body(theEnv, theRoot, &input_stream);
+	//debug("END: load_file fd=%d\n", infd);
 	return ostream.buffer;
 }

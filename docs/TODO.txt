@@ -1,22 +1,24 @@
-
-
-FIXES
-=====
-
+DONE
+====
 fix compile warning around stdup define _XOPEN_SOURCE 500
 file headers changed to reference 'femto'
 removed old undoset code
 added undo functionality, set global_undo_mode = 1, so undo active by default
 added Atto style basic syntax highlighting
 added in atto fixes for UTF8
-
-THE REAL STUFF
-==============
 add tiny_lisp support
 add keyboard setting etc
 load startup file
 load femto.rc file
 
+TODO
+====
+fix display core dump
+write a test file for all lisp functions
+test all keyboard keys
+test all command lists
+run command list check
+fix oxo.lsp failure
 
 
 
@@ -26,22 +28,13 @@ esc-]      eval-block built in
 esc-;      repl       built in
 ctrl-]     user-defined
 
-
-TESTS
-=====
-test all keyboard keys
-test all command lists
-run command list check
-fix oxo.lsp failure
-
-
 (defun sq (n)
   (* n n))
 
 (sq 3)
 9
 
-(message "Hello sasdasdfasffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+(message "Hello ")
 t
 
 (setq b "hh")

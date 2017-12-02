@@ -462,3 +462,6 @@ extern void reset_output_stream(void);
 extern int init_lisp();
 extern char *call_lisp(char *);
 extern char *load_file(int);
+
+
+extern int user_func_count;

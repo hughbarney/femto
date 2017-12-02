@@ -774,6 +774,8 @@ void repl()
 	char *output;
 	buffer_t *bp;
 
+	reset_output_stream();
+
 	if (getinput("> ", lisp_query, TEMPBUF, F_CLEAR)) {
 		output = call_lisp(lisp_query);
 
@@ -785,6 +787,8 @@ void repl()
 			(void)popup_window(bp->b_bname);
 		}
 	}
+
+	reset_output_stream();
 }
 
 /*
@@ -813,14 +817,18 @@ void eval_block()
 void user_func()
 {
 	char *output;
-	
+
+	user_func_count++;
+	//debug("\nSTART: user_func_count=%d\n", user_func_count);	
 	assert(key_return != NULL);
 	if (0 == strcmp(key_return->k_funcname, E_NOT_BOUND)) {
 		msg(E_NOT_BOUND);
+		user_func_count--;
 		return;
 	}
 
 	reset_output_stream();
+	//debug("user_func: k_funcname=%s\n", key_return->k_funcname);
 	output = call_lisp(key_return->k_funcname);
 
 	/* show errors on message line */
@@ -831,4 +839,6 @@ void user_func()
 		msg(buf);
 	}	
 	reset_output_stream();
+	user_func_count--;
+	//debug("END: user_func_count=%d\n", user_func_count);	
 }
