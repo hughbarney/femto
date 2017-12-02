@@ -1,3 +1,10 @@
+## Femto 2.2 1 December 2017
+* added (delete-other-windows) (list-buffers) (split-window) (other-window) (get-clipboard) (get-buffer-count)
+
+## Femto 2.1 30 November 2017
+* added tiny_lisp support
+* added ability to configure keyboard using (set-key)
+* load femto.rc file
 
 ## Femto 2.0 29 November 2017
 * brought up to date with FemtoEmacs undo, Atto highlighting, Atto UTF8 fixes
