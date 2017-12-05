@@ -34,6 +34,8 @@
 #include <unistd.h>
 #include <curses.h>
 
+extern void debug(char *,...);
+
 typedef long point_t;
 
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
@@ -1043,7 +1045,6 @@ extern char *get_clipboard(void);
 extern int count_buffers(void);
 extern void display_prompt_and_response(char *, char *);
 extern void msg(char *,...);
-extern void debug(char *,...);
 extern void log_message(char *);
 extern void insert_string(char *);
 
@@ -1676,8 +1677,9 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 				*gcArgs = evalList(gcArgs, gcEnv, GC_ROOTS);
 				return primitive->eval(gcArgs, GC_ROOTS);
 			}
-		} else
+		} else {
 			exceptionWithObject(*gcFunc, "is not a function");
+		}
 	}
 }
 

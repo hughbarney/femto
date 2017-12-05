@@ -127,7 +127,8 @@ void load_config()
 
 void debug(char *format, ...)
 {
-	char buffer[256];
+	char buffer[256]; /* warning this is limited size, we should use vnsprintf */
+
 	va_list args;
 	va_start (args, format);
 

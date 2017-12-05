@@ -155,15 +155,6 @@
     (if (eq -1 start_p) (message "could not find start of s-expression"))
     (if (eq -1 end_p) (message "could not find end of s-expression"))) ))
 
-;; run our naughts and crosses game
-(defun run_oxo()
-  (load_script "oxo.lsp")
-  (oxo))
-
-(defun run_test()
-  (load_script "test.lsp")
-  (hello_func))
-
 ;;
 ;;  Key Bindings 
 ;;
@@ -174,13 +165,5 @@
 (set-key "c-x ?" "(describe-key)")
 (set-key "c-]" "(find_and_eval_sexp)")
 
-;; core dumps ??
-(set-key "c-x c-o" "(run_oxo)")
-(set-key "c-x c-p" "(oxo)")
-
-;; does not overwite internal command apropos (maybe we should allow this)
-(set-key "esc-a" "(duplicate_line)")
-
-;; will return nil as key binding esc-# does not exist
-(set-key "esc-#" "(zipp)")
-
+(load_script "oxo.lsp")
+(set-key "c-x c-o" "(oxo)")
