@@ -11,6 +11,14 @@
 ;; place femto.rc in your home direcory and it is run when femto starts up.
 ;;
 
+;; max value
+(defun max(a b)
+  (if (> a b) a b))
+
+;; min value
+(defun min(a b)
+  (if (< a b) a b))
+
 ;; concatenate a list of strings
 (defmacro concat args
   (cond
@@ -30,6 +38,24 @@
 
 (defun repeat (n func)  
   (cond ((> n 0) (func) (repeat (- n 1) func))))
+
+;; trim all spaces from front of a string
+(defun string.trim.front(s)
+  (cond
+    ((not (eq (string.ref s 0) " ")) s)
+    ((< (string.length s) 2) "")
+    (t (string.trim.front (string.substring s 1 (- (string.length s) 1)))) ))
+
+;; trim all spaces from back of a string
+(defun string.trim.back(s)
+  (cond
+    ((not (eq (string.ref s (- (string.length s) 1)) " ")) s)
+    ((< (string.length s) 2) "")
+    (t (string.trim.back (string.substring s 0 (- (string.length s) 2)))) ))
+
+;; trim spaces off front and back of a string
+(defun string.trim(s)
+  (string.trim.back (string.trim.front s)))
 
 ;; shrink string by dropping off last char
 (defun shrink(s)
@@ -168,6 +194,6 @@
 (load_script "oxo.lsp")
 (set-key "c-x c-o" "(oxo)")
 
-;;(load_script "bufmenu.lsp")
-;;(set-key "c-x c-b" "(buffer-menu)")
+(load_script "bufmenu.lsp")
+(set-key "c-x c-b" "(buffer-menu)")
 

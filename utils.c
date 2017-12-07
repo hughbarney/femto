@@ -52,43 +52,6 @@ void make_buffer_name_uniq(char *bname)
 	}
 }
 
-/*
- * trim spaces from front and back of a string
- * though Femtolisp has a string.trim procedure, I cant get it to work
- * this function is only called by the femtolisp interface to the editor.
- *
- */
-
-char *string_trim(char *str)
-{
-	if (!str) {
-		errno = EINVAL;
-		return NULL;
-	}
-
-	/* if empty string return the string, it would be fatal to traverse backwards*/
-	if (strlen(str) == 0) return str;
-
-	char *ptr = str;
-
-	/* first first none space */
-	while (isspace(*ptr))
-		++ptr;
-
-	str = ptr;
-
-	/* find first char before the end NULL terminator */
-	ptr = strchr (str, '\0') - 1;
-
-	/* traverse back to first none space */
-	while (isspace(*ptr))
-		--ptr;
-
-	*++ptr = '\0';
-
-	return str;
-}
-
 /* replace control chars with spaces in string s */
 void remove_control_chars(char_t *s)
 {

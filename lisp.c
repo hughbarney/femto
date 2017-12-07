@@ -1040,6 +1040,7 @@ extern char *get_input_key(void);
 extern char *get_key_name(void);
 extern char *get_key_funcname(void);
 extern char *get_clipboard(void);
+extern char *get_current_bufname(void);
 extern int select_buffer(char *);
 extern int delete_buffer_byname(char *);
 extern int save_buffer_byname(char *);
@@ -1104,6 +1105,30 @@ Object *stringAppend(Object ** args, GC_PARAM)
 	return obj;
 }
 
+Object *stringRef(Object ** args, GC_PARAM)
+{
+	char ch[2];
+	Object *first = (*args)->car;
+	Object *second = (*args)->cdr->car;
+
+	if (first->type != TYPE_STRING)
+	    exceptionWithObject(first, "is not a string (string.ref)");
+	if (second->type != TYPE_NUMBER)
+	    exceptionWithObject(second, "is not a number (string.ref)");
+
+	char *str = first->string;
+	int ref = (int)(second->number);
+	int len = strlen(str);
+
+	if (ref < 0 || ref >= len)
+	    exceptionWithObject(second, "is out of bounds (string.ref)");
+
+	ch[0] = str[ref];
+	ch[1] = '\0';
+
+	return newStringWithLength(ch, 1, GC_ROOTS);
+}
+
 Object *stringSubstring(Object ** args, GC_PARAM)
 {
 	Object *first = (*args)->car;
@@ -1111,7 +1136,7 @@ Object *stringSubstring(Object ** args, GC_PARAM)
 	Object *third = (*args)->cdr->cdr->car;
 
 	if (first->type != TYPE_STRING)
-	    exceptionWithObject(first, "is not a string");
+	    exceptionWithObject(first, "is not a string (string.substring)");
 	if (second->type != TYPE_NUMBER)
 	    exceptionWithObject(second, "is not a number");  
 	if (third->type != TYPE_NUMBER)
@@ -1143,7 +1168,7 @@ Object *stringLength(Object ** args, GC_PARAM)
 {
 	Object *first = (*args)->car;
 	if (first->type != TYPE_STRING)
-	    exceptionWithObject(first, "is not a string");
+	    exceptionWithObject(first, "is not a string (string.length)");
 
 	return newNumber(strlen(first->string), GC_ROOTS);	
 }
@@ -1221,7 +1246,7 @@ Object *e_save_buffer(Object ** args, GC_PARAM)
 	return (result ? t : nil);
 }
 
-Object *e_delete_buffer(Object ** args, GC_PARAM)
+Object *e_kill_buffer(Object ** args, GC_PARAM)
 {
 	ONE_STRING_ARG();
 	int result = delete_buffer_byname(first->string);
@@ -1257,6 +1282,13 @@ Object *e_getch(Object ** args, GC_PARAM)
 	ch[0] = (unsigned char)getch();
 	ch[1] = '\0';
 	return newStringWithLength(ch, 1, GC_ROOTS);
+}
+
+Object *e_get_buffer_name(Object ** args, GC_PARAM)
+{
+	char buf[20];
+	strcpy(buf, get_current_bufname());
+	return newStringWithLength(buf, strlen(buf), GC_ROOTS);
 }
 
 Object *asciiToString(Object ** args, GC_PARAM)
@@ -1323,7 +1355,7 @@ Object *e_log_message(Object ** args, GC_PARAM)
 	return t;
 }
 
-Object *e_debug(Object ** args, GC_PARAM)
+Object *e_log_debug(Object ** args, GC_PARAM)
 {
 	ONE_STRING_ARG();
 	debug(first->string);
@@ -1446,6 +1478,7 @@ Primitive primitives[] = {
 	{"string.length", 1, 1, stringLength},
 	{"string.append", 2, 2, stringAppend},
 	{"string.substring", 3, 3, stringSubstring},
+	{"string.ref", 2, 2, stringRef},
 	{"string->number", 1, 1, stringToNumber},
 	{"number->string", 1, 1, numberToString},
 	{"ascii", 1, 1, asciiToString},
@@ -1455,7 +1488,7 @@ Primitive primitives[] = {
 
 	{"message", 1, 1, e_message},
 	{"log-message", 1, 1, e_log_message},
-	{"debug", 1, 1, e_debug},
+	{"log-debug", 1, 1, e_log_debug},
 	{"insert-string", 1, 1, e_insert_string},
 	{"set-point", 1, 1, e_set_point},
 	{"get-point", 0, 0, e_get_point},
@@ -1466,12 +1499,13 @@ Primitive primitives[] = {
 	{"get-key", 0, 0, e_get_key},
 	{"get-key-name", 0, 0, e_get_key_name},
 	{"get-key-funcname", 0, 0, e_get_key_funcname},
+	{"get-buffer-name", 0, 0, e_get_buffer_name},
 	{"getch", 0, 0, e_getch},
 	{"save-buffer", 1, 1, e_save_buffer},
 	{"search-forward", 1, 1, e_search_forward},
 	{"search-backward", 1, 1, e_search_backward},
 	{"select-buffer", 1, 1, e_select_buffer},
-	{"delete-buffer", 1, 1, e_delete_buffer},
+	{"kill-buffer", 1, 1, e_kill_buffer},
 	{"find-file", 1, 1, e_find_file},
 	{"update-display", 0, 0, e_update_display},
 	{"refresh", 0, 0, e_refresh},
@@ -1492,7 +1526,6 @@ Primitive primitives[] = {
 	{"backspace", 0, 0, e_backspace},
 	{"page-down", 0, 0, e_forward_page},
 	{"page-up", 0, 0, e_backward_page},
-	{"save-buffer", 0, 0, e_save_buffer},
 	{"delete-other-windows", 0, 0, e_delete_other_windows},
 	{"list-buffers", 0, 0, e_list_buffers},
 	{"split-window", 0, 0, e_split_window},
