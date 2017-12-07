@@ -1,7 +1,8 @@
+## Femto 2.4 7 December 2017
+* added (get-buffer-name) (string.ref) (string.trim), fixed bufmenu.lsp, removed c code for string_trim().
 
 ## Femto 2.3 5 December 2017
- added (save-buffer) (delete-buffer) (select-buffer) (search-forward) (search-backward) (find-file)
-
+*  added (save-buffer) (delete-buffer) (select-buffer) (search-forward) (search-backward) (find-file)
 
 ## Femto 2.2 1 December 2017
 * added (delete-other-windows) (list-buffers) (split-window) (other-window) (get-clipboard) (get-buffer-count)
