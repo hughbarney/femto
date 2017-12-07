@@ -167,3 +167,7 @@
 
 (load_script "oxo.lsp")
 (set-key "c-x c-o" "(oxo)")
+
+;;(load_script "bufmenu.lsp")
+;;(set-key "c-x c-b" "(buffer-menu)")
+

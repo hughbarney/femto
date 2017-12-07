@@ -1,5 +1,17 @@
+TODO
+====
+implement buffer_menu
+update README
+write a test file for all lisp functions
+test all keyboard keys
+test all command lists
+run command list check
+
+
 DONE
 ====
+1/12/17 fix oxo.lsp failure
+fix display core dump
 fix compile warning around stdup define _XOPEN_SOURCE 500
 file headers changed to reference 'femto'
 removed old undoset code
@@ -11,15 +23,6 @@ add keyboard setting etc
 load startup file
 load femto.rc file
 
-TODO
-====
-fix display core dump
-write a test file for all lisp functions
-test all keyboard keys
-test all command lists
-run command list check
-fix oxo.lsp failure
-
 
 
 LISP INTERACTION
@@ -27,16 +30,3 @@ LISP INTERACTION
 esc-]      eval-block built in
 esc-;      repl       built in
 ctrl-]     user-defined
-
-(defun sq (n)
-  (* n n))
-
-(sq 3)
-9
-
-(message "Hello ")
-t
-
-(setq b "hh")
-"hh"
-

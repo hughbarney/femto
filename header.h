@@ -20,11 +20,11 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.1"
+#define E_VERSION       "2.3"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND	"<not bound>"
 #define E_INITFILE      "femto.rc"
-#define VERSION	        "femto 2.1, Public Domain, Nov 2017, by Hugh Barney,  No warranty."
+#define VERSION	        "femto 2.3, Public Domain, Nov 2017, by Hugh Barney,  No warranty."
 #define PROG_NAME       "femto"
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
@@ -328,8 +328,6 @@ extern point_t line_to_point(int);
 extern void update_search_prompt(char *, char *);
 extern void display_search_result(point_t, int, char *, char *);
 extern void move_to_search_result(point_t);
-extern point_t search_forward_curbp(point_t, char *);
-extern point_t search_forward2(buffer_t *, point_t, char *);
 
 extern buffer_t *find_buffer(char *, int);
 extern buffer_t *find_buffer_by_fname(char *);
@@ -368,14 +366,6 @@ extern void match_parens(void);
 extern void match_paren_forwards(buffer_t *, char, char);
 extern void match_paren_backwards(buffer_t *, char, char);
 
-//extern int scan_for_keywords(char_t *, int *);
-//extern void scan_for_block_comments(char_t *, int *, int *);
-//extern void scan_for_line_comments(char_t *, int *);
-//extern void scan_for_end_line_comments(char_t *, int *);
-//extern void scan_for_end_comments(char_t *, int *, int *);
-//extern void setLanguage(char* extension, int *);
-//extern void keyboardDefinition(void);
-//extern void chkPar(void);
 extern void repl(void);
 extern void eval_block();
 extern void execute_command();

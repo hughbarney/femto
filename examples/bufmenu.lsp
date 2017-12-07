@@ -19,7 +19,7 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; The following Editor functions are need to implement a buffer menu
+;; The following Editor functions are needed to implement a buffer menu extension
 ;;
 ;; (gotoline 10)
 ;; (update-display)
@@ -36,23 +36,24 @@
 ;; (other-window)
 ;; (get-clipboard)
 ;; 
-;; - (save-buffer bufm-buf)
+;; (save-buffer bufm-buf)
 ;; (get-buffer-count)
-;; - (search-forward "str")
-;; - (select-buffer "*scratch*"))
-;; 
+;; - (get-buffer-name)
+;; (search-forward "str")
+;; (select-buffer "*scratch*"))
+;; - (trim)
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define bufm-line 3)   
-(define bufm-start-line 3)
-(define bufm-last-line 3)
-(define bufm-max-ops 400)
-(define bufm-debugging #f)
-(define bufm-stop #f)
-(define bufm-obuf "")
-(define bufm-buf "")
-(define bufm-key "")
+(setq bufm-line 3)   
+(setq bufm-start-line 3)
+(setq bufm-last-line 3)
+(setq bufm-max-ops 400)
+(setq bufm-debugging nil)
+(setq bufm-stop nil)
+(setq bufm-obuf "")
+(setq bufm-buf "")
+(setq bufm-key "")
 
 ;;
 ;; (buffer-menu)
@@ -60,43 +61,43 @@
 ;; List buffers, the starts on line 3.
 ;; (get-buffer-count) will report 1 additional buffer than listed
 ;; as *buffers* is hidden from the list when created
-;; loop round (with a limit of 400 operations) until bufm-stop gets set to #t
+;; loop round (with a limit of 400 operations) until bufm-stop gets set to t
 ;;
 
 
-(define (buffer-menu)
+(defun buffer-menu()
     (bufm-debug "buffer-menu")
-    (set! bufm-obuf (get-buffer-name))
+    (setq bufm-obuf (get-buffer-name))
     (list-buffers)
-    (set! bufm-line bufm-start-line)   
-    (set! bufm-last-line (+ bufm-start-line (get-buffer-count)))
-    (set! bufm-last-line (- bufm-last-line 2))
-    (set! bufm-stop #f)
+    (setq bufm-line bufm-start-line)   
+    (setq bufm-last-line (+ bufm-start-line (get-buffer-count)))
+    (setq bufm-last-line (- bufm-last-line 2))
+    (setq bufm-stop nil)
     (goto-line bufm-line)
     (delete-other-windows)
-    (set! bufm-buf (bufm-get-bufn))
-    (do ((i 1 (1+ i)))
-        ((or (> i bufm-max-ops) bufm-stop))        
-        (bufm-loop-payload))
+    (setq bufm-buf (bufm-get-bufn))
+    (bufm-loop-payload)
     (update-display))
-
 
 ;;
 ;; (bufm-loop-payload)
 ;;
-;; executed by the above do() loop until bufm-stop is #t
+;; executed until bufm-stop is t
 ;; set the message on the input line
 ;; wait for a key to be pressed and dispatch it to the 
 ;; bound key or single key handlers 
 ;;
 
-(define (bufm-loop-payload)
+(defun bufm-loop-payload()
     (message "buffer menu: 1,2,s,k,x")
     (update-display)
-    (set! bufm-key (get-key))
+    (setq bufm-key (get-key))
     (if (equal? bufm-key "")
 	 (bufm-handle-bound-key)
-         (bufm-handle-single-key bufm-key)))
+         (bufm-handle-single-key bufm-key))
+    (cond
+      ((or (> bufm-ops bufm-max-ops) bufm-stop) (setq bufm-stop t))
+      (t (bufm-loop-payload))))
 
 ;;
 ;; (bufm-handle-bound-key)
@@ -107,12 +108,12 @@
 ;; retrieve the name of the buffer into bufm-buf
 ;;
 
-(define (bufm-handle-bound-key)
+(defun bufm-handle-bound-key()
     (bufm-debug "bufm-handle-bound-key")
-    (set! bufm-key (get-key-binding))
+    (setq bufm-key (get-key-binding))
     (if (equal? bufm-key "previous-line") (bufm-move-line -1))
     (if (equal? bufm-key "next-line") (bufm-move-line 1))
-    (set! bufm-buf (bufm-get-bufn)))
+    (setq bufm-buf (bufm-get-bufn)))
 
 ;;
 ;; (bufm-handle-single-key)
@@ -124,27 +125,27 @@
 ;; x exit buffer-menu
 ;;
 
-(define (bufm-handle-single-key k)
+(defun bufm-handle-single-key(k)
    (bufm-debug "bufm-handle-single-key")
-   (set! bufm_count (get-buffer-count))
+   (setq bufm_count (get-buffer-count))
    (cond   ( (equal? k "x")
              (goto-line bufm-start-line)
              (beginning-of-line)
              (if (search-forward bufm-obuf)
                    (select-buffer bufm-obuf)
                    (select-buffer "*scratch*"))
-             (set! bufm-stop #t)
+             (setq bufm-stop t)
 	     (update-display))
            ( (and (equal? k "1") (> bufm_count 1))
              (select-buffer bufm-buf)
              (delete-other-windows)
-             (set! bufm-stop #t))
+             (setq bufm-stop t))
            ( (and (equal? k "2") (> bufm_count 1))
              (select-buffer bufm-buf)
              (split-window)
              (select-buffer bufm-obuf)
              (other-window)
-             (set! bufm-stop #t))
+             (setq bufm-stop t))
            ( (and (equal? k "s") (> bufm_count 1))
              (save-buffer bufm-buf)
              (list-buffers)
@@ -152,11 +153,11 @@
            ( (and (equal? k "k") (> bufm_count 1))
 	     (kill-buffer bufm-buf)
              (list-buffers)
-             (set! bufm-last-line (+ bufm-start-line (get-buffer-count)))
-             (set! bufm-last-line (- bufm-last-line 2))
+             (setq bufm-last-line (+ bufm-start-line (get-buffer-count)))
+             (setq bufm-last-line (- bufm-last-line 2))
              (bufm-move-line 0)
              (goto-line bufm-line)
-             (set! bufm-buf (bufm-get-bufn)))))
+             (setq bufm-buf (bufm-get-bufn)))))
 
 
 ;;
@@ -166,16 +167,15 @@
 ;; trim away leading and trailing spaces
 ;;
 
-(define (bufm-get-bufn)
+(defun bufm-get-bufn()
    (goto-line bufm-line)
    (beginning-of-line)
-   (forward-char 11)
+   (repeat 11 forward-char)
    (set-mark)
-   (forward-char 17)
+   (repeat 17 forward-char)
    (copy-region)
    (beginning-of-line)
    (trim (get-clipboard)))
-
 
 ;;
 ;; (bufm-move-line)
@@ -184,18 +184,18 @@
 ;; check that bufm-line is between bufm-start-line and bufm-last-line
 ;; and adjust the value if required
 ;;
-(define (bufm-move-line n)
-	(set! bufm-line (max bufm-start-line (min (+ bufm-line n) bufm-last-line))))
+(defun bufm-move-line(n)
+	(setq bufm-line (max bufm-start-line (min (+ bufm-line n) bufm-last-line))))
 
 ;;
 ;; procedures to assist debugging and tracing
 ;; output is sent to file debug.out
 ;;
 
-(define (log-var n v)
+(defun log-var(n v)
 	(log-debug (string-append n "=" v "\n")))
 
-(define (bufm-debug msg)
+(defun bufm-debug(msg)
    (if bufm-debugging
       (begin
         (log-debug (string-append msg "\n"))
@@ -205,3 +205,4 @@
         (log-var "bufm-obuf" bufm-obuf)
         (log-var "bufm-buf" bufm-buf)
         (log-debug "\n\n"))))
+

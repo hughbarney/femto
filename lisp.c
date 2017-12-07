@@ -1027,7 +1027,6 @@ DEFINE_EDITOR_FUNC(delete)
 DEFINE_EDITOR_FUNC(backspace)
 DEFINE_EDITOR_FUNC(forward_page)
 DEFINE_EDITOR_FUNC(backward_page)
-DEFINE_EDITOR_FUNC(save_buffer)
 DEFINE_EDITOR_FUNC(quit)
 DEFINE_EDITOR_FUNC(eval_block)
 DEFINE_EDITOR_FUNC(delete_other_windows)
@@ -1035,18 +1034,24 @@ DEFINE_EDITOR_FUNC(list_buffers)
 DEFINE_EDITOR_FUNC(split_window)
 DEFINE_EDITOR_FUNC(other_window)
 
-
 extern int set_key(char *, char *);
 extern char *get_char(void);
 extern char *get_input_key(void);
 extern char *get_key_name(void);
 extern char *get_key_funcname(void);
 extern char *get_clipboard(void);
+extern int select_buffer(char *);
+extern int delete_buffer_byname(char *);
+extern int save_buffer_byname(char *);
 extern int count_buffers(void);
 extern void display_prompt_and_response(char *, char *);
 extern void msg(char *,...);
 extern void log_message(char *);
 extern void insert_string(char *);
+extern void move_to_search_result(point_t);
+extern point_t search_forward(char *);
+extern point_t search_backwards(char *);
+extern void readfile(char *);
 
 Object *e_get_char(Object **args, GC_PARAM) { return newStringWithLength(get_char(), 1, GC_ROOTS); }
 Object *e_get_key(Object **args, GC_PARAM) { return newString(get_input_key(), GC_ROOTS); }
@@ -1202,20 +1207,48 @@ Object *os_getenv(Object ** args, GC_PARAM)
 	return newStringWithLength(e, strlen(e), GC_ROOTS);
 }
 
-extern point_t search_forward_curbp(point_t, char *);
+Object *e_select_buffer(Object ** args, GC_PARAM)
+{
+	ONE_STRING_ARG();
+	int result = select_buffer(first->string);
+	return (result ? t : nil);
+}
+
+Object *e_save_buffer(Object ** args, GC_PARAM)
+{
+	ONE_STRING_ARG();
+	int result = save_buffer_byname(first->string);
+	return (result ? t : nil);
+}
+
+Object *e_delete_buffer(Object ** args, GC_PARAM)
+{
+	ONE_STRING_ARG();
+	int result = delete_buffer_byname(first->string);
+	return (result ? t : nil);
+}
+
+Object *e_find_file(Object ** args, GC_PARAM)
+{
+	ONE_STRING_ARG();
+	readfile(first->string);
+	return t;
+}
 
 Object *e_search_forward(Object ** args, GC_PARAM)
 {
-	Object *first = (*args)->car;
-	Object *second = (*args)->cdr->car;
+	ONE_STRING_ARG();
+	point_t founded = search_forward(first->string);
+	move_to_search_result(founded);
+	return (founded == -1 ? nil : t);
+}
 
-	if (first->type != TYPE_NUMBER)
-	    exceptionWithObject(first, "is not a number");
-	if (second->type != TYPE_STRING)
-	    exceptionWithObject(first, "is not a string");
-
-	double num = search_forward_curbp((point_t)first->number, second->string);
-	return newNumber(num, GC_ROOTS);
+Object *e_search_backward(Object ** args, GC_PARAM)
+{
+	ONE_STRING_ARG();
+	point_t founded = search_backwards(first->string);
+	move_to_search_result(founded);
+	return (founded == -1 ? nil : t);
 }
 
 Object *e_getch(Object ** args, GC_PARAM)
@@ -1434,7 +1467,12 @@ Primitive primitives[] = {
 	{"get-key-name", 0, 0, e_get_key_name},
 	{"get-key-funcname", 0, 0, e_get_key_funcname},
 	{"getch", 0, 0, e_getch},
-	{"search-forward", 2, 2, e_search_forward},
+	{"save-buffer", 1, 1, e_save_buffer},
+	{"search-forward", 1, 1, e_search_forward},
+	{"search-backward", 1, 1, e_search_backward},
+	{"select-buffer", 1, 1, e_select_buffer},
+	{"delete-buffer", 1, 1, e_delete_buffer},
+	{"find-file", 1, 1, e_find_file},
 	{"update-display", 0, 0, e_update_display},
 	{"refresh", 0, 0, e_refresh},
 
