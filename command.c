@@ -270,7 +270,7 @@ void i_gotoline()
 	}
 }
 
-void goto_line(int line)
+int goto_line(int line)
 {
 	point_t p;
 
@@ -278,8 +278,10 @@ void goto_line(int line)
 	if (p != -1) {
 		curbp->b_point = p;
 		msg(m_line, line);
+		return 1;
 	} else {
 		msg(m_lnot_found, line);
+		return 0;
 	}
 }
 

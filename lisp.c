@@ -1053,6 +1053,7 @@ extern void move_to_search_result(point_t);
 extern point_t search_forward(char *);
 extern point_t search_backwards(char *);
 extern void readfile(char *);
+extern int goto_line(int);
 
 Object *e_get_char(Object **args, GC_PARAM) { return newStringWithLength(get_char(), 1, GC_ROOTS); }
 Object *e_get_key(Object **args, GC_PARAM) { return newString(get_input_key(), GC_ROOTS); }
@@ -1230,6 +1231,17 @@ Object *os_getenv(Object ** args, GC_PARAM)
 	char *e = getenv(first->string);
 	if (e == NULL) return nil;
 	return newStringWithLength(e, strlen(e), GC_ROOTS);
+}
+
+Object *e_goto_line(Object ** args, GC_PARAM)
+{
+	Object *first = (*args)->car;
+
+	if (first->type != TYPE_NUMBER)
+	    exceptionWithObject(first, "is not a number");
+
+	int result = goto_line(first->number);
+	return (result == 1 ? t : nil);
 }
 
 Object *e_select_buffer(Object ** args, GC_PARAM)
@@ -1495,11 +1507,12 @@ Primitive primitives[] = {
 	{"set-key", 2, 2, e_set_key},
 	{"prompt", 2, 2, e_prompt},
 	{"eval-block", 0, 0, e_eval_block},
+	{"get-buffer-name", 0, 0, e_get_buffer_name},
 	{"get-char", 0, 0, e_get_char},
 	{"get-key", 0, 0, e_get_key},
 	{"get-key-name", 0, 0, e_get_key_name},
 	{"get-key-funcname", 0, 0, e_get_key_funcname},
-	{"get-buffer-name", 0, 0, e_get_buffer_name},
+	{"goto-line", 1, 1, e_goto_line},
 	{"getch", 0, 0, e_getch},
 	{"save-buffer", 1, 1, e_save_buffer},
 	{"search-forward", 1, 1, e_search_forward},

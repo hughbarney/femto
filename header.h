@@ -20,11 +20,11 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.3"
+#define E_VERSION       "2.4"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND	"<not bound>"
 #define E_INITFILE      "femto.rc"
-#define VERSION	        "femto 2.3, Public Domain, Nov 2017, by Hugh Barney,  No warranty."
+#define VERSION	        "femto 2.4, Public Domain, Dec 2017, by Hugh Barney,  No warranty."
 #define PROG_NAME       "femto"
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
@@ -321,7 +321,6 @@ extern void debug_stats(char *);
 extern void showpos(void);
 extern void killtoeol(void);
 extern void i_gotoline(void);
-extern void goto_line(int);
 extern void search(void);
 extern void query_replace(void);
 extern point_t line_to_point(int);
@@ -412,7 +411,7 @@ extern void forward_page(void);
 extern void copy_region(void);
 extern void delete_other_windows(void);
 extern void other_window(void);
-extern void goto_line(int line);
+extern int goto_line(int);
 extern void kill_region(void);
 extern void list_buffers(void);
 extern void down(void);

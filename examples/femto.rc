@@ -121,18 +121,6 @@
     ((not (eq key "")) (message key))
     (t (message (concat (get-key-name) " runs command " (get-key-funcname))))))
 
-;; goto the line requested
-;; (does not check for stupid responses yet)
-(defun i_gotoline()
- (setq line (input "Goto line: " ""))
- (cond
-   ((eq line "") "")
-   (t (gotoline (string->number line))) ))
-
-(defun gotoline(ln)
-  (beginning-of-buffer)
-  (repeat (- ln 1) next-line))
-
 ;;
 ;; GNU Emacs style lisp interaction.
 ;; Place cursor behind an s-expression, type C-] and the
@@ -181,19 +169,17 @@
     (if (eq -1 start_p) (message "could not find start of s-expression"))
     (if (eq -1 end_p) (message "could not find end of s-expression"))) ))
 
+
+(load_script "oxo.lsp")
+(load_script "bufmenu.lsp")
+
 ;;
 ;;  Key Bindings 
 ;;
 
-(set-key "esc-a" "(duplicate_line)")
-(set-key "esc-g" "(i_gotoline)")
-(set-key "c-k" "(kill-to-eol)")
+;;(set-key "esc-a" "(duplicate_line)")
 (set-key "c-x ?" "(describe-key)")
 (set-key "c-]" "(find_and_eval_sexp)")
-
-(load_script "oxo.lsp")
 (set-key "c-x c-o" "(oxo)")
-
-(load_script "bufmenu.lsp")
 (set-key "c-x c-b" "(buffer-menu)")
 
