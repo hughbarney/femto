@@ -53,6 +53,7 @@
 (setq bufm-debugging t)
 (setq bufm-stop nil)
 (setq bufm-obuf "")
+(setq bufm-oclip "")
 (setq bufm-buf "")
 (setq bufm-key "")
 
@@ -70,6 +71,7 @@
     (bufm-debug "buffer-menu")
     (setq bufm-ops 0)
     (setq bufm-obuf (get-buffer-name))
+    (setq bufm-oclip (get-clipboard))
     (list-buffers)
     (setq bufm-line bufm-start-line)   
     (setq bufm-last-line (+ bufm-start-line (get-buffer-count)))
@@ -79,6 +81,7 @@
     (delete-other-windows)
     (setq bufm-buf (bufm-get-bufn))
     (bufm-loop-payload)
+    (set-clipboard bufm-oclip)
     (update-display))
 
 ;;

@@ -60,11 +60,11 @@ save-buffer
 search-backwards
 search-forward
 select-buffer
-- set-clipboard
+set-clipboard
 set-key
 set-mark
 set-point
-- shell-command
+shell-command
 split-window
 string->number
 string.append

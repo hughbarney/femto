@@ -62,6 +62,26 @@
 (defun string.trim(s)
   (string.trim.back (string.trim.front s)))
 
+
+;; delete next word
+(defun delete-next-word()
+  (backward-word)
+  (forward-word)
+  (set-mark)
+  (forward-word)
+  (kill-region))
+
+;; previous word
+(defun delete-previous-word()
+  (forward-word)
+  (backward-word)
+  (forward-char)
+  (set-mark)
+  (backward-word)
+  (backward-word)
+  (forward-char)
+  (kill-region))
+
 ;; shrink string by dropping off last char
 (defun shrink(s)
   (cond
@@ -182,9 +202,11 @@
 ;;  Key Bindings 
 ;;
 
-;;(set-key "esc-a" "(duplicate_line)")
+(set-key "esc-right" "(delete-next-word)")
+(set-key "esc-left" "(delete-previous-word)")
 (set-key "c-x ?" "(describe-key)")
 (set-key "c-]" "(find_and_eval_sexp)")
 (set-key "c-x c-o" "(oxo)")
 (set-key "c-x c-b" "(buffer-menu)")
 (set-key "c-x c-g" "(edit-config)")
+

@@ -2,12 +2,13 @@
  * tiny-lisp interpretter based on
  * https://github.com/matp/tiny-lisp
  *
- * with modifications and extension to enable it to be embedded and called
+ * with modifications and extensions to enable it to be embedded and called
  * by an application.
  *
- *  int init_lisp()
- *  char *call_lisp(char *input)
- *  char *load_file(charint infd, char *output, int o_size)
+ *   int init_lisp()
+ *   char *call_lisp(char *input)
+ *   char *load_file(int fd)
+ *   void reset_output_stream()
  *
  * Input and Output is a Stream abstraction layer.
  * There is 1 and only 1 output stream which is only cleared
@@ -1044,6 +1045,7 @@ extern char *get_key_name(void);
 extern char *get_key_funcname(void);
 extern char *get_clipboard(void);
 extern char *get_current_bufname(void);
+extern void set_scrap(unsigned char *);
 extern int select_buffer(char *);
 extern int delete_buffer_byname(char *);
 extern int save_buffer_byname(char *);
@@ -1057,6 +1059,7 @@ extern void move_to_search_result(point_t);
 extern point_t search_forward(char *);
 extern point_t search_backwards(char *);
 extern void readfile(char *);
+extern void shell_command(char *);
 extern int goto_line(int);
 
 Object *e_get_char(Object **args, GC_PARAM) { return newStringWithLength(get_char(), 1, GC_ROOTS); }
@@ -1090,6 +1093,30 @@ Object *e_set_key(Object ** args, GC_PARAM)
 {
 	TWO_STRING_ARGS();
 	return (1 == set_key(first->string, second->string) ? t : nil);
+}
+
+Object *e_set_clipboard(Object ** args, GC_PARAM)
+{
+	Object *first = (*args)->car;
+
+	if (first->type != TYPE_STRING)
+	    exceptionWithObject(first, "is not a string (set-clipboard)");
+
+	/* gets freed by next call to set_clipboard */
+	char *sub = strdup(first->string);
+	set_scrap((unsigned char *)sub);
+	return t;
+}
+
+Object *e_shell_command(Object ** args, GC_PARAM)
+{
+	Object *first = (*args)->car;
+
+	if (first->type != TYPE_STRING)
+	    exceptionWithObject(first, "is not a string (set-clipboard)");
+
+	shell_command(first->string);
+	return t;
 }
 
 Object *stringAppend(Object ** args, GC_PARAM)
@@ -1541,6 +1568,8 @@ Primitive primitives[] = {
 	{"next-line", 0, 0, e_down},
 	{"previous-line", 0, 0, e_up},
 	{"set-mark", 0, 0, e_set_mark},
+	{"set-clipboard", 1, 1, e_set_clipboard},
+	{"shell-command", 1, 1, e_shell_command},
 	{"delete", 0, 0, e_delete},
 	{"copy-region", 0, 0, e_copy_region},
 	{"kill-region", 0, 0, e_kill_region},
