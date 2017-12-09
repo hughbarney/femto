@@ -1,10 +1,13 @@
 TODO
 ====
+implement remaining commands (shell-command, set-clipboard, get-version-string, add-mode-global
 update README
 write a test file for all lisp functions
 test all keyboard keys
 test all command lists
 run command list check
+tidy up header.h
+review all code
 dired.lsp
 shell command
 prompt that recalls commands
