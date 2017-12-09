@@ -1014,12 +1014,15 @@ DEFINE_EDITOR_FUNC(beginning_of_buffer)
 DEFINE_EDITOR_FUNC(end_of_buffer)
 DEFINE_EDITOR_FUNC(left)
 DEFINE_EDITOR_FUNC(right)
+DEFINE_EDITOR_FUNC(forward_word)
+DEFINE_EDITOR_FUNC(backward_word)
 DEFINE_EDITOR_FUNC(up)
 DEFINE_EDITOR_FUNC(down)
 DEFINE_EDITOR_FUNC(lnbegin)
 DEFINE_EDITOR_FUNC(lnend)
 DEFINE_EDITOR_FUNC(yank)
 DEFINE_EDITOR_FUNC(update_display)
+DEFINE_EDITOR_FUNC(clear_message_line)
 DEFINE_EDITOR_FUNC(copy_region)
 DEFINE_EDITOR_FUNC(set_mark)
 DEFINE_EDITOR_FUNC(kill_region)
@@ -1047,6 +1050,7 @@ extern int save_buffer_byname(char *);
 extern int count_buffers(void);
 extern void display_prompt_and_response(char *, char *);
 extern void msg(char *,...);
+extern void clear_message_line(void);
 extern void log_message(char *);
 extern void insert_string(char *);
 extern void move_to_search_result(point_t);
@@ -1521,6 +1525,7 @@ Primitive primitives[] = {
 	{"kill-buffer", 1, 1, e_kill_buffer},
 	{"find-file", 1, 1, e_find_file},
 	{"update-display", 0, 0, e_update_display},
+	{"clear-message-line", 0, 0, e_clear_message_line},
 	{"refresh", 0, 0, e_refresh},
 
 	{"beginning-of-buffer", 0, 0, e_beginning_of_buffer},
@@ -1528,7 +1533,11 @@ Primitive primitives[] = {
 	{"beginning-of-line", 0, 0, e_lnbegin},
 	{"end-of-line", 0, 0, e_lnend},
 	{"forward-char", 0, 0, e_right},
+	{"forward-page", 0, 0, e_forward_page},
+	{"forward-word", 0, 0, e_forward_word},
 	{"backward-char", 0, 0, e_left},
+	{"backward-page", 0, 0, e_backward_page},
+	{"backward-word", 0, 0, e_backward_word},
 	{"next-line", 0, 0, e_down},
 	{"previous-line", 0, 0, e_up},
 	{"set-mark", 0, 0, e_set_mark},
@@ -1537,8 +1546,6 @@ Primitive primitives[] = {
 	{"kill-region", 0, 0, e_kill_region},
 	{"yank", 0, 0, e_yank},
 	{"backspace", 0, 0, e_backspace},
-	{"page-down", 0, 0, e_forward_page},
-	{"page-up", 0, 0, e_backward_page},
 	{"delete-other-windows", 0, 0, e_delete_other_windows},
 	{"list-buffers", 0, 0, e_list_buffers},
 	{"split-window", 0, 0, e_split_window},

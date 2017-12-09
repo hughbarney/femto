@@ -11,11 +11,11 @@ ascii
 ascii->number
 backspace
 backward-char
-- backward-page
-- backward-word
+backward-page
+backward-word
 beginning-of-buffer
 beginning-of-line
-- clear-message-line
+clear-message-line
 copy-region
 delete
 delete-other-windows
@@ -25,8 +25,8 @@ eval-block
 exit
 find-file
 forward-char
-- forward-page
-- forward-word
+forward-page
+forward-word
 get-buffer-count
 get-buffer-name
 get-char
@@ -75,4 +75,3 @@ string.trim
 string?
 update-display
 yank
-

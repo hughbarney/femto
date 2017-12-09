@@ -1,15 +1,17 @@
 TODO
 ====
-implement buffer_menu
 update README
 write a test file for all lisp functions
 test all keyboard keys
 test all command lists
 run command list check
-
+dired.lsp
+shell command
+prompt that recalls commands
 
 DONE
 ====
+6/12/17 implement buffer_menu
 1/12/17 fix oxo.lsp failure
 fix display core dump
 fix compile warning around stdup define _XOPEN_SOURCE 500
