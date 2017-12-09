@@ -33,6 +33,11 @@
 ;; the user should modify this value to where they wish to store scripts and extensions
 (setq script_dir (home "src/femto/examples/"))
 
+(setq config_file "femto.rc")
+
+(defun edit-config()
+  (find-file (home config_file)))
+
 (defun load_script(fn)
   (load (concat script_dir fn)))
 
@@ -182,4 +187,4 @@
 (set-key "c-]" "(find_and_eval_sexp)")
 (set-key "c-x c-o" "(oxo)")
 (set-key "c-x c-b" "(buffer-menu)")
-
+(set-key "c-x c-g" "(edit-config)")

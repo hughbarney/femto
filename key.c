@@ -205,6 +205,8 @@ void setup_keys()
 	set_key_internal("esc->",     "(end-of-buffer)"       , "\x1B\x3E", end_of_buffer);
 	set_key_internal("esc-]",     "(eval-block)"          , "\x1B\x5D", eval_block);
 	set_key_internal("esc-;",     "(exec-lisp-command)"   , "\x1B\x3B", repl);
+	set_key_internal("esc-.",     "(user-func)"           , "\x1B\x2E", user_func);
+
 
 	set_key_internal("up ",     "(previous-line)",       "\x1B\x5B\x41", up);
 	set_key_internal("down",    "(next-line)",           "\x1B\x5B\x42", down);
