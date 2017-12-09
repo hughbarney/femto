@@ -6,7 +6,7 @@ Key
  + a comment on the name
 
 
-- add-mode-global
+add-mode-global
 ascii
 ascii->number
 backspace
@@ -35,7 +35,7 @@ get-key
 get-key-funcname
 get-key-name
 get-point
-- get-version-string
+get-version-string
 getch
 goto-line
 insert-string
@@ -56,6 +56,7 @@ page-up
 previous-line
 prompt
 refresh
+rename-buffer
 save-buffer
 search-backwards
 search-forward

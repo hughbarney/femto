@@ -1048,6 +1048,7 @@ extern char *get_current_bufname(void);
 extern void set_scrap(unsigned char *);
 extern int select_buffer(char *);
 extern int delete_buffer_byname(char *);
+extern void rename_current_buffer(char *);
 extern int save_buffer_byname(char *);
 extern int count_buffers(void);
 extern void display_prompt_and_response(char *, char *);
@@ -1061,6 +1062,8 @@ extern point_t search_backwards(char *);
 extern void readfile(char *);
 extern void shell_command(char *);
 extern int goto_line(int);
+extern int add_mode_global(char *);
+extern char *get_version_string(void);
 
 Object *e_get_char(Object **args, GC_PARAM) { return newStringWithLength(get_char(), 1, GC_ROOTS); }
 Object *e_get_key(Object **args, GC_PARAM) { return newString(get_input_key(), GC_ROOTS); }
@@ -1093,6 +1096,12 @@ Object *e_set_key(Object ** args, GC_PARAM)
 {
 	TWO_STRING_ARGS();
 	return (1 == set_key(first->string, second->string) ? t : nil);
+}
+
+Object *e_add_mode_global(Object ** args, GC_PARAM)
+{
+	ONE_STRING_ARG();
+	return (1 == add_mode_global(first->string) ? t : nil);
 }
 
 Object *e_set_clipboard(Object ** args, GC_PARAM)
@@ -1264,6 +1273,12 @@ Object *os_getenv(Object ** args, GC_PARAM)
 	return newStringWithLength(e, strlen(e), GC_ROOTS);
 }
 
+Object *e_get_version_string(Object ** args, GC_PARAM)
+{
+	char *ver = get_version_string();
+	return newStringWithLength(ver, strlen(ver), GC_ROOTS);
+}
+
 Object *e_goto_line(Object ** args, GC_PARAM)
 {
 	Object *first = (*args)->car;
@@ -1280,6 +1295,14 @@ Object *e_select_buffer(Object ** args, GC_PARAM)
 	ONE_STRING_ARG();
 	int result = select_buffer(first->string);
 	return (result ? t : nil);
+}
+
+Object *e_rename_buffer(Object ** args, GC_PARAM)
+{
+	ONE_STRING_ARG();
+	rename_current_buffer(first->string);
+	char *bname = get_current_bufname();
+	return newStringWithLength(bname, strlen(bname), GC_ROOTS);
 }
 
 Object *e_save_buffer(Object ** args, GC_PARAM)
@@ -1529,6 +1552,7 @@ Primitive primitives[] = {
 	{"load", 1, 1, e_load},
 	{"os.getenv", 1, 1, os_getenv},
 
+	{"add-mode-global", 1, 1, e_add_mode_global},
 	{"message", 1, 1, e_message},
 	{"log-message", 1, 1, e_log_message},
 	{"log-debug", 1, 1, e_log_debug},
@@ -1545,10 +1569,12 @@ Primitive primitives[] = {
 	{"get-key-funcname", 0, 0, e_get_key_funcname},
 	{"goto-line", 1, 1, e_goto_line},
 	{"getch", 0, 0, e_getch},
+	{"get-version-string", 0, 0, e_get_version_string},
 	{"save-buffer", 1, 1, e_save_buffer},
 	{"search-forward", 1, 1, e_search_forward},
 	{"search-backward", 1, 1, e_search_backward},
 	{"select-buffer", 1, 1, e_select_buffer},
+	{"rename-buffer", 1, 1, e_rename_buffer},
 	{"kill-buffer", 1, 1, e_kill_buffer},
 	{"find-file", 1, 1, e_find_file},
 	{"update-display", 0, 0, e_update_display},

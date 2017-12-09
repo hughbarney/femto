@@ -195,8 +195,13 @@
     (if (eq -1 end_p) (message "could not find end of s-expression"))) ))
 
 
+;;
+;;  Load extensions
+;;
+
 (load_script "oxo.lsp")
 (load_script "bufmenu.lsp")
+(load_script "dired.lsp")
 
 ;;
 ;;  Key Bindings 
@@ -208,5 +213,6 @@
 (set-key "c-]" "(find_and_eval_sexp)")
 (set-key "c-x c-o" "(oxo)")
 (set-key "c-x c-b" "(buffer-menu)")
+(set-key "c-x c-d" "(dired)")
 (set-key "c-x c-g" "(edit-config)")
 
