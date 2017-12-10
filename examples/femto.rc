@@ -105,42 +105,9 @@
   (and (>= (ascii->number k) 0) (<= (ascii->number k) 31)))
 
 
-;; prompt for string and return response, handle backspace, cr and c-g
-(defun input(q response)
-  (prompt q response)
-  (setq key (getch))
-  (cond
-    ((eq key "\n") response)
-    ((is_ctl_g key) "")
-    ((is_backspace key) (input q (shrink response)))
-    ((is_control_char key) (input q response))
-    (t (input q (string.append response key)))  ))
-
-;;
-;; duplicate a line
-;;
-(defun duplicate_line()
-  (beginning-of-line)
-  (set-mark)
-  (next-line)
-  (beginning-of-line)
-  (copy-region)
-  (yank)
-  (previous-line))
-
-;; kill to end of line, uses if and progn
-(defun kill-to-eol()
-  (if (eq "\n" (get-char))
-    (progn
-      (delete))
-    (progn
-      (set-mark)
-      (end-of-line)
-      (kill-region))))
-
 ;; prompt for a keystroke then show its name
 (defun describe-key()
-  (prompt "Describe Key: " "")
+  (show-prompt "Describe Key: " "")
   (setq key (get-key))
   (cond
     ((not (eq key "")) (message key))
@@ -202,6 +169,7 @@
 (load_script "oxo.lsp")
 (load_script "bufmenu.lsp")
 (load_script "dired.lsp")
+(load_script "grep.lsp")
 
 ;;
 ;;  Key Bindings 
@@ -214,5 +182,6 @@
 (set-key "c-x c-o" "(oxo)")
 (set-key "c-x c-b" "(buffer-menu)")
 (set-key "c-x c-d" "(dired)")
-(set-key "c-x c-g" "(edit-config)")
+(set-key "c-x c" "(edit-config)")
+(set-key "c-x g" "(grep-command)")
 

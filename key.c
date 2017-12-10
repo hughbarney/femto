@@ -88,7 +88,8 @@ void make_key(char *name, char *bytes)
 void create_keys()
 {
 	char ch;
-	char ctrx_map[] = "c-x c-|";
+	char ctrx_map1[] = "c-x c-|";
+	char ctrx_map2[] = "c-x x";
 	char ctrl_map[] = "c-|";
 	char esc_map[] = "esc-|";
 	char ctrx_bytes[] = "\x18\x01";
@@ -115,12 +116,17 @@ void create_keys()
 
 	/* control-x control-a to z */
 	for (ch = 1; ch <= 26; ch++) {
-		ctrx_map[6] = ch + 96;
+		ctrx_map1[6] = ch + 96;
 		ctrx_bytes[1] = ch;
-		make_key(ctrx_map, ctrx_bytes);
+		make_key(ctrx_map1, ctrx_bytes);
 	}
 
-	//make_key("c-x ?", "\x18\x3F");
+	/* control-x a to z */
+	for (ch = 1; ch <= 26; ch++) {
+		ctrx_map2[4] = ch + 96;
+		ctrx_bytes[1] = ch + 96;
+		make_key(ctrx_map2, ctrx_bytes);
+	}	
 }
 
 int set_key_internal(char *name, char *funcname, char *bytes, void (*func)(void))
@@ -203,7 +209,6 @@ void setup_keys()
 //	set_key_internal("esc-esc",   "(show-version)"        , "\x1B\x1B", version);
 	set_key_internal("esc-home",  "(beginning-of-buffer)" , "\x1B\x1B\x4F\x48", beginning_of_buffer);
 	set_key_internal("esc-@",     "(set-mark)"            , "\x1B\x40", i_set_mark);
-	set_key_internal("esc-@",     "(set-mark)"            , "\x1B\x40", i_set_mark);
 	set_key_internal("esc-<",     "(beginning-of-buffer)" , "\x1B\x3C", beginning_of_buffer);
 	set_key_internal("esc->",     "(end-of-buffer)"       , "\x1B\x3E", end_of_buffer);
 	set_key_internal("esc-]",     "(eval-block)"          , "\x1B\x5D", eval_block);
@@ -237,6 +242,7 @@ void setup_keys()
 	set_key_internal("c-x n",     "(next-buffer)"           , "\x18\x6E", next_buffer);
 	set_key_internal("c-x o",     "(other-window)"          , "\x18\x6F", other_window);
 	set_key_internal("c-x @",     "(shell-command)"         , "\x18\x40", i_shell_command);
+	set_key_internal("c-x `",     "(user-func)"             , "\x18\x60", user_func);
 	
 	set_key_internal("c-space", "(set-mark)",            "\x00", i_set_mark);
 	set_key_internal("c-]",     E_NOT_BOUND,             "\x1D", user_func);
@@ -343,6 +349,7 @@ int getinput(char *prompt, char *buf, int nbuf, int flag)
 			return (cpos > 0 ? TRUE : FALSE);
 
 		case 0x07: /* ctrl-g */
+			buf[0] = '\0';
 			return FALSE;
 
 		case 0x7f: /* del, erase */

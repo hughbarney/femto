@@ -36,6 +36,8 @@
 #include <curses.h>
 
 extern void debug(char *,...);
+#define F_NONE          0
+#define F_CLEAR         1
 
 typedef long point_t;
 
@@ -43,7 +45,8 @@ typedef long point_t;
 #define MAP_ANONYMOUS        MAP_ANON
 #endif
 
-#define MEMORY_SIZE          131072UL
+//#define MEMORY_SIZE          131072UL
+#define MEMORY_SIZE          262144UL  /* 256k */
 
 typedef struct Object Object;
 
@@ -1039,6 +1042,7 @@ DEFINE_EDITOR_FUNC(split_window)
 DEFINE_EDITOR_FUNC(other_window)
 
 extern int set_key(char *, char *);
+extern int getinput(char *, char *, int, int);
 extern char *get_char(void);
 extern char *get_input_key(void);
 extern char *get_key_name(void);
@@ -1214,11 +1218,23 @@ Object *stringLength(Object ** args, GC_PARAM)
 	return newNumber(strlen(first->string), GC_ROOTS);	
 }
 
-Object *e_prompt(Object ** args, GC_PARAM)
+Object *e_show_prompt(Object ** args, GC_PARAM)
 {
 	TWO_STRING_ARGS();
 	display_prompt_and_response(first->string, second->string);
 	return t;
+}
+
+Object *e_prompt(Object ** args, GC_PARAM)
+{
+	TWO_STRING_ARGS();
+
+	char response[81];
+	strncpy(response, second->string, 80);
+	response[80] = '\0';
+
+	(void) ! getinput(first->string, response, 80, F_NONE);
+	return newStringWithLength(response, strlen(response), GC_ROOTS);
 }
 
 Object *primitiveStringQ(Object ** args, GC_PARAM)
@@ -1561,6 +1577,7 @@ Primitive primitives[] = {
 	{"get-point", 0, 0, e_get_point},
 	{"set-key", 2, 2, e_set_key},
 	{"prompt", 2, 2, e_prompt},
+	{"show-prompt", 2, 2, e_show_prompt},
 	{"eval-block", 0, 0, e_eval_block},
 	{"get-buffer-name", 0, 0, e_get_buffer_name},
 	{"get-char", 0, 0, e_get_char},

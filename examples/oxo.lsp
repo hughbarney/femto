@@ -1,44 +1,13 @@
-; O | X | O
-;----------
-; O | X | X
-;----------
-; O | 8 | X
-
-
-
-
-
-
-
-
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-  
- 
- 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;; Simple tick-tac-toe (or naughts and cross, oxo for short) 
+;; implementaion for femto.
+;; Hugh Barney Dec 2017
+;; 
 ;; The following editor functions are required to implement OXO
 ;; 
 ;; (insert-string "\n ")
-;; (gotoline 10)
+;; (goto-line 10)
 ;; (beginning-of-line)
 ;; (kill-to-eol)
 ;; (message "")
@@ -51,13 +20,24 @@
 ;; (kill-region)
 ;; (beginning-of-buffer)
 ;; 
+;;
+;;  O | X | O
+;; ----------
+;;  O | X | X
+;; ----------
+;;  O | 8 | X
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun oxo_debug(s)
  (if debug_oxo (debug s) s))
 
 (defun init()
-  (oxo_debug "(init)\n")
+ (oxo_debug "(init)\n")
+ (select-buffer "*oxo*")
+ (beginning-of-buffer)
+ (end-of-buffer)
+ (kill-region)
  (setq board (list "E" "1" "2" "3" "4" "5" "6" "7" "8" "9")))
 
 (defun val(n)
@@ -80,7 +60,7 @@
 ;; prompt for string and return response, handle backspace, cr and c-g
 (defun inputat(ln q response)
   (oxo_debug "inputat\n")
-  (gotoline ln)
+  (goto-line ln)
   (beginning-of-line)
   (kill-to-eol)
   (insert-string (concat q response))
@@ -173,7 +153,7 @@
 
 (defun clearline(ln)
   (oxo_debug "clearline\n")
-  (gotoline ln)
+  (goto-line ln)
   (beginning-of-line)  
   (kill-to-eol) )
 
@@ -191,6 +171,7 @@
 
 (defun play_again()
   (setq m (inputat 8 "Play again (y or n) ? " ""))
+  (clearline  8)
   (or (eq m "y") (eq m "Y")) )
 
 (defun play()
@@ -207,7 +188,8 @@
   (if (play_again)
     (oxo)
   (progn 
-    (msg "Thank you for playing" nil)
+    (msg "Thank you for playing" t)
+    (kill-buffer "*oxo*")
     (clearline 8)
     (message "")) ))
 
