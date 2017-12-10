@@ -5,40 +5,38 @@ Femto is an extended version of Atto Emacs with a Tiny Lisp extension languauge
 > -- <cite>Antoine de Saint-Exupery</cite>
 
 ## Goals of Femto Emacs
-* To extend Atto Emacs with filename completion, dired, buffer menu and the ability to run a shell command.
+
+* To be an extendable version of the Atto Emacs editor using a Tiny Lisp extension language
 * Provide a rich level of functionality in the smallest amount of code
-* Femto Emacs will eventually have it own lisp extension languauge.
 * Be easy to understand without extensive study (to encourage further experimentation).
-
-## IMPORTANT NOTE - THIS BRANCH IS NOT MAINTAINED
-
-This branch was an intermediary project in order to seed the work done on FemtoEmacs.  As such this branch is no longer maintained and I plan to only put bug fixes into Atto or FemtoEmacs.
-
- https://github.com/FemtoEmacs/Femto-Emacs
- 
- https://github.com/hughbarney/Femto-Emacs
 
 ## Why the name Femto?
 
 The small Emacs naming scheme appears to use sub-unit prefixes in decending order with each further reduction of functionality. The Nano and Pico Emacs editors have been around for a while.
 
- Nano means 10 to the power of minus 9
- Pico means 10 to the power of minus 12
- Femto means 10 to power of minus 15
- Atto means 10 to power of minus 18
+* Nano means 10 to the power of minus 9
+* Pico means 10 to the power of minus 12 
+* Femto means 10 to power of minus 15
+* Atto means 10 to power of minus 18
+* Zepto means 10 to the power of minus 21
+* Zep is smaller version of Zepto Emacs 
 
 In Defining Atto as the lowest functional Emacs I have had to consider the essential feature set that makes Emacs, 'Emacs'. I have defined this point as a basic Emacs command set and key bindings; the ability to edit multiple files (buffers), and switch between them; edit the buffers in mutliple windows, cut, copy and paste; forward and reverse searching, a replace function and basic syntax hilighting. The proviso being that all this will fit in less than 2000 lines of C.
 
-Femto is an extended version of Atto Emacs.
-
-Atto means 10 to the power of minus 18.
-
-An extended Atto would therefore be called Femto (10 to the power of minus 15).
+Femto is an extended version of Atto Emacs with its own extension languauge
 
 
 ## Derivation
-Femto is based on the Atto codebase [0] (as of Atto 1.6)
-Atto was based on the public domain code of Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]).
+* Femto is based on the Atto codebase [0], which in turn was based on Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]). 
+* Femto was originally an intermediate project to form a codebase for the FemtoEmacs Editor [8], [9] which was a collaboration between Hugh Barney, Ed Costa, ...  FemtoEmacs uses xxx Femtolisp LISP implementation as the basis for its extension language.  However the Femtolisp codebase is in excess of 12K line of code an fairly difficult to understand how to use it inside an embedded application.
+* In late 2016 Hugh Barney decided to look for a smaller lisp implementation for Femto and settled on Tiny-Lisp[7] by Mattias Pirstitz.
+* Zepl was an initial project that established the suitability of Tiny-Lisp for use within an Emacs type editor.
+
+## Femto Extensions
+
+* grep - enables searching for text in files and loading of the files at the location of the match into the editor.
+* bufmenu - the classic Emacs buffer menu
+* oxo - a basic implementation of tick-tack-toe that runs in the Editor.
 
 ## Comparisons with Other Emacs Implementations
 
@@ -145,74 +143,131 @@ Generally, the procedure for copying or moving text is:
     ESC will escape from the search prompt and return to the point of the match
     C-G abort the search and return to point before the search started
 
-
-
-
 ## List Function Interface
 ```lisp
-   
-(beginning-of-buffer)                   ;; go to the beginning of the buffer
-(end-of-buffer)                         ;; go to the end of the buffer
+
+;;
+;; cursor movement
+;;
+
+(forward-char)                          ;;
+(forward-word)                          ;;
+(forward-page)                          ;;
+(backward-char)                         ;;
+(backward-word)                         ;;
+(backward-page)                         ;;
+(next-line)                             ;;
+(previous-line)                         ;; 
 (beginning-of-line)                     ;; go to the beginning of the current line
 (end-of-line)                           ;; go to the end of the current line
-(forward-char)                          ;; move forward 1 character to the right
-(backward-char)
-(next-line)
-(previous-line)
-(page-down)
-(page-up)             
+(beginning-of-buffer)                   ;; go to the beginning of the buffer
+(end-of-buffer)                         ;; go to the end of the buffer
+(goto-line 11)                          ;; go to the specified line
+(set-point 1234)                        ;; set the point to the value specified
+(get-point)                             ;; returns the current point
 
-(save-buffer)                          ;; saves the current buffer to disk
+;;
+;; buffer handling
+;;
 
-(set-mark)                             ;; sets the mark at the current point in the buffer
-(copy-region)                          ;; copies the current region into the clipboard
-(kill-region)                          ;; kills the current region and copies it into the clipboard
-(yank)                                 ;; pastes the clipboard into the current buffer
-(get-clipboard)                        ;; returns the contents of the clipboard as a string
-(set-clipboard var)                    ;; sets up clipboard with contents of string var
+(get-buffer-count)                      ;;
+(get-buffer-name)                       ;;
+(select-buffer)                         ;;
+(kill-buffer)                           ;;
+(rename-buffer)                         ;;
+(list-buffers)                          ;;
+(find-file "file.txt")                  ;; xxx
+(save-buffer)                           ;; saves the current buffer to disk
 
+;;
+;; window handling
+;;
+
+(delete-other-windows)                  ;;
+(other-window)                          ;;
+(split-window)                          ;;
+
+;;
+;; cut, copy, paste and the clipboard
+;;
+
+(set-mark)                              ;; sets the mark at the current point in the buffer
+(copy-region)                           ;; copies the current region into the clipboard
+(kill-region)                           ;; kills the current region and copies it into the clipboard
+(yank)                                  ;; pastes the clipboard into the current buffer
+(get-clipboard)                         ;; returns the contents of the clipboard as a string
+(set-clipboard var)                     ;; sets up clipboard with contents of string var
 (delete)
 (backspace)
-(exit)
 
-(string? symbol)                              ;; return true if symbol is a string
-(string.append "string1" "string2")           ;; concatenate 2 strings returning a new string
-(string.substring string n1 n2)               ;; return a substring of string from ref n1 to n2
-(string->number s)                            ;; return a number converted from the string, eg "99" => 99
-(number->string n)                            ;; return a strung representation of the number, eg 99.56 => "99.56"
+;;
+;; keyboard handling
+;;
 
-(load "filename")                             ;; load and evaluate the lisp file
-(message "the text of the message")           ;; set the message line
-(set-key "name" "(function-name)"             ;; specify a key binding
-(prompt "prompt message" "response")          ;; display the prompt in the command line, pass in "" for response.
-	                                      ;; pass in a previous response with a no empty string
-											
-(get-char)                                    ;; return the character at the current position in the file
-(get-key)                                     ;; wait for a key press, return the key or "" if the key was a command key
-(get-key-name)                                ;; return the name of the key pressed eg: c-k for control-k.
-(get-key-funcname)                            ;; return the name of the function bound to the key
-(getch)                                       ;; calls the c function getch and returns the keystroke
+(get-char)                              ;; return the character at the current position in the file
+(get-key)                               ;; wait for a key press, return the key or "" if the key was a command key
+(get-key-name)                          ;; return the name of the key pressed eg: c-k for control-k.
+(get-key-funcname)                      ;; return the name of the function bound to the key
+(getch)                                 ;; calls the c function getch and returns the keystroke
+(set-key "key-name" "(lisp-func)")      ;; binds a key to a lisp function, see keynames see "Keys Names below"
 
+;;
+;; string handling
+;; 
 
-(insert-string "string")                      ;; insert the string into the buffer at the current location
-(set-point 1234)                              ;; set the point to the value specified
-(get-point)                                   ;; returns the current point
-(set-key "key-name" "(lisp-func)")            ;; binds a key to a lisp function, see keynames see "Keys Names below"
-(prompt "prompt text" "initial response")     ;; prompts for a value on the command line and returns the response
-(eval-block)                                  ;; passes the marked region to be evaluated by lisp, displays the output
+(string? symbol)                        ;; return true if symbol is a string
+(string.length)                         ;;
+(string.ref)                            ;;
+(string.trim)                           ;;
+(string.append "string1" "string2")     ;; concatenate 2 strings returning a new string
+(string.substring string n1 n2)         ;; return a substring of string from ref n1 to n2
+(string->number s)                      ;; return a number converted from the string, eg "99" => 99
+(number->string n)                      ;; return a strung representation of the number, eg 99.56 => "99.56"
 
+;;
+;; number handling
+;;
 
+(number->string)                        ;;
+(number?)                               ;;
+(ascii)                                 ;;
+(ascii->number)                         ;;
 
-(search-forward "accelerate")       ;; search forward from the point value passed in for the string supplied
-                                              ;; returns -1 if string is found or the point value of the match
+;;
+;; interaction with the user
+;;
+
+(message)                               ;;
+(clear-message-line)                    ;;
+(prompt "prompt" "initial response")    ;; prompts for a value on the command line and returns the response
+(show-prompt)                           ;; display the prompt and response but do not go into editing mode of the response
 (display)                               ;; calls the display function so that the screen is updated
-(refresh)     
+(refresh)
+
+;;
+;; lisp interaction
+;;
+
+(load "filename")                       ;; load and evaluate the lisp file
+(eval-block)                            ;; passes the marked region to be evaluated by lisp, displays the output
+log-message                             ;;
+log-debug                               ;;
+
+;;
+;; miscellaneous
+;;
+
+(insert-string "string")                ;; insert the string into the buffer at the current location
+(search-forward "accelerate")           ;; search forward from the point value passed in for the string supplied
+search-backwards                        ;;
+get-version-string                      ;;
+shell-command                           ;;
+os.getenv                               ;;
+add-mode-global                         ;;
+exit                                    ;;
 
 
 ```
-
-
-
 
 ## Building on Ubuntu (using UTF8 support in ncurse / ncursesw)
 
@@ -233,9 +288,7 @@ $ sudo apt-get install libncurses5-dev libncursesw5-dev
 ## Future Enhancements
 
 The following enhancements are envisaged.
-* A buffer menu facility
-* Directory and file manegement (Dired) functionality.
-* A Lisp or Scheme based extension languauge.
+* Directory and file manegement (Dired) functionality.  A basic start has been made with dired.lsp
 
 ## Known Issues
 	Goto-line will fail to go to the very last line.  This is a special case that could easily be fixed.
@@ -252,4 +305,7 @@ The following enhancements are envisaged.
     [4] Jonathan Payne, Buffer-Gap: http://ned.rubyforge.org/doc/buffer-gap.txt
     [5] Anthony Howe,  http://ned.rubyforge.org/doc/editor-101.txt
     [6] Anthony Howe, http://ned.rubyforge.org/doc/editor-102.txt
+    [7] Tiny-Lisp,  https://github.com/matp/tiny-lisp
+    [8] FemtoEmacs, https://github.com/FemtoEmacs/Femto-Emacs
+    [9] FemtoEmacs, https://github.com/hughbarney/Femto-Emacs
 
