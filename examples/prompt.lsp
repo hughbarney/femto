@@ -1,4 +1,11 @@
 ;;
+;; This is not complete. The idea here is to look at building a
+;; command line history that could be traversed using up and down arrow
+;;
+;;
+
+
+;;
 ;; set to empty
 ;;
 (setq cmd_list ())
@@ -15,7 +22,7 @@ nil
 ;; prompt for string and return response, handle backspace, cr and c-g
 ;;
 (defun cmd_prompt(q response)
-  (prompt q response)
+  (show_prompt q response)
   (setq key (get-key))
   (if (eq key "")
   (progn
@@ -44,5 +51,4 @@ nil
 
 
 (cmd_prompt ": " "")
-
 

@@ -113,7 +113,7 @@
 
 (defun get-move()
   (oxo_debug "(get-move)\n")
-  (setq m (inputat 7 "Your move: " ""))
+  (setq m (inputat 7 "Your move (X): " ""))
   (setq m (string->number m))
   (if (or (> m 9) (< m 1)) (progn (msg "Please select a free cell between 1 and 9" t) (get-move)))
   (if (not (is_free m)) (progn (msg "That cell is taken" t) (get-move)))

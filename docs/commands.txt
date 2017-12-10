@@ -66,6 +66,7 @@ set-key
 set-mark
 set-point
 shell-command
+show-prompt
 split-window
 string->number
 string.append

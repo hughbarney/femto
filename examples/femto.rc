@@ -82,6 +82,16 @@
   (forward-char)
   (kill-region))
 
+;; kill to end of line, uses if and progn
+(defun kill-to-eol()
+  (if (eq "\n" (get-char))
+    (progn
+      (delete))
+    (progn
+      (set-mark)
+      (end-of-line)
+      (kill-region))))
+
 ;; shrink string by dropping off last char
 (defun shrink(s)
   (cond
@@ -177,6 +187,7 @@
 
 (set-key "esc-right" "(delete-next-word)")
 (set-key "esc-left" "(delete-previous-word)")
+(set-key "c-k" "(kill-to-eol)")
 (set-key "c-x ?" "(describe-key)")
 (set-key "c-]" "(find_and_eval_sexp)")
 (set-key "c-x c-o" "(oxo)")
