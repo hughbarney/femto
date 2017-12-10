@@ -1,3 +1,14 @@
+## Femto 2.5 10 Demember 2017
+* updated lisp function reference
+* retored kill-to-eol back to femto.rc, added grep.lsp
+* added (prompt) and (show_prompt), grep.lsp invoke with 'c-x g' and grep-next 'c-x `', added key definitions for "c-x a" to "c-x z"
+* Added rename-buffer, get-version-string, added dired.lsp
+* added shell-command, set-clipboard bufmenu.lsp restore clipboard on exit, added delete-next-word delete-previous-word
+* removed hltest.c from src directory, updated TODO.txt
+* added clear-message-line, forward-word, forward-page, backward-page, backward-word
+* added esc-.; some changes to femto.rc; started testfunc.lsp; started prompt.lsp; wrote list examples
+
+
 ## Femto 2.4 7 December 2017
 * added (get-buffer-name) (string.ref) (string.trim), fixed bufmenu.lsp, removed c code for string_trim().
 
