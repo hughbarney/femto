@@ -1,5 +1,5 @@
-# Femto Emacs
-Femto is an extended version of Atto Emacs.
+# Femto
+Femto is an extended version of Atto Emacs with a Tiny Lisp extension languauge
 
 > A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing left to take away.
 > -- <cite>Antoine de Saint-Exupery</cite>
@@ -22,10 +22,10 @@ This branch was an intermediary project in order to seed the work done on FemtoE
 
 The small Emacs naming scheme appears to use sub-unit prefixes in decending order with each further reduction of functionality. The Nano and Pico Emacs editors have been around for a while.
 
-Nano means 10 to the power of minus 9
-Pico means 10 to the power of minus 12
-Femto means 10 to power of minus 15
-Atto means 10 to power of minus 18
+ Nano means 10 to the power of minus 9
+ Pico means 10 to the power of minus 12
+ Femto means 10 to power of minus 15
+ Atto means 10 to power of minus 18
 
 In Defining Atto as the lowest functional Emacs I have had to consider the essential feature set that makes Emacs, 'Emacs'. I have defined this point as a basic Emacs command set and key bindings; the ability to edit multiple files (buffers), and switch between them; edit the buffers in mutliple windows, cut, copy and paste; forward and reverse searching, a replace function and basic syntax hilighting. The proviso being that all this will fit in less than 2000 lines of C.
 
@@ -48,14 +48,14 @@ Atto was based on the public domain code of Anthony Howe's editor (commonly know
     atto           atto       33002     1.9k     10
     pEmacs         pe         59465     5.7K     16
     Esatz-Emacs    ee         59050     5.7K     14
-	GNOME          GNOME      55922     9.8k     13
+    GNOME          GNOME      55922     9.8k     13
     Zile           zile      257360    11.7k     48
     Mg             mg        585313    16.5K     50
     uEmacs/Pk      em        147546    17.5K     34
     Pico           pico      438534    24.0k     29
     Nano           nano      192008    24.8K     17
-	jove           jove      248824    34.7k     94
-	Qemacs         qe        379968    36.9k     59
+    jove           jove      248824    34.7k     94
+    Qemacs         qe        379968    36.9k     59
     ue3.10         uemacs    171664    52.4K     16
     GNUEmacs       emacs   14632920   358.0k    186
 
@@ -98,10 +98,9 @@ Atto was based on the public domain code of Anthony Howe's editor (commonly know
     ^X^B  List Buffers
     ^X^C  Exit. Any unsaved files will require confirmation.
     ^X^F  Find file; read into a new buffer created from filename.
-    ^X^S  Save current buffer to disk, using the buffer's filename as the name of
-    ^X^W  Write current buffer to disk. Type in a new filename at the prompt to
-	^X@   shell-command (you are prompted for a command which is sent to the shell
-	      and the result is displayed in the *output* buffer
+    ^X^S  Save current buffer to disk, using the filename associated with the buffer
+    ^X^W  Write current buffer to disk. Type in a new filename at the prompt
+    ^X@   shell-command (prompted for a command which is sent to the shell
     ^Xi   Insert file at point
     ^X=   Show Character at position
     ^X^N  next-buffer
@@ -114,7 +113,7 @@ Atto was based on the public domain code of Anthony Howe's editor (commonly know
     Home  Beginning-of-line
     End   End-of-line
     Del   Delete character under cursor
-	Ins   Toggle Overwrite Mode
+    Ins   Toggle Overwrite Mode
     Left  Move left
     Right Move point right
     Up    Move to the previous line
@@ -145,6 +144,75 @@ Generally, the procedure for copying or moving text is:
     C-R at the search prompt will search backwards, will wrap at start of the buffer
     ESC will escape from the search prompt and return to the point of the match
     C-G abort the search and return to point before the search started
+
+
+
+
+## List Function Interface
+```lisp
+   
+(beginning-of-buffer)                   ;; go to the beginning of the buffer
+(end-of-buffer)                         ;; go to the end of the buffer
+(beginning-of-line)                     ;; go to the beginning of the current line
+(end-of-line)                           ;; go to the end of the current line
+(forward-char)                          ;; move forward 1 character to the right
+(backward-char)
+(next-line)
+(previous-line)
+(page-down)
+(page-up)             
+
+(save-buffer)                          ;; saves the current buffer to disk
+
+(set-mark)                             ;; sets the mark at the current point in the buffer
+(copy-region)                          ;; copies the current region into the clipboard
+(kill-region)                          ;; kills the current region and copies it into the clipboard
+(yank)                                 ;; pastes the clipboard into the current buffer
+(get-clipboard)                        ;; returns the contents of the clipboard as a string
+(set-clipboard var)                    ;; sets up clipboard with contents of string var
+
+(delete)
+(backspace)
+(exit)
+
+(string? symbol)                              ;; return true if symbol is a string
+(string.append "string1" "string2")           ;; concatenate 2 strings returning a new string
+(string.substring string n1 n2)               ;; return a substring of string from ref n1 to n2
+(string->number s)                            ;; return a number converted from the string, eg "99" => 99
+(number->string n)                            ;; return a strung representation of the number, eg 99.56 => "99.56"
+
+(load "filename")                             ;; load and evaluate the lisp file
+(message "the text of the message")           ;; set the message line
+(set-key "name" "(function-name)"             ;; specify a key binding
+(prompt "prompt message" "response")          ;; display the prompt in the command line, pass in "" for response.
+	                                      ;; pass in a previous response with a no empty string
+											
+(get-char)                                    ;; return the character at the current position in the file
+(get-key)                                     ;; wait for a key press, return the key or "" if the key was a command key
+(get-key-name)                                ;; return the name of the key pressed eg: c-k for control-k.
+(get-key-funcname)                            ;; return the name of the function bound to the key
+(getch)                                       ;; calls the c function getch and returns the keystroke
+
+
+(insert-string "string")                      ;; insert the string into the buffer at the current location
+(set-point 1234)                              ;; set the point to the value specified
+(get-point)                                   ;; returns the current point
+(set-key "key-name" "(lisp-func)")            ;; binds a key to a lisp function, see keynames see "Keys Names below"
+(prompt "prompt text" "initial response")     ;; prompts for a value on the command line and returns the response
+(eval-block)                                  ;; passes the marked region to be evaluated by lisp, displays the output
+
+
+
+(search-forward "accelerate")       ;; search forward from the point value passed in for the string supplied
+                                              ;; returns -1 if string is found or the point value of the match
+(display)                               ;; calls the display function so that the screen is updated
+(refresh)     
+
+
+```
+
+
+
 
 ## Building on Ubuntu (using UTF8 support in ncurse / ncursesw)
 
