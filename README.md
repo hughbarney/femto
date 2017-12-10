@@ -40,12 +40,14 @@ Femto is an extended version of Atto Emacs with its own extension languauge
 
 ## Comparisons with Other Emacs Implementations
 
+Femto has almost the same level of functionality as MicroEmacs 3.10 for a codebase 1/10 of the size.
+
     Editor         Binary   BinSize     KLOC  Files
 
-    femto          femto      43397     2.1k     11
     atto           atto       33002     1.9k     10
     pEmacs         pe         59465     5.7K     16
     Esatz-Emacs    ee         59050     5.7K     14
+    femto          femto     356399     6.3k     18 **
     GNOME          GNOME      55922     9.8k     13
     Zile           zile      257360    11.7k     48
     Mg             mg        585313    16.5K     50
@@ -54,7 +56,7 @@ Femto is an extended version of Atto Emacs with its own extension languauge
     Nano           nano      192008    24.8K     17
     jove           jove      248824    34.7k     94
     Qemacs         qe        379968    36.9k     59
-    ue3.10         uemacs    171664    52.4K     16
+    ue3.10         uemacs    171664    52.4K     16 ++
     GNUEmacs       emacs   14632920   358.0k    186
 
 
@@ -143,7 +145,117 @@ Generally, the procedure for copying or moving text is:
     ESC will escape from the search prompt and return to the point of the match
     C-G abort the search and return to point before the search started
 
-## List Function Interface
+
+
+## Lisp Interaction
+
+There are two ways to interract with Tiny-Lisp within Femto.
+
+* You can use C-] to find the last s-expression above the cursor and send it to be evaluated.
+* You can mark a region and send the whole region to be evaluated.
+
+### Lisp Interaction - finding and evaluating the last s-expression
+
+This works in almost the same way as GNU Emacs in the scratch buffer.
+
+
+### Lisp Interaction - mark and evaluating a region
+
+Type a lisp function into the editor.
+
+for example:
+
+    1: --------------
+    2: (defun factorial (n)
+    3:   (cond ((= n 0) 1)
+    4:     (t (* n (factorial (- n 1))))))
+    5:--------------
+
+Place the cursor at the beginning of line 1 and set a mark (hit control-spacebar).
+
+Now move the cursot to line 5 and evaluate the block of code (hit escape followed by ])
+
+Femto will pass the code to lisp for it to be evaluated.
+ 
+    <Lambda (n)>
+
+Now call factorial in the same way (mark the start of the code, move to the end of the code and hit escape-])
+
+    (factorial 6)
+
+    720
+
+
+## femto.rc file
+
+The sample femto.rc file should be placed into your HOME directory
+The example shows how the editor can be extended.
+
+```lisp
+;; -*-Lisp-*-
+;;
+;; FEMTO an extended Atto Emacs with a tiny lisp extension language
+;; hughbarney AT googlemail.com
+;;
+;; The editor provides only basic buffer movement and edit functions
+;; everything else is done by extending the user interface using the
+;; lisp extension language. Functions can be bound to keys using set-key.
+;; For example: (set-key "c-k" "(kill-to-eol)")
+;; 
+;; place femto.rc in your home direcory and it is run when femto starts up.
+;;
+
+;; kill to end of line, uses if and progn
+(defun kill-to-eol()
+  (if (eq "\n" (get-char))
+    (progn
+      (delete))
+    (progn
+      (set-mark)
+      (end-of-line)
+      (kill-region))))
+
+;; prompt for a keystroke then show its name
+(defun describe-key()
+  (show-prompt "Describe Key: " "")
+  (setq key (get-key))
+  (cond
+    ((not (eq key "")) (message key))
+    (t (message (concat (get-key-name) " runs command " (get-key-funcname))))))
+```
+
+
+## Key Names
+
+The following keynames are used for user key bindings
+
+* "c-a" to "c-z"                 Control-A to Control-Z  (Control-X, I and M are reserved)
+* "c-x c-a" to "c-x c-z"         Control-X folowed by Control-A to Control-Z
+* "c-x a-z"                      Control-X followed by a to z
+* "esc-a" to "esc-z"             Escape-A to Escape-Z
+
+When using (set-key) the keyname must be supplied using the key names above.
+The lisp function must be enclosed in brackets ().
+
+Examples:
+```lisp
+    (set-key "esc-right" "(delete-next-word)")
+    (set-key "esc-left" "(delete-previous-word)")
+    (set-key "c-k" "(kill-to-eol)")
+    (set-key "c-x ?" "(describe-key)")
+    (set-key "c-]" "(find_and_eval_sexp)")
+    (set-key "c-x c-o" "(oxo)")
+    (set-key "c-x c-b" "(buffer-menu)")
+    (set-key "c-x c-d" "(dired)")
+    (set-key "c-x c" "(edit-config)")
+    (set-key "c-x g" "(grep-command)")
+```
+
+Key bindings cane be checked using describe-key (c-x ?).
+This is implemented in Lisp in the femto.rc file.
+
+
+## Lisp Function Interface
 ```lisp
 
 ;;
