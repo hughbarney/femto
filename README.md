@@ -262,14 +262,14 @@ This is implemented in Lisp in the femto.rc file.
 ;; cursor movement
 ;;
 
-(forward-char)                          ;;
-(forward-word)                          ;;
-(forward-page)                          ;;
-(backward-char)                         ;;
-(backward-word)                         ;;
-(backward-page)                         ;;
-(next-line)                             ;;
-(previous-line)                         ;; 
+(forward-char)                          ;; move the point forward 1 character
+(forward-word)                          ;; move the point forward by 1 word
+(forward-page)                          ;; move forward by 1 page
+(backward-char)                         ;; move backward 1 character
+(backward-word)                         ;; move forward 1 word
+(backward-page)                         ;; move backward by 1 page
+(next-line)                             ;; move to the next line
+(previous-line)                         ;; move to the previous line
 (beginning-of-line)                     ;; go to the beginning of the current line
 (end-of-line)                           ;; go to the end of the current line
 (beginning-of-buffer)                   ;; go to the beginning of the buffer
@@ -282,12 +282,12 @@ This is implemented in Lisp in the femto.rc file.
 ;; buffer handling
 ;;
 
-(get-buffer-count)                      ;;
-(get-buffer-name)                       ;;
-(select-buffer)                         ;;
-(kill-buffer)                           ;;
-(rename-buffer)                         ;;
-(list-buffers)                          ;;
+(get-buffer-count)                      ;; 
+(get-buffer-name)                       ;; 
+(select-buffer)                         ;; 
+(kill-buffer)                           ;; 
+(rename-buffer)                         ;; 
+(list-buffers)                          ;; 
 (find-file "file.txt")                  ;; xxx
 (save-buffer)                           ;; saves the current buffer to disk
 
@@ -295,9 +295,9 @@ This is implemented in Lisp in the femto.rc file.
 ;; window handling
 ;;
 
-(delete-other-windows)                  ;;
-(other-window)                          ;;
-(split-window)                          ;;
+(delete-other-windows)                  ;; 
+(other-window)                          ;; 
+(split-window)                          ;; 
 
 ;;
 ;; cut, copy, paste and the clipboard
@@ -371,12 +371,12 @@ log-debug                               ;;
 
 (insert-string "string")                ;; insert the string into the buffer at the current location
 (search-forward "accelerate")           ;; search forward from the point value passed in for the string supplied
-search-backwards                        ;;
-get-version-string                      ;;
-shell-command                           ;;
-os.getenv                               ;;
-add-mode-global                         ;;
-exit                                    ;;
+(search-backwards "string")             ;;
+(get-version-string)                    ;;
+(shell-command "ls -l")                 ;;
+(os.getenv("PATH")                      ;;
+(add-mode-global("undo")                ;; 
+(exit)                                  ;; exit femto
 
 
 ```
