@@ -787,8 +787,8 @@ void repl()
 
 	reset_output_stream();
 
-	if (getinput("> ", lisp_query, TEMPBUF, F_CLEAR)) {
-		output = call_lisp(lisp_query);
+	if (getinput("> ", response_buf, TEMPBUF, F_CLEAR)) {
+		output = call_lisp(response_buf);
 
 		if (strlen(output) < 60) {
 			msg(output);

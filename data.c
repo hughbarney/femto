@@ -17,8 +17,6 @@ char msgline[TEMPBUF];
 char response_buf[TEMPBUF];
 char searchtext[STRBUF_M];
 char replace[STRBUF_M];
-//char *prog_name;
-char lisp_query[LISP_IN_OUT];
 
 keymap_t *key_return;
 keymap_t *khead = NULL;
@@ -35,7 +33,7 @@ char *f_usage = "usage: %s [-f <config>] [file]\n";
 char *f_initscr = "%s: Failed to initialize the screen.\n";
 char *f_alloc = "%s: Failed to allocate required memory.\n";
 char *m_ok = "Ok.";
-char *m_version = VERSION;
+char *m_version = E_VERSION_STR;
 char *m_alloc = "No more memory available.";
 char *m_toobig = "File \"%s\" is too big to load.";
 char *m_empty = "Nothing to insert.";

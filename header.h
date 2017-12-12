@@ -24,8 +24,8 @@ int mkstemp(char *);
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND	"<not bound>"
 #define E_INITFILE      "femto.rc"
-#define VERSION	        "femto 2.4, Public Domain, Dec 2017, by Hugh Barney,  No warranty."
-#define PROG_NAME       "femto"
+#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, Dec 2017, by Hugh Barney,  No warranty."
+
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
 #define NOPAREN         -1
@@ -185,8 +185,7 @@ extern char msgline[];          /* Message line input/output buffer. */
 extern char response_buf[];     /* Temporary buffer. */
 extern char searchtext[];
 extern char replace[];
-extern char lisp_query[];
-//extern char *prog_name;         /* Name used to invoke editor. */
+
 extern keymap_t *key_return;    /* Command key return */
 extern keymap_t *khead;
 extern keymap_t *ktail;
