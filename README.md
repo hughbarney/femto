@@ -223,7 +223,7 @@ The following keynames are used for user key bindings
 
 * "c-a" to "c-z"                 Control-A to Control-Z  (Control-X, I and M are reserved)
 * "c-x c-a" to "c-x c-z"         Control-X folowed by Control-A to Control-Z
-* "c-x a-z"                      Control-X followed by a to z
+* "c-x a" to "c-x z"             Control-X followed by a to z
 * "esc-a" to "esc-z"             Escape-A to Escape-Z
 
 When using (set-key) the keyname must be supplied using the key names above.
@@ -244,14 +244,14 @@ Examples:
 ```
 
 Key bindings cane be checked using describe-key (c-x ?).
-This is implemented in Lisp in the femto.rc file.
+(describe-key) is implemented in Lisp in the femto.rc file.
 
 
 ## Femto Extensions
 
-* grep - enables searching for text in files and loading of the files at the location of the match into the editor.
-* bufmenu - the classic Emacs buffer menu
-* oxo - a basic implementation of tick-tack-toe that runs in the Editor.
+* **grep** - enables searching for text in files and loading of the files at the location of the match into the editor.
+* **bufmenu** - the classic Emacs buffer menu
+* **oxo** - a basic implementation of tick-tack-toe that runs in the Editor.
 
 ```lisp
    ;; the extensions are loaded bu using load_script
