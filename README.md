@@ -32,12 +32,6 @@ Femto is an extended version of Atto Emacs with its own extension languauge
 * In late 2016 Hugh Barney decided to look for a smaller lisp implementation for Femto and settled on Tiny-Lisp[7] by Mattias Pirstitz.
 * Zepl was an initial project that established the suitability of Tiny-Lisp for use within an Emacs type editor.
 
-## Femto Extensions
-
-* grep - enables searching for text in files and loading of the files at the location of the match into the editor.
-* bufmenu - the classic Emacs buffer menu
-* oxo - a basic implementation of tick-tack-toe that runs in the Editor.
-
 ## Comparisons with Other Emacs Implementations
 
 Femto has almost the same level of functionality as MicroEmacs 3.10 for a codebase 1/10 of the size.
@@ -58,8 +52,6 @@ Femto has almost the same level of functionality as MicroEmacs 3.10 for a codeba
     Qemacs         qe        379968    36.9k     59
     ue3.10         uemacs    171664    52.4K     16 ++
     GNUEmacs       emacs   14632920   358.0k    186
-
-
 
 ## Femto Key Bindings
     C-A   begining-of-line
@@ -255,6 +247,42 @@ Key bindings cane be checked using describe-key (c-x ?).
 This is implemented in Lisp in the femto.rc file.
 
 
+## Femto Extensions
+
+* grep - enables searching for text in files and loading of the files at the location of the match into the editor.
+* bufmenu - the classic Emacs buffer menu
+* oxo - a basic implementation of tick-tack-toe that runs in the Editor.
+
+```lisp
+   ;; the extensions are loaded bu using load_script
+
+   ;;
+   ;;  Load extensions
+   ;;
+
+   (load_script "oxo.lsp")
+   (load_script "bufmenu.lsp")
+   (load_script "dired.lsp")
+   (load_script "grep.lsp")
+```
+
+Note that load script is a user defined function in femto.rc. It loads a script file from the
+directory set in the variable script_dir.
+
+```lisp
+
+  ;; return filename relative to the homedir
+  (defun home(fn)
+    (concat (os.getenv "HOME") "/" fn))
+
+  ;; the user should modify this value to where they wish to store scripts and extensions
+  (setq script_dir (home "src/femto/examples/"))
+
+  (defun load_script(fn)
+    (load (concat script_dir fn)))
+```
+
+
 ## Lisp Function Interface
 ```lisp
 
@@ -282,22 +310,22 @@ This is implemented in Lisp in the femto.rc file.
 ;; buffer handling
 ;;
 
-(get-buffer-count)                      ;; 
-(get-buffer-name)                       ;; 
-(select-buffer)                         ;; 
-(kill-buffer)                           ;; 
-(rename-buffer)                         ;; 
-(list-buffers)                          ;; 
-(find-file "file.txt")                  ;; xxx
+(get-buffer-count)                      ;; return the number of buffers, includes all special buffers and *buffers*
+(get-buffer-name)                       ;; return the name of the current buffer
+(select-buffer "mybuf.txt")             ;; select a buffer called mybuf.txt
+(kill-buffer "mybuf.txt")               ;; kill the buffer called mybuf.txt, unsaved changes are discarded
+(rename-buffer "newname.txt")           ;; rename the current buffer to a new name
+(list-buffers)                          ;; list all the buffers in a buffer called *buffers*
+(find-file "file.txt")                  ;; loads file into a new buffer
 (save-buffer)                           ;; saves the current buffer to disk
 
 ;;
 ;; window handling
 ;;
 
-(delete-other-windows)                  ;; 
-(other-window)                          ;; 
-(split-window)                          ;; 
+(delete-other-windows)                  ;; make current window the only window
+(other-window)                          ;; moves to the next window down on the screen
+(split-window)                          ;; splits the current window
 
 ;;
 ;; cut, copy, paste and the clipboard
@@ -309,8 +337,8 @@ This is implemented in Lisp in the femto.rc file.
 (yank)                                  ;; pastes the clipboard into the current buffer
 (get-clipboard)                         ;; returns the contents of the clipboard as a string
 (set-clipboard var)                     ;; sets up clipboard with contents of string var
-(delete)
-(backspace)
+(delete)                                ;; deletes the character at the point
+(backspace)                             ;; deletes the character to the left of the point
 
 ;;
 ;; keyboard handling
@@ -327,10 +355,10 @@ This is implemented in Lisp in the femto.rc file.
 ;; string handling
 ;; 
 
-(string? symbol)                        ;; return true if symbol is a string
-(string.length)                         ;;
-(string.ref)                            ;;
-(string.trim)                           ;;
+(string? s)                             ;; return true if s is a string
+(string.length "string")                ;; return the length of the string
+(string.ref s pos)                      ;; return the character at position pos (0 based) in string s
+(string.trim " abc ")                   ;; return a string with the spaces trimmed off the beginning and the end
 (string.append "string1" "string2")     ;; concatenate 2 strings returning a new string
 (string.substring string n1 n2)         ;; return a substring of string from ref n1 to n2
 (string->number s)                      ;; return a number converted from the string, eg "99" => 99
@@ -340,21 +368,21 @@ This is implemented in Lisp in the femto.rc file.
 ;; number handling
 ;;
 
-(number->string)                        ;;
-(number?)                               ;;
-(ascii)                                 ;;
-(ascii->number)                         ;;
+(number->string)                        ;; convert a number type to a string
+(number? var)                           ;; return t if the variable is a number
+(ascii 67)                              ;; return the ASCII character as a string for the number
+(ascii->number "C")                     ;; return the ASCII value for the character passed in as a single char string
 
 ;;
 ;; interaction with the user
 ;;
 
-(message)                               ;;
-(clear-message-line)                    ;;
+(message str)                           ;; set the message line to the string
+(clear-message-line)                    ;; clear the message line
 (prompt "prompt" "initial response")    ;; prompts for a value on the command line and returns the response
-(show-prompt)                           ;; display the prompt and response but do not go into editing mode of the response
-(display)                               ;; calls the display function so that the screen is updated
-(refresh)
+(show-prompt p r)                       ;; display the prompt and response but do not go into editing mode of the response
+(update-display)                        ;; calls the display function so that the screen is updated
+(refresh)                               ;; marks all windows for updates and the calls update-display
 
 ;;
 ;; lisp interaction
@@ -362,8 +390,8 @@ This is implemented in Lisp in the femto.rc file.
 
 (load "filename")                       ;; load and evaluate the lisp file
 (eval-block)                            ;; passes the marked region to be evaluated by lisp, displays the output
-log-message                             ;;
-log-debug                               ;;
+(log-message string)                    ;; log the message to the *messages* buffer
+(log-debug string)                      ;; write the string to the debug.out file
 
 ;;
 ;; miscellaneous
@@ -371,11 +399,11 @@ log-debug                               ;;
 
 (insert-string "string")                ;; insert the string into the buffer at the current location
 (search-forward "accelerate")           ;; search forward from the point value passed in for the string supplied
-(search-backwards "string")             ;;
-(get-version-string)                    ;;
-(shell-command "ls -l")                 ;;
-(os.getenv("PATH")                      ;;
-(add-mode-global("undo")                ;; 
+(search-backwards "string")             ;; search backwards from the point value passed in for the string supplied
+(get-version-string)                    ;; return the version string for this version of femto
+(shell-command cmd_string)              ;; send the cmd_string to the shell and colect the output in the *output* buffer
+(os.getenv("PATH")                      ;; return the value of the environment variable eg "PATH"
+(add-mode-global("undo")                ;; set a global mode on for all buffers (only supports "undo" at present)
 (exit)                                  ;; exit femto
 
 
