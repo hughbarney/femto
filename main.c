@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 {
 	setup_keys();
 	(void)init_lisp();
-	load_config();
+
 
 	setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
 	if (initscr() == NULL) fatal(f_initscr);
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	associate_b2w(curbp, curwp);
 
 	beginning_of_buffer();
-	//key_map = keymap;
+	load_config();
 
 	while (!done) {
 		update_display();
@@ -83,11 +83,8 @@ int main(int argc, char **argv)
 void fatal(char *msg)
 {
 	if (curscr != NULL) {
-		//move(LINES-1, 0);
-		//refresh();
 		noraw();
 		endwin();
-		//putchar('\n');
 	}
 	printf("\n%s %s:\n%s\n", E_NAME, E_VERSION, msg);
 	exit(1);

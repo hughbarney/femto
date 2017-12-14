@@ -271,6 +271,7 @@ extern point_t dndn(buffer_t *, point_t);
 
 extern char_t *get_key(keymap_t *, keymap_t **);
 extern keymap_t *new_key(char *, char *);
+extern void execute_key(void);
 extern void make_key(char *, char *);
 extern void create_keys();
 extern int set_key_internal(char *, char *, char *, void (*)(void));

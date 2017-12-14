@@ -227,11 +227,11 @@ void setup_keys()
 	set_key_internal("pgdn",      "(page-down)",            "\x1B\x5B\x36\x7E", forward_page);
 	set_key_internal("backspace", "(backspace)",            "\x7f", backspace);
 
-	set_key_internal("c-x c-c", "(exit)"                  , "\x18\x03", quit_ask);
-	set_key_internal("c-x c-f", "(find-file)"             , "\x18\x06", i_readfile);  
-	set_key_internal("c-x c-n", "(next-buffer"            , "\x18\x0E", next_buffer);
-	set_key_internal("c-x c-s", "(save-buffer)",         "\x18\x13", savebuffer);  
-	set_key_internal("c-x c-w", "(write-file)"            , "\x18\x17", writefile);
+	set_key_internal("c-x c-c",   "(exit)"                  , "\x18\x03", quit_ask);
+	set_key_internal("c-x c-f",   "(find-file)"             , "\x18\x06", i_readfile);  
+	set_key_internal("c-x c-n",   "(next-buffer"            , "\x18\x0E", next_buffer);
+	set_key_internal("c-x c-s",   "(save-buffer)"           , "\x18\x13", savebuffer);  
+	set_key_internal("c-x c-w",   "(write-file)"            , "\x18\x17", writefile);
 	set_key_internal("c-x 1",     "(delete-other-windows)"  , "\x18\x31", delete_other_windows);
 	set_key_internal("c-x 2",     "(split-window)"          , "\x18\x32", split_window);
 	set_key_internal("c-x =",     "(cursor-position)"       , "\x18\x3D", showpos);
@@ -242,11 +242,11 @@ void setup_keys()
 	set_key_internal("c-x n",     "(next-buffer)"           , "\x18\x6E", next_buffer);
 	set_key_internal("c-x o",     "(other-window)"          , "\x18\x6F", other_window);
 	set_key_internal("c-x @",     "(shell-command)"         , "\x18\x40", i_shell_command);
-	set_key_internal("c-x `",     "(user-func)"             , "\x18\x60", user_func);
-	
-	set_key_internal("c-space", "(set-mark)",            "\x00", i_set_mark);
-	set_key_internal("c-]",     E_NOT_BOUND,             "\x1D", user_func);
-	set_key_internal("resize",  "(resize)",              "\x9A", resize_terminal);
+	set_key_internal("c-x (",     "(user-func)"             , "\x18\x28", user_func);
+	set_key_internal("c-x )",     "(user-func)"             , "\x18\x29", user_func);
+	set_key_internal("c-space",   "(set-mark)"              , "\x00", i_set_mark);
+	set_key_internal("c-]",       E_NOT_BOUND               , "\x1D", user_func);
+	set_key_internal("resize",     "(resize)"               , "\x9A", resize_terminal);
 }
 
 
@@ -316,6 +316,13 @@ char *get_key_funcname()
 char *get_key_name()
 {
 	return (key_return != NULL ? key_return->k_name : "");
+}
+
+/* execute the function of the last bound key */
+void execute_key()
+{
+	if (key_return != NULL)
+		(key_return->k_func)();
 }
 
 int getinput(char *prompt, char *buf, int nbuf, int flag)

@@ -1040,6 +1040,7 @@ DEFINE_EDITOR_FUNC(delete_other_windows)
 DEFINE_EDITOR_FUNC(list_buffers)
 DEFINE_EDITOR_FUNC(split_window)
 DEFINE_EDITOR_FUNC(other_window)
+DEFINE_EDITOR_FUNC(execute_key)
 
 extern int set_key(char *, char *);
 extern int getinput(char *, char *, int, int);
@@ -1050,6 +1051,7 @@ extern char *get_key_funcname(void);
 extern char *get_clipboard(void);
 extern char *get_current_bufname(void);
 extern void set_scrap(unsigned char *);
+extern void execute_key(void);
 extern int select_buffer(char *);
 extern int delete_buffer_byname(char *);
 extern void rename_current_buffer(char *);
@@ -1619,6 +1621,7 @@ Primitive primitives[] = {
 	{"yank", 0, 0, e_yank},
 	{"backspace", 0, 0, e_backspace},
 	{"delete-other-windows", 0, 0, e_delete_other_windows},
+	{"execute-key", 0, 0, e_execute_key},
 	{"list-buffers", 0, 0, e_list_buffers},
 	{"split-window", 0, 0, e_split_window},
 	{"other-window", 0, 0, e_other_window},

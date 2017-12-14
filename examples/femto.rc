@@ -38,7 +38,7 @@
 (defun edit-config()
   (find-file (home config_file)))
 
-(defun load_script(fn)
+(defun load-script(fn)
   (load (concat script_dir fn)))
 
 (defun repeat (n func)  
@@ -173,13 +173,30 @@
 
 
 ;;
+;; start up message
+;;
+
+(defun show-startup-message()
+  (if (eq "*scratch*" (get-buffer-name))
+  (progn
+    (insert-string "\n\n\n\n\n\n\n\n\n\n\n\n")
+    (insert-string "   / _| ___ _ __ ___ | |_ ___     \n")
+    (insert-string "  | |_ / _ \ '_ ` _ \| __/ _ \    \n")
+    (insert-string "  |  _|  __/ | | | | | || (_) |   \n")
+    (insert-string "  |_|  \___|_| |_| |_|\__\___/'    \n\n")
+    (insert-string "  Tiny Emacs clone with Tiny-Lisp extension language\n  ")
+    (insert-string (get-version-string))
+    (insert-string "\n\n\n\n\n\n\n"))))
+
+;;
 ;;  Load extensions
 ;;
 
-(load_script "oxo.lsp")
-(load_script "bufmenu.lsp")
-(load_script "dired.lsp")
-(load_script "grep.lsp")
+(load-script "oxo.lsp")
+(load-script "bufmenu.lsp")
+(load-script "dired.lsp")
+(load-script "grep.lsp")
+(load-script "defmacro.lsp")
 
 ;;
 ;;  Key Bindings 
@@ -195,4 +212,8 @@
 (set-key "c-x c-d" "(dired)")
 (set-key "c-x c" "(edit-config)")
 (set-key "c-x g" "(grep-command)")
+(set-key "c-x (" "(dm-start-macro)")
+(set-key "c-x )" "(dm-end-macro)")
+
+(show-startup-message)
 
