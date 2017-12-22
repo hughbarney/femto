@@ -45,6 +45,7 @@
   (select-buffer dm-buffer)
   (insert-string ")")
   (select-buffer dm-obuf)
+  (setq dm-ops (+ 1 dm-max-ops))
   (message "macro recording completed"))
 
 ;; prompt for string and return response, handle backspace, cr and c-g
