@@ -212,8 +212,6 @@
 (set-key "c-x c-d" "(dired)")
 (set-key "c-x c" "(edit-config)")
 (set-key "c-x g" "(grep-command)")
-(set-key "c-x (" "(dm-start-macro)")
-(set-key "c-x )" "(dm-end-macro)")
 
 (show-startup-message)
 
