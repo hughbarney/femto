@@ -182,6 +182,8 @@ Now call factorial in the same way (mark the start of the code, move to the end 
 
     720
 
+![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-lisp.jpg)
+
 
 ## femto.rc file
 
@@ -289,6 +291,7 @@ directory set in the variable script_dir.
   (defun load_script(fn)
     (load (concat script_dir fn)))
 ```
+![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-oxo.jpg)
 
 
 ## Lisp Function Interface
