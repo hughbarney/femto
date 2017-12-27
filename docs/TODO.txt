@@ -1,5 +1,7 @@
 TODO
 ====
+change eval_block to eval_region
+
 implement remaining commands (shell-command, set-clipboard, get-version-string, add-mode-global
 update README
 write a test file for all lisp functions

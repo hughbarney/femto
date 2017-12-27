@@ -1,6 +1,10 @@
 # Femto
 Femto is an extended version of Atto Emacs with a Tiny Lisp extension languauge
 
+![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-hilite.png)
+
+![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-startup.jpg)
+
 > A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing left to take away.
 > -- <cite>Antoine de Saint-Exupery</cite>
 
@@ -27,10 +31,11 @@ Femto is an extended version of Atto Emacs with its own extension languauge
 
 
 ## Derivation
-* Femto is based on the Atto codebase [0], which in turn was based on Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]). 
-* Femto was originally an intermediate project to form a codebase for the FemtoEmacs Editor [8], [9] which was a collaboration between Hugh Barney, Ed Costa, ...  FemtoEmacs uses xxx Femtolisp LISP implementation as the basis for its extension language.  However the Femtolisp codebase is in excess of 12K line of code an fairly difficult to understand how to use it inside an embedded application.
+* **Femto** is based on the Atto codebase [0], which in turn was based on Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]). 
+* **Femto** was originally an intermediate project to form a codebase for the FemtoEmacs Editor [8], [9] which was a collaboration between Hugh Barney, Ed Costa and Lucas Guerra.  FemtoEmacs uses Jeff Bezanson's Femtolisp LISP [10] implementation as the basis for its extension language.  However the Femtolisp codebase is in excess of 12K line of code an fairly difficult to understand how to use it inside an embedded application.
 * In late 2016 Hugh Barney decided to look for a smaller lisp implementation for Femto and settled on Tiny-Lisp[7] by Mattias Pirstitz.
-* Zepl was an initial project that established the suitability of Tiny-Lisp for use within an Emacs type editor.
+* **Zepl** was an initial project that established the suitability of Tiny-Lisp for use within an Emacs type editor. The results surpassed expectations.
+* In late 2017 Hugh Barney decided to return to the *Femto* editor and extend it using Tiny-Lisp.
 
 ## Comparisons with Other Emacs Implementations
 
@@ -181,6 +186,9 @@ Now call factorial in the same way (mark the start of the code, move to the end 
 ## femto.rc file
 
 The sample femto.rc file should be placed into your HOME directory
+
+![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-femtorc.jpg)
+
 The example shows how the editor can be extended.
 
 ```lisp
@@ -448,4 +456,4 @@ The following enhancements are envisaged.
     [7] Tiny-Lisp,  https://github.com/matp/tiny-lisp
     [8] FemtoEmacs, https://github.com/FemtoEmacs/Femto-Emacs
     [9] FemtoEmacs, https://github.com/hughbarney/Femto-Emacs
-
+    [10] Femtolisp,  https://github.com/JeffBezanson/femtolisp
