@@ -6,18 +6,17 @@
 ;; then select one of the following letters
 ;;
 ;; Suggested first implementation does the following
-;; o - if a directory change to that directory and reload the ls output
-;; f - open the file in the editor
-;; x - exit dired
-;;
+;;   f or CR - if a directory change to that directory and reload the ls output
+;;   f or CR - open the file in the editor
+;;   x       - exit dired
 ;;
 ;; This is just a start. Completion of this DIRED is left as challenge for the
 ;; reader.  For an example see the dired.cmd sample that was written for MicroEMACS
 ;;
 ;;
 ;;
-;; (load_script "dired.lsp")
-;; (dired)
+;; (load_script "dired.lsp") ;; to load
+;; (dired)                   ;; to call
 ;;
 ;;
 
@@ -108,15 +107,17 @@
 
 
 (defun de-handle-command-key(k)
-   (setq de-ops (+ de-max-ops 1))
    (if (eq k "x")
    (progn
         (select-buffer de-obuf)
-        (kill-buffer dired-buffer)))
+        (kill-buffer dired-buffer)
+        (setq de-ops (+ de-max-ops 1))))
    (if (or (eq k "f") (eq k "\n"))
    (progn
         (if de-is-dir (de-open-dir) (de-open-file))
-        (kill-buffer dired-buffer))))
+        (kill-buffer dired-buffer)
+        (setq de-ops (+ de-max-ops 1)))))
+
 
 (defun de-open-file()
   (find-file (concat dired-dir "/" de-name)))
