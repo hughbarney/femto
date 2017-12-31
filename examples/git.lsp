@@ -22,8 +22,9 @@
 (setq git-name "")
 (setq git-start-line 1)
 (setq git-last-line 1)
-(setq git-is-dir nil)
-(setq git-is-link nil)
+(setq git-status1 ".")
+(setq git-status2 ".")
+(setq git-status "[..]")
 (setq git-ops 0)
 (setq git-max-ops 300)
 
@@ -46,6 +47,9 @@
   (setq git-line 1)
   (setq git-ops 0)
   (setq git-name "")
+  (setq git-status1 ".")
+  (setq git-status2 ".")
+  (setq git-status "[..]")
   (select-buffer git-buffer)
   (end-of-buffer)
   (previous-line)
@@ -70,7 +74,7 @@
   (setq git-ops (+ git-ops 1))
   (if (< git-ops git-max-ops)
   (progn
-    (message (concat "(" git-name ") git menu: s,c,x"))
+    (message (concat git-status "(" git-name ") git menu: s,u,x"))
     (update-display)
     (setq git-key (get-key))
     (if (eq git-key "")
@@ -84,7 +88,6 @@
   (if (eq git-key "(next-line)") (git-move-line 1))
   (git-get-info))
 
-
 (defun git-handle-command-key(k)
    (if (eq k "x")
    (progn
@@ -95,22 +98,20 @@
    (progn
         (shell-command (concat "git add " git-name))
         (git-menu)))
-   (if (or (eq k "f") (eq k "\n"))
+   (if (eq k "c")
    (progn
-        (if git-is-dir (git-open-dir) (git-open-file))
-        (kill-buffer git-buffer)
-        (setq git-ops (+ git-max-ops 1)))))
+        (git-get-msg)))
+   (if (eq k "u")
+   (progn
+        (shell-command (concat "git reset HEAD " git-name))
+        (git-menu))))
 
-(defun git-open-file()
-  (find-file (concat git-dir "/" git-name)))
-
-(defun git-open-dir()
-  (if (eq ".." git-name)
-  (progn
-    (setq git-dir (git-up-dir git-dir)))
-  (progn
-    (setq git-dir (concat git-dir "/" git-name))))
-  (git))
+(defun git-get-msg()
+  (split-window)
+  (select-buffer "*commit*")
+  (message "c-c c-c to commit, c-c c-q to cancel")
+  (update-display)
+  (get-key))
 
 (defun git-move-line(n)
   (setq git-line (max git-start-line (min (+ git-line n) git-last-line))))
@@ -118,28 +119,34 @@
 (defun git-get-info()
   (goto-line git-line)
   (beginning-of-line)
-  (repeat 2 forward-char)
-  (setq ch (get-char))
-  (setq git-is-dir (eq "d" ch))
-  (setq git-is-link (eq "l" ch))
-  (if git-is-link
-  (progn
-    (end-of-line)
-    (search-backward " ")
-    (search-backward " ")
-    (search-backward " "))
-  (progn
-    (end-of-line)
-    (search-backward " ")))
+  (setq git-status1 (get-char))
+  (forward-char)
+  (setq git-status2 (get-char))
   (forward-char)
   (forward-char)
   (set-mark)
   (setq p (get-point))
-  (if git-is-link (search-forward " ") (end-of-line))
+  (end-of-line)
   (copy-region)
   (set-point p)
+  (setq git-status (concat "[" (git-status-to-text git-status1) ":" (git-status-to-text git-status2) "]"))
   (setq git-name (string.trim (get-clipboard))))
 
+;;
+;; nice lookup table for git status
+;;
+
+(defun git-status-to-text(s)
+  (cond
+   ((eq s "M") "modified")
+   ((eq s "A") "added")
+   ((eq s "D") "deleted")
+   ((eq s "R") "renamed")
+   ((eq s "C") "copied")
+   ((eq s "U") "updated")
+   ((eq s "?") "untracked")
+   ((eq s " ") "")
+   (t          "unknown")))
 
 ;;
 ;; setup key binding
