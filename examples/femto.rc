@@ -197,6 +197,7 @@
 (load-script "dired.lsp")
 (load-script "grep.lsp")
 (load-script "defmacro.lsp")
+(load-script "git.lsp")
 
 ;;
 ;;  Key Bindings 
