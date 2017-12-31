@@ -167,4 +167,3 @@
     ((eq "/" (string.ref d (- (string.length d) 1)))  (string.substring d 0 (- (string.length d) 2)))
     (t (de-up-dir (string.substring d 0 (- (string.length d) 2))))))
 
-

@@ -1499,10 +1499,40 @@ Object *name(Object **args, GC_PARAM) {                                      \
   }                                                                          \
 }
 
+Object *primitiveMod(Object **args, GC_PARAM) {
+  if (*args == nil)
+    return newNumber(1, GC_ROOTS);
+  else if ((*args)->car->type != TYPE_NUMBER)
+    exceptionWithObject((*args)->car, "is not a number");
+  else {
+    Object *object, *rest;
+
+    if ((*args)->cdr == nil) {
+      object = newNumber(1, GC_ROOTS);
+      rest = *args;
+    } else {
+      GC_TRACE(gcFirst, (*args)->car);
+      object = newObjectFrom(gcFirst, GC_ROOTS);
+      rest = (*args)->cdr;
+    }
+
+    for (; rest != nil; rest = rest->cdr) {
+      if (rest->car->type != TYPE_NUMBER)
+        exceptionWithObject(rest->car, "is not a number");
+
+      object->number = (int)object->number % (int)rest->car->number;
+    }
+
+    return object;
+  }
+}
+
+
 DEFINE_PRIMITIVE_ARITHMETIC(primitiveAdd, +, 0)
-    DEFINE_PRIMITIVE_ARITHMETIC(primitiveSubtract, -, 0)
-    DEFINE_PRIMITIVE_ARITHMETIC(primitiveMultiply, *, 1)
-    DEFINE_PRIMITIVE_ARITHMETIC(primitiveDivide, /, 1)
+DEFINE_PRIMITIVE_ARITHMETIC(primitiveSubtract, -, 0)
+DEFINE_PRIMITIVE_ARITHMETIC(primitiveMultiply, *, 1)
+DEFINE_PRIMITIVE_ARITHMETIC(primitiveDivide, /, 1)
+
 #define DEFINE_PRIMITIVE_RELATIONAL(name, op)                                \
 Object *name(Object **args, GC_PARAM) {                                      \
   if ((*args)->car->type != TYPE_NUMBER)                                     \
@@ -1521,11 +1551,12 @@ Object *name(Object **args, GC_PARAM) {                                      \
     return result ? t : nil;                                                 \
   }                                                                          \
 }
-    DEFINE_PRIMITIVE_RELATIONAL(primitiveEqual, ==)
-    DEFINE_PRIMITIVE_RELATIONAL(primitiveLess, <)
-    DEFINE_PRIMITIVE_RELATIONAL(primitiveLessEqual, <=)
-    DEFINE_PRIMITIVE_RELATIONAL(primitiveGreater, >)
-    DEFINE_PRIMITIVE_RELATIONAL(primitiveGreaterEqual, >=)
+
+DEFINE_PRIMITIVE_RELATIONAL(primitiveEqual, ==)
+DEFINE_PRIMITIVE_RELATIONAL(primitiveLess, <)
+DEFINE_PRIMITIVE_RELATIONAL(primitiveLessEqual, <=)
+DEFINE_PRIMITIVE_RELATIONAL(primitiveGreater, >)
+DEFINE_PRIMITIVE_RELATIONAL(primitiveGreaterEqual, >=)
 
 typedef struct Primitive {
 	char *name;
@@ -1552,6 +1583,7 @@ Primitive primitives[] = {
 	{"-", 1, -1, primitiveSubtract},
 	{"*", 0, -1, primitiveMultiply},
 	{"/", 1, -1, primitiveDivide},
+	{"%", 1, -1, primitiveMod},
 	{"=", 1, -1, primitiveEqual},
 	{"<", 1, -1, primitiveLess},
 	{"<=", 1, -1, primitiveLessEqual},
