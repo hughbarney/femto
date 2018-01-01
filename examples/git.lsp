@@ -96,7 +96,8 @@
   (cond
     ((eq k "x")
       (select-buffer git-obuf)
-      (kill-buffer git-buffer))
+      (kill-buffer git-buffer)
+      (setq git-ops (+ git-max-ops 1)))
     ((eq k "s")
       (if (eq git-status2 "D") (setq git-minus-u "-u ") (setq git-minus-u "")) 
       (shell-command (concat "git add " git-minus-u git-name))
