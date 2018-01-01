@@ -148,6 +148,7 @@
       "cancel")))
 
 (defun get-commit-key()
+  (update-display)
   (setq k (get-key))
   (if (eq k "")
   (progn
@@ -155,10 +156,9 @@
     (cond
       ((eq git-key "(cc-commit)") "commit")
       ((eq git-key "(cc-cancel)") "cancel")
-      (t (get-commit-key))))
+      (t (execute-key) (get-commit-key))))
   (progn
     (insert-string k)
-    (update-display)
     (get-commit-key))))
 
 (defun git-move-line(n)
