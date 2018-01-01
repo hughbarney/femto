@@ -17,7 +17,9 @@
 
 (setq git-status-cmd "git status --porcelain")
 (setq git-buffer "*git*")
+(setq git-commit-buffer "*commit*")
 (setq git-obuf "*scratch*")
+(setq out-buffer "*output*")
 (setq git-line 1)
 (setq git-name "")
 (setq git-start-line 1)
@@ -74,7 +76,7 @@
   (setq git-ops (+ git-ops 1))
   (if (< git-ops git-max-ops)
   (progn
-    (message (concat git-status "(" git-name ") git menu: s,u,x"))
+    (message (concat git-status "(" git-name ") git menu: c,s,u,x"))
     (update-display)
     (setq git-key (get-key))
     (if (eq git-key "")
@@ -97,21 +99,46 @@
    (if (eq k "s")
    (progn
         (shell-command (concat "git add " git-name))
+        (kill-buffer out-buffer)
         (git-menu)))
    (if (eq k "c")
    (progn
-        (git-get-msg)))
+        (git-get-commit-string)
+        (git-menu)))
    (if (eq k "u")
    (progn
         (shell-command (concat "git reset HEAD " git-name))
+        (kill-buffer out-buffer)
         (git-menu))))
 
-(defun git-get-msg()
+;;
+;; not yet complete, need to write temp file so we can use it for the 
+;; commit comments, not yet figired how to make this uniq and manage the file
+;;
+(defun git-get-commit-string()
+  (kill-buffer git-commit-buffer)
   (split-window)
-  (select-buffer "*commit*")
+  (select-buffer git-commit-buffer)
   (message "c-c c-c to commit, c-c c-q to cancel")
   (update-display)
-  (get-key))
+  (setq r (get-commit-key))
+  (if (eq r "commit")
+    (progn
+      (select-buffer git-commit-buffer))))
+
+(defun get-commit-key()
+  (setq k (get-key))
+  (if (eq k "")
+  (progn
+    (setq git-key (get-key-funcname))
+    (cond
+      ((eq git-key "(cc-commit)") "commit")
+      ((eq git-key "(cc-cancel)") "cancel")
+      (t (get-commit-key))))
+  (progn
+    (insert-string k)
+    (update-display)
+    (get-commit-key))))
 
 (defun git-move-line(n)
   (setq git-line (max git-start-line (min (+ git-line n) git-last-line))))
@@ -152,3 +179,5 @@
 ;; setup key binding
 ;;
 (set-key "c-x c-g" "(git-menu)")
+(set-key "c-c c-c" "(cc-commit)")
+(set-key "c-c c-q" "(cc-cancel)")

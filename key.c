@@ -90,9 +90,12 @@ void create_keys()
 	char ch;
 	char ctrx_map1[] = "c-x c-|";
 	char ctrx_map2[] = "c-x x";
+	char ctrc_map1[] = "c-c c-|";
+	char ctrc_map2[] = "c-c x";
 	char ctrl_map[] = "c-|";
 	char esc_map[] = "esc-|";
 	char ctrx_bytes[] = "\x18\x01";
+	char ctrc_bytes[] = "\x03\x01";
 	char ctrl_bytes[] = "\x01";
 	char esc_bytes[] = "\x1B\x61";
 
@@ -101,7 +104,7 @@ void create_keys()
 
 	/* control-a to z */
 	for (ch = 1; ch <= 26; ch++) {
-		if (ch == 9 || ch == 10 || ch == 24) continue;  /* skip tab, linefeed, ctrl-x */
+		if (ch == 3 || ch == 9 || ch == 10 || ch == 24) continue;  /* skip c-c, tab, linefeed, ctrl-x */
 		ctrl_map[2] = ch + 96;   /* ASCII a is 97 */
 		ctrl_bytes[0] = ch;
 		make_key(ctrl_map, ctrl_bytes);
@@ -127,6 +130,20 @@ void create_keys()
 		ctrx_bytes[1] = ch + 96;
 		make_key(ctrx_map2, ctrx_bytes);
 	}	
+
+	/* control-c control-a to z */
+	for (ch = 1; ch <= 26; ch++) {
+		ctrc_map1[6] = ch + 96;
+		ctrc_bytes[1] = ch;
+		make_key(ctrc_map1, ctrc_bytes);
+	}
+
+	/* control-c a to z */
+	for (ch = 1; ch <= 26; ch++) {
+		ctrc_map2[4] = ch + 96;
+		ctrc_bytes[1] = ch + 96;
+		make_key(ctrc_map2, ctrc_bytes);
+	}
 }
 
 int set_key_internal(char *name, char *funcname, char *bytes, void (*func)(void))
@@ -229,7 +246,7 @@ void setup_keys()
 
 	set_key_internal("c-x c-c",   "(exit)"                  , "\x18\x03", quit_ask);
 	set_key_internal("c-x c-f",   "(find-file)"             , "\x18\x06", i_readfile);  
-	set_key_internal("c-x c-n",   "(next-buffer"            , "\x18\x0E", next_buffer);
+	set_key_internal("c-x c-n",   "(next-buffer)"           , "\x18\x0E", next_buffer);
 	set_key_internal("c-x c-s",   "(save-buffer)"           , "\x18\x13", savebuffer);  
 	set_key_internal("c-x c-w",   "(write-file)"            , "\x18\x17", writefile);
 	set_key_internal("c-x 1",     "(delete-other-windows)"  , "\x18\x31", delete_other_windows);
