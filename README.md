@@ -262,6 +262,7 @@ Key bindings cane be checked using describe-key (c-x ?).
 * **grep** - enables searching for text in files and loading of the files at the location of the match into the editor.
 * **bufmenu** - the classic Emacs buffer menu
 * **oxo** - a basic implementation of tick-tack-toe that runs in the Editor.
+* **git** - a simple interface to the git version control tool (similar to GNU Emacs magit).
 
 ```lisp
    ;; the extensions are loaded bu using load_script
