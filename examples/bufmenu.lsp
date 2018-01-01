@@ -135,7 +135,7 @@
 (defun bufm-handle-single-key(k)
    (bufm-debug "bufm-handle-single-key")
    (setq bufm_count (get-buffer-count))
-   (cond   ( (eq k "x")
+   (cond   ( (or (eq k "x") (eq k "q"))
              (goto-line bufm-start-line)
              (beginning-of-line)
              (if (search-forward bufm-obuf)
