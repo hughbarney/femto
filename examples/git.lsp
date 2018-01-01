@@ -96,8 +96,7 @@
   (if (eq k "x")
   (progn
     (select-buffer git-obuf)
-    (kill-buffer git-buffer)
-    (setq git-ops (+ git-max-ops 1))))
+    (kill-buffer git-buffer)))
   (if (eq k "s")
   (progn
     (if (eq git-status2 "D") (setq git-minus-u "-u ") (setq git-minus-u "")) 
@@ -108,6 +107,14 @@
   (progn
     (if (eq "commit" (git-get-commit-string))
       (shell-command (concat "git commit -F " git-commit-file)))
+    (git-menu)))
+  (if (eq k "p")
+  (progn
+    (shell-command "git push origin master")
+    (select-buffer out-buffer)
+    (message "output of push command, press space to continue")
+    (update-display)
+    (get-key)
     (git-menu)))
   (if (eq k "u")
   (progn
