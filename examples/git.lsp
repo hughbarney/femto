@@ -1,24 +1,27 @@
 ;;
 ;; Simple version of magit for Femto
-;; Not yet finnished
+;; Almost completed
 ;; 
 ;; use the arrow keys to move up or down the list
 ;; then select one of the following letters
 ;;
-;; Suggested first implementation does the following
+;; This implementation does the following
 ;;   s - stage the file
 ;;   c - commit the stage files
 ;;   u - refresh the status
+;;   d - diff the changes (git style)
+;;   p - push to master
 ;;   x - exit
-;;
+;;  
 ;; (load_script "git.lsp")   ;; to load
-;; (git)                     ;; to call
+;; (git-menu)                ;; to call
 ;;
 
 (setq git-status-cmd "git status --porcelain")
 (setq git-buffer "*git*")
 (setq git-commit-buffer "*commit*")
-(setq git-obuf "*scratch*")
+(setq git-diff-buffer "*git-diff*")
+(setq git-obuf "")
 (setq out-buffer "*output*")
 (setq git-line 1)
 (setq git-name "")
@@ -33,7 +36,7 @@
 
 (defun git-menu()
   (delete-other-windows)
-  (setq git-obuf (get-buffer-name))
+  (if (eq git-obuf "") (setq git-obuf (get-buffer-name)))
   (kill-buffer git-buffer)
   (shell-command git-status-cmd)
   (rename-buffer git-buffer)
@@ -42,7 +45,8 @@
   (git-get-last-line)
   (beginning-of-buffer)
   (git-get-info)
-  (git-loop))
+  (git-loop)
+  (setq git-obuf ""))
 
 (defun git-init()
   (setq git-start-line 1)
@@ -77,7 +81,7 @@
   (setq git-ops (+ git-ops 1))
   (if (< git-ops git-max-ops)
   (progn
-    (message (concat git-status "(" git-name ") git menu: c,s,u,x"))
+    (message (concat git-status "(" git-name ") git menu: c,d,s,u,p,x"))
     (update-display)
     (setq git-key (get-key))
     (if (eq git-key "")
@@ -91,10 +95,9 @@
   (if (eq git-key "(next-line)") (git-move-line 1))
   (git-get-info))
 
-
 (defun git-handle-command-key(k)
   (cond
-    ((eq k "x")
+    ((or (eq k "x") (eq k "q"))
       (select-buffer git-obuf)
       (kill-buffer git-buffer)
       (setq git-ops (+ git-max-ops 1)))
@@ -108,6 +111,8 @@
         (shell-command (concat "git commit -F " git-commit-file)))
       (git-menu))
     ((eq k "p")
+      (message "pushing commits to master ...")
+      (update-display)
       (shell-command "git push -v origin master")
       (select-buffer out-buffer)
       (message "output of push command, press space to continue")
@@ -117,11 +122,22 @@
     ((eq k "u")
       (shell-command (concat "git reset HEAD " git-name))
       (kill-buffer out-buffer)
-      (git-menu))))
+      (git-menu))
+    ((eq k "d")
+      (git-diff))))
+
+(defun git-diff()
+  (shell-command "git diff")
+  (select-buffer out-buffer)
+  (rename-buffer git-diff-buffer)
+  (message "git diff output, navigate or 'q' to quit")
+  (update-display)
+  (view-file-to-quit)
+  (kill-buffer git-diff-buffer)
+  (git-menu))
 
 ;;
-;; not yet complete, need to write temp file so we can use it for the 
-;; commit comments, not yet figired how to make this uniq and manage the file
+;; split window and get commit comments, write to a file or abort
 ;;
 (defun git-get-commit-string()
   (kill-buffer git-commit-buffer)
@@ -161,6 +177,29 @@
     (insert-string k)
     (get-commit-key))))
 
+
+(defun view-file-to-quit()
+  (setq k (get-key))
+  (cond
+    ((eq k "q") t)
+    ((eq k "")
+      (exec-view-key)
+      (view-file-to-quit))
+    (t (view-file-to-quit))))
+
+(defun exec-view-key()
+  (setq f (get-key-funcname))
+  (if (or 
+    (eq f "(page-down)") 
+    (eq f "(page-up)")
+    (eq f "(next-line)")
+    (eq f "(previous-line)")
+    (eq f "(beginning-of-buffer)")
+    (eq f "(end-of-buffer)"))
+ (progn 
+   (execute-key)
+   (update-display))))
+
 (defun git-move-line(n)
   (setq git-line (max git-start-line (min (+ git-line n) git-last-line))))
 
@@ -197,9 +236,11 @@
    (t          "unknown")))
 
 ;;
-;; setup key binding
+;; setup key bindings
 ;;
 (set-key "c-x c-g" "(git-menu)")
+
+;; used during commit pop up window
 (set-key "c-c c-c" "(cc-commit)")
 (set-key "c-c c-q" "(cc-cancel)")
 
