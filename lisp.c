@@ -1070,6 +1070,7 @@ extern void shell_command(char *);
 extern int goto_line(int);
 extern int add_mode_global(char *);
 extern char *get_version_string(void);
+extern char *get_temp_file(void);
 
 Object *e_get_char(Object **args, GC_PARAM) { return newStringWithLength(get_char(), 1, GC_ROOTS); }
 Object *e_get_key(Object **args, GC_PARAM) { return newString(get_input_key(), GC_ROOTS); }
@@ -1121,6 +1122,12 @@ Object *e_set_clipboard(Object ** args, GC_PARAM)
 	char *sub = strdup(first->string);
 	set_scrap((unsigned char *)sub);
 	return t;
+}
+
+Object *e_get_temp_file(Object ** args, GC_PARAM)
+{
+	char *fn = get_temp_file();
+	return newStringWithLength(fn, strlen(fn), GC_ROOTS);	
 }
 
 Object *e_shell_command(Object ** args, GC_PARAM)
@@ -1601,6 +1608,7 @@ Primitive primitives[] = {
 	{"ascii->number", 1, 1, asciiToNumber},
 	{"load", 1, 1, e_load},
 	{"os.getenv", 1, 1, os_getenv},
+	{"get-temp-file", 0, 0, e_get_temp_file},
 
 	{"add-mode-global", 1, 1, e_add_mode_global},
 	{"message", 1, 1, e_message},

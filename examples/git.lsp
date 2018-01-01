@@ -124,7 +124,16 @@
   (setq r (get-commit-key))
   (if (eq r "commit")
     (progn
-      (select-buffer git-commit-buffer))))
+      (setq commit-file (get-temp-file))
+      (select-buffer git-commit-buffer)
+      (beginning-of-buffer)
+      (set-mark)
+      (end-of-buffer)
+      (copy-region)
+      (find-file commit-file)
+      (yank)
+      (save-buffer (get-buffer-name))
+      (kill-buffer git-commit-buffer))))
 
 (defun get-commit-key()
   (setq k (get-key))
@@ -181,3 +190,4 @@
 (set-key "c-x c-g" "(git-menu)")
 (set-key "c-c c-c" "(cc-commit)")
 (set-key "c-c c-q" "(cc-cancel)")
+
