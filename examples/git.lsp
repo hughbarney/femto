@@ -93,34 +93,30 @@
 
 
 (defun git-handle-command-key(k)
-  (if (eq k "x")
-  (progn
-    (select-buffer git-obuf)
-    (kill-buffer git-buffer)))
-  (if (eq k "s")
-  (progn
-    (if (eq git-status2 "D") (setq git-minus-u "-u ") (setq git-minus-u "")) 
-    (shell-command (concat "git add " git-minus-u git-name))
-    (kill-buffer out-buffer)
-    (git-menu)))
-  (if (eq k "c")
-  (progn
-    (if (eq "commit" (git-get-commit-string))
-      (shell-command (concat "git commit -F " git-commit-file)))
-    (git-menu)))
-  (if (eq k "p")
-  (progn
-    (shell-command "git push -v origin master")
-    (select-buffer out-buffer)
-    (message "output of push command, press space to continue")
-    (update-display)
-    (get-key)
-    (git-menu)))
-  (if (eq k "u")
-  (progn
-    (shell-command (concat "git reset HEAD " git-name))
-    (kill-buffer out-buffer)
-    (git-menu))))
+  (cond
+    ((eq k "x")
+      (select-buffer git-obuf)
+      (kill-buffer git-buffer))
+    ((eq k "s")
+      (if (eq git-status2 "D") (setq git-minus-u "-u ") (setq git-minus-u "")) 
+      (shell-command (concat "git add " git-minus-u git-name))
+      (kill-buffer out-buffer)
+      (git-menu))
+    ((eq k "c")
+      (if (eq "commit" (git-get-commit-string))
+        (shell-command (concat "git commit -F " git-commit-file)))
+      (git-menu))
+    ((eq k "p")
+      (shell-command "git push -v origin master")
+      (select-buffer out-buffer)
+      (message "output of push command, press space to continue")
+      (update-display)
+      (get-key)
+      (git-menu))
+    ((eq k "u")
+      (shell-command (concat "git reset HEAD " git-name))
+      (kill-buffer out-buffer)
+      (git-menu))))
 
 ;;
 ;; not yet complete, need to write temp file so we can use it for the 
