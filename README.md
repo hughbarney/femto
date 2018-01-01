@@ -11,7 +11,8 @@ Femto is an extended version of Atto Emacs with a Tiny Lisp extension languauge
 ## Goals of Femto Emacs
 
 * To be an extendable version of the Atto Emacs editor using a Tiny Lisp extension language
-* Provide a rich level of functionality in the smallest amount of code
+* Provide a number of useful extension packages written in Tiny Lisp (these include an interface to **git** (similar to GNU Emacs Magit), a small version of **dired**, a buffer management menu (**buffer menu**), and an interface to **grep**. 
+* 
 * Be easy to understand without extensive study (to encourage further experimentation).
 
 ## Why the name Femto?
@@ -35,7 +36,7 @@ Femto is an extended version of Atto Emacs with its own extension languauge
 * **Femto** was originally an intermediate project to form a codebase for the FemtoEmacs Editor [8], [9] which was a collaboration between Hugh Barney, Ed Costa and Lucas Guerra.  FemtoEmacs uses Jeff Bezanson's Femtolisp LISP [10] implementation as the basis for its extension language.  However the Femtolisp codebase is in excess of 12K line of code an fairly difficult to understand how to use it inside an embedded application.
 * In late 2016 Hugh Barney decided to look for a smaller lisp implementation for Femto and settled on Tiny-Lisp[7] by Mattias Pirstitz.
 * **Zepl** was an initial project that established the suitability of Tiny-Lisp for use within an Emacs type editor. The results surpassed expectations.
-* In late 2017 Hugh Barney decided to return to the *Femto* editor and extend it using Tiny-Lisp.
+* In late 2017 Hugh Barney decided to return to the **Femto** editor and extend it using Tiny-Lisp.
 
 ## Comparisons with Other Emacs Implementations
 
