@@ -110,7 +110,7 @@
     (git-menu)))
   (if (eq k "p")
   (progn
-    (shell-command "git push origin master")
+    (shell-command "git push -v origin master")
     (select-buffer out-buffer)
     (message "output of push command, press space to continue")
     (update-display)
