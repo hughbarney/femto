@@ -22,6 +22,7 @@
 (setq out-buffer "*output*")
 (setq git-line 1)
 (setq git-name "")
+(setq git-commit-file "")
 (setq git-start-line 1)
 (setq git-last-line 1)
 (setq git-status1 ".")
@@ -90,26 +91,28 @@
   (if (eq git-key "(next-line)") (git-move-line 1))
   (git-get-info))
 
+
 (defun git-handle-command-key(k)
-   (if (eq k "x")
-   (progn
-        (select-buffer git-obuf)
-        (kill-buffer git-buffer)
-        (setq git-ops (+ git-max-ops 1))))
-   (if (eq k "s")
-   (progn
-        (shell-command (concat "git add " git-name))
-        (kill-buffer out-buffer)
-        (git-menu)))
-   (if (eq k "c")
-   (progn
-        (git-get-commit-string)
-        (git-menu)))
-   (if (eq k "u")
-   (progn
-        (shell-command (concat "git reset HEAD " git-name))
-        (kill-buffer out-buffer)
-        (git-menu))))
+  (if (eq k "x")
+  (progn
+    (select-buffer git-obuf)
+    (kill-buffer git-buffer)
+    (setq git-ops (+ git-max-ops 1))))
+  (if (eq k "s")
+  (progn
+    (shell-command (concat "git add " git-name))
+    (kill-buffer out-buffer)
+    (git-menu)))
+  (if (eq k "c")
+  (progn
+    (if (eq "commit" (git-get-commit-string))
+      (shell-command (concat "git commit -F " git-commit-file)))
+    (git-menu)))
+  (if (eq k "u")
+  (progn
+    (shell-command (concat "git reset HEAD " git-name))
+    (kill-buffer out-buffer)
+    (git-menu))))
 
 ;;
 ;; not yet complete, need to write temp file so we can use it for the 
@@ -124,16 +127,20 @@
   (setq r (get-commit-key))
   (if (eq r "commit")
     (progn
-      (setq commit-file (get-temp-file))
+      (setq git-commit-file (get-temp-file))
       (select-buffer git-commit-buffer)
       (beginning-of-buffer)
       (set-mark)
       (end-of-buffer)
       (copy-region)
-      (find-file commit-file)
+      (find-file git-commit-file)
       (yank)
       (save-buffer (get-buffer-name))
-      (kill-buffer git-commit-buffer))))
+      (kill-buffer (get-buffer-name))
+      (kill-buffer git-commit-buffer)
+      "commit")
+    (progn
+      "cancel")))
 
 (defun get-commit-key()
   (setq k (get-key))
