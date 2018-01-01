@@ -100,7 +100,8 @@
     (setq git-ops (+ git-max-ops 1))))
   (if (eq k "s")
   (progn
-    (shell-command (concat "git add " git-name))
+    (if (eq git-status2 "D") (setq git-minus-u "-u ") (setq git-minus-u "")) 
+    (shell-command (concat "git add " git-minus-u git-name))
     (kill-buffer out-buffer)
     (git-menu)))
   (if (eq k "c")
