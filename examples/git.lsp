@@ -1,26 +1,60 @@
 ;;
 ;; Simple version of magit for Femto
-;; Almost completed
-;; 
-;; use the arrow keys to move up or down the list
-;; then select one of the following letters
 ;;
-;; This implementation does the following
-;;   s - stage the file
-;;   c - commit the stage files
-;;   u - refresh the status
-;;   d - diff the changes (git style)
-;;   p - push to master
-;;   x - exit
-;;  
 ;; (load_script "git.lsp")   ;; to load
 ;; (git-menu)                ;; to call
 ;;
+
+
+(setq git-help-string
+"
+Simple version of magit for Femto
+Hugh Barney, Jan 2018
+
+When invoked the output of 'git status --porcelain' is displayed
+This shows a list of untracked and unstaged changes
+The first column shows the status of any staged changes
+The second column shows the status of any unstaged changes
+
+----staged chages
+|-----unstaged changes
+SU
+----------sample window---------
+ M examples/git.lsp
+?? dd
+?? log.txt
+?? ww
+
+-------------------------------
+
+The key to the file status in the first and second columns is:
+
+ M  modified 
+ A  added 
+ D  deleted 
+ R  renamed 
+ C  copied 
+ U  updated 
+ ?  untracked 
+
+
+Use the Up and Down arrow keys to move up or down the list of files
+then select one of the following letters to operate on the file
+
+  s - stage the file
+  c - commit the stage files
+  u - un-stage the file
+  d - diff the changes (git style)
+  x - exit
+  p - push to master
+
+")
 
 (setq git-status-cmd "git status --porcelain")
 (setq git-buffer "*git*")
 (setq git-commit-buffer "*commit*")
 (setq git-diff-buffer "*git-diff*")
+(setq git-help-buffer "*help*")
 (setq git-obuf "")
 (setq out-buffer "*output*")
 (setq git-line 1)
@@ -81,7 +115,7 @@
   (setq git-ops (+ git-ops 1))
   (if (< git-ops git-max-ops)
   (progn
-    (message (concat git-status "(" git-name ") git menu: c,d,s,u,p,x"))
+    (message (concat git-status "(" git-name ") git menu: c,d,s,u,p,x h=help"))
     (update-display)
     (setq git-key (get-key))
     (if (eq git-key "")
@@ -123,6 +157,8 @@
       (shell-command (concat "git reset HEAD " git-name))
       (kill-buffer out-buffer)
       (git-menu))
+    ((eq k "h")
+      (git-help))
     ((eq k "d")
       (git-diff))))
 
@@ -134,6 +170,19 @@
   (update-display)
   (view-file-to-quit)
   (kill-buffer git-diff-buffer)
+  (git-menu))
+
+(defun git-help()
+  (setq buf (get-buffer-name))
+  (select-buffer git-help-buffer)
+  (insert-string git-help-string)
+  (beginning-of-buffer)
+  (message "help, 'q' to quit")
+  (update-display)
+  (view-file-to-quit)
+  (select-buffer buf)
+  (delete-other-windows)
+  (kill-buffer git-help-buffer)
   (git-menu))
 
 ;;
