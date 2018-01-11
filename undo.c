@@ -20,7 +20,7 @@ undo_tt *new_undo()
  * called by specific functions to register details so that they can be reversed
  * later by calling the equal and opposite function.
  */
-void add_undo(buffer_t *bp, char type, point_t p, char_t *str)
+void add_undo(buffer_t *bp, char type, point_t p, char_t *str, char_t *rep)
 {
 	int len = 1;
 	assert(bp != NULL);
@@ -71,8 +71,9 @@ void add_undo(buffer_t *bp, char type, point_t p, char_t *str)
 		bp->b_utail = up;
 		up->u_type = type;
 		up->u_point = p;
-
 		up->u_string = (char_t *)strdup((char *)str);
+		if (type == UNDO_T_REPLACE)
+			up->u_replace = (char_t *)strdup((char *)rep);
 		//debug_undo("ADD-new", up, bp);
 	}
 }
@@ -194,6 +195,12 @@ undo_tt *execute_undo(undo_tt *up)
 		curbp->b_mark  = up->u_point + strlen((char *)up->u_string);
 		kill_region();
 		break;
+
+	/* we replace the replace string with the original */
+	case UNDO_T_REPLACE:
+		curbp->b_point = up->u_point;
+		replace_string(curbp, (char *)up->u_replace, (char *)up->u_string, strlen((char *)up->u_replace), strlen((char *)up->u_string));
+		break;
 	}
 
 	curbp->b_ucnt = -1;
@@ -208,14 +215,6 @@ void undo_command()
 	int continue_undo = 1;
 	undo_tt *up = curbp->b_utail;
 	curbp->b_ucnt = -1;
-
-	/* do old style undo if we have not enabled global_undo_mode in init.lsp */
-	/*
-	if (global_undo_mode == 0) {
-		undo();
-		return;
-	}
-	*/
 
 	if (up == NULL) {
 		msg("No undo recorded for this buffer");
@@ -422,6 +421,8 @@ char *get_undo_type_name(undo_tt *up)
 		return STR_T_DELETE;
 	case UNDO_T_INSAT:
 		return STR_T_INSAT;
+	case UNDO_T_REPLACE:
+		return STR_T_REPLACE;
 	}
 
 	return STR_T_NONE;
@@ -436,9 +437,11 @@ void list_undos()
 void dump_undos(buffer_t *bp)
 {
 	char_t *str;
+	char_t *rep;
 	int count = 0;
 	int size = 0;
-	char_t line[41];
+	char_t buf1[41];
+	char_t buf2[21];
 	char report_line[90];
 	undo_tt *prev;
 	buffer_t *list_bp = find_buffer("*undos*", TRUE);
@@ -456,10 +459,21 @@ void dump_undos(buffer_t *bp)
 
 	while (prev != NULL) {
 		str = (prev->u_string != NULL ? prev->u_string : (char_t *)" ");
+		rep = (prev->u_replace != NULL ? prev->u_replace : (char_t *)" ");
 		size = get_undo_size(prev);
-		safe_strncpy((char *)line, (char *)str, 40);
-		remove_control_chars(line);
-		sprintf(report_line, "%03d %6s %9ld %4d %s\n",  ++count, get_undo_type_name(prev), prev->u_point, size, line);
+
+		if (prev->u_type == UNDO_T_REPLACE) {
+			safe_strncpy((char *)buf1, (char *)str, 20);
+			remove_control_chars(buf1);
+			safe_strncpy((char *)buf2, (char *)rep, 20);
+			remove_control_chars(buf2);
+			sprintf(report_line, "%03d %6s %9ld %4d %s -> %s\n",  ++count, get_undo_type_name(prev), prev->u_point, size, buf1, buf2);
+		} else {
+			safe_strncpy((char *)buf1, (char *)str, 40);
+			remove_control_chars(buf1);
+			sprintf(report_line, "%03d %6s %9ld %4d %s\n",  ++count, get_undo_type_name(prev), prev->u_point, size, buf1);
+		}
+
 		insert_string(report_line);
 		prev = prev->u_prev;
 	}

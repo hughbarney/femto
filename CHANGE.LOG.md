@@ -1,3 +1,7 @@
+## Femto 2.6 11 January 2018
+* fixed undo so that it handles replaced text
+* fixed creation of c-x ` key
+
 ## Femto 2.5 10 Demember 2017
 * updated lisp function reference
 * retored kill-to-eol back to femto.rc, added grep.lsp
@@ -7,7 +11,6 @@
 * removed hltest.c from src directory, updated TODO.txt
 * added clear-message-line, forward-word, forward-page, backward-page, backward-word
 * added esc-.; some changes to femto.rc; started testfunc.lsp; started prompt.lsp; wrote list examples
-
 
 ## Femto 2.4 7 December 2017
 * added (get-buffer-name) (string.ref) (string.trim), fixed bufmenu.lsp, removed c code for string_trim().

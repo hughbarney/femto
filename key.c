@@ -261,6 +261,7 @@ void setup_keys()
 	set_key_internal("c-x @",     "(shell-command)"         , "\x18\x40", i_shell_command);
 	set_key_internal("c-x (",     "(user-func)"             , "\x18\x28", user_func);
 	set_key_internal("c-x )",     "(user-func)"             , "\x18\x29", user_func);
+	set_key_internal("c-x `",     "(user-func)"             , "\x18\x60", user_func);
 	set_key_internal("c-space",   "(set-mark)"              , "\x00", i_set_mark);
 	set_key_internal("c-]",       E_NOT_BOUND               , "\x1D", user_func);
 	set_key_internal("resize",     "(resize)"               , "\x9A", resize_terminal);

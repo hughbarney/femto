@@ -76,28 +76,42 @@ void query_replace(void)
 			}
 		}
 
-		if (rlen > slen) {
-			movegap(curbp, found);
-			/*check enough space in gap left */
-			if (rlen - slen < curbp->b_egap - curbp->b_gap)
-				growgap(curbp, rlen - slen);
-			/* shrink gap right by r - s */
-			curbp->b_gap = curbp->b_gap + (rlen - slen);
-		} else if (slen > rlen) {
-			movegap(curbp, found);
-			/* stretch gap left by s - r, no need to worry about space */
-			curbp->b_gap = curbp->b_gap - (slen - rlen);
-		} else {
-			/* if rlen = slen, we just overwrite the chars, no need to move gap */
-		}
-
-		/* now just overwrite the chars at point in the buffer */
-		l_point = curbp->b_point;
-		memcpy(ptr(curbp, curbp->b_point), replace, rlen * sizeof (char_t));
-		add_mode(curbp, B_MODIFIED);
-		curbp->b_point = found - (slen - rlen); /* end of replcement */
+		l_point = curbp->b_point; /* save last point */
+		replace_string(curbp, searchtext, replace, slen, rlen);
 		numsub++;
 	}
 
 	msg("%d substitutions", numsub);
+}
+
+void replace_string(buffer_t *bp, char *s, char *r, int slen, int rlen)
+{
+	/*
+	 * we call this function with the point set at the start of the search string
+	 * search places the point at the end of the search
+	 * to claculate the value of found we add on the length of the search string
+	 */
+	point_t found = bp->b_point + slen;
+
+	if (rlen > slen) {
+		movegap(bp, found);
+		/*check enough space in gap left */
+		if (rlen - slen < bp->b_egap - bp->b_gap)
+			growgap(bp, rlen - slen);
+		/* shrink gap right by r - s */
+		bp->b_gap = bp->b_gap + (rlen - slen);
+	} else if (slen > rlen) {
+		movegap(bp, found);
+		/* stretch gap left by s - r, no need to worry about space */
+		bp->b_gap = bp->b_gap - (slen - rlen);
+	} else {
+		/* if rlen = slen, we just overwrite the chars, no need to move gap */
+	}
+
+	/* now just overwrite the chars at point in the buffer */
+	memcpy(ptr(bp, bp->b_point), r, rlen * sizeof (char_t));
+	add_mode(bp, B_MODIFIED);
+
+	add_undo(curbp, UNDO_T_REPLACE, curbp->b_point, (char_t *)s, (char_t *)r);
+	curbp->b_point = found - (slen - rlen); /* set point to end of replacement */
 }

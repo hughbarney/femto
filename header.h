@@ -20,11 +20,11 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.4"
+#define E_VERSION       "2.6"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND	"<not bound>"
 #define E_INITFILE      "femto.rc"
-#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, Dec 2017, by Hugh Barney,  No warranty."
+#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, January 2018, by Hugh Barney,  No warranty."
 
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
@@ -63,6 +63,7 @@ int mkstemp(char *);
 #define UNDO_T_YANK        4
 #define UNDO_T_DELETE      5
 #define UNDO_T_INSAT       6
+#define UNDO_T_REPLACE     7
 
 #define STR_T_INSERT       "INSERT"
 #define STR_T_BACKSP       "BACKSP"
@@ -70,6 +71,7 @@ int mkstemp(char *);
 #define STR_T_YANK         "YANK  "
 #define STR_T_DELETE       "DELETE"
 #define STR_T_INSAT        "INSAT "
+#define STR_T_REPLACE      "REPLC "
 #define STR_T_NONE         "NONE  "
 
 /* edit field attributes */
@@ -115,6 +117,7 @@ typedef struct command_t {
 typedef struct undo_tt {
 	point_t  u_point;
 	char_t  *u_string;
+	char_t  *u_replace;
 	char_t   u_type;
 	struct undo_tt *u_prev;
 } undo_tt;
@@ -343,6 +346,7 @@ extern char* get_buffer_name(buffer_t *);
 extern char* get_buffer_modeline_name(buffer_t *);
 extern void get_line_stats(int *, int *);
 extern void query_replace(void);
+extern void replace_string(buffer_t *, char *, char *, int, int);
 extern window_t *new_window();
 extern window_t *split_current_window(void);
 extern window_t *find_window(char *);
@@ -377,7 +381,7 @@ extern int match_string_position(string_list_t *, int);
 extern int shortest_string_len(string_list_t *);
 extern char *shortest_common_string(string_list_t *);
 extern undo_tt *new_undo();
-extern void add_undo(buffer_t *, char, point_t, char_t *);
+extern void add_undo(buffer_t *, char, point_t, char_t *, char_t *);
 extern void free_undos(undo_tt *);
 extern void list_undos(void);
 extern void dump_undos(buffer_t *);
@@ -431,7 +435,7 @@ extern int select_buffer(char *);
 extern int save_buffer_byname(char *);
 extern void msg(char *, ...);
 extern void clear_message_line(void);
-extern char *string_trim(char *);
+//extern char *string_trim(char *);
 extern char *get_current_bufname();
 extern void log_debug(char *);
 extern void set_scrap(unsigned char *);

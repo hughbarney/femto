@@ -176,7 +176,7 @@ void insert()
 		*curbp->b_gap++ = the_char[0]; 
 		curbp->b_point = pos(curbp, curbp->b_egap);
 		/* the point is set so that and undo will backspace over the char */
-		add_undo(curbp, UNDO_T_INSERT, curbp->b_point, the_char);
+		add_undo(curbp, UNDO_T_INSERT, curbp->b_point, the_char, NULL);
 	}
 	add_mode(curbp, B_MODIFIED);
 }
@@ -212,7 +212,7 @@ void insert_at()
 		curbp->b_point = pos(curbp, curbp->b_egap);
 		curbp->b_point--; /* move point back to where it was before, should always be safe */
 		/* the point is set so that and undo will DELETE the char */
-		add_undo(curbp, UNDO_T_INSAT, curbp->b_point, the_char);
+		add_undo(curbp, UNDO_T_INSAT, curbp->b_point, the_char, NULL);
 	}
 
 	add_mode(curbp, B_MODIFIED);
@@ -234,7 +234,7 @@ void backspace()
 		the_char[n] = '\0'; /* null terminate, the backspaced char(s) */
 		curbp->b_point = pos(curbp, curbp->b_egap);
 		//debug("point after bs = %ld\n", curbp->b_point);
-		add_undo(curbp, UNDO_T_BACKSPACE, curbp->b_point, the_char);
+		add_undo(curbp, UNDO_T_BACKSPACE, curbp->b_point, the_char, NULL);
 	}
 
 	curbp->b_point = pos(curbp, curbp->b_egap);
@@ -256,7 +256,7 @@ void delete()
 		curbp->b_egap += n;
 		curbp->b_point = pos(curbp, curbp->b_egap);
 		add_mode(curbp, B_MODIFIED);
-		add_undo(curbp, UNDO_T_DELETE, curbp->b_point, the_char);
+		add_undo(curbp, UNDO_T_DELETE, curbp->b_point, the_char, NULL);
 	}
 }
 
@@ -467,7 +467,7 @@ void copy_cut(int cut)
 		*(scrap + nscrap) = '\0';  /* null terminate for insert_string */
 		if (cut) {
 			//debug("CUT: pt=%ld nscrap=%d\n", curbp->b_point, nscrap);
-			add_undo(curbp, UNDO_T_KILL, (curbp->b_point < curbp->b_mark ? curbp->b_point : curbp->b_mark), scrap);
+			add_undo(curbp, UNDO_T_KILL, (curbp->b_point < curbp->b_mark ? curbp->b_point : curbp->b_mark), scrap, NULL);
 			curbp->b_egap += nscrap; /* if cut expand gap down */
 			curbp->b_point = pos(curbp, curbp->b_egap); /* set point to after region */
 			add_mode(curbp, B_MODIFIED);
@@ -520,7 +520,7 @@ void insert_string(char *str)
 	} else if (len < curbp->b_egap - curbp->b_gap || growgap(curbp, len)) {
 		curbp->b_point = movegap(curbp, curbp->b_point);
 		//debug("INS STR: pt=%ld len=%d\n", curbp->b_point, strlen((char *)str));
-		add_undo(curbp, UNDO_T_YANK, curbp->b_point, (char_t *)str);
+		add_undo(curbp, UNDO_T_YANK, curbp->b_point, (char_t *)str, NULL);
 		memcpy(curbp->b_gap, str, len * sizeof (char_t));
 		curbp->b_gap += len;
 		curbp->b_point = pos(curbp, curbp->b_egap);
