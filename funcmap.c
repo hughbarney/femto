@@ -81,8 +81,6 @@ void check_maps()
 	}
 }
 
-typedef void (*void_func)(void);
-
 /* translate from function name to function pointer */
 void_func name_to_function(const char *fname)
 {

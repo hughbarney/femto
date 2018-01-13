@@ -81,7 +81,6 @@ void right()
  */
 int utf8_size(char_t c)
 {
-	//debug("%d ", c);
 	if (c >= 192 && c < 224) return 2;
 	if (c >= 224 && c < 240) return 3;
 	if (c >= 240 && c < 248) return 4;
@@ -825,21 +824,18 @@ void eval_block()
 	reset_output_stream();
 }
 
+/* this is called for every user key setup by a call to set_key */
 void user_func()
 {
 	char *output;
 
-	user_func_count++;
-	//debug("\nSTART: user_func_count=%d\n", user_func_count);	
 	assert(key_return != NULL);
 	if (0 == strcmp(key_return->k_funcname, E_NOT_BOUND)) {
 		msg(E_NOT_BOUND);
-		user_func_count--;
 		return;
 	}
 
 	reset_output_stream();
-	//debug("user_func: k_funcname=%s\n", key_return->k_funcname);
 	output = call_lisp(key_return->k_funcname);
 
 	/* show errors on message line */
@@ -850,6 +846,4 @@ void user_func()
 		msg(buf);
 	}	
 	reset_output_stream();
-	user_func_count--;
-	//debug("END: user_func_count=%d\n", user_func_count);	
 }

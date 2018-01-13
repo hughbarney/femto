@@ -38,7 +38,6 @@
 extern void debug(char *,...);
 #define F_NONE          0
 #define F_CLEAR         1
-
 typedef long point_t;
 
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)

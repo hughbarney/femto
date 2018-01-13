@@ -77,12 +77,11 @@ int mkstemp(char *);
 /* edit field attributes */
 #define F_NONE          0
 #define F_CLEAR         1
-
 #define ZERO_STRING(X) X[0]='\0';
 
 typedef unsigned char char_t;
 typedef long point_t;
-#define FEMTO_POINT_T      1
+typedef void (*void_func)(void);
 
 typedef enum {
 	B_MODIFIED = 0x01,
@@ -252,209 +251,230 @@ extern char *str_shell_cmd;
 extern char *str_buffers;
 extern char *str_clip_too_big;
 
-extern void free_string_list(string_list_t *);
-extern string_list_t *match_functions(const char *);
-extern void apropos_command(void);
-extern void list_bindings(void);
-extern void fatal(char *);
-extern char *get_file_extension(char *);
-extern void display_char(buffer_t *, char_t *);
-extern void display(window_t *, int);
-extern int utf8_size(char_t);
-extern int prev_utf8_char_size(void);
-extern void display_utf8(buffer_t *, char_t, int);
-extern void dispmsg(void);
-extern void modeline(window_t *);
-extern point_t lnstart(buffer_t *, point_t);
-extern point_t lncolumn(buffer_t *, point_t, int);
-extern point_t segstart(buffer_t *, point_t, point_t);
-extern point_t segnext(buffer_t *, point_t, point_t);
-extern point_t upup(buffer_t *, point_t);
-extern point_t dndn(buffer_t *, point_t);
 
-extern char_t *get_key(keymap_t *, keymap_t **);
-extern keymap_t *new_key(char *, char *);
-extern void execute_key(void);
-extern void make_key(char *, char *);
-extern void create_keys();
-extern int set_key_internal(char *, char *, char *, void (*)(void));
-extern int set_key(char *, char *);
-extern void setup_keys();
-
-extern int growgap(buffer_t *, point_t);
-extern point_t movegap(buffer_t *, point_t);
-extern point_t pos(buffer_t *, char_t *);
-extern char_t *ptr(buffer_t *, point_t);
-extern int posix_file(char *);
-extern int save_buffer(buffer_t *,char *);
-extern int e_load_file(char *);
-extern int insert_file(char *, int);
-extern void append_string(buffer_t *, char *);
-extern void undo(void);
-extern void backspace(void);
-extern void set_mark(void);
-extern void unmark(void);
-extern int check_region(void);
-extern void copy_cut(int);
-extern void delete(void);
-extern void toggle_overwrite_mode(void);
-extern void down(void);
-extern void insert(void);
-extern void insert_at(void);
-extern void yank(void);
-extern void quit(void);
-extern int yesno(int);
-extern void quit_ask(void);
-extern void redraw(void);
-extern void i_readfile(void);
-extern void insertfile(void);
-extern void right(void);
-extern void version(void);
-extern char *get_version_string();
-extern void writefile(void);
-extern void savebuffer(void);
-extern void clear_buffer(void);
-extern void zero_buffer(buffer_t *);
-extern point_t document_size(buffer_t *);
-extern int buffer_is_empty(buffer_t *);
-extern void debug(char *, ...);
-extern void load_config(void);
-extern void log_debug_message(char *, ...);
-extern void debug_stats(char *);
-extern void showpos(void);
-extern void killtoeol(void);
-extern void i_gotoline(void);
-extern void search(void);
-extern void query_replace(void);
-extern point_t line_to_point(int);
-extern void update_search_prompt(char *, char *);
-extern void display_search_result(point_t, int, char *, char *);
-extern void move_to_search_result(point_t);
-
-extern buffer_t *find_buffer(char *, int);
+/* functions in buffer.c */
 extern buffer_t *find_buffer_by_fname(char *);
-extern void add_mode(buffer_t *, buffer_flags_t);
-extern void delete_mode(buffer_t *, buffer_flags_t);
-extern void buffer_init(buffer_t *);
-extern int delete_buffer(buffer_t *);
-extern void next_buffer(void);
-extern int count_buffers(void);
-extern int count_windows(void);
-extern int modified_buffers(void);
-extern void killbuffer(void);
-extern char* get_buffer_name(buffer_t *);
+extern buffer_t *find_buffer(char *, int);
+extern char* get_buffer_filename(buffer_t *);
 extern char* get_buffer_modeline_name(buffer_t *);
-extern void get_line_stats(int *, int *);
-extern void query_replace(void);
-extern void replace_string(buffer_t *, char *, char *, int, int);
-extern window_t *new_window();
-extern window_t *split_current_window(void);
-extern window_t *find_window(char *);
-extern window_t *popup_window(char *);
-extern void one_window(window_t *);
-extern void free_other_windows();
-extern void w2b(window_t *);
-extern void b2w(window_t *);
-extern void b2w_all_windows(buffer_t *);
-extern void mark_all_windows(void);
-extern void associate_b2w(buffer_t *, window_t *);
-extern void disassociate_b(window_t *);
-extern void hijack_window(window_t *, buffer_t *);
-extern void restore_hijacked_window(window_t *);
-extern int getfilename(char *, char *, int);
-extern void display_prompt_and_response(char *, char *);
-extern void i_shell_command(void);
-extern char* get_temp_file(void);
-extern void match_parens(void);
-extern void match_paren_forwards(buffer_t *, char, char);
-extern void match_paren_backwards(buffer_t *, char, char);
+extern char* get_buffer_name(buffer_t *);
+extern char *get_current_bufname();
+extern int buffer_is_empty(buffer_t *);
+extern int count_buffers();
+extern int delete_buffer(buffer_t *);
+extern int delete_buffer_byname(char *);
+extern int modified_buffers();
+extern int save_buffer_byname(char *);
+extern int select_buffer(char *);
+extern point_t document_size(buffer_t *);
+extern void add_mode(buffer_t *, buffer_flags_t);
+extern void buffer_init(buffer_t *);
+extern void delete_mode(buffer_t *, buffer_flags_t);
+extern void list_buffers();
+extern void next_buffer();
+extern void zero_buffer(buffer_t *);
 
-extern void repl(void);
+/* functions in command.c */
+extern char *get_char();
+extern char *get_clipboard();
+extern char* get_temp_file();
+extern char *get_version_string();
+extern char *rename_current_buffer(char *);
+extern int add_mode_global(char *);
+extern int goto_line(int);
+extern int i_check_region();
+extern int prev_utf8_char_size();
+extern int utf8_size(char_t c);
+extern int yesno(int flag);
+extern point_t get_point();
+extern unsigned char *get_scrap();
+extern void append_string(buffer_t *, char *);
+extern void backspace();
+extern void backward_page();
+extern void backward_word();
+extern void beginning_of_buffer();
+extern void copy_cut(int cut);
+extern void copy_region();
+extern void delete();
+extern void down();
+extern void end_of_buffer();
 extern void eval_block();
-extern void execute_command();
-extern void remove_control_chars(char_t *);
-extern void make_buffer_name(char *, char *);
-extern void make_buffer_name_uniq(char *);
-extern void safe_strncpy(char *, char *, int);
+extern void forward_page();
+extern void forward_word();
+extern void i_gotoline();
+extern void insert();
+extern void insert_at();
+extern void insertfile();
+extern void insert_string(char *);
+extern void i_readfile();
+extern void i_set_mark();
+extern void i_shell_command();
+extern void killbuffer();
+extern void kill_region();
+extern void killtoeol();
+extern void left();
+extern void lnbegin();
+extern void lnend();
+extern void log_debug(char *);
+extern void log_debug_message(char *format, ...);
+extern void log_message(char *);
+extern void match_paren_backwards(buffer_t *, char, char);
+extern void match_paren_forwards(buffer_t *, char, char);
+extern void match_parens();
+extern void quit();
+extern void quit_ask();
+extern void readfile(char *);
+extern void redraw();
+extern void repl();
 extern void resize_terminal();
+extern void right();
+extern void savebuffer();
+extern void set_mark();
+extern void set_point(point_t);
+extern void set_scrap(unsigned char *);
+extern void shell_command(char *);
+extern void showpos();
+extern void toggle_overwrite_mode();
+extern void unmark();
+extern void up();
+extern void user_func();
+extern void version();
+extern void writefile();
+extern void yank();
+
+/* functions in complete.c */
+extern int getfilename(char *, char *, int);
+
+/* functions in display.c */
+extern point_t dndn(buffer_t *, point_t);
+extern point_t lncolumn(buffer_t *, point_t, int);
+extern point_t lnstart(buffer_t *, register point_t);
+extern point_t segnext(buffer_t *, point_t, point_t);
+extern point_t segstart(buffer_t *, point_t, point_t);
+extern point_t upup(buffer_t *, point_t);
+extern void b2w_all_windows(buffer_t *);
+extern void b2w(window_t *w);
+extern void clear_message_line();
+extern void display_char(buffer_t *, char_t *);
+extern void display_prompt_and_response(char *, char *);
+extern void display_utf8(buffer_t *, char_t, int);
+extern void display(window_t *, int);
+extern void dispmsg();
+extern void modeline(window_t *);
+extern void update_display();
+extern void w2b(window_t *);
+
+/* functions in funcmap.c */
+extern char *shortest_common_string(string_list_t *);
+extern int count_string_list(string_list_t *);
 extern int match_string_position(string_list_t *, int);
 extern int shortest_string_len(string_list_t *);
-extern char *shortest_common_string(string_list_t *);
-extern undo_tt *new_undo();
-extern void add_undo(buffer_t *, char, point_t, char_t *, char_t *);
-extern void free_undos(undo_tt *);
-extern void list_undos(void);
-extern void dump_undos(buffer_t *);
-extern int count_undos(buffer_t *);
-extern int get_total_undo_size(buffer_t *);
-extern int get_undo_size(undo_tt *);
-extern void list_undo_stats();
-extern void append_undo_char(undo_tt *, char);
-extern void append_undo_string(undo_tt *, char_t *);
-extern void undo_command(void);
-extern undo_tt *execute_undo(undo_tt *);
-extern int get_undo_again(void);
-extern char *get_undo_type_name(undo_tt *);
-extern void discard_buffer_undo_history(buffer_t *);
-extern int get_buf_utf8_size(char_t *, int);
-extern void debug_undo(char *, undo_tt *, buffer_t *);
-extern void user_func(void);
+extern string_list_t *match_functions(const char *);
+extern void apropos_command();
+extern void check_maps();
+extern void execute_command();
+extern void free_string_list(string_list_t *);
+extern void_func name_to_function(const char *);
+extern void list_bindings();
 
-extern void insert_string(char *);
-extern void left(void);
-extern void right(void);
-extern void backsp(void);
-extern void lnbegin(void);
-extern void lnend(void);
-extern void beginning_of_buffer(void);
-extern void end_of_buffer(void);
-extern void backward_word(void);
-extern void forward_word(void);
-extern void backward_page(void);
-extern void forward_page(void);
-extern void copy_region(void);
-extern void delete_other_windows(void);
-extern void other_window(void);
-extern int goto_line(int);
-extern void kill_region(void);
-extern void list_buffers(void);
-extern void down(void);
-extern void up(void);
-extern point_t search_forward(char *);
-extern void move_to_search_result(point_t);
-extern point_t search_backwards(char *);
-extern void i_set_mark(void);
-extern void split_window(void);
-extern void paste(void);
-extern void eval_block(void);
-extern char *get_version_string(void);
-extern int count_buffers(void);
-extern void update_display(void);
-extern int delete_buffer_byname(char *);
-extern int select_buffer(char *);
-extern int save_buffer_byname(char *);
-extern void msg(char *, ...);
-extern void clear_message_line(void);
-//extern char *string_trim(char *);
-extern char *get_current_bufname();
-extern void log_debug(char *);
-extern void set_scrap(unsigned char *);
-extern unsigned char *get_scrap(void);
-extern void log_message(char *);
-extern int add_mode_global(char *);
-extern void discard_undo_history(void);
-extern void shell_command(char *);
-extern int getinput(char *, char *, int, int);
-extern char *rename_current_buffer(char *);
-extern void readfile(char *);
-extern void set_parse_state(buffer_t *, point_t);
+/* functions in gap.c */
+extern char_t * ptr(buffer_t *, register point_t);
+extern int e_load_file(char *);
+extern int growgap(buffer_t *, point_t);
+extern int insert_file(char *, int);
+extern int posix_file(char *);
+extern int save_buffer(buffer_t *, char *);
+extern point_t line_to_point(int);
+extern point_t movegap(buffer_t *, point_t);
+extern point_t pos(buffer_t *, register char_t *);
+extern void clear_buffer();
+extern void get_line_stats(int *, int *);
+
+/* functions in hilite.c */
+extern char_t get_at(buffer_t *, point_t);
+extern int is_symbol(char_t);
 extern int parse_text(buffer_t *, point_t);
+extern void set_parse_state(buffer_t *, point_t);
 
-/* lisp.c */
-extern void reset_output_stream(void);
-extern int init_lisp();
+/* functions in key.c */
+extern char *get_input_key();
+extern char *get_key_funcname();
+extern char *get_key_name();
+extern char_t *get_key(keymap_t *, keymap_t **);
+extern int getinput(char *, char *, int, int);
+extern int set_key(char *, char *);
+extern int set_key_internal(char *, char *, char *, void (*)(void));
+extern keymap_t *new_key(char *, char *);
+extern void create_keys();
+extern void execute_key();
+extern void make_key(char *, char *);
+extern void setup_keys();
+
+/* functions in lisp.c */
 extern char *call_lisp(char *);
 extern char *load_file(int);
+extern int init_lisp();
+extern void reset_output_stream(void);
 
+/* functions in main.c */
+extern int main(int argc, char **);
+extern void debug(char *format, ...);
+extern void debug_stats(char *s);
+extern void fatal(char *msg);
+extern void load_config();
+extern void msg(char *m, ...);
 
-extern int user_func_count;
+/* functions in replace.c */
+extern void query_replace(void);
+extern void replace_string(buffer_t *, char *, char *, int, int);
+
+/* functions in search.c */
+extern point_t search_backwards(char *);
+extern point_t search_forward(char *);
+extern void display_search_result(point_t found, int, char *, char *);
+extern void move_to_search_result(point_t);
+extern void search();
+
+/* functions in undo.c */
+extern char *get_undo_type_name(undo_tt *);
+extern int count_undos(buffer_t *);
+extern int get_buf_utf8_size(char_t *, int);
+extern int get_total_undo_size(buffer_t *);
+extern int get_undo_again();
+extern int get_undo_size(undo_tt *);
+extern undo_tt *execute_undo(undo_tt *);
+extern undo_tt *new_undo();
+extern void add_undo(buffer_t *, char, point_t, char_t *, char_t *);
+extern void append_undo_string(undo_tt *, char_t *);
+extern void debug_undo(char *, undo_tt *, buffer_t *);
+extern void discard_buffer_undo_history(buffer_t *);
+extern void discard_undo_history();
+extern void dump_undos(buffer_t *);
+extern void free_undos(undo_tt *);
+extern void list_undos();
+extern void list_undo_stats();
+extern void undo_command();
+
+/* functions in utils.c */
+extern void make_buffer_name(char *, char *);
+extern void make_buffer_name_uniq(char *);
+extern void remove_control_chars(char_t *);
+extern void safe_strncpy(char *, char *, int);
+
+/* functions in window.c */
+extern int count_windows();
+extern void associate_b2w(buffer_t *, window_t *);
+extern void delete_other_windows();
+extern void disassociate_b(window_t *);
+extern void free_other_windows(window_t *);
+extern void hijack_window(window_t *, buffer_t *);
+extern void mark_all_windows();
+extern void one_window(window_t *);
+extern void other_window();
+extern void restore_hijacked_window(window_t *);
+extern void split_window();
+extern window_t *find_window(char *);
+extern window_t* new_window();
+extern window_t *popup_window(char *);
+extern window_t *split_current_window();
+
