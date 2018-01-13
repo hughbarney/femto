@@ -11,7 +11,7 @@ Femto is an extended version of Atto Emacs with a Tiny Lisp extension languauge
 ## Goals of Femto Emacs
 
 * To be an extendable version of the Atto Emacs editor using a Tiny Lisp extension language
-* Provide a number of useful extension packages written in Tiny Lisp (these include an interface to **git** (similar to GNU Emacs Magit), a small version of **dired**, a buffer management menu (**buffer menu**), and an interface to **grep**.
+* Provide a number of useful extension packages written in Tiny Lisp (these include an interface to **git** (similar to GNU Emacs Magit), a small version of **dired**, a buffer management menu (**buffer menu**), **defmacro** allows for a macro to be recorded and invoked using c-x e, and an interface to **grep**.
 * Be easy to understand without extensive study (to encourage further experimentation).
 
 ## Why the name Femto?
