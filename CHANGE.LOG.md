@@ -1,3 +1,6 @@
+## Femto 2.7 13 Januart 2018
+* fixed display issue (jumping to eof and redisplay) when paging down or deleting lines on last screen of the file (issue present in Anthons Editor).
+
 ## Femto 2.6 11 January 2018
 * fixed undo so that it handles replaced text
 * fixed creation of c-x ` key

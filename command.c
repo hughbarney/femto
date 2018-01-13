@@ -13,7 +13,7 @@ void beginning_of_buffer()
 
 void end_of_buffer()
 {
-	curbp->b_epage = curbp->b_point = pos(curbp, curbp->b_ebuf);
+	curbp->b_point = pos(curbp, curbp->b_ebuf);
 	curwp->w_point = curbp->b_point;
 }
 
@@ -131,7 +131,8 @@ void forward_page()
 	curbp->b_page = curbp->b_point = upup(curbp, curbp->b_epage);
 	while (0 < curbp->b_row--)
 		down();
-	curbp->b_epage = pos(curbp, curbp->b_ebuf);
+	/* this stops a reframe in display(), and epage is recalculated during display() */
+	curbp->b_epage = pos(curbp, curbp->b_ebuf); 
 }
 
 void backward_page()
