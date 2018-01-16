@@ -5,63 +5,6 @@
 
 #include "header.h"
 
-/* XXX needs to be tested agains keylist */
-
-/* name, function */
-command_t commands[] = {
-        {"apropos", apropos_command},
-	{"backspace", backspace},
-	{"backward-character", left},
-	{"backward-page", backward_page},
-	{"backward-word", backward_word},
-	{"beginning-of-buffer", beginning_of_buffer},
-	{"beginning-of-line", lnbegin},
-	{"clear-message-line", clear_message_line},
-	{"copy-region", copy_region},
-	{"cursor-position", showpos},
-	{"delete-left", backspace},
-	{"delete-other-windows", delete_other_windows},
-	{"discard-undo-history", discard_undo_history},
-	{"end-of-buffer", end_of_buffer},
-	{"end-of-line", lnend},
-	{"eval-block", eval_block},
-	{"exec-lisp-command", repl},
-	{"exit", quit_ask},
-	{"find-file", i_readfile},
-	{"forward-character", right},
-	{"forward-delete-char", delete},
-	{"forward-page", forward_page},
-	{"forward-word", forward_word},
-	{"goto-line", i_gotoline},
-	{"insert-file", insertfile},
-	{"kill-buffer", killbuffer},
-	{"kill-line", killtoeol},
-	{"kill-region", kill_region},
-	{"list-bindings", list_bindings},
-	{"list-buffers", list_buffers},
-	{"list-undo", list_undos},
-	{"list-stats-undo", list_undo_stats},
-	{"next-buffer", next_buffer},
-	{"next-line", down},
-	{"other-window", other_window},
-	{"previous-line", up},
-	{"query-replace", query_replace},
-	{"refresh", redraw},
-	{"resize-terminal", resize_terminal},
-	{"save-buffer", savebuffer},
-	{"search-backward", search},
-	{"search-forward", search},
-	{"set-mark", i_set_mark},
-	{"shell-command", i_shell_command},
-	{"show-version", version},
-	{"split-window", split_window},
-	{"toggle-overwrite-mode", toggle_overwrite_mode},
-	{"undo", undo_command},
-	{"write-file", writefile},
-	{"yank", yank},
-	{NULL, NULL }
-};
-
 keymap_t *new_key(char *name, char *bytes)
 {
 	keymap_t *kp = (keymap_t *)malloc(sizeof(keymap_t));
@@ -150,27 +93,31 @@ int set_key_internal(char *name, char *funcname, char *bytes, void (*func)(void)
 {
 	keymap_t *kp;
 	
+	/* check if we have an existing key, if so update it */
 	for (kp = khead; kp->k_next != NULL; kp = kp->k_next) {
 		if (0 == strcmp(kp->k_name, name)) {
 			strncpy(kp->k_funcname, funcname, MAX_KFUNC);
 			kp->k_funcname[MAX_KFUNC] ='\0';
 			if (func != NULL)  /* dont set if its a user_func */
 				kp->k_func = func;
+			else
+				kp->k_func = user_func;
+			if (strcmp("user_func", funcname) != 0)
+				(void)register_command(funcname, func);
 			return 1;
 		}
 	}
 
 	/* not found, create it and add onto the tail */
-	if (func != NULL) {
-		kp = new_key(name, bytes);
-		strncpy(kp->k_funcname, funcname, MAX_KFUNC);
-		kp->k_funcname[MAX_KFUNC] ='\0';
-		kp->k_func = func;
-		ktail->k_next = kp;
-		ktail = kp;
-		return 1;
-	}
-	return 0;
+	kp = new_key(name, bytes);
+	strncpy(kp->k_funcname, funcname, MAX_KFUNC);
+	kp->k_funcname[MAX_KFUNC] ='\0';
+	kp->k_func = func;
+	ktail->k_next = kp;
+	ktail = kp;
+	if (strcmp("user_func", funcname) != 0)
+		(void)register_command(funcname, func);
+	return 1;
 }
 
 int set_key(char *name, char *funcname)
@@ -181,90 +128,91 @@ int set_key(char *name, char *funcname)
 void setup_keys()
 {
 	create_keys();
-        set_key_internal("c-a",     "(beginning-of-line)"     , "\x01", lnbegin);
-	set_key_internal("c-b",     "(backward-char)"         , "\x02", left);
-	set_key_internal("c-d",     "(delete)"                , "\x04", delete);
-	set_key_internal("c-e",     "(end-of-line)"           , "\x05", lnend);
-	set_key_internal("c-f",     "(forward-char)"          , "\x06", right);
-	set_key_internal("c-n",     "(next-line)"             , "\x0E", down);
-	set_key_internal("c-p",     "(previous-line)"         , "\x10", up);
-	set_key_internal("c-h",     "(backspace)"             , "\x08", backspace);
-	set_key_internal("c-k",     "(kill-line)"             , "\x0B", killtoeol);
-	set_key_internal("c-l",     "(refresh)"               , "\x0C", redraw);
-	set_key_internal("c-n",     "(next-line)"             , "\x0E", down);
-	set_key_internal("c-p",     "(previous-line)"         , "\x10", up);
-	set_key_internal("c-r",     "(search-backward)"       , "\x12", search);
-	set_key_internal("c-s",     "(search-forward)"        , "\x13", search);
-	set_key_internal("c-u",     "(undo)"                  , "\x15", undo_command);
-	set_key_internal("c-v",     "(forward-page)"          , "\x16", forward_page);
-	set_key_internal("c-w",     "(kill-region)"           , "\x17", kill_region);
-	set_key_internal("c-y",     "(yank)"                  , "\x19", yank);
+        set_key_internal("c-a",     "beginning-of-line"     , "\x01", lnbegin);
+	set_key_internal("c-b",     "backward-char"         , "\x02", left);
+	set_key_internal("c-d",     "delete"                , "\x04", delete);
+	set_key_internal("c-e",     "end-of-line"           , "\x05", lnend);
+	set_key_internal("c-f",     "forward-char"          , "\x06", right);
+	set_key_internal("c-n",     "next-line"             , "\x0E", down);
+	set_key_internal("c-p",     "previous-line"         , "\x10", up);
+	set_key_internal("c-h",     "backspace"             , "\x08", backspace);
+	set_key_internal("c-k",     "kill-to-eol"           , "\x0B", user_func);
+	set_key_internal("c-l",     "refresh"               , "\x0C", redraw);
+	set_key_internal("c-n",     "next-line"             , "\x0E", down);
+	set_key_internal("c-p",     "previous-line"         , "\x10", up);
+	set_key_internal("c-r",     "search-backward"       , "\x12", search);
+	set_key_internal("c-s",     "search-forward"        , "\x13", search);
+	set_key_internal("c-u",     "undo"                  , "\x15", undo_command);
+	set_key_internal("c-v",     "forward-page"          , "\x16", forward_page);
+	set_key_internal("c-w",     "kill-region"           , "\x17", kill_region);
+	set_key_internal("c-y",     "yank"                  , "\x19", yank);
 
-        set_key_internal("esc-a",   "(apropos)"               , "\x1B\x61", apropos_command);
-	set_key_internal("esc-b",   "(backward-word)"         , "\x1B\x62", backward_word);
-	set_key_internal("esc-c",   "(copy-region)"           , "\x1B\x63", copy_region);
-	set_key_internal("esc-d",   "(kill-line)"             , "\x1B\x64", killtoeol);
-	set_key_internal("esc-f",   "(forward-word)"          , "\x1B\x66", forward_word);
-	set_key_internal("esc-g",   "(goto-line)"             , "\x1B\x67", i_gotoline);
-	set_key_internal("esc-i",   "(yank)"                  , "\x1B\x69", yank);
-	set_key_internal("esc-k",   "(kill-region)"           , "\x1B\x6B", kill_region);
-	set_key_internal("esc-l",   "(list-bindings)"         , "\x1B\x6C", list_bindings);
-	set_key_internal("esc-m",   "(set-mark)"              , "\x1B\x6D", i_set_mark);
-	set_key_internal("esc-n",   "(next-buffer)"           , "\x1B\x6E", next_buffer);
-	set_key_internal("esc-o",   "(delete-other-windows)"  , "\x1B\x6F", delete_other_windows);
-	set_key_internal("esc-r",   "(query-replace)"         , "\x1B\x72", query_replace);
-	set_key_internal("esc-v",   "(page-up)"               , "\x1B\x76", backward_page);
-	set_key_internal("esc-w",   "(copy-region)"           , "\x1B\x77", copy_region);
-	set_key_internal("esc-x",   "(execute-command)"       , "\x1B\x78", execute_command);
+        set_key_internal("esc-a",   "apropos"               , "\x1B\x61", apropos);
+	set_key_internal("esc-b",   "backward-word"         , "\x1B\x62", backward_word);
+	set_key_internal("esc-c",   "copy-region"           , "\x1B\x63", copy_region);
+	set_key_internal("esc-d",   "kill-to-eol"           , "\x1B\x64", user_func);
+	set_key_internal("esc-f",   "forward-word"          , "\x1B\x66", forward_word);
+	set_key_internal("esc-g",   "goto-line"             , "\x1B\x67", i_gotoline);
+	set_key_internal("esc-i",   "yank"                  , "\x1B\x69", yank);
+	set_key_internal("esc-k",   "kill-region"           , "\x1B\x6B", kill_region);
+	set_key_internal("esc-l",   "describe-bindings"     , "\x1B\x6C", describe_bindings);
+	set_key_internal("esc-m",   "set-mark"              , "\x1B\x6D", i_set_mark);
+	set_key_internal("esc-n",   "next-buffer"           , "\x1B\x6E", next_buffer);
+	set_key_internal("esc-o",   "delete-other-windows"  , "\x1B\x6F", delete_other_windows);
+	set_key_internal("esc-r",   "query-replace"         , "\x1B\x72", query_replace);
+	set_key_internal("esc-v",   "page-up"               , "\x1B\x76", backward_page);
+	set_key_internal("esc-w",   "copy-region"           , "\x1B\x77", copy_region);
+	set_key_internal("esc-x",   "execute-command"       , "\x1B\x78", execute_command);
 
-	set_key_internal("esc-up",    "(beginning-of-buffer)" , "\x1B\x1B\x5B\x41", beginning_of_buffer);	
-	set_key_internal("esc-down",  "(end-of-buffer)"       , "\x1B\x1B\x5B\x42", end_of_buffer);
-	set_key_internal("esc-right", "(user-func)"           , "\x1B\x1B\x5B\x43", user_func);
-	set_key_internal("esc-left",  "(user-func)"           , "\x1B\x1B\x5B\x44", user_func);
+	set_key_internal("esc-up",    "beginning-of-buffer" , "\x1B\x1B\x5B\x41", beginning_of_buffer);	
+	set_key_internal("esc-down",  "end-of-buffer"       , "\x1B\x1B\x5B\x42", end_of_buffer);
+	set_key_internal("esc-right", "user-func"           , "\x1B\x1B\x5B\x43", user_func);
+	set_key_internal("esc-left",  "user-func"           , "\x1B\x1B\x5B\x44", user_func);
+	set_key_internal("esc-end",   "end-of-buffer"       , "\x1B\x1B\x4F\x46", end_of_buffer);
+	set_key_internal("esc-home",  "beginning-of-buffer" , "\x1B\x1B\x4F\x48", beginning_of_buffer);
+	set_key_internal("esc-@",     "set-mark"            , "\x1B\x40", i_set_mark);
+	set_key_internal("esc-<",     "beginning-of-buffer" , "\x1B\x3C", beginning_of_buffer);
+	set_key_internal("esc->",     "end-of-buffer"       , "\x1B\x3E", end_of_buffer);
+	set_key_internal("esc-]",     "eval-block"          , "\x1B\x5D", eval_block);
+	set_key_internal("esc-;",     "exec-lisp-command"   , "\x1B\x3B", repl);
+	set_key_internal("esc-.",     "user-func"           , "\x1B\x2E", user_func);
 
-	set_key_internal("esc-end",   "(end-of-buffer)"       , "\x1B\x1B\x4F\x46", end_of_buffer);
-//	set_key_internal("esc-esc",   "(show-version)"        , "\x1B\x1B", version);
-	set_key_internal("esc-home",  "(beginning-of-buffer)" , "\x1B\x1B\x4F\x48", beginning_of_buffer);
-	set_key_internal("esc-@",     "(set-mark)"            , "\x1B\x40", i_set_mark);
-	set_key_internal("esc-<",     "(beginning-of-buffer)" , "\x1B\x3C", beginning_of_buffer);
-	set_key_internal("esc->",     "(end-of-buffer)"       , "\x1B\x3E", end_of_buffer);
-	set_key_internal("esc-]",     "(eval-block)"          , "\x1B\x5D", eval_block);
-	set_key_internal("esc-;",     "(exec-lisp-command)"   , "\x1B\x3B", repl);
-	set_key_internal("esc-.",     "(user-func)"           , "\x1B\x2E", user_func);
+	set_key_internal("up ",       "previous-line",        "\x1B\x5B\x41", up);
+	set_key_internal("down",      "next-line",            "\x1B\x5B\x42", down);
+	set_key_internal("left",      "backward-char",        "\x1B\x5B\x44", left);
+	set_key_internal("right",     "forward-char",         "\x1B\x5B\x43", right);
+	set_key_internal("home",      "beginning-of-line",    "\x1B\x4F\x48", lnbegin);
+	set_key_internal("end",       "end-of-line",          "\x1B\x4F\x46", lnend);
+	set_key_internal("del",       "delete",               "\x1B\x5B\x33\x7E", delete);
+	set_key_internal("ins",       "toggle-overwrite-mode" , "\x1B\x5B\x32\x7E", toggle_overwrite_mode);
+	set_key_internal("pgup",      "page-up",              "\x1B\x5B\x35\x7E", backward_page);
+	set_key_internal("pgdn",      "page-down",            "\x1B\x5B\x36\x7E", forward_page);
+	set_key_internal("backspace", "backspace",            "\x7f", backspace);
 
-	set_key_internal("up ",       "(previous-line)",        "\x1B\x5B\x41", up);
-	set_key_internal("down",      "(next-line)",            "\x1B\x5B\x42", down);
-	set_key_internal("left",      "(backward-character)",   "\x1B\x5B\x44", left);
-	set_key_internal("right",     "(forward-character)",    "\x1B\x5B\x43", right);
-	set_key_internal("home",      "(beginning-of-line)",    "\x1B\x4F\x48", lnbegin);
-	set_key_internal("end",       "(end-of-line)",          "\x1B\x4F\x46", lnend);
-	set_key_internal("del",       "(delete)",               "\x1B\x5B\x33\x7E", delete);
-	set_key_internal("ins",       "(toggle-overwrite-mode)" , "\x1B\x5B\x32\x7E", toggle_overwrite_mode);
-	set_key_internal("pgup",      "(page-up)",              "\x1B\x5B\x35\x7E", backward_page);
-	set_key_internal("pgdn",      "(page-down)",            "\x1B\x5B\x36\x7E", forward_page);
-	set_key_internal("backspace", "(backspace)",            "\x7f", backspace);
+	set_key_internal("c-x c-c",   "exit"                  , "\x18\x03", quit_ask);
+	set_key_internal("c-x c-f",   "find-file"             , "\x18\x06", i_readfile);  
+	set_key_internal("c-x c-n",   "next-buffer"           , "\x18\x0E", next_buffer);
+	set_key_internal("c-x c-s",   "save-buffer"           , "\x18\x13", savebuffer);  
+	set_key_internal("c-x c-w",   "write-file"            , "\x18\x17", writefile);
+	set_key_internal("c-x 1",     "delete-other-windows"  , "\x18\x31", delete_other_windows);
+	set_key_internal("c-x 2",     "split-window"          , "\x18\x32", split_window);
+	set_key_internal("c-x =",     "cursor-position"       , "\x18\x3D", cursor_position);
+	set_key_internal("c-x ?",     "user-func"             , "\x18\x3F", user_func);
+	set_key_internal("c-x b",     "list-buffers"          , "\x18\x62", list_buffers);
+	set_key_internal("c-x i",     "insert-file"           , "\x18\x69", insertfile);
+	set_key_internal("c-x k",     "kill-buffer"           , "\x18\x6B", kill_buffer);
+	set_key_internal("c-x n",     "next-buffer"           , "\x18\x6E", next_buffer);
+	set_key_internal("c-x o",     "other-window"          , "\x18\x6F", other_window);
+	set_key_internal("c-x @",     "shell-command"         , "\x18\x40", i_shell_command);
+	set_key_internal("c-x (",     "user-func"             , "\x18\x28", user_func);
+	set_key_internal("c-x )",     "user-func"             , "\x18\x29", user_func);
+	set_key_internal("c-x `",     "user-func"             , "\x18\x60", user_func);
+	set_key_internal("c-space",   "set-mark"              , "\x00", i_set_mark);
+	set_key_internal("c-]",       "user-func"             , "\x1D", user_func);
+	set_key_internal("resize",     "resize"               , "\x9A", resize_terminal);
 
-	set_key_internal("c-x c-c",   "(exit)"                  , "\x18\x03", quit_ask);
-	set_key_internal("c-x c-f",   "(find-file)"             , "\x18\x06", i_readfile);  
-	set_key_internal("c-x c-n",   "(next-buffer)"           , "\x18\x0E", next_buffer);
-	set_key_internal("c-x c-s",   "(save-buffer)"           , "\x18\x13", savebuffer);  
-	set_key_internal("c-x c-w",   "(write-file)"            , "\x18\x17", writefile);
-	set_key_internal("c-x 1",     "(delete-other-windows)"  , "\x18\x31", delete_other_windows);
-	set_key_internal("c-x 2",     "(split-window)"          , "\x18\x32", split_window);
-	set_key_internal("c-x =",     "(cursor-position)"       , "\x18\x3D", showpos);
-	set_key_internal("c-x ?",     "(user-func)"             , "\x18\x3F", user_func);
-	set_key_internal("c-x b",     "(list-buffers)"          , "\x18\x62", list_buffers);
-	set_key_internal("c-x i",     "(insert-file)"           , "\x18\x69", insertfile);
-	set_key_internal("c-x k",     "(kill-buffer)"           , "\x18\x6B", killbuffer);
-	set_key_internal("c-x n",     "(next-buffer)"           , "\x18\x6E", next_buffer);
-	set_key_internal("c-x o",     "(other-window)"          , "\x18\x6F", other_window);
-	set_key_internal("c-x @",     "(shell-command)"         , "\x18\x40", i_shell_command);
-	set_key_internal("c-x (",     "(user-func)"             , "\x18\x28", user_func);
-	set_key_internal("c-x )",     "(user-func)"             , "\x18\x29", user_func);
-	set_key_internal("c-x `",     "(user-func)"             , "\x18\x60", user_func);
-	set_key_internal("c-space",   "(set-mark)"              , "\x00", i_set_mark);
-	set_key_internal("c-]",       E_NOT_BOUND               , "\x1D", user_func);
-	set_key_internal("resize",     "(resize)"               , "\x9A", resize_terminal);
+	register_command("describe-functions", describe_functions);
+	register_command("show-version", version);
 }
 
 

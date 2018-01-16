@@ -14,7 +14,7 @@
 ;; x - exit buffer menu
 ;;
 ;;
-;; (load "samples/bufmenu.scm")
+;; (load "examples/bufmenu.scm")
 ;; (buffer-menu)
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,7 +50,7 @@
 (setq bufm-last-line 3)
 (setq bufm-ops 0)
 (setq bufm-max-ops 400)
-(setq bufm-debugging t)
+(setq bufm-debugging nil)
 (setq bufm-stop nil)
 (setq bufm-obuf "")
 (setq bufm-oclip "")
@@ -118,8 +118,8 @@
 (defun bufm-handle-bound-key()
     (bufm-debug "bufm-handle-bound-key")
     (setq bufm-key (get-key-funcname))
-    (if (eq bufm-key "(previous-line)") (bufm-move-line -1))
-    (if (eq bufm-key "(next-line)") (bufm-move-line 1))
+    (if (eq bufm-key "previous-line") (bufm-move-line -1))
+    (if (eq bufm-key "next-line") (bufm-move-line 1))
     (setq bufm-buf (bufm-get-bufn)))
 
 ;;

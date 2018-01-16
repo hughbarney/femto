@@ -27,8 +27,8 @@ nil
   (if (eq key "")
   (progn
     (setq fkey (get-key-funcname))
-    (if (eq fkey "(previous-line)") (cmd-move-line -1))
-    (if (eq fkey "(next-line)") (cmd-move-line 1))
+    (if (eq fkey "previous-line") (cmd-move-line -1))
+    (if (eq fkey "next-line") (cmd-move-line 1))
     (setq response (nth cmd-line cmd-list))))
   (cond
     ((eq key "\n") (save_response response))

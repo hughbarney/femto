@@ -26,6 +26,47 @@ int count_string_list(string_list_t *list)
 	return count;
 }
 
+command_t *register_command(char *cmd_name, void (*func)(void))
+{
+	command_t *cp = cheadp;
+	command_t *cmdp;
+
+	while (cp != NULL) {
+		if (strcmp(cmd_name, cp->c_name) == 0) {
+			//debug("existing cmd: %s\n", cmd_name);
+			cp->c_func = func; /* update it */
+			return cp;
+		}
+		cp = cp->c_next;
+	}
+
+	if ((cmdp = (command_t *) malloc (sizeof (command_t))) == NULL)
+		return NULL;
+
+	assert(cmdp != NULL);
+	strcpy(cmdp->c_name, cmd_name);
+	cmdp->c_func = func;
+	cmdp->c_next = NULL;
+	assert(func != NULL);
+
+	/* find the place in the list to insert this command */
+	if (cheadp == NULL) {
+		cheadp = cmdp;
+	} else if (strcmp(cheadp->c_name, cmd_name) > 0) {
+		/* insert at the head of the list */
+		cmdp->c_next = cheadp;
+		cheadp = cmdp;
+	} else {
+		for (cp = cheadp; cp->c_next != NULL; cp = cp->c_next)
+			if (strcmp (cp->c_next->c_name, cmd_name) > 0)
+				break;
+		/* and insert it */
+		cmdp->c_next = cp->c_next;
+		cp->c_next = cmdp;
+	}
+	debug("register_cmd: %s\n", cmdp->c_name);
+	return cmdp;
+}
 
 /*
  * match possible function names
@@ -40,14 +81,14 @@ string_list_t *match_functions(const char *fname)
 	len = strlen(fname);
 	head = NULL;
 
-	for (fn = commands; fn->name != NULL; fn++) {
-		if (memcmp(fname, fn->name, len) == 0) {
+	for (fn = cheadp; fn->c_next != NULL; fn = fn->c_next) {
+		if (memcmp(fname, fn->c_name, len) == 0) {
 			if ((sl = malloc(sizeof(*sl))) == NULL) {
 				free_string_list(head);
 				return (NULL);
 			}
 
-			sl->string = strdup(fn->name);
+			sl->string = strdup(fn->c_name);
 			sl->next = head;
 			head = sl;
 			count++;
@@ -56,39 +97,14 @@ string_list_t *match_functions(const char *fname)
 	return head;
 }
 
-/*
- * we should run this after changing the static key-binding list to check if any
- * mis-matches of command names against the key binding names have been introduced.
- *
- */
-void check_maps()
-{
-	command_t *fn;
-	keymap_t *ky;
-	int found;
-
-	for (ky = khead; ky != NULL; ky = ky->k_next) {
-
-		found = 0;
-
-		for (fn = commands; fn->name != NULL; fn++)
-			if (strcmp(fn->name, ky->k_funcname) == 0)
-				found = 1;
-
-		if (found == 0) {
-			//debug("No match for (%s) (%s)\n", ky->key_name, ky->key_desc);
-		}
-	}
-}
-
 /* translate from function name to function pointer */
 void_func name_to_function(const char *fname)
 {
 	command_t *fn;
 
-	for (fn = commands; fn->name != NULL; fn++)
-		if (strcmp(fn->name, fname) == 0)
-			return fn->func;
+	for (fn = cheadp; fn->c_next !=NULL; fn = fn->c_next)
+		if (strcmp(fn->c_name, fname) == 0)
+			return fn->c_func;
 	return NULL;
 }
 
@@ -147,7 +163,7 @@ char *shortest_common_string(string_list_t *list)
 }
 
 /* show commands that match a sub-string */
-void apropos_command()
+void apropos()
 {
 	buffer_t *bp;
 	command_t *fn;
@@ -162,14 +178,14 @@ void apropos_command()
 	assert(bp != NULL);
 	zero_buffer(bp);
 
-	for (fn = commands; fn->name != NULL; fn++) {
-		if (strstr(fn->name, response_buf) == NULL)
+	for (fn = cheadp; fn->c_next != NULL; fn = fn->c_next) {
+		if (strstr(fn->c_name, response_buf) == NULL)
 			continue;
 
 		bindlist[0] = '\0';
 
 		for (ky = khead; ky != NULL; ky = ky->k_next) {
-			if (strcmp(fn->name, ky->k_funcname) == 0) {
+			if (strcmp(fn->c_name, ky->k_funcname) == 0) {
 				if (bindlist[0] != '\0')
 					strcat(bindlist, ", ");
 
@@ -181,7 +197,7 @@ void apropos_command()
 			}
 		}
 
-		sprintf(apropos, "%-30s %s\n", fn->name, bindlist);
+		sprintf(apropos, "%-30s %s\n", fn->c_name, bindlist);
 		append_string(bp, apropos);
 	}
 
@@ -189,7 +205,7 @@ void apropos_command()
 }
 
 /* show all the key bindings in a buffer */
-void list_bindings()
+void describe_bindings()
 {
 	buffer_t *bp;
 	keymap_t *ky;
@@ -202,6 +218,25 @@ void list_bindings()
 	for (ky = khead; ky != NULL; ky = ky->k_next) {
 		sprintf(binding, "%-16s %s\n", ky->k_name, ky->k_funcname);
 		append_string(bp, binding);
+	}
+
+	(void)popup_window(bp->b_bname);
+}
+
+/* show all registered functions in a buffer */
+void describe_functions()
+{
+	buffer_t *bp;
+	command_t *cp;
+	char funcname[80];
+
+	bp = find_buffer(str_help_buf, TRUE);
+	assert(bp != NULL);
+	zero_buffer(bp);
+
+	for (cp = cheadp; cp != NULL; cp = cp->c_next) {
+		sprintf(funcname, "%s\n", cp->c_name);
+		append_string(bp, funcname);
 	}
 
 	(void)popup_window(bp->b_bname);
@@ -325,7 +360,22 @@ void execute_command()
 	if (strlen(command_name) > 0) {
 		funct = name_to_function(command_name);
 
-		if (funct != NULL) {
+		if (funct == NULL || funct == user_func) {
+			char funcname[80];
+			reset_output_stream();
+			sprintf(funcname, "(%s)", command_name);
+			char *output = call_lisp(funcname);
+
+			/* show errors on message line */
+			/* can probably make this a common function */                
+			if (NULL != strstr(output, "error:")) {
+				char buf[81];
+				strncpy(buf, output, 80);
+				buf[80] ='\0';
+				msg(buf);
+			}	
+			reset_output_stream();
+		} else {
 			(funct)();
 		}
 	}

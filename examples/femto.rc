@@ -203,16 +203,16 @@
 ;;  Key Bindings 
 ;;
 
-(set-key "esc-right" "(delete-next-word)")
-(set-key "esc-left" "(delete-previous-word)")
-(set-key "c-k" "(kill-to-eol)")
-(set-key "c-x ?" "(describe-key)")
-(set-key "c-]" "(find_and_eval_sexp)")
-(set-key "c-x c-o" "(oxo)")
-(set-key "c-x c-b" "(buffer-menu)")
-(set-key "c-x c-d" "(dired)")
-(set-key "c-x c" "(edit-config)")
-(set-key "c-x g" "(grep-command)")
+(set-key "esc-right" "delete-next-word")
+(set-key "esc-left" "delete-previous-word")
+(set-key "c-k" "kill-to-eol")
+(set-key "c-x ?" "describe-key")
+(set-key "c-]" "find_and_eval_sexp")
+(set-key "c-x c-o" "oxo")
+(set-key "c-x c-b" "buffer-menu")
+(set-key "c-x c-d" "dired")
+(set-key "c-x c" "edit-config")
+(set-key "c-x g" "grep-command")
 
 (show-startup-message)
 

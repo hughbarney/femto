@@ -125,8 +125,8 @@ then select one of the following letters to operate on the file
 
 (defun git-handle-arrow-key()
   (setq git-key (get-key-funcname))
-  (if (eq git-key "(previous-line)") (git-move-line -1))
-  (if (eq git-key "(next-line)") (git-move-line 1))
+  (if (eq git-key "previous-line") (git-move-line -1))
+  (if (eq git-key "next-line") (git-move-line 1))
   (git-get-info))
 
 (defun git-handle-command-key(k)
@@ -219,8 +219,8 @@ then select one of the following letters to operate on the file
   (progn
     (setq git-key (get-key-funcname))
     (cond
-      ((eq git-key "(cc-commit)") "commit")
-      ((eq git-key "(cc-cancel)") "cancel")
+      ((eq git-key "cc-commit") "commit")
+      ((eq git-key "cc-cancel") "cancel")
       (t (execute-key) (get-commit-key))))
   (progn
     (insert-string k)
@@ -239,12 +239,12 @@ then select one of the following letters to operate on the file
 (defun exec-view-key()
   (setq f (get-key-funcname))
   (if (or 
-    (eq f "(page-down)") 
-    (eq f "(page-up)")
-    (eq f "(next-line)")
-    (eq f "(previous-line)")
-    (eq f "(beginning-of-buffer)")
-    (eq f "(end-of-buffer)"))
+    (eq f "page-down") 
+    (eq f "page-up")
+    (eq f "next-line")
+    (eq f "previous-line")
+    (eq f "beginning-of-buffer")
+    (eq f "end-of-buffer"))
  (progn 
    (execute-key)
    (update-display))))
@@ -287,9 +287,9 @@ then select one of the following letters to operate on the file
 ;;
 ;; setup key bindings
 ;;
-(set-key "c-x c-g" "(git-menu)")
+(set-key "c-x c-g" "git-menu")
 
 ;; used during commit pop up window
-(set-key "c-c c-c" "(cc-commit)")
-(set-key "c-c c-q" "(cc-cancel)")
+(set-key "c-c c-c" "cc-commit")
+(set-key "c-c c-q" "cc-cancel")
 

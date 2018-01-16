@@ -202,7 +202,7 @@ The example shows how the editor can be extended.
 ;; The editor provides only basic buffer movement and edit functions
 ;; everything else is done by extending the user interface using the
 ;; lisp extension language. Functions can be bound to keys using set-key.
-;; For example: (set-key "c-k" "(kill-to-eol)")
+;; For example: (set-key "c-k" "kill-to-eol")
 ;; 
 ;; place femto.rc in your home direcory and it is run when femto starts up.
 ;;
@@ -241,16 +241,16 @@ The lisp function must be enclosed in brackets ().
 
 Examples:
 ```lisp
-    (set-key "esc-right" "(delete-next-word)")
-    (set-key "esc-left" "(delete-previous-word)")
-    (set-key "c-k" "(kill-to-eol)")
-    (set-key "c-x ?" "(describe-key)")
-    (set-key "c-]" "(find_and_eval_sexp)")
-    (set-key "c-x c-o" "(oxo)")
-    (set-key "c-x c-b" "(buffer-menu)")
-    (set-key "c-x c-d" "(dired)")
-    (set-key "c-x c" "(edit-config)")
-    (set-key "c-x g" "(grep-command)")
+    (set-key "esc-right" "delete-next-word")
+    (set-key "esc-left" "delete-previous-word")
+    (set-key "c-k" "kill-to-eol")
+    (set-key "c-x ?" "describe-key")
+    (set-key "c-]" "find_and_eval_sexp")
+    (set-key "c-x c-o" "oxo")
+    (set-key "c-x c-b" "buffer-menu")
+    (set-key "c-x c-d" "dired")
+    (set-key "c-x c" "edit-config")
+    (set-key "c-x g" "grep-command")
 ```
 
 Key bindings cane be checked using describe-key (c-x ?).
@@ -361,7 +361,7 @@ directory set in the variable script_dir.
 (get-key-name)                          ;; return the name of the key pressed eg: c-k for control-k.
 (get-key-funcname)                      ;; return the name of the function bound to the key
 (getch)                                 ;; calls the c function getch and returns the keystroke
-(set-key "key-name" "(lisp-func)")      ;; binds a key to a lisp function, see keynames see "Keys Names below"
+(set-key "key-name" "lisp-func")        ;; binds a key to a lisp function, see keynames see "Keys Names below"
 
 ;;
 ;; string handling

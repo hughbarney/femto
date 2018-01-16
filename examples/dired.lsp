@@ -101,8 +101,8 @@
 
 (defun de-handle-arrow-key()
   (setq de-key (get-key-funcname))
-  (if (eq de-key "(previous-line)") (de-move-line -1))
-  (if (eq de-key "(next-line)") (de-move-line 1))
+  (if (eq de-key "previous-line") (de-move-line -1))
+  (if (eq de-key "next-line") (de-move-line 1))
   (de-get-info))
 
 

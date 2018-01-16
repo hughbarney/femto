@@ -1,4 +1,7 @@
-## Femto 2.7 13 Januart 2018
+## Femto 2.8 15 January 2018
+* fixed registration of commands for use by esc-x execute-command. These are now held in a dynamic list which means new command created and bound to keys will get registered and be available to be called at the command line. All lisp extension packages have had code updated so that functions not longer have the () around the names.
+
+## Femto 2.7 13 January 2018
 * fixed display issue (jumping to eof and redisplay) when paging down or deleting lines on last screen of the file (issue present in Anthons Editor).
 
 ## Femto 2.6 11 January 2018

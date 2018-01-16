@@ -1,18 +1,31 @@
 TODO
 ====
+make kill-to-eol not delete last char
+check for all unbound and unregistered functions
 change eval_block to eval_region
-
-implement remaining commands (shell-command, set-clipboard, get-version-string, add-mode-global
-update README
 write a test file for all lisp functions
 test all keyboard keys
 test all command lists
 run command list check
-tidy up header.h
 review all code
 dired.lsp
-shell command
 prompt that recalls commands
+
+
+DONE
+====
+16/1/18 review all examples\*.lsp for names of functions - should no have () around names
+15/1/18 fix keyboard macros (kill-to-eof) - they stopped working
+
+
+DONE
+====
+when ??
+tidy up header.h
+update README
+implement remaining commands (shell-command, set-clipboard, get-version-string, add-mode-global
+shell command
+
 
 DONE
 ====
@@ -29,7 +42,6 @@ add tiny_lisp support
 add keyboard setting etc
 load startup file
 load femto.rc file
-
 
 
 LISP INTERACTION

@@ -350,7 +350,7 @@ void writefile()
 	}
 }
 
-void killbuffer()
+void kill_buffer()
 {
 	buffer_t *kill_bp = curbp;
 	int bcount = count_buffers();
@@ -576,7 +576,7 @@ void log_message(char *str)
 	append_string(bp, str);
 }
 
-void showpos()
+void cursor_position()
 {
 	int current, lastln;
 	point_t end_p = pos(curbp, curbp->b_ebuf);
@@ -829,6 +829,7 @@ void eval_block()
 void user_func()
 {
 	char *output;
+	char funcname[80];
 
 	assert(key_return != NULL);
 	if (0 == strcmp(key_return->k_funcname, E_NOT_BOUND)) {
@@ -837,7 +838,8 @@ void user_func()
 	}
 
 	reset_output_stream();
-	output = call_lisp(key_return->k_funcname);
+	sprintf(funcname, "(%s)", key_return->k_funcname);
+	output = call_lisp(funcname);
 
 	/* show errors on message line */
 	if (NULL != strstr(output, "error:")) {

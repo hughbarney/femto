@@ -105,8 +105,9 @@ typedef struct keymap_t {
 } keymap_t;
 
 typedef struct command_t {
-        char *name;
-	void (*func)(void);
+        char c_name[MAX_KFUNC + 1];
+	void (*c_func)(void);
+	struct command_t *c_next;
 } command_t;
 
 /*
@@ -167,6 +168,7 @@ extern buffer_t *curbp;			/* current buffer */
 extern buffer_t *bheadp;		/* head of list of buffers */
 extern window_t *curwp;
 extern window_t *wheadp;
+extern command_t *cheadp;
 
 /*
  * Some compilers define size_t as a unsigned 16 bit number while
@@ -191,7 +193,6 @@ extern char replace[];
 extern keymap_t *key_return;    /* Command key return */
 extern keymap_t *khead;
 extern keymap_t *ktail;
-extern command_t commands[];
 
 /* fatal() messages. */
 extern char *f_ok;              /* EXIT_OK */
@@ -309,9 +310,9 @@ extern void insert_string(char *);
 extern void i_readfile();
 extern void i_set_mark();
 extern void i_shell_command();
-extern void killbuffer();
+extern void kill_buffer();
 extern void kill_region();
-extern void killtoeol();
+//extern void killtoeol();
 extern void left();
 extern void lnbegin();
 extern void lnend();
@@ -333,7 +334,7 @@ extern void set_mark();
 extern void set_point(point_t);
 extern void set_scrap(unsigned char *);
 extern void shell_command(char *);
-extern void showpos();
+extern void cursor_position();
 extern void toggle_overwrite_mode();
 extern void unmark();
 extern void up();
@@ -366,16 +367,17 @@ extern void w2b(window_t *);
 
 /* functions in funcmap.c */
 extern char *shortest_common_string(string_list_t *);
+extern command_t *register_command(char *, void (*)(void));
 extern int count_string_list(string_list_t *);
 extern int match_string_position(string_list_t *, int);
 extern int shortest_string_len(string_list_t *);
 extern string_list_t *match_functions(const char *);
-extern void apropos_command();
-extern void check_maps();
+extern void apropos();
 extern void execute_command();
 extern void free_string_list(string_list_t *);
 extern void_func name_to_function(const char *);
-extern void list_bindings();
+extern void describe_bindings();
+extern void describe_functions();
 
 /* functions in gap.c */
 extern char_t * ptr(buffer_t *, register point_t);
@@ -477,4 +479,3 @@ extern window_t *find_window(char *);
 extern window_t* new_window();
 extern window_t *popup_window(char *);
 extern window_t *split_current_window();
-

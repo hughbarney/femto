@@ -17,7 +17,7 @@
   (setq grep-search-files (prompt "grep search files: " grep-search-files))
   (setq grep-query (concat grep-cmd " " grep-search " " grep-search-files))
   (shell-command grep-query)
-  (set-key "c-x `" "(grep-next)")
+  (set-key "c-x `" "grep-next")
   (rename-buffer grep-buf))
 
 (defun grep-next()

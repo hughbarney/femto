@@ -25,6 +25,7 @@ buffer_t *curbp;			/* current buffer */
 buffer_t *bheadp;			/* head of list of buffers */
 window_t *curwp;
 window_t *wheadp;
+command_t *cheadp = NULL;
 
 char *f_ok = "%s: Terminated successfully.\n";
 char *f_error = "%s: Unspecified error.\n";

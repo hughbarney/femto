@@ -96,8 +96,8 @@
 ;; define the key bindings
 ;;
 
-(set-key "c-x (" "(dm-start-macro)")
-(set-key "c-x )" "(dm-end-macro)")
-(set-key "c-x e" "(mymacro)")
-(set-key "esc-e" "(mymacro)")
+(set-key "c-x (" "dm-start-macro")
+(set-key "c-x )" "dm-end-macro")
+(set-key "c-x e" "mymacro")
+(set-key "esc-e" "mymacro")
 

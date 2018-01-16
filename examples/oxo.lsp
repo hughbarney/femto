@@ -54,7 +54,7 @@
     (cons val (cdr list)) ))
 
 (defun newline_and_space()
-  (oxo_debug "(newline_and_space)\n")
+  (oxo_debug "newline_and_space\n")
   (insert-string "\n "))
 
 ;; prompt for string and return response, handle backspace, cr and c-g
@@ -75,7 +75,7 @@
     (t (inputat ln q (string.append response key)))  ))
 
 (defun draw()
-  (oxo_debug "(draw)\n")
+  (oxo_debug "draw\n")
   (beginning-of-buffer)
   (set-mark)
   (repeat 10 next-line)
@@ -112,7 +112,7 @@
   (and (not (check_for_win wins "X")) (not (check_for_win wins "O")) (not (board_full (cdr board))) ))
 
 (defun get-move()
-  (oxo_debug "(get-move)\n")
+  (oxo_debug "get-move\n")
   (setq m (inputat 7 "Your move (X): " ""))
   (setq m (string->number m))
   (if (or (> m 9) (< m 1)) (progn (msg "Please select a free cell between 1 and 9" t) (get-move)))
@@ -159,7 +159,7 @@
 
 ;; just find first empty square
 (defun computer_move()
-  (oxo_debug "(computer_move)\n")
+  (oxo_debug "computer_move\n")
   (setq board (set-nth board (find_free board) "O")) )
 
 (defun show_result()
@@ -175,7 +175,7 @@
   (or (eq m "y") (eq m "Y")) )
 
 (defun play()
-  (oxo_debug "(play)\n")
+  (oxo_debug "play\n")
   (draw)
   (oxo_debug "about to update display\n")
   (update-display)
