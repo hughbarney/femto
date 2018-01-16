@@ -1460,7 +1460,9 @@ Object *e_insert_string(Object ** args, GC_PARAM)
 }
 
 extern void set_point(point_t);
+extern point_t get_mark(void);
 extern point_t get_point(void);
+extern point_t get_point_max(void);
 
 Object *e_set_point(Object ** args, GC_PARAM)
 {
@@ -1471,9 +1473,19 @@ Object *e_set_point(Object ** args, GC_PARAM)
 	return t;
 }
 
+Object *e_get_mark(Object ** args, GC_PARAM)
+{
+	return newNumber(get_mark(), GC_ROOTS);
+}
+
 Object *e_get_point(Object ** args, GC_PARAM)
 {
 	return newNumber(get_point(), GC_ROOTS);
+}
+
+Object *e_get_point_max(Object ** args, GC_PARAM)
+{
+	return newNumber(get_point_max(), GC_ROOTS);
 }
 
 #define DEFINE_PRIMITIVE_ARITHMETIC(name, op, init)                          \
@@ -1615,7 +1627,9 @@ Primitive primitives[] = {
 	{"log-debug", 1, 1, e_log_debug},
 	{"insert-string", 1, 1, e_insert_string},
 	{"set-point", 1, 1, e_set_point},
+	{"get-mark", 0, 0, e_get_mark},
 	{"get-point", 0, 0, e_get_point},
+	{"get-point-max", 0, 0, e_get_point_max},
 	{"set-key", 2, 2, e_set_key},
 	{"prompt", 2, 2, e_prompt},
 	{"show-prompt", 2, 2, e_show_prompt},

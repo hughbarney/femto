@@ -1,3 +1,6 @@
+## Femto 2.9 16 January 2018
+* fixed kill-to-eol, no longer starts to delete backwards if at end of file
+
 ## Femto 2.8 15 January 2018
 * fixed registration of commands for use by esc-x execute-command. These are now held in a dynamic list which means new command created and bound to keys will get registered and be available to be called at the command line. All lisp extension packages have had code updated so that functions not longer have the () around the names.
 

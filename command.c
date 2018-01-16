@@ -400,18 +400,6 @@ void toggle_overwrite_mode() {
 		curbp->b_flags |= B_OVERWRITE;
 }
 
-void killtoeol()
-{
-	/* point = start of empty line or last char in file */
-	if (*(ptr(curbp, curbp->b_point)) == 0xa || (curbp->b_point + 1 == ((curbp->b_ebuf - curbp->b_buf) - (curbp->b_egap - curbp->b_gap))) ) {
-		delete();
-	} else {
-		curbp->b_mark = curbp->b_point;
-		lnend();
-		copy_cut(TRUE);
-	}
-}
-
 int i_check_region()
 {
 	if (curbp->b_mark == NOMARK) {
@@ -763,10 +751,22 @@ void set_point(point_t p)
 	curbp->b_point = p;
 }
 
+/* return mark in current buffer */
+point_t get_mark()
+{
+	return curbp->b_mark;
+}
+
 /* return point in current buffer */
 point_t get_point()
 {
 	return curbp->b_point;
+}
+
+/* return point in current buffer */
+point_t get_point_max()
+{
+	return pos(curbp, curbp->b_ebuf);
 }
 
 /*

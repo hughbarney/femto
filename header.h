@@ -20,7 +20,7 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.7"
+#define E_VERSION       "2.9"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND	"<not bound>"
 #define E_INITFILE      "femto.rc"
@@ -287,7 +287,9 @@ extern int i_check_region();
 extern int prev_utf8_char_size();
 extern int utf8_size(char_t c);
 extern int yesno(int flag);
+extern point_t get_mark();
 extern point_t get_point();
+extern point_t get_point_max();
 extern unsigned char *get_scrap();
 extern void append_string(buffer_t *, char *);
 extern void backspace();
@@ -312,7 +314,6 @@ extern void i_set_mark();
 extern void i_shell_command();
 extern void kill_buffer();
 extern void kill_region();
-//extern void killtoeol();
 extern void left();
 extern void lnbegin();
 extern void lnend();

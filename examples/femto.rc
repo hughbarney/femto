@@ -84,13 +84,10 @@
 
 ;; kill to end of line, uses if and progn
 (defun kill-to-eol()
-  (if (eq "\n" (get-char))
-    (progn
-      (delete))
-    (progn
-      (set-mark)
-      (end-of-line)
-      (kill-region))))
+  (cond
+    ((eq (get-point) (get-point-max)) nil)
+    ((eq "\n" (get-char)) (delete))
+    (t (set-mark) (end-of-line) (if (eq (get-point) (get-mark)) (delete) (kill-region)))))
 
 ;; shrink string by dropping off last char
 (defun shrink(s)
