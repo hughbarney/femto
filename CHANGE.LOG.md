@@ -1,3 +1,6 @@
+## Femto 2.10 20 January 2018
+* fixed lnend() behavior at end of file
+
 ## Femto 2.9 16 January 2018
 * fixed kill-to-eol, no longer starts to delete backwards if at end of file
 

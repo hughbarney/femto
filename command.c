@@ -113,8 +113,11 @@ void lnbegin()
 
 void lnend()
 {
+        if (curbp->b_point == pos(curbp, curbp->b_ebuf)) return; /* do nothing if EOF */
 	curbp->b_point = dndn(curbp, curbp->b_point);
+	point_t p = curbp->b_point;
 	left();
+	curbp->b_point = (*ptr(curbp, curbp->b_point) == '\n') ? curbp->b_point : p;
 }
 
 void backward_word()
