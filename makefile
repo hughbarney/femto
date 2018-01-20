@@ -71,5 +71,5 @@ clean:
 	-$(RM) $(OBJ) femto
 
 install:
-	-$(MV) femto $(HOME)/$(HOSTNAME)/bin
+	-$(MV) femto $(HOME)/bin
 
