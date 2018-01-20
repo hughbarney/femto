@@ -64,7 +64,7 @@ command_t *register_command(char *cmd_name, void (*func)(void))
 		cmdp->c_next = cp->c_next;
 		cp->c_next = cmdp;
 	}
-	debug("register_cmd: %s\n", cmdp->c_name);
+	//debug("register_cmd: %s\n", cmdp->c_name);
 	return cmdp;
 }
 

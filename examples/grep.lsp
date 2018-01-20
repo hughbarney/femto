@@ -14,11 +14,13 @@
   (kill-buffer grep-buf)
   (setq grep-line 0)
   (setq grep-search (prompt "grep search for: " grep-search))
-  (setq grep-search-files (prompt "grep search files: " grep-search-files))
-  (setq grep-query (concat grep-cmd " " grep-search " " grep-search-files))
-  (shell-command grep-query)
-  (set-key "c-x `" "grep-next")
-  (rename-buffer grep-buf))
+  (if (> (string.length grep-search) 0)
+  (progn
+    (setq grep-search-files (prompt "grep search files: " grep-search-files))
+    (setq grep-query (concat grep-cmd " " grep-search " " grep-search-files))
+    (shell-command grep-query)
+    (set-key "c-x `" "grep-next")
+    (rename-buffer grep-buf))))
 
 (defun grep-next()
   (select-buffer grep-buf)
