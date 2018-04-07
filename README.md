@@ -36,12 +36,17 @@ In Defining Atto as the lowest functional Emacs I have had to consider the essen
 Femto is an extended version of Atto Emacs with its own extension languauge
 
 
-## Derivation
-* **Femto** is based on the Atto codebase [0], which in turn was based on Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]). 
+## History
+
+* In late 2015 Hugh Barney wrote the Atto editor 'A minimum functioning Emacs is less than 2000 lines of C'.  Atto was based on Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]). 
+* **Femto** is based on the Atto codebase [0]
 * **Femto** was originally an intermediate project to form a codebase for the FemtoEmacs Editor [8], [9] which was a collaboration between Hugh Barney, Ed Costa and Lucas Guerra.  FemtoEmacs uses Jeff Bezanson's Femtolisp LISP [10] implementation as the basis for its extension language.  However the Femtolisp codebase is in excess of 12K line of code and fairly difficult to understand how to use it inside an embedded application.
 * In late 2016 Hugh Barney decided to look for a smaller lisp implementation for Femto and settled on Tiny-Lisp[7] by Mattias Pirstitz.
 * **Zepl** was an initial project that established the suitability of Tiny-Lisp for use within an Emacs type editor. The results surpassed expectations.
 * In late 2017 Hugh Barney decided to return to the **Femto** editor and extend it using Tiny-Lisp.
+
+For a full version history please refer to the file CHANGE.LOG.md
+
 
 ## Comparisons with Other Emacs Implementations
 
