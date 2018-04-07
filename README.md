@@ -14,6 +14,12 @@ Femto is an extended version of Atto Emacs with a Tiny Lisp extension languauge
 * Provide a number of useful extension packages written in Tiny Lisp (these include an interface to **git** (similar to GNU Emacs Magit), a small version of **dired**, a buffer management menu (**buffer menu**), **defmacro** allows for a macro to be recorded and invoked using c-x e, and an interface to **grep**.
 * Be easy to understand without extensive study (to encourage further experimentation).
 
+
+## What does Femto bring to the party of Text Editors
+
+As far as I know Femto is the only Emacs Style editor to provide a macro recorder that generates usable lisp code that can then be used to build a lager more complex utility.   Whilst GNU Emacs has a macro recorder facility it only allows you to dump out the keystrokes used during macro recording.  Femto does this by writing the lisp code to a text buffer called *macro*.  Though I have tried dozens of text editors over the years (mostly on PCs, but a few on Mini and Mainframe Computers) I am not are of any other editor that works this way.  This feature was born out of the principle of keeping a small editor code written in C and where possible using Lisp to implement new features.  The standard Emacs macro keystrokes [C-x (, C-c ), C-x e] ere all written in Lisp in examples/defmacro.lsp. This meant that no special C code was needed in Femto to know when it was in macro mode or not.
+
+
 ## Why the name Femto?
 
 The small Emacs naming scheme appears to use sub-unit prefixes in decending order with each further reduction of functionality. The Nano and Pico Emacs editors have been around for a while.
