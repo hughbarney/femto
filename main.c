@@ -116,6 +116,14 @@ void load_config()
 	assert(output != NULL);
 	close(fd);
 
+	/*
+	 * If output is null, the rc file was empty, so quit early.
+	 * Otherwise, the strstr call will segfault!
+	 */
+	if (output == NULL) {
+		reset_output_stream();
+		return;
+	}
 	/* all exceptions start with the word error: */
 	if (NULL != strstr(output, "error:"))
 		fatal(output);
