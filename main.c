@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 	init_pair(ID_SINGLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* single quoted strings */
 	init_pair(ID_DOUBLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* double quoted strings */
 	init_pair(ID_BRACE, COLOR_BLACK, COLOR_CYAN);            /* brace highlight */
-	
+
 	if (1 < argc) {
 		char bname[NBUFN];
 		char fname[NAME_MAX + 1];
@@ -109,7 +109,7 @@ void load_config()
 	(void)snprintf(fname, 300, "%s/%s", getenv("HOME"), E_INITFILE);
 
 	if ((fd = open(fname, O_RDONLY)) == -1)
-		fatal("failed to open " E_INITFILE " in HOME directory");
+		return;
 
 	reset_output_stream();
 	output = load_file(fd);
