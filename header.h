@@ -20,11 +20,11 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.10"
+#define E_VERSION       "2.11"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND	"<not bound>"
 #define E_INITFILE      "femto.rc"
-#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, January 2018, by Hugh Barney,  No warranty."
+#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, August 2020, by Hugh Barney,  No warranty."
 
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
@@ -131,6 +131,7 @@ typedef struct buffer_t
 	point_t b_cpoint;         /* the original current point, used for mutliple window displaying */
 	point_t b_page;           /* start of page */
 	point_t b_epage;          /* end of page */
+	point_t b_reframe;        /* force a reframe of the display */
 	int b_cnt;                /* count of windows referencing this buffer */
 	int b_size;               /* current size of text being edited (not including gap) */
 	int b_psize;              /* previous size */

@@ -8,13 +8,12 @@
 void beginning_of_buffer()
 {
 	curbp->b_point = 0;
-	curwp->w_point = curbp->b_point;
 }
 
 void end_of_buffer()
 {
 	curbp->b_point = pos(curbp, curbp->b_ebuf);
-	curwp->w_point = curbp->b_point;
+	if (curbp->b_epage < pos(curbp, curbp->b_ebuf)) curbp->b_reframe = 1;
 }
 
 void quit_ask()

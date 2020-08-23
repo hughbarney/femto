@@ -1,3 +1,6 @@
+## Femto 2.11 23 August 2020
+* used the Atto solution for jumping to eof and redisplay
+
 ## Femto 2.10 20 January 2018
 * fixed lnend() behavior at end of file
 
