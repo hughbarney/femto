@@ -6,7 +6,7 @@ CC      = cc
 CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DNDEBUG
 CFLAGS += -O2 -std=c11 -Wall -pedantic -g
 LD      = cc
-LDFLAGS = -o
+LDFLAGS =
 LIBS    = -lncursesw
 CP      = cp
 MV      = mv
@@ -15,7 +15,7 @@ RM      = rm
 OBJ     = command.o display.o complete.o data.o gap.o key.o search.o buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o lisp.o main.o
 
 femto: $(OBJ)
-	$(LD) $(LDFLAGS) femto $(OBJ) $(LIBS)
+	$(LD) $(LDFLAGS) -o femto $(OBJ) $(LIBS)
 
 complete.o: complete.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c complete.c
