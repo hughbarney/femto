@@ -20,10 +20,12 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.11"
+#define E_VERSION       "2.12"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND	"<not bound>"
-#define E_INITFILE      "femto.rc"
+#ifndef E_INITFILE
+#define E_INITFILE      "/usr/local/share/femto/femto.rc"
+#endif
 #define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, August 2020, by Hugh Barney,  No warranty."
 
 #define MSGLINE         (LINES-1)

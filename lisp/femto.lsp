@@ -1,14 +1,5 @@
-;; -*-Lisp-*-
 ;;
-;; FEMTO an extended Atto Emacs with a tiny lisp extension language
-;; hughbarney AT googlemail.com
-;;
-;; The editor provides only basic buffer movement and edit functions
-;; everything else is done by extending the user interface using the
-;; lisp extension language. Functions can be bound to keys using set-key.
-;; For example: (set-key "c-k" "(kill-to-eol)")
-;; 
-;; place femto.rc in your home direcory and it is run when femto starts up.
+;; Basic Femto extensions
 ;;
 
 ;; max value
@@ -18,28 +9,6 @@
 ;; min value
 (defun min(a b)
   (if (< a b) a b))
-
-;; concatenate a list of strings
-(defmacro concat args
-  (cond
-    ((null args) "")
-    ((null (cdr args)) (car args))
-    (t (list (quote string.append) (car args) (cons (quote concat) (cdr args)))) ))
-
-;; return filename relative to the homedir
-(defun home(fn)
-  (concat (os.getenv "HOME") "/" fn))
-
-;; the user should modify this value to where they wish to store scripts and extensions
-(setq script_dir (home "src/femto/examples/"))
-
-(setq config_file "femto.rc")
-
-(defun edit-config()
-  (find-file (home config_file)))
-
-(defun load-script(fn)
-  (load (concat script_dir fn)))
 
 (defun repeat (n func)  
   (cond ((> n 0) (func) (repeat (- n 1) func))))
@@ -184,32 +153,3 @@
     (insert-string "  Tiny Emacs clone with Tiny-Lisp extension language\n  ")
     (insert-string (get-version-string))
     (insert-string "\n\n\n\n\n\n\n"))))
-
-;;
-;;  Load extensions
-;;
-
-(load-script "oxo.lsp")
-(load-script "bufmenu.lsp")
-(load-script "dired.lsp")
-(load-script "grep.lsp")
-(load-script "defmacro.lsp")
-(load-script "git.lsp")
-
-;;
-;;  Key Bindings 
-;;
-
-(set-key "esc-right" "delete-next-word")
-(set-key "esc-left" "delete-previous-word")
-(set-key "c-k" "kill-to-eol")
-(set-key "c-x ?" "describe-key")
-(set-key "c-]" "find_and_eval_sexp")
-(set-key "c-x c-o" "oxo")
-(set-key "c-x c-b" "buffer-menu")
-(set-key "c-x c-d" "dired")
-(set-key "c-x c" "edit-config")
-(set-key "c-x g" "grep-command")
-
-(show-startup-message)
-

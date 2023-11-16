@@ -1,0 +1,64 @@
+;; -*-Lisp-*-
+;;
+;; FEMTO an extended Atto Emacs with a tiny lisp extension language
+;; hughbarney AT googlemail.com
+;;
+;; The editor provides only basic buffer movement and edit functions
+;; everything else is done by extending the user interface using the
+;; lisp extension language. Functions can be bound to keys using set-key.
+;; For example: (set-key "c-k" "(kill-to-eol)")
+;;
+
+;; Directory where scripts and extensions are stored
+(setq script_dir SCRIPTDIR)
+;; Directory where user specific configuration is stored
+(setq config_dir ".config/femto")
+
+(setq config_file "femto.rc")
+
+;; concatenate a list of strings
+(defmacro concat args
+  (cond
+    ((null args) "")
+    ((null (cdr args)) (car args))
+    (t (list (quote string.append) (car args) (cons (quote concat) (cdr args)))) ))
+
+(defun load-script(fn)
+  (load (concat script_dir "/" fn)))
+
+(defun confn(fn)
+  (concat (os.getenv "HOME") "/" config_dir "/" fn))
+
+(defun edit-config()
+  (find-file (confn config_file)))
+
+;;
+;;  Load extensions
+;;
+
+(load-script "femto.lsp")
+(load-script "oxo.lsp")
+(load-script "bufmenu.lsp")
+(load-script "dired.lsp")
+(load-script "grep.lsp")
+(load-script "defmacro.lsp")
+(load-script "git.lsp")
+
+;;
+;;  Key Bindings 
+;;
+
+(set-key "esc-right" "delete-next-word")
+(set-key "esc-left" "delete-previous-word")
+(set-key "c-k" "kill-to-eol")
+(set-key "c-x ?" "describe-key")
+(set-key "c-]" "find_and_eval_sexp")
+(set-key "c-x c-o" "oxo")
+(set-key "c-x c-b" "buffer-menu")
+(set-key "c-x c-d" "dired")
+(set-key "c-x c" "edit-config")
+(set-key "c-x g" "grep-command")
+
+(load (confn config_file))
+
+(show-startup-message)

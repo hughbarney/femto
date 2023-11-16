@@ -101,15 +101,13 @@ void msg(char *m, ...)
 
 void load_config()
 {
-	char fname[300];
 	char *output;
 	int fd;
 
 	reset_output_stream();
-	(void)snprintf(fname, 300, "%s/%s", getenv("HOME"), E_INITFILE);
 
-	if ((fd = open(fname, O_RDONLY)) == -1)
-		fatal("failed to open " E_INITFILE " in HOME directory");
+	if ((fd = open(E_INITFILE, O_RDONLY)) == -1)
+		fatal("failed to open init file: " E_INITFILE);
 
 	reset_output_stream();
 	output = load_file(fd);

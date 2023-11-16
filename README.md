@@ -196,113 +196,53 @@ Now call factorial in the same way (mark the start of the code, move to the end 
 ![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-lisp.jpg)
 
 
-## femto.rc file
+## Femto Startup
 
-The sample femto.rc file should be placed into your HOME directory
+The Femto editor itself provides only basic buffer movement and edit
+functions, everything else is done by extending the user interface
+using the Lisp extension language.
 
-![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-femtorc.jpg)
+The `lisp` subdirectory contains essential extensions to the Femto
+editor as well as examples.  With `make install` these are copied to a
+system wide location, together with the `femto.rc` file.
 
-The example shows how the editor can be extended.
+When Femto starts it loads the `femto.rc` file, which in turn loads
+the extensions with their respective key bindings and then shows a
+startup message in the *scratch* buffer.
 
-```lisp
-;; -*-Lisp-*-
-;;
-;; FEMTO an extended Atto Emacs with a tiny lisp extension language
-;; hughbarney AT googlemail.com
-;;
-;; The editor provides only basic buffer movement and edit functions
-;; everything else is done by extending the user interface using the
-;; lisp extension language. Functions can be bound to keys using set-key.
-;; For example: (set-key "c-k" "kill-to-eol")
-;; 
-;; place femto.rc in your home direcory and it is run when femto starts up.
-;;
+Just before showing the startup message a user specific `femto.rc`
+file is loaded from the directory `.config/femto` in your HOME
+directory if available.
 
-;; kill to end of line, uses if and progn
-(defun kill-to-eol()
-  (if (eq "\n" (get-char))
-    (progn
-      (delete))
-    (progn
-      (set-mark)
-      (end-of-line)
-      (kill-region))))
+If `femto` should be run from the source directory build it with
 
-;; prompt for a keystroke then show its name
-(defun describe-key()
-  (show-prompt "Describe Key: " "")
-  (setq key (get-key))
-  (cond
-    ((not (eq key "")) (message key))
-    (t (message (concat (get-key-name) " runs command " (get-key-funcname))))))
-```
+    CPPFLAGS=-DE_INITFILE=\\\"femto.rc\\\" make SCRIPTDIR=\\\"lisp\\\"
 
+It will then read `femto.rc` the current directory and the extensions
+from the `lisp` subdirectory.
 
-## Key Names
+## Basic Femto Extension
 
-The following keynames are used for user key bindings
+`femto.rc` and `femto.lsp` extend the Lisp editor and provide basic editor functionality.
 
-* "c-a" to "c-z"                 Control-A to Control-Z  (Control-X, I and M are reserved)
-* "c-x c-a" to "c-x c-z"         Control-X folowed by Control-A to Control-Z
-* "c-x a" to "c-x z"             Control-X followed by a to z
-* "esc-a" to "esc-z"             Escape-A to Escape-Z
-
-When using (set-key) the keyname must be supplied using the key names above.
-The lisp function must be enclosed in brackets ().
-
-Examples:
-```lisp
-    (set-key "esc-right" "delete-next-word")
-    (set-key "esc-left" "delete-previous-word")
-    (set-key "c-k" "kill-to-eol")
-    (set-key "c-x ?" "describe-key")
-    (set-key "c-]" "find_and_eval_sexp")
-    (set-key "c-x c-o" "oxo")
-    (set-key "c-x c-b" "buffer-menu")
-    (set-key "c-x c-d" "dired")
-    (set-key "c-x c" "edit-config")
-    (set-key "c-x g" "grep-command")
-```
-
-Key bindings cane be checked using describe-key (c-x ?).
-(describe-key) is implemented in Lisp in the femto.rc file.
+* `load-script` *`file`* - load file from script directory.
+* `edit-config` - open user specific configuration file in Femto.
+* `delete-next-word`, `delete-previous-word`, `kill-to-eol` - For Emacs like key bindings
+* `describe-key`, `find_end_p`, `find_start_p`, `find_and_eval_sexp`, `show-startup-message`
+* `concat` *`args`*, `string.trim.front` *`s`*, `string.trim.back` *`s`*, `string.trim` *`s`*, `shrink` *`s`* - string operations
+* `max` *`a b`*, `min` *`a b`*, `repeat` *`n func`* - Lisp functions
+* `is_ctl_g` *`k`*, `is_escape` *`k`*, `is_backspace` *`k`*, `is_ctl_s` *`k`*, `is_control_char` *`k`* - helper functions
 
 
 ## Femto Extensions
 
+Additional extensions loaded by `femto.rc`
+
 * **grep** - enables searching for text in files and loading of the files at the location of the match into the editor.
 * **bufmenu** - the classic Emacs buffer menu
-* **oxo** - a basic implementation of tick-tack-toe that runs in the Editor.
 * **git** - a simple interface to the git version control tool (similar to GNU Emacs magit).
+* **oxo** - a basic implementation of tick-tack-toe that runs in the Editor.
 
-```lisp
-   ;; the extensions are loaded bu using load_script
-
-   ;;
-   ;;  Load extensions
-   ;;
-
-   (load_script "oxo.lsp")
-   (load_script "bufmenu.lsp")
-   (load_script "dired.lsp")
-   (load_script "grep.lsp")
-```
-
-Note that load script is a user defined function in femto.rc. It loads a script file from the
-directory set in the variable script_dir.
-
-```lisp
-
-  ;; return filename relative to the homedir
-  (defun home(fn)
-    (concat (os.getenv "HOME") "/" fn))
-
-  ;; the user should modify this value to where they wish to store scripts and extensions
-  (setq script_dir (home "src/femto/examples/"))
-
-  (defun load_script(fn)
-    (load (concat script_dir fn)))
-```
 ![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-oxo.jpg)
 
 
@@ -437,38 +377,42 @@ directory set in the variable script_dir.
 When building on Ubuntu you will need to install the libcurses dev package.
 NOTE: As of Femto 1.2 you will also need the libncursesw (wide) library
 
-$ sudo apt-get install apt-file
-$ apt-file update
+	$ sudo apt-get install apt-file
+	$ apt-file update
 
 now search for which package would have curses.h
-$ apt-file search curses.h
 
-libncurses5-dev: /usr/include/curses.h
+	$ apt-file search curses.h
 
-$ sudo apt-get install libncurses5-dev libncursesw5-dev
+	libncurses5-dev: /usr/include/curses.h
+
+	$ sudo apt-get install libncurses5-dev libncursesw5-dev
 
 
 ## Future Enhancements
 
 The following enhancements are envisaged.
+
 * Directory and file manegement (Dired) functionality.  A basic start has been made with dired.lsp
 
 ## Known Issues
-	Goto-line will fail to go to the very last line.  This is a special case that could easily be fixed.
+
+Goto-line will fail to go to the very last line.  This is a special case that could easily be fixed.
 
 ## Copying
-  Femto code is released to the public domain.
-  hughbarney@gmail.com November 2017
+
+Femto code is released to the public domain. hughbarney@gmail.com November 2017
 
 ## References
-    [0] Atto Emacs - https://github.com/hughbarney/atto
-    [1] Perfect Emacs - https://github.com/hughbarney/pEmacs
-    [2] Anthony's Editor - https://github.com/hughbarney/Anthony-s-Editor
-    [3] MG - https://github.com/rzalamena/mg
-    [4] Jonathan Payne, Buffer-Gap: http://ned.rubyforge.org/doc/buffer-gap.txt
-    [5] Anthony Howe,  http://ned.rubyforge.org/doc/editor-101.txt
-    [6] Anthony Howe, http://ned.rubyforge.org/doc/editor-102.txt
-    [7] Tiny-Lisp,  https://github.com/matp/tiny-lisp
-    [8] FemtoEmacs, https://github.com/FemtoEmacs/Femto-Emacs
-    [9] FemtoEmacs, https://github.com/hughbarney/Femto-Emacs
-    [10] Femtolisp,  https://github.com/JeffBezanson/femtolisp
+
+ * [0] Atto Emacs - https://github.com/hughbarney/atto
+ * [1] Perfect Emacs - https://github.com/hughbarney/pEmacs
+ * [2] Anthony's Editor - https://github.com/hughbarney/Anthony-s-Editor
+ * [3] MG - https://github.com/rzalamena/mg
+ * [4] Jonathan Payne, Buffer-Gap: http://ned.rubyforge.org/doc/buffer-gap.txt
+ * [5] Anthony Howe,  http://ned.rubyforge.org/doc/editor-101.txt
+ * [6] Anthony Howe, http://ned.rubyforge.org/doc/editor-102.txt
+ * [7] Tiny-Lisp,  https://github.com/matp/tiny-lisp
+ * [8] FemtoEmacs, https://github.com/FemtoEmacs/Femto-Emacs
+ * [9] FemtoEmacs, https://github.com/hughbarney/Femto-Emacs
+ * [10] Femtolisp,  https://github.com/JeffBezanson/femtolisp

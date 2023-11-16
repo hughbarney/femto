@@ -3,6 +3,7 @@
 #
 
 CC      = cc
+CPP     = cpp
 CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DNDEBUG
 CFLAGS += -O2 -std=c11 -Wall -pedantic -g
 LD      = cc
@@ -11,10 +12,15 @@ LIBS    = -lncursesw
 CP      = cp
 MV      = mv
 RM      = rm
+MKDIR	= mkdir
+PREFIX  = /usr/local
+BINDIR  = $(PREFIX)/bin
+DATADIR = $(PREFIX)/share
+SCRIPTDIR = $(DATADIR)/femto
 
 OBJ     = command.o display.o complete.o data.o gap.o key.o search.o buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o lisp.o main.o
 
-femto: $(OBJ)
+femto: $(OBJ) femto.rc
 	$(LD) $(LDFLAGS) -o femto $(OBJ) $(LIBS)
 
 complete.o: complete.c header.h
@@ -65,11 +71,18 @@ lisp.o: lisp.c
 main.o: main.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c main.c
 
-
+femto.rc: femto.rc.in
+	$(CPP) -P -D SCRIPTDIR=$(SCRIPTDIR) $< $@
 
 clean:
-	-$(RM) $(OBJ) femto
+	-$(RM) -f $(OBJ) femto femto.rc
 
-install:
-	-$(MV) femto $(HOME)/bin
+install: femto femto.rc
+	-$(MKDIR) -p $$DESTDIR$(BINDIR)
+	-$(CP) femto $$DESTDIR$(BINDIR)
+	-$(MKDIR) -p $$DESTDIR$(DATADIR)/femto
+	-$(CP) lisp/*.lsp femto.rc $$DESTDIR$(DATADIR)/femto
 
+uninstall:
+	-$(RM) -f $$DESTDIR$(BINDIR)/femto
+	-$(RM) -rf $$DESTDIR$(DATADIR)/femto
