@@ -43,6 +43,7 @@
 (load-script "grep.lsp")
 (load-script "defmacro.lsp")
 (load-script "git.lsp")
+(load-script "startup.lsp")
 
 ;;
 ;;  Key Bindings 
