@@ -8,7 +8,7 @@
 int main(int argc, char **argv)
 {
 	setup_keys();
-	(void)init_lisp();
+	(void)init_lisp(argc, argv);
 
 
 	setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
