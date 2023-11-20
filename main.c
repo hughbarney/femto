@@ -8,7 +8,7 @@
 int main(int argc, char **argv)
 {
 	setup_keys();
-	(void)init_lisp();
+	(void)init_lisp(argc, argv);
 
 
 	setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
@@ -28,19 +28,8 @@ int main(int argc, char **argv)
 	init_pair(ID_DOUBLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* double quoted strings */
 	init_pair(ID_BRACE, COLOR_BLACK, COLOR_CYAN);            /* brace highlight */
 	
-	if (1 < argc) {
-		char bname[NBUFN];
-		char fname[NAME_MAX + 1];
-		/* Save filename irregardless of load() success. */
-		safe_strncpy(fname, argv[1], NAME_MAX);
-		make_buffer_name(bname, fname);
-		curbp = find_buffer(bname, TRUE);
-		(void)insert_file(fname, FALSE);
-		strcpy(curbp->b_fname, fname);
-	} else {
-		curbp = find_buffer(str_scratch, TRUE);
-		strncpy(curbp->b_bname, str_scratch, STRBUF_S);
-	}
+	curbp = find_buffer(str_scratch, TRUE);
+	strncpy(curbp->b_bname, str_scratch, STRBUF_S);
 
 	wheadp = curwp = new_window();
 	one_window(curwp);

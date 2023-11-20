@@ -1960,7 +1960,7 @@ static char *stdlib = LISP(
 
 // MAIN ///////////////////////////////////////////////////////////////////////
 
-Object *newRootEnv(GC_PARAM)
+Object *newRootEnv(GC_PARAM, int arg, char **argv)
 {
 	GC_TRACE(gcEnv, newEnv(&nil, &nil, GC_ROOTS));
 	GC_TRACE(gcVar, nil);
@@ -1989,6 +1989,21 @@ Object *newRootEnv(GC_PARAM)
 		*gcObject = readExpr(&stream, GC_ROOTS);
 		evalExpr(gcObject, gcEnv, GC_ROOTS);
 	}
+	// add argv0 and argv
+	*gcVar = newSymbol("argv0", GC_ROOTS);
+	*gcVal = newString(*argv, GC_ROOTS);
+	argv++;
+	envSet(gcVar, gcVal, gcEnv, GC_ROOTS);
+	*gcVar = newSymbol("argv", GC_ROOTS);
+	*gcVal = nil;
+	Object **i = gcVal;
+	while(*argv) {
+	  *i = newCons(&nil, &nil, GC_ROOTS);
+	  (*i)->car = newString(*argv, GC_ROOTS);
+	  i = &(*i)->cdr;
+	  argv++;
+	}
+	envSet(gcVar, gcVal, gcEnv, GC_ROOTS);
 
 	return *gcEnv;
 }
@@ -2071,7 +2086,7 @@ void call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
 /*
  * 3 interface functions that enable lisp to be embedded in an application (eg Editor)
  */
-int init_lisp()
+int init_lisp(int argc, char **argv)
 {
 	theRoot = nil;
 
@@ -2086,7 +2101,7 @@ int init_lisp()
 	symbols = newCons(&t, &symbols, theRoot);
 
 	temp_root.type = TYPE_CONS;
-	temp_root.car = newRootEnv(theRoot);
+	temp_root.car = newRootEnv(theRoot, argc, argv);
 	temp_root.cdr = theRoot;
 
 	theEnv = &temp_root.car;

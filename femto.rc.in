@@ -32,6 +32,17 @@
 (defun edit-config()
   (find-file (confn config_file)))
 
+(defun getopts (opts pos)
+  (setq o (car opts))
+  (cond
+    ((null o))
+    ((eq (string.ref o 0) "+")
+     (getopts (cdr opts) (string->number (string.substring o 1 (- (string.length o) 1)))))
+    (t
+     (find-file o)
+     (goto-line pos)
+     (getopts (cdr opts) 0))))
+
 ;;
 ;;  Load extensions
 ;;
@@ -64,3 +75,4 @@
 
 (load (confn config_file))
 
+(getopts argv 0)
