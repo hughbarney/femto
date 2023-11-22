@@ -1,3 +1,6 @@
+## Femto 2.12 22 November 2023
+* elegant command line argument handling past to lisp for processing - kudos and thanks to jorge-leon 
+
 ## Femto 2.11 23 August 2020
 * used the Atto solution for jumping to eof and redisplay
 
