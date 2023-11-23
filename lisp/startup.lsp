@@ -13,6 +13,7 @@
     (insert-string "  |  _|  __/ | | | | | || (_) |   \n")
     (insert-string "  |_|  \___|_| |_| |_|\__\___/'    \n\n  ")
     (insert-string "\n\n")
+    (insert-string "  C-x h   for help\n\n")
     (insert-string "  **********************************/\n\n\n\n")
     (insert-string "  Tiny Emacs clone with Tiny-Lisp extension language\n  ")
     (insert-string (get-version-string))

@@ -1037,6 +1037,8 @@ DEFINE_EDITOR_FUNC(quit)
 DEFINE_EDITOR_FUNC(eval_block)
 DEFINE_EDITOR_FUNC(delete_other_windows)
 DEFINE_EDITOR_FUNC(list_buffers)
+DEFINE_EDITOR_FUNC(describe_bindings)
+DEFINE_EDITOR_FUNC(describe_functions)
 DEFINE_EDITOR_FUNC(split_window)
 DEFINE_EDITOR_FUNC(other_window)
 DEFINE_EDITOR_FUNC(execute_key)
@@ -1676,6 +1678,8 @@ Primitive primitives[] = {
 	{"delete-other-windows", 0, 0, e_delete_other_windows},
 	{"execute-key", 0, 0, e_execute_key},
 	{"list-buffers", 0, 0, e_list_buffers},
+	{"describe-bindings", 0, 0, e_describe_bindings},
+	{"describe-functions", 0, 0, e_describe_functions},
 	{"split-window", 0, 0, e_split_window},
 	{"other-window", 0, 0, e_other_window},
 	{"get-clipboard", 0, 0, e_get_clipboard},

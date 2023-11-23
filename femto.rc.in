@@ -55,9 +55,11 @@
 (load-script "defmacro.lsp")
 (load-script "git.lsp")
 (load-script "startup.lsp")
+(load-script "info.lsp")
+
 
 ;;
-;;  Key Bindings 
+;;  Key Bindings, setkey is used to bind keys to user defined functions in lisp
 ;;
 
 (set-key "esc-right" "delete-next-word")
@@ -69,6 +71,7 @@
 (set-key "c-x c-b" "buffer-menu")
 (set-key "c-x c-d" "dired")
 (set-key "c-x c" "edit-config")
+(set-key "c-x h" "show-info")
 (set-key "c-x g" "grep-command")
 
 (show-startup-message)

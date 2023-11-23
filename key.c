@@ -211,7 +211,8 @@ void setup_keys()
 	set_key_internal("c-]",       "user-func"             , "\x1D", user_func);
 	set_key_internal("resize",     "resize"               , "\x9A", resize_terminal);
 
-	register_command("describe-functions", describe_functions);
+	set_key_internal("c-c f",     "describe-functions"    , "\x03\x66", describe_functions);
+
 	register_command("show-version", version);
 }
 

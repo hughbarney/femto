@@ -20,7 +20,7 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.12"
+#define E_VERSION       "2.13"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND	"<not bound>"
 #ifndef E_INITFILE
