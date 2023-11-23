@@ -36,6 +36,7 @@
   (setq o (car opts))
   (cond
     ((null o))
+    ((eq o "+"))
     ((eq (string.ref o 0) "+")
      (getopts (cdr opts) (string->number (string.substring o 1 (- (string.length o) 1)))))
     (t
