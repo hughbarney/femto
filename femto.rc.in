@@ -17,11 +17,20 @@
 (setq config_file "femto.rc")
 
 ;; concatenate a list of strings
-(defmacro concat args
+
+(defun stringify (s)
+  (cond
+    ((null s)    "")
+    ((number? s) (number->string s))
+    ((string? s) s) 
+    ((consp s)   (string.append (stringify (car s)) (stringify (cdr s))))
+    (t (string.append "" s))))
+
+(defun concat args
   (cond
     ((null args) "")
-    ((null (cdr args)) (car args))
-    (t (list (quote string.append) (car args) (cons (quote concat) (cdr args)))) ))
+    ((null (cdr args)) (stringify (car args)))
+    (t (string.append (stringify (car args)) (concat (cdr args)))) ))
 
 (defun load-script(fn)
   (load (concat script_dir "/" fn)))
@@ -62,6 +71,10 @@
 ;;
 ;;  Key Bindings, setkey is used to bind keys to user defined functions in lisp
 ;;
+
+(set-key "c-x @" "shell-command") ;; femto
+(set-key "esc !" "shell-command")
+(set-key "c-x i" "insert-file")
 
 (set-key "esc-right" "delete-next-word")
 (set-key "esc-left" "delete-previous-word")
