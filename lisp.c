@@ -35,6 +35,8 @@
 #include <unistd.h>
 #include <curses.h>
 
+#include "header.h"
+
 extern void debug(char *,...);
 #define F_NONE          0
 #define F_CLEAR         1
@@ -1055,7 +1057,6 @@ extern void set_scrap(unsigned char *);
 extern void execute_key(void);
 extern int select_buffer(char *);
 extern int delete_buffer_byname(char *);
-extern void rename_current_buffer(char *);
 extern int save_buffer_byname(char *);
 extern int count_buffers(void);
 extern void display_prompt_and_response(char *, char *);
@@ -1131,15 +1132,37 @@ Object *e_get_temp_file(Object ** args, GC_PARAM)
 	return newStringWithLength(fn, strlen(fn), GC_ROOTS);	
 }
 
-Object *e_shell_command(Object ** args, GC_PARAM)
-{
+Object *e_system(Object ** args, GC_PARAM) {
+
+	ONE_STRING_ARG();
+	return newNumber((double) system(first->string), GC_ROOTS);
+}
+
+Object *e_insert_file(Object ** args, GC_PARAM) {
+
+	// ToDo: want to give an optional modify flag, but then it segfaults
 	Object *first = (*args)->car;
-
+	int mflag;
+	
 	if (first->type != TYPE_STRING)
-	    exceptionWithObject(first, "is not a string (set-clipboard)");
+	    exceptionWithObject(first, "is not a string (insert-file)");
 
-	shell_command(first->string);
-	return t;
+	mflag = (first->cdr != nil && first->cdr->car != nil);
+	mflag = FALSE;
+	if (insert_file(first->string, mflag) == TRUE)
+		return t;
+	else
+		return nil;
+}
+
+Object *e_getfilename(Object **args, GC_PARAM) {
+
+	ONE_STRING_ARG();
+	
+	if (FALSE == getfilename(first->string, (char*) response_buf, NAME_MAX))
+		return nil;
+	
+	return newString(response_buf, GC_ROOTS);
 }
 
 Object *stringAppend(Object ** args, GC_PARAM)
@@ -1319,6 +1342,8 @@ Object *e_goto_line(Object ** args, GC_PARAM)
 Object *e_select_buffer(Object ** args, GC_PARAM)
 {
 	ONE_STRING_ARG();
+	// Note: select buffer always returns TRUE
+	//  so it seems to be superfluous to test for the return value
 	int result = select_buffer(first->string);
 	return (result ? t : nil);
 }
@@ -1343,6 +1368,12 @@ Object *e_kill_buffer(Object ** args, GC_PARAM)
 	ONE_STRING_ARG();
 	int result = delete_buffer_byname(first->string);
 	return (result ? t : nil);
+}
+Object *e_zero_buffer(Object ** args, GC_PARAM)
+{
+	assert(curbp != NULL);
+	zero_buffer(curbp);
+	return nil;
 }
 
 Object *e_find_file(Object ** args, GC_PARAM)
@@ -1647,11 +1678,14 @@ Primitive primitives[] = {
 	{"save-buffer", 1, 1, e_save_buffer},
 	{"search-forward", 1, 1, e_search_forward},
 	{"search-backward", 1, 1, e_search_backward},
+	{"insert-file-contents-literally", 1, 2, e_insert_file},
 	{"select-buffer", 1, 1, e_select_buffer},
 	{"rename-buffer", 1, 1, e_rename_buffer},
 	{"kill-buffer", 1, 1, e_kill_buffer},
+	{"erase-buffer", 0, 0, e_zero_buffer},
 	{"find-file", 1, 1, e_find_file},
 	{"update-display", 0, 0, e_update_display},
+	{"prompt-filename", 1, 1, e_getfilename},
 	{"clear-message-line", 0, 0, e_clear_message_line},
 	{"refresh", 0, 0, e_refresh},
 
@@ -1669,7 +1703,7 @@ Primitive primitives[] = {
 	{"previous-line", 0, 0, e_up},
 	{"set-mark", 0, 0, e_set_mark},
 	{"set-clipboard", 1, 1, e_set_clipboard},
-	{"shell-command", 1, 1, e_shell_command},
+	{"system", 1, 1, e_system},
 	{"delete", 0, 0, e_delete},
 	{"copy-region", 0, 0, e_copy_region},
 	{"kill-region", 0, 0, e_kill_region},

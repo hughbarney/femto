@@ -147,6 +147,7 @@ void setup_keys()
 	set_key_internal("c-w",     "kill-region"           , "\x17", kill_region);
 	set_key_internal("c-y",     "yank"                  , "\x19", yank);
 
+	set_key_internal("esc-!",   "shell-command"         , "\x1B\x21", user_func);
         set_key_internal("esc-a",   "apropos"               , "\x1B\x61", apropos);
 	set_key_internal("esc-b",   "backward-word"         , "\x1B\x62", backward_word);
 	set_key_internal("esc-c",   "copy-region"           , "\x1B\x63", copy_region);
@@ -174,7 +175,8 @@ void setup_keys()
 	set_key_internal("esc-<",     "beginning-of-buffer" , "\x1B\x3C", beginning_of_buffer);
 	set_key_internal("esc->",     "end-of-buffer"       , "\x1B\x3E", end_of_buffer);
 	set_key_internal("esc-]",     "eval-block"          , "\x1B\x5D", eval_block);
-	set_key_internal("esc-;",     "exec-lisp-command"   , "\x1B\x3B", repl);
+	set_key_internal("esc-:",     "exec-lisp-command"   , "\x1B\x3A", repl);
+	set_key_internal("esc-;",     "exec-lisp-command"   , "\x1B\x3B", repl); // femto
 	set_key_internal("esc-.",     "user-func"           , "\x1B\x2E", user_func);
 
 	set_key_internal("up ",       "previous-line",        "\x1B\x5B\x41", up);
@@ -199,11 +201,10 @@ void setup_keys()
 	set_key_internal("c-x =",     "cursor-position"       , "\x18\x3D", cursor_position);
 	set_key_internal("c-x ?",     "user-func"             , "\x18\x3F", user_func);
 	set_key_internal("c-x b",     "list-buffers"          , "\x18\x62", list_buffers);
-	set_key_internal("c-x i",     "insert-file"           , "\x18\x69", insertfile);
 	set_key_internal("c-x k",     "kill-buffer"           , "\x18\x6B", kill_buffer);
 	set_key_internal("c-x n",     "next-buffer"           , "\x18\x6E", next_buffer);
 	set_key_internal("c-x o",     "other-window"          , "\x18\x6F", other_window);
-	set_key_internal("c-x @",     "shell-command"         , "\x18\x40", i_shell_command);
+	set_key_internal("c-x @",     "user-func"             , "\x18\x40", user_func);
 	set_key_internal("c-x (",     "user-func"             , "\x18\x28", user_func);
 	set_key_internal("c-x )",     "user-func"             , "\x18\x29", user_func);
 	set_key_internal("c-x `",     "user-func"             , "\x18\x60", user_func);

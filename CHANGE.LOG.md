@@ -1,3 +1,6 @@
+## Femto 2.14 25 November 2023
+* introduced shell-exec and rewrote shell-command in lisp
+
 ## Femto 2.13 23 November 2023
 * added info.lsp to support info screen, invoked by C-x h
 * made describe-bindings, describe-functions callable through lisp
