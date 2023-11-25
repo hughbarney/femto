@@ -13,6 +13,34 @@
 (defun repeat (n func)  
   (cond ((> n 0) (func) (repeat (- n 1) func))))
 
+;; OS interaction
+;; Note: this emulates the original femto shell-command.
+;;   The move from C to Lisp allows implementation of more
+;;   powerful system interaction in the future
+(defun shell-command ()
+  (setq command (prompt-filename "Command: "))
+  (cond (command (shell-exec command))))
+
+(defun shell-exec (command)
+  (setq temp (get-temp-file))
+  (setq rc (system (concat command " > " temp " 2>&1 <&-")))
+  (cond
+    ((eq command ""))
+    ((or (eq rc -1) (eq rc 127))
+	(concat "error: failed to execute" command ": "  rc))
+    (t
+     (cond (not (eq rc 0)) (message "warning: " command " exited: " rc))
+     (select-buffer "*output*")
+     (erase-buffer)
+     (insert-file-contents-literally temp)
+     (system (concat "rm -f " temp))
+     (clear-message-line)
+     )))
+
+(defun insert-file ()
+  (setq fn (prompt-filename "Insert file: "))
+  (cond (fn (insert-file-contents-literally fn))))
+
 ;; trim all spaces from front of a string
 (defun string.trim.front(s)
   (cond

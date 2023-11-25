@@ -287,12 +287,6 @@ int goto_line(int line)
 	}
 }
 
-void insertfile()
-{
-	if (getfilename(str_insert_file, (char*) response_buf, NAME_MAX))
-		(void)insert_file(response_buf, TRUE);
-}
-
 void i_readfile()
 {
 	if (FALSE == getfilename(str_read, (char*)response_buf, NAME_MAX))
@@ -680,34 +674,6 @@ void match_paren_backwards(buffer_t *bp, char open_paren, char close_paren)
 		position--;
 	}
 	bp->b_paren = NOPAREN;
-}
-
-void i_shell_command()
-{
-	if (getinput(str_shell_cmd, (char*)response_buf, NAME_MAX, F_CLEAR))
-		shell_command(response_buf);
-}
-
-void shell_command(char *command)
-{
-	char sys_command[255];
-	buffer_t *bp;
-	char *output_file = get_temp_file();
-
-	sprintf(sys_command, "%s > %s 2>&1", command, output_file);
-	//debug("sys_command: '%s'\n", sys_command);
-
-	if (0 != system(sys_command))
-		return;
-
-	bp = find_buffer(str_output, TRUE);
-	disassociate_b(curwp); /* we are leaving the old buffer for a new one */
-	curbp = bp;
-	associate_b2w(curbp, curwp);
-
-	e_load_file(output_file);
-	msg(""); /* clear the msg line, dont display temp filename */
-	safe_strncpy(curbp->b_bname, str_output, NBUFN);
 }
 
 int add_mode_global(char *mode_name)

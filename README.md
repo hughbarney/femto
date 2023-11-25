@@ -146,6 +146,7 @@ Generally, the procedure for copying or moving text is:
 3. Move the cursor to the desired location and yank it back (with ^Y).
 
 ### Searching
+
     C-S or C-R enters the search prompt, where you type the search string
     BACKSPACE - will reduce the search string, any other character will extend it
     C-S at the search prompt will search forward, will wrap at end of the buffer
@@ -160,7 +161,7 @@ Generally, the procedure for copying or moving text is:
 There are two ways to interract with Tiny-Lisp within Femto.
 
 * You can use C-] to find the last s-expression above the cursor and send it to be evaluated.
-* You can mark a region and send the whole region to be evaluated.
+* You can mark a region and send the whole region to be evaluated with ESC-].
 
 ### Lisp Interaction - finding and evaluating the last s-expression
 
@@ -281,6 +282,7 @@ Additional extensions loaded by `femto.rc`
 (list-buffers)                          ;; list all the buffers in a buffer called *buffers*
 (find-file "file.txt")                  ;; loads file into a new buffer
 (save-buffer)                           ;; saves the current buffer to disk
+(erase-buffer)                          ;; erases all text of the current buffer
 
 ;;
 ;; window handling
@@ -344,6 +346,7 @@ Additional extensions loaded by `femto.rc`
 (clear-message-line)                    ;; clear the message line
 (prompt "prompt" "initial response")    ;; prompts for a value on the command line and returns the response
 (show-prompt p r)                       ;; display the prompt and response but do not go into editing mode of the response
+(prompt-filename "prompt")              ;; display the prompt with file search
 (update-display)                        ;; calls the display function so that the screen is updated
 (refresh)                               ;; marks all windows for updates and the calls update-display
 
