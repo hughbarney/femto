@@ -442,7 +442,7 @@ void dump_undos(buffer_t *bp)
 	int size = 0;
 	char_t buf1[41];
 	char_t buf2[21];
-	char report_line[90];
+	char report_line[120];
 	undo_tt *prev;
 	buffer_t *list_bp = find_buffer("*undos*", TRUE);
 

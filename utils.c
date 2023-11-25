@@ -30,26 +30,34 @@ void make_buffer_name(char *bname, char *fname)
 
 void make_buffer_name_uniq(char *bname)
 {
-	int num = 0;
-	char basen[NBUFN];
+        int num, len;
 	char bufn[NBUFN];
 
 	if (NULL == find_buffer(bname, FALSE))
 		return;
 
-	strcpy(basen, bname);
-	basen[14] = '\0';
-	basen[15] = '\0';
-
-	while(TRUE) {
-		sprintf(bufn, "%s%d", basen, num++);
-		
-		if (NULL == find_buffer(bufn, FALSE)) {
-			strcpy(bname, bufn);
-			return;
-		}
-		assert(num < 100); /* fail after 100 */
+	strncpy(bufn, bname, 15);
+	len = strlen(bufn);
+	for (num=1; num<10; num++) {
+	  sprintf(bufn+len, "%1d", num);
+	  if (NULL == find_buffer(bufn, FALSE)) goto uniq;
 	}
+	strncpy(bufn, bname, 14);
+	len = strlen(bufn);
+	for (num=10; num<100; num++) {
+	  sprintf(bufn+len, "%2d", num);
+	  if (NULL == find_buffer(bufn, FALSE)) goto uniq;
+	}
+	strncpy(bufn, bname, 13);
+	len = strlen(bufn);
+	for (num=100; num<1000; num++) {
+	  sprintf(bufn+len, "%3d", num);
+	  if (NULL == find_buffer(bufn, FALSE)) goto uniq;
+	}
+	assert(false);
+ uniq:
+	strcpy(bname, bufn);
+	return;
 }
 
 /* replace control chars with spaces in string s */
