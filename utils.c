@@ -30,16 +30,14 @@ void make_buffer_name(char *bname, char *fname)
 
 void make_buffer_name_uniq(char *bname)
 {
-	int num = 0;
-	char basen[NBUFN];
+	unsigned char num = 0;
+	char basen[NBUFN - 3];
 	char bufn[NBUFN];
 
 	if (NULL == find_buffer(bname, FALSE))
 		return;
 
-	strcpy(basen, bname);
-	basen[14] = '\0';
-	basen[15] = '\0';
+	safe_strncpy(basen, bname, NBUFN - 3);
 
 	while(TRUE) {
 		sprintf(bufn, "%s%d", basen, num++);

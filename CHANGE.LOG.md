@@ -1,3 +1,6 @@
+## Femto 2.15 25 November 2023
+* fixed compiler warnings
+
 ## Femto 2.14 25 November 2023
 * introduced shell-exec and rewrote shell-command in lisp
 
