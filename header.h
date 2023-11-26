@@ -182,6 +182,9 @@ extern command_t *cheadp;
  */
 #define MAX_SIZE_T      ((unsigned long) (size_t) ~0)
 
+extern int debug_mode;          /* Enable debugging */
+extern int batch_mode;          /* If True GUI is not run */
+
 extern int done;                /* Quit flag. */
 extern int msgflag;             /* True if msgline should be displayed. */
 extern int global_undo_mode;    /* True if we are undo mode is allowed by default */
