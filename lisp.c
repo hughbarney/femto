@@ -2190,7 +2190,7 @@ char *call_lisp(char *input)
 	debug("START: call_lisp() '%s'\n", input);
 	set_input_stream_buffer(&is, input);
 	if (call_lisp_body(theEnv, theRoot, &is))
-		return "error: call_lisp() failed";
+		debug("call_lisp() failed: %s\n", ostream.buffer);
 	debug("END: call_lisp() '%s'\n", input);
 	return ostream.buffer;
 }
@@ -2201,7 +2201,7 @@ char *load_file(int infd)
 	Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
         set_stream_file(&input_stream, infd);
 	if (load_file_body(theEnv, theRoot, &input_stream))
-		return "error: load_file() failed";
+		debug("load_file(%d) failed: %s\n", ostream.buffer);
 	//debug("END: load_file fd=%d\n", infd);
 	return ostream.buffer;
 }
