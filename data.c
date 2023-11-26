@@ -5,6 +5,9 @@
 
 #include "header.h"
 
+int batch_mode = 0;
+int debug_mode = 0;
+
 int done;
 int result;
 int global_undo_mode = 1;
