@@ -23,7 +23,8 @@ int main(int argc, char **argv)
 
     /* Lisp */
     setup_keys();
-    (void)init_lisp(argc, argv);
+    if (init_lisp(argc, argv))
+        fatal("fLisp initialization failed");
     load_config();
 
     if (!batch_mode) gui();

@@ -1,5 +1,5 @@
 /*
- * tiny-lisp interpretter based on
+ * tiny-lisp interpreter based on
  * https://github.com/matp/tiny-lisp
  *
  * with modifications and extensions to enable it to be embedded and called
@@ -19,7 +19,6 @@
  *
  */
 
-
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <assert.h>
@@ -37,7 +36,6 @@
 
 #include "header.h"
 
-extern void debug(char *,...);
 #define F_NONE          0
 #define F_CLEAR         1
 typedef long point_t;
@@ -50,7 +48,6 @@ typedef long point_t;
 #define MEMORY_SIZE          262144UL  /* 256k */
 
 typedef struct Object Object;
-
 
 typedef enum Type {
 	TYPE_NUMBER,
@@ -946,6 +943,19 @@ Object *primitiveAtom(Object ** args, GC_PARAM)
 	return ((*args)->car->type != TYPE_CONS) ? t : nil;
 }
 
+Object *primitiveSymbolP(Object ** args, GC_PARAM)
+{
+	return ((*args)->car->type == TYPE_SYMBOL) ? t : nil;
+}
+
+Object *primitiveSymbolName(Object ** args, GC_PARAM)
+{
+	Object *first = (*args)->car;
+	if (first->type !=  TYPE_SYMBOL)
+		exceptionWithObject(first, "not a symbol");
+	return newString(first->string, GC_ROOTS);
+}
+
 Object *primitiveEq(Object ** args, GC_PARAM)
 {
 	Object *first = (*args)->car, *second = (*args)->cdr->car;
@@ -1637,6 +1647,8 @@ Primitive primitives[] = {
 	{"lambda", 1, -1 /* special form */ },
 	{"macro", 1, -1 /* special form */ },
 	{"atom", 1, 1, primitiveAtom},
+	{"symbolp", 1, 1, primitiveSymbolP},
+	{"symbol-name", 1, 1, primitiveSymbolName},
 	{"eq", 2, 2, primitiveEq},
 	{"car", 1, 1, primitiveCar},
 	{"cdr", 1, 1, primitiveCdr},
@@ -2103,13 +2115,13 @@ void reset_output_stream()
 	}
 }
 
-void load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
+int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 {
 	//debug("load_file_body\n");
 	GC_TRACE(gcObject, nil);
 
 	if (setjmp(exceptionEnv))
-		return;
+		return 1;
 
 	while (peekNext(input_stream) != EOF) {
 		*gcObject = nil;
@@ -2118,21 +2130,22 @@ void load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 		writeObject(*gcObject, true, &ostream);
 		writeChar('\n', &ostream);
 	}
+	return 0;
 }
 
-void call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
+int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
 {
 	GC_TRACE(gcObject, nil);
 
 	for (;;) {
 		if (setjmp(exceptionEnv))
-			return;
+			return 1;
 
 		*gcObject = nil;
 
 		if (peekNext(input_stream) == EOF) {
 			writeChar('\n', &ostream);
-			return;
+			return 0;
 		}
 
 		*gcObject = readExpr(input_stream, GC_ROOTS);
@@ -2140,6 +2153,7 @@ void call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
 		writeObject(*gcObject, true, &ostream);
 		writeChar('\n', &ostream);
 	}
+	return 0;
 }
 
 /*
@@ -2175,7 +2189,8 @@ char *call_lisp(char *input)
 
 	debug("START: call_lisp() '%s'\n", input);
 	set_input_stream_buffer(&is, input);
-	call_lisp_body(theEnv, theRoot, &is);
+	if (call_lisp_body(theEnv, theRoot, &is))
+		return "error: call_lisp() failed";
 	debug("END: call_lisp() '%s'\n", input);
 	return ostream.buffer;
 }
@@ -2185,7 +2200,8 @@ char *load_file(int infd)
 	debug("load_file(%d)\n", infd);
 	Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
         set_stream_file(&input_stream, infd);
-	load_file_body(theEnv, theRoot, &input_stream);
+	if (load_file_body(theEnv, theRoot, &input_stream))
+		return "error: load_file() failed";
 	//debug("END: load_file fd=%d\n", infd);
 	return ostream.buffer;
 }

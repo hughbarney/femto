@@ -22,9 +22,10 @@
   (cond
     ((null s)    "")
     ((number? s) (number->string s))
-    ((string? s) s) 
+    ((string? s) s)
+    ((symbolp s) (symbol-name s))
     ((consp s)   (string.append (stringify (car s)) (stringify (cdr s))))
-    (t (string.append "" s))))
+    (t (signal "cannot stringify unknown object types"))))
 
 (defun concat args
   (cond
