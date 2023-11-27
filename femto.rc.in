@@ -26,7 +26,7 @@
 (defun string (s)
   ;; Convert argument to string. Common Lisp
   (cond
-    ((eq s nil)    "")
+    ((eq nil s)    "")
     ((numberp s) (number->string s))
     ((stringp s) s)
     ((symbolp s) (symbol-name s))
@@ -36,8 +36,8 @@
 (defun concat args
   ;; concatenate all arguments to a string. Elisp
   (cond
-    ((eq args nil) "")
-    ((eq (cdr args) nil) (string (car args)))
+    ((eq nil args) "")
+    ((eq nil (cdr args)) (string (car args)))
     (t (string.append (string (car args)) (concat (cdr args)))) ))
 
 (defun load-script(fn)
