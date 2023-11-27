@@ -1292,13 +1292,13 @@ Object *e_prompt(Object ** args, GC_PARAM)
 	return newStringWithLength(response, strlen(response), GC_ROOTS);
 }
 
-Object *primitiveStringQ(Object ** args, GC_PARAM)
+Object *primitiveStringP(Object ** args, GC_PARAM)
 {
 	Object *first = (*args)->car;
 	return (first != nil && first->type == TYPE_STRING) ? t : nil;
 }
 
-Object *primitiveNumberQ(Object ** args, GC_PARAM)
+Object *primitiveNumberP(Object ** args, GC_PARAM)
 {
 	Object *first = (*args)->car;
 	return (first != nil && first->type == TYPE_NUMBER) ? t : nil;
@@ -1668,14 +1668,14 @@ Primitive primitives[] = {
 	{"<=", 1, -1, primitiveLessEqual},
 	{">", 1, -1, primitiveGreater},
 	{">=", 1, -1, primitiveGreaterEqual},
-	{"number?", 1, 1, primitiveNumberQ},
-	{"string?", 1, 1, primitiveStringQ},
+	{"numberp", 1, 1, primitiveNumberP},
+	{"stringp", 1, 1, primitiveStringP},
 	{"string.length", 1, 1, stringLength},
 	{"string.append", 2, 2, stringAppend},
 	{"string.substring", 3, 3, stringSubstring},
 	{"string.ref", 2, 2, stringRef},
 	{"string->number", 1, 1, stringToNumber},
-	{"number->string", 1, 1, numberToString},
+	{"number-to-string", 1, 1, numberToString},
 	{"ascii", 1, 1, asciiToString},
 	{"ascii->number", 1, 1, asciiToNumber},
 	{"load", 1, 1, e_load},
