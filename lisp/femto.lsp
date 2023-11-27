@@ -17,8 +17,10 @@
 ;; Note: this emulates the original femto shell-command.
 ;;   The move from C to Lisp allows implementation of more
 ;;   powerful system interaction in the future
-(defun shell-command ()
-  (setq command (prompt-filename "Command: "))
+(defun shell-command arg
+  (cond
+    ((eq nil arg) (setq command (prompt-filename "Command: ")))
+    (t setq command arg))
   (cond (command (shell-exec command))))
 
 (defun shell-exec (command)
