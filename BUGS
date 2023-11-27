@@ -1,0 +1,19 @@
+BUGS encountered during fLisp refactoring and batch mode
+
+- valgrind detects several memory leaks, call with:
+  FEMTO_DEBUG=0 valgrind --leak-check=full --track-origins=yes femto
+
+- defmacro segfaults on simple macro expansion, can be reproduced in
+  original tiny-lisp.
+
+  (defmacro IF (pred then else)
+  (list 'cond (cons pred then) (cons 't else)))
+
+  (IF t "then" "else") -> segfault
+
+- The status line has a ' ' space before the buffer name, but none after.
+
+- On startup with (startup-message) and a small terminal window, the *scratch*
+  buffer seems frozen.  Now after introducing batch mode things get worse:
+  The status line is on top and only a terminal resize refreshes the display.
+
