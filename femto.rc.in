@@ -9,6 +9,11 @@
 ;; For example: (set-key "c-k" "(kill-to-eol)")
 ;;
 
+;; Femto backwards compatible defun`s
+(setq number? numberp)
+(setq number->string number-to-string) ; Elisp
+(setq string? stringp)
+
 ;; Directory where scripts and extensions are stored
 (setq script_dir SCRIPTDIR)
 ;; Directory where user specific configuration is stored
@@ -18,20 +23,22 @@
 
 ;; concatenate a list of strings
 
-(defun stringify (s)
+(defun string (s)
+  ;; Convert argument to string. Common Lisp
   (cond
-    ((null s)    "")
-    ((number? s) (number->string s))
-    ((string? s) s)
+    ((eq s nil)    "")
+    ((numberp s) (number->string s))
+    ((stringp s) s)
     ((symbolp s) (symbol-name s))
-    ((consp s)   (string.append (stringify (car s)) (stringify (cdr s))))
-    (t (signal "cannot stringify unknown object types"))))
+    ((consp s)   (string.append (string (car s)) (string (cdr s))))
+    (t (signal "cannot convert object of this type to string"))))
 
 (defun concat args
+  ;; concatenate all arguments to a string. Elisp
   (cond
-    ((null args) "")
-    ((null (cdr args)) (stringify (car args)))
-    (t (string.append (stringify (car args)) (concat (cdr args)))) ))
+    ((eq args nil) "")
+    ((eq (cdr args) nil) (string (car args)))
+    (t (string.append (string (car args)) (concat (cdr args)))) ))
 
 (defun load-script(fn)
   (load (concat script_dir "/" fn)))
