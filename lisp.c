@@ -1484,6 +1484,8 @@ Object *e_load(Object ** args, GC_PARAM)
 
 	char *out = load_file(fd);
 	close(fd);
+	/* Note: in batch_mode incidentially out is NULL: don't rely on this! */
+	if (out == NULL) return t;
 	return (NULL == strstr(out, "error:")) ? t : nil;
 }
 
@@ -2104,14 +2106,13 @@ void reset_output_stream()
 	if (batch_mode) {
 	  stream->type = STREAM_TYPE_FILE;
 	  stream->fd = STDOUT_FILENO;
-	  stream->buffer = NULL;
 	} else {
 	  stream->type = STREAM_TYPE_STRING;
 	  stream->length = 0;
-	  if (stream->buffer != NULL) {
-	    free(stream->buffer);
+	}
+	if (stream->buffer != NULL) {
+		free(stream->buffer);
 		stream->buffer = NULL;
-	  }
 	}
 }
 
@@ -2184,14 +2185,14 @@ int init_lisp(int argc, char **argv)
 
 char *call_lisp(char *input)
 {
+	debug("call_lisp(%s)\n", input);
+
 	assert(input != NULL);
 	Stream is = { .type = STREAM_TYPE_STRING };
-
-	debug("START: call_lisp() '%s'\n", input);
 	set_input_stream_buffer(&is, input);
-	if (call_lisp_body(theEnv, theRoot, &is))
+	reset_output_stream();
+	if (call_lisp_body(theEnv, theRoot, &is) && !batch_mode)
 		debug("call_lisp() failed: %s\n", ostream.buffer);
-	debug("END: call_lisp() '%s'\n", input);
 	return ostream.buffer;
 }
 
@@ -2200,9 +2201,9 @@ char *load_file(int infd)
 	debug("load_file(%d)\n", infd);
 	Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
         set_stream_file(&input_stream, infd);
-	if (load_file_body(theEnv, theRoot, &input_stream))
+	reset_output_stream();
+	if (load_file_body(theEnv, theRoot, &input_stream) && !batch_mode)
 		debug("load_file(%d) failed: %s\n", ostream.buffer);
-	//debug("END: load_file fd=%d\n", infd);
 	return ostream.buffer;
 }
 

@@ -59,6 +59,7 @@ buffer_t *find_buffer(char *bname, int cflag)
 	buffer_t *bp = NULL;
 	buffer_t *sb = NULL;
 
+	debug("find-buffer(%s, %d)\n", bname, cflag);
 	bp = bheadp;
 	while (bp != NULL) {
 		if (strcmp(bname, bp->b_bname) == 0) {

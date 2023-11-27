@@ -12,15 +12,20 @@ void gui(); /* The GUI loop used in interactive mode */
 
 int main(int argc, char **argv)
 {
-    batch_mode = (getenv("FEMTO_BATCH") != NULL);
-    debug_mode = (getenv("FEMTO_DEBUG") != NULL);
+    char *envv = NULL;
+    batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
+    debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
   
     /* buffers */
     setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
     curbp = find_buffer(str_scratch, TRUE);
     strncpy(curbp->b_bname, str_scratch, STRBUF_S);
     beginning_of_buffer();
-
+    /* windows */
+    wheadp = curwp = new_window();
+    one_window(curwp);
+    associate_b2w(curbp, curwp);
+    
     /* Lisp */
     setup_keys();
     if (init_lisp(argc, argv))
@@ -53,10 +58,6 @@ void gui()
     init_pair(ID_SINGLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* single quoted strings */
     init_pair(ID_DOUBLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* double quoted strings */
     init_pair(ID_BRACE, COLOR_BLACK, COLOR_CYAN);            /* brace highlight */
-
-    wheadp = curwp = new_window();
-    one_window(curwp);
-    associate_b2w(curbp, curwp);
 
     debug("gui(): loop\n");
     while (!done) {
@@ -129,18 +130,15 @@ void load_config()
     if ((fd = open(init_file, O_RDONLY)) == -1) {
         (void)call_lisp("(message \"failed to open init file\")");
     } else {
-        reset_output_stream();
         output = load_file(fd);
         close(fd);
-        //if (!batch_mode) {
-        assert(output != NULL);
+        if (!batch_mode) {
+            assert(output != NULL);
 	   
-        /* all exceptions start with the word error: */
-        if (NULL != strstr(output, "error:"))
-            //  fatal(output);
-            (void)call_lisp("signal 'error-init '(\"init file throws exception\")");
-        //}
-        reset_output_stream();
+            /* all exceptions start with the word error: */
+            if (NULL != strstr(output, "error:"))
+                (void)call_lisp("signal 'error-init '(\"init file throws exception\")");
+        }
     }
 }
 
