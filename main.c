@@ -30,9 +30,8 @@ int main(int argc, char **argv)
     beginning_of_buffer();
     /* windows */
     wheadp = curwp = new_window();
-    one_window(curwp);
     associate_b2w(curbp, curwp);
-    
+
     /* Lisp */
     setup_keys();
     if (init_lisp(argc, argv, flib))
@@ -74,6 +73,9 @@ void gui()
     init_pair(ID_SINGLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* single quoted strings */
     init_pair(ID_DOUBLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* double quoted strings */
     init_pair(ID_BRACE, COLOR_BLACK, COLOR_CYAN);            /* brace highlight */
+
+    /* windows */
+    one_window(curwp);
 
     debug("gui(): loop\n");
     while (!done) {

@@ -78,7 +78,17 @@ char_t * ptr(buffer_t *bp, register point_t offset)
 {
 	if (offset < 0)
 		return (bp->b_buf);
+#if VALGRIND
+	return (bp->b_buf+offset +
+		(
+		 bp->b_buf +
+		 offset < bp->b_gap ?
+		 0 : bp->b_egap-bp->b_gap - 1
+		 )
+		);
+#else
 	return (bp->b_buf+offset + (bp->b_buf + offset < bp->b_gap ? 0 : bp->b_egap-bp->b_gap));
+#endif
 }
 
 /* Given a pointer into the buffer, convert it to a buffer offset */

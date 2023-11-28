@@ -2145,6 +2145,7 @@ int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 		writeObject(*gcObject, true, &ostream);
 		writeChar('\n', &ostream);
 	}
+	free(input_stream->buffer);
 	return 0;
 }
 char *load_file(int infd)
