@@ -8,7 +8,11 @@
 
 #include "header.h"
 
+void load_config(); /* Load configuration/init file */
 void gui(); /* The GUI loop used in interactive mode */
+
+#define CPP_XSTR(s) CPP_STR(s)
+#define CPP_STR(s) #s
 
 int main(int argc, char **argv)
 {
@@ -16,10 +20,8 @@ int main(int argc, char **argv)
     batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
     debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
 
-#define CPP_XSTR(s) CPP_STR(s)
-#define CPP_STR(s) #s
     if ((flib=getenv("FEMTOLIB")) == NULL)
-        flib = CPP_XSTR(SCRIPTDIR);
+        flib = CPP_XSTR(E_SCRIPTDIR);
 
     /* buffers */
     setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
@@ -35,8 +37,17 @@ int main(int argc, char **argv)
     setup_keys();
     if (init_lisp(argc, argv, flib))
         fatal("fLisp initialization failed");
-    load_config();
 
+    /* Init file */
+    char *init_file, cmd[TEMPBUF];
+
+    if ((init_file = getenv("FEMTORC")) == NULL)
+        init_file = CPP_XSTR(E_INITFILE);
+
+    snprintf(cmd, TEMPBUF, "(load \"%s\")", init_file);
+    (void)call_lisp(cmd);
+
+    /* GUI */
     if (!batch_mode) gui();
 
     debug("main(): shutdown\n");
@@ -117,33 +128,6 @@ void msg(char *m, ...)
     if (batch_mode) {
         puts(msgline);
         fflush(stdout);
-    }
-}
-
-void load_config()
-{
-    char *init_file;
-    char *output;
-    int fd;
-
-    init_file = getenv("FEMTORC");
-    if (init_file == NULL)
-        init_file = E_INITFILE;
-
-    debug("load_config(): init_file=\"%s\"\n", init_file);
-     
-    if ((fd = open(init_file, O_RDONLY)) == -1)
-        (void)call_lisp("(message \"failed to open init file\")");
-    else {
-        output = load_file(fd);
-        close(fd);
-        if (!batch_mode) {
-            assert(output != NULL);
-	   
-            /* all exceptions start with the word error: */
-            if (NULL != strstr(output, "error:"))
-                (void)call_lisp("signal 'error-init '(\"init file throws exception\")");
-        }
     }
 }
 

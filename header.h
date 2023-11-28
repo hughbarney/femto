@@ -23,6 +23,9 @@ int mkstemp(char *);
 #define E_VERSION       "2.15"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND	"<not bound>"
+#ifndef E_SCRIPTDIR
+#define E_SCRIPTDIR    "/usr/local/share/femto"
+#endif
 #ifndef E_INITFILE
 #define E_INITFILE      "/usr/local/share/femto/femto.rc"
 #endif
@@ -421,7 +424,6 @@ extern void setup_keys();
 
 /* functions in lisp.c */
 extern char *call_lisp(char *);
-extern char *load_file(int);
 extern int init_lisp(int, char**, char*);
 
 /* functions in main.c */
@@ -429,7 +431,6 @@ extern int main(int argc, char **);
 extern void debug(char *format, ...);
 extern void debug_stats(char *s);
 extern void fatal(char *msg);
-extern void load_config();
 extern void msg(char *m, ...);
 
 /* functions in replace.c */

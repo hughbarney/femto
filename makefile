@@ -17,6 +17,7 @@ PREFIX  = /usr/local
 BINDIR  = $(PREFIX)/bin
 DATADIR = $(PREFIX)/share
 SCRIPTDIR = "$(DATADIR)/femto"
+INITFILE = "$(SCRIPTDIR)/femto.rc"
 
 OBJ     = command.o display.o complete.o data.o gap.o key.o search.o buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o lisp.o main.o
 
@@ -69,7 +70,10 @@ lisp.o: lisp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c lisp.c
 
 main.o: main.c header.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D SCRIPTDIR=$(SCRIPTDIR) -c main.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) \
+	  -D E_SCRIPTDIR=$(SCRIPTDIR) \
+	  -D E_INITFILE=$(INITFILE) \
+	  -c main.c
 
 clean:
 	-$(RM) -f $(OBJ) femto

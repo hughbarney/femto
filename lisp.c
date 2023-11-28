@@ -3,12 +3,12 @@
  * https://github.com/matp/tiny-lisp
  *
  * with modifications and extensions to enable it to be embedded and called
- * by an application.
+ * by an application and to load Lisp files.
  *
- *   int init_lisp()
- *   char *call_lisp(char *input)
- *   char *load_file(int fd)
- *   void reset_output_stream()
+ *   public:
+ *   init_lisp() .. initialize the interpreter
+ *   call_lisp() .. evaluate a string
+ *   (load fn)   .. evalate contents of file fn, uses load_file()
  *
  * Input and Output is a Stream abstraction layer.
  * There is 1 and only 1 output stream which is only cleared
@@ -1463,7 +1463,8 @@ Object *asciiToNumber(Object ** args, GC_PARAM)
 	return newNumber((double)*first->string, GC_ROOTS);
 }
 
-char *load_file(int);
+
+char *load_file(int infd);
 
 Object *e_load(Object ** args, GC_PARAM)
 {
@@ -1476,7 +1477,10 @@ Object *e_load(Object ** args, GC_PARAM)
 	    exceptionWithObject(first, "is not a string");
 
 	debug("(load %s)\n", first->string);
-	if ((fd = open(first->string, O_RDONLY)) == -1) {
+
+	if (!strcmp(first->string, "-"))
+		fd = 0;
+	else if ((fd = open(first->string, O_RDONLY)) == -1) {
 		// Note: we wanted the next line, but it segfaults when
 		//   used in init_config():
 		//   exceptionWithObject(nil, "open() failed");
@@ -1485,7 +1489,7 @@ Object *e_load(Object ** args, GC_PARAM)
 		writeString(ebuf, &ostream);
 		return nil;
 	}
-
+	    
 	char *out = load_file(fd);
 	close(fd);
 	/* Note: in batch_mode incidentially out is NULL: don't rely on this! */
@@ -2143,6 +2147,16 @@ int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 	}
 	return 0;
 }
+char *load_file(int infd)
+{
+	debug("load_file(%d)\n", infd);
+	Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
+	set_stream_file(&input_stream, infd);
+	reset_output_stream();
+	if (load_file_body(theEnv, theRoot, &input_stream) && !batch_mode)
+		debug("load_file(%d) failed: %s\n", ostream.buffer);
+	return ostream.buffer;
+}
 
 int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
 {
@@ -2206,17 +2220,6 @@ char *call_lisp(char *input)
 	reset_output_stream();
 	if (call_lisp_body(theEnv, theRoot, &is) && !batch_mode)
 		debug("call_lisp() failed: %s\n", ostream.buffer);
-	return ostream.buffer;
-}
-
-char *load_file(int infd)
-{
-	debug("load_file(%d)\n", infd);
-	Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
-	set_stream_file(&input_stream, infd);
-	reset_output_stream();
-	if (load_file_body(theEnv, theRoot, &input_stream) && !batch_mode)
-		debug("load_file(%d) failed: %s\n", ostream.buffer);
 	return ostream.buffer;
 }
 
