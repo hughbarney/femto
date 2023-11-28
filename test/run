@@ -1,0 +1,62 @@
+#!/bin/sh
+# leg20231128
+#
+# Poor mans unit test framework
+#
+
+[ "$1" = "-?" ] && {
+    cat <<EOF
+Femto test suite
+
+available tests:
+
+$(
+    for TESTFILE in *.test; do
+        printf "\t%s\t%s" "$TESTFILE" "$(head -1 $TESTFILE)"
+    done
+)
+
+Run all tests:  $0
+Run some tests: $0 [test ..]
+This help:      $0 -?
+
+EOF
+    exit
+}
+
+# - - -
+
+echo TAP version 14
+
+: ${VERBOSE:=}
+: ${NUM_TESTS:=5}
+
+# - - - no user servicable parts inside
+
+[ "$NUM_TESTS" ] && echo 1..$NUM_TESTS ||
+	trap '[ $? = 0 ] || echo Bail out!; echo 1..$TEST' EXIT
+
+TEST=0
+
+ok () {
+    [ $? != 0 ] && printf "not " && OK=1 || OK=0
+    TEST=$((TEST+1)); echo ok $TEST - $@; return $OK
+}
+
+# - - -
+
+[ $# = 0 ] && set -- *.test
+
+femto () { ../femto "$@"; }
+
+for test; do  (
+    #mkdir -p tmp
+    #rm -rf tmp/*
+    
+    export FEMTO_BATCH=1
+    export FEMTO_DEBUG=1
+    export FEMTORC=-
+    export FEMTOLIB=../lisp
+    . ./${test}
+); done
+#rm -rf tmp

@@ -1,0 +1,37 @@
+# test executable and fLisp functionality
+# leg20231128: Femto
+
+[ -x ../femto ]
+ok femto-1 femto exists and is executable;
+
+(FEMTORC= femto >/dev/null)
+ok femto-2 w/o femto.rc femto succeds silently
+
+(: | femto >/dev/null)
+ok femto-3 empty input succeeds silently
+
+[ "$(echo "(" | FEMTORC=- femto 2>&1)" \
+      = "error: unexpected end of stream in list
+t" ]
+ok reader-1 incomplete sexp error msg
+
+[ "$( echo "'(nil 'atom)" | femto )" = "(nil (quote atom))
+t" ]
+ok reader-2 read "'" ok, writer succeeds
+
+# Primitives
+[ "$( echo '(quote)' | femto)" = "error: #<Primitive quote> expects at least 1 arguments
+t" ]
+ok quote-1 w/o arg error message
+
+[ "$( echo '(quote t)' | femto)" = "t
+t" ]
+ok quote-2 constant yields itself
+
+[ "$( echo '(quote symbol)' | femto)" = "symbol
+t" ]
+ok quote-3 symbol yields symbol
+
+# Local Variables:
+# mode: sh
+# End:
