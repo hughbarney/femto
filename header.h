@@ -422,7 +422,7 @@ extern void setup_keys();
 /* functions in lisp.c */
 extern char *call_lisp(char *);
 extern char *load_file(int);
-extern int init_lisp();
+extern int init_lisp(int, char**, char*);
 
 /* functions in main.c */
 extern int main(int argc, char **);

@@ -203,6 +203,7 @@ The Femto editor itself provides only basic buffer movement and edit
 functions, everything else is done by extending the user interface
 using the Lisp extension language.
 
+
 The `lisp` subdirectory contains essential extensions to the Femto
 editor as well as examples.  With `make install` these are copied to a
 system wide location, together with the `femto.rc` file.
@@ -213,14 +214,29 @@ startup message in the *scratch* buffer.
 
 Just before showing the startup message a user specific `femto.rc`
 file is loaded from the directory `.config/femto` in your HOME
-directory if available.
+directory, if available.
 
-If `femto` should be run from the source directory build it with
+The `femto.rc` file and the extensions are loaded by default from
+`/usr/local/share/femto`.  This path is made available in the Lisp
+interpreter as `script_dir`.  This default directory can be changed at
+compile time by changing SCRIPTDIR.  At startup `femto` overrides the
+default with the value of the environment variable FEMTOLIB if set.
 
-    CPPFLAGS=-DE_INITFILE=\\\"femto.rc\\\" make SCRIPTDIR=\\\"lisp\\\"
 
-It will then read `femto.rc` the current directory and the extensions
-from the `lisp` subdirectory.
+## Batch Mode
+
+If the environment variable FEMTO_BATCH exists and is not set to `0`
+batch mode is enabled.  In batch mode the GUI is not started up and
+all Lisp output is sent to `stdout`.
+
+
+## Debugging
+
+If the environment variable FEMTO_DEBUG exists and is not set to `0`
+debug mode is enabled.  In debug mode, some internal workings are
+logged to the file `debug.out`, as well as the arguments of the
+invocations of the `log-debug` Lisp primitive.
+
 
 ## Basic Femto Extension
 
@@ -233,7 +249,7 @@ from the `lisp` subdirectory.
 * `concat` *`args`*, `string.trim.front` *`s`*, `string.trim.back` *`s`*, `string.trim` *`s`*, `shrink` *`s`* - string operations
 * `max` *`a b`*, `min` *`a b`*, `repeat` *`n func`* - Lisp functions
 * `is_ctl_g` *`k`*, `is_escape` *`k`*, `is_backspace` *`k`*, `is_ctl_s` *`k`*, `is_control_char` *`k`* - helper functions
-
+0
 
 ## Femto Extensions
 

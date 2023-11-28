@@ -125,13 +125,13 @@ void writeString(char *str, Stream *stream)
 
    switch (stream->type) {
    case STREAM_TYPE_FILE:
-        len = strlen(str);
-        len = write(stream->fd, str, len);
+	len = strlen(str);
+	len = write(stream->fd, str, len);
 	return;
 
     case STREAM_TYPE_STRING:
-    default:		
-        len = strlen(str);
+    default:
+	len = strlen(str);
 	new = realloc(stream->buffer, stream->length + len + 1);
 	assert(new != NULL);
 	memcpy(new + stream->length, str, len);
@@ -171,14 +171,14 @@ void writeChar(char ch, Stream *stream)
 
     str[0] = ch;
     str[1] = '\0';
-    
+
     switch (stream->type) {
     case STREAM_TYPE_FILE:
 	i = write(stream->fd, str, i);
 	return;
 
     case STREAM_TYPE_STRING:
-    default:		
+    default:
 	writeString(str, stream);
 	return;
     }
@@ -187,7 +187,7 @@ void writeChar(char ch, Stream *stream)
 void exceptionWithObject(Object * object, char *format, ...)
 {
 	static char buf[WRITE_FMT_BUFSIZ];
-	
+
 	writeString("error: ", &ostream);
 
 	if (object) {
@@ -1018,7 +1018,7 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
 {
 	Object *first = (*args)->car;
 	Object *second = (*args)->cdr->car;
-	
+
 	if (first->type != TYPE_SYMBOL)
 		exceptionWithObject(first , "is not a symbol");
 	if (second != nil && second->type != TYPE_CONS)
@@ -1028,7 +1028,7 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
 	exceptionWithObject(*e, first->string);
 	return *e;
 }
-	
+
 /************************* Editor Extensions **************************************/
 
 #define DEFINE_EDITOR_FUNC(name) \
@@ -1111,7 +1111,7 @@ Object *e_get_buffer_count(Object **args, GC_PARAM) { return newNumber(count_buf
 	if (first->type != TYPE_STRING)                      \
 	    exceptionWithObject(first, "is not a string");   \
 	if (second->type != TYPE_STRING)                     \
-	    exceptionWithObject(second, "is not a string");  
+	    exceptionWithObject(second, "is not a string");
 
 #define ONE_STRING_ARG()                                    \
 	Object *first = (*args)->car;                        \
@@ -1153,7 +1153,7 @@ Object *e_set_clipboard(Object ** args, GC_PARAM)
 Object *e_get_temp_file(Object ** args, GC_PARAM)
 {
 	char *fn = get_temp_file();
-	return newStringWithLength(fn, strlen(fn), GC_ROOTS);	
+	return newStringWithLength(fn, strlen(fn), GC_ROOTS);
 }
 
 Object *e_system(Object ** args, GC_PARAM) {
@@ -1167,7 +1167,7 @@ Object *e_insert_file(Object ** args, GC_PARAM) {
 	// ToDo: want to give an optional modify flag, but then it segfaults
 	Object *first = (*args)->car;
 	int mflag;
-	
+
 	if (first->type != TYPE_STRING)
 	    exceptionWithObject(first, "is not a string (insert-file)");
 
@@ -1180,10 +1180,10 @@ Object *e_insert_file(Object ** args, GC_PARAM) {
 Object *e_getfilename(Object **args, GC_PARAM) {
 
 	ONE_STRING_ARG();
-	
+
 	if (FALSE == getfilename(first->string, (char*) response_buf, NAME_MAX))
 		return nil;
-	
+
 	return newString(response_buf, GC_ROOTS);
 }
 
@@ -1199,7 +1199,7 @@ Object *stringAppend(Object ** args, GC_PARAM)
 	memcpy(new + len1, second->string, len2);
 	new[len1 + len2] = '\0';
 
-	Object *obj = newStringWithLength(new, len1 + len2, GC_ROOTS);	
+	Object *obj = newStringWithLength(new, len1 + len2, GC_ROOTS);
 	free(new);
 
 	return obj;
@@ -1238,9 +1238,9 @@ Object *stringSubstring(Object ** args, GC_PARAM)
 	if (first->type != TYPE_STRING)
 	    exceptionWithObject(first, "is not a string (string.substring)");
 	if (second->type != TYPE_NUMBER)
-	    exceptionWithObject(second, "is not a number");  
+	    exceptionWithObject(second, "is not a number");
 	if (third->type != TYPE_NUMBER)
-	    exceptionWithObject(third, "is not a number");  
+	    exceptionWithObject(third, "is not a number");
 
 	int start = (int)(second->number);
 	int end = (int)(third->number);
@@ -1270,7 +1270,7 @@ Object *stringLength(Object ** args, GC_PARAM)
 	if (first->type != TYPE_STRING)
 	    exceptionWithObject(first, "is not a string (string.length)");
 
-	return newNumber(strlen(first->string), GC_ROOTS);	
+	return newNumber(strlen(first->string), GC_ROOTS);
 }
 
 Object *e_show_prompt(Object ** args, GC_PARAM)
@@ -1315,8 +1315,8 @@ Object *stringToNumber(Object ** args, GC_PARAM)
 	return newNumber(num, GC_ROOTS);
 }
 
-/* 
- * XXX could be improved to handle integers and decimals better 
+/*
+ * XXX could be improved to handle integers and decimals better
  * for example 121323.000000 (%f) is ugly but so is 1.213230e+05 (%g)
  */
 Object *numberToString(Object ** args, GC_PARAM)
@@ -1469,16 +1469,20 @@ Object *e_load(Object ** args, GC_PARAM)
 {
 	int fd;
 	char ebuf[81];
-	Object *first = (*args)->car;
+
+	ONE_STRING_ARG();
+
 	if (first->type != TYPE_STRING)
 	    exceptionWithObject(first, "is not a string");
 
 	debug("(load %s)\n", first->string);
 	if ((fd = open(first->string, O_RDONLY)) == -1) {
+		// Note: we wanted the next line, but it segfaults when
+		//   used in init_config():
+		//   exceptionWithObject(nil, "open() failed");
 		snprintf(ebuf, 80, "failed to open %s\n", first->string);
 		ebuf[80] ='\0';
 		writeString(ebuf, &ostream);
-		close(fd);
 		return nil;
 	}
 
@@ -1554,7 +1558,7 @@ Object *name(Object **args, GC_PARAM) {                                      \
     exceptionWithObject((*args)->car, "is not a number");             \
   else {                                                                     \
     Object *object, *rest;                                                   \
-                                                                             \
+									     \
     if ((*args)->cdr == nil) {                                               \
       object = newNumber(init, GC_ROOTS);                                    \
       rest = *args;                                                          \
@@ -1563,14 +1567,14 @@ Object *name(Object **args, GC_PARAM) {                                      \
       object = newObjectFrom(gcFirst, GC_ROOTS);                             \
       rest = (*args)->cdr;                                                   \
     }                                                                        \
-                                                                             \
+									     \
     for (; rest != nil; rest = rest->cdr) {                                  \
       if (rest->car->type != TYPE_NUMBER)                                    \
-        exceptionWithObject(rest->car, "is not a number");            \
-                                                                             \
+	exceptionWithObject(rest->car, "is not a number");            \
+									     \
       object->number = object->number op rest->car->number;                  \
     }                                                                        \
-                                                                             \
+									     \
     return object;                                                           \
   }                                                                          \
 }
@@ -1594,7 +1598,7 @@ Object *primitiveMod(Object **args, GC_PARAM) {
 
     for (; rest != nil; rest = rest->cdr) {
       if (rest->car->type != TYPE_NUMBER)
-        exceptionWithObject(rest->car, "is not a number");
+	exceptionWithObject(rest->car, "is not a number");
 
       object->number = (int)object->number % (int)rest->car->number;
     }
@@ -1616,14 +1620,14 @@ Object *name(Object **args, GC_PARAM) {                                      \
   else {                                                                     \
     Object *rest = *args;                                                    \
     bool result = true;                                                      \
-                                                                             \
+									     \
     for (; result && rest->cdr != nil; rest = rest->cdr) {                   \
       if (rest->cdr->car->type != TYPE_NUMBER)                               \
-        exceptionWithObject(rest->cdr->car, "is not a number");       \
-                                                                             \
+	exceptionWithObject(rest->cdr->car, "is not a number");       \
+									     \
       result &= rest->car->number op rest->cdr->car->number;                 \
     }                                                                        \
-                                                                             \
+									     \
     return result ? t : nil;                                                 \
   }                                                                          \
 }
@@ -1974,30 +1978,30 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 
 static char *stdlib = LISP(
   (setq list (lambda args args))
-  
+
   (setq defmacro (macro (name params . body)
     (list (quote setq) name (list (quote macro) params . body))))
-  
+
   (defmacro defun (name params . body)
     (list (quote setq) name (list (quote lambda) params . body)))
-  
+
   (defun null (x) (eq x nil))
-  
+
   (defun map1 (func xs)
     (if (null xs)
-        nil
-        (cons (func (car xs))
-              (map1 func (cdr xs)))))
-  
+	nil
+	(cons (func (car xs))
+	      (map1 func (cdr xs)))))
+
   (defmacro and args
     (cond ((null args) t)
-          ((null (cdr args)) (car args))
-          (t (list (quote if) (car args) (cons (quote and) (cdr args))))))
+	  ((null (cdr args)) (car args))
+	  (t (list (quote if) (car args) (cons (quote and) (cdr args))))))
 
-  (defmacro or args 
+  (defmacro or args
     (if (null args)
-        nil
-        (cons (quote cond) (map1 list args))))
+	nil
+	(cons (quote cond) (map1 list args))))
 
   (defun not (x) (if x nil t))
 
@@ -2005,28 +2009,28 @@ static char *stdlib = LISP(
   (defun listp (x) (or (null x) (consp x)))
 
   (defun zerop (x) (= x 0))
-  
+
   (defun equal (x y)
     (or (and (atom x) (atom y)
-             (eq x y))
-        (and (not (atom x)) (not (atom y))
-             (equal (car x) (car y))
-             (equal (cdr x) (cdr y)))))
-  
+	     (eq x y))
+	(and (not (atom x)) (not (atom y))
+	     (equal (car x) (car y))
+	     (equal (cdr x) (cdr y)))))
+
   (defun nth (n xs)
     (if (zerop n)
-        (car xs)
-        (nth (- n 1) (cdr xs))))
+	(car xs)
+	(nth (- n 1) (cdr xs))))
 
   (defun append (xs y)
     (if (null xs)
-        y
-        (cons (car xs) (append (cdr xs) y))))
+	y
+	(cons (car xs) (append (cdr xs) y))))
 );
 
 // MAIN ///////////////////////////////////////////////////////////////////////
 
-Object *newRootEnv(GC_PARAM, int arg, char **argv)
+Object *newRootEnv(GC_PARAM, int arg, char **argv, char* flib)
 {
 	GC_TRACE(gcEnv, newEnv(&nil, &nil, GC_ROOTS));
 	GC_TRACE(gcVar, nil);
@@ -2062,7 +2066,7 @@ Object *newRootEnv(GC_PARAM, int arg, char **argv)
 	envSet(gcVar, gcVal, gcEnv, GC_ROOTS);
 
 	*gcVar = newSymbol("argv", GC_ROOTS);
-        *gcVal = nil;
+	*gcVal = nil;
 	Object **i = gcVal;
 	while(*argv) {
 		*i = newCons(&nil, &nil, GC_ROOTS);
@@ -2070,6 +2074,12 @@ Object *newRootEnv(GC_PARAM, int arg, char **argv)
 		i = &(*i)->cdr;
 		argv++;
 	}
+	envSet(gcVar, gcVal, gcEnv, GC_ROOTS);
+
+	// add fLisp library dir aka script_dir
+	*gcVar = newSymbol("script_dir", GC_ROOTS);
+	*gcVal = newString(flib, GC_ROOTS);
+
 	envSet(gcVar, gcVal, gcEnv, GC_ROOTS);
 
 	return *gcEnv;
@@ -2160,8 +2170,11 @@ int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
 /*
  * 3 interface functions that enable lisp to be embedded in an application (eg Editor)
  */
-int init_lisp(int argc, char **argv)
+int init_lisp(int argc, char **argv, char *flib)
 {
+
+	debug("init_lisp(%d, %p, \"%s\")\n", argc, argv, flib);
+
 	theRoot = nil;
 
 	//set_stream_file(&istream, STDIN_FILENO);
@@ -2175,7 +2188,7 @@ int init_lisp(int argc, char **argv)
 	symbols = newCons(&t, &symbols, theRoot);
 
 	temp_root.type = TYPE_CONS;
-	temp_root.car = newRootEnv(theRoot, argc, argv);
+	temp_root.car = newRootEnv(theRoot, argc, argv, flib);
 	temp_root.cdr = theRoot;
 
 	theEnv = &temp_root.car;
@@ -2200,7 +2213,7 @@ char *load_file(int infd)
 {
 	debug("load_file(%d)\n", infd);
 	Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
-        set_stream_file(&input_stream, infd);
+	set_stream_file(&input_stream, infd);
 	reset_output_stream();
 	if (load_file_body(theEnv, theRoot, &input_stream) && !batch_mode)
 		debug("load_file(%d) failed: %s\n", ostream.buffer);

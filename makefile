@@ -16,11 +16,11 @@ MKDIR	= mkdir
 PREFIX  = /usr/local
 BINDIR  = $(PREFIX)/bin
 DATADIR = $(PREFIX)/share
-SCRIPTDIR = \"$(DATADIR)/femto\"
+SCRIPTDIR = "$(DATADIR)/femto"
 
 OBJ     = command.o display.o complete.o data.o gap.o key.o search.o buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o lisp.o main.o
 
-femto: $(OBJ) femto.rc
+femto: $(OBJ)
 	$(LD) $(LDFLAGS) -o femto $(OBJ) $(LIBS)
 
 complete.o: complete.c header.h
@@ -69,13 +69,10 @@ lisp.o: lisp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c lisp.c
 
 main.o: main.c header.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c main.c
-
-femto.rc: femto.rc.in
-	$(CPP) -P -D SCRIPTDIR=$(SCRIPTDIR) $< $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D SCRIPTDIR=$(SCRIPTDIR) -c main.c
 
 clean:
-	-$(RM) -f $(OBJ) femto femto.rc
+	-$(RM) -f $(OBJ) femto
 
 install: femto femto.rc
 	-$(MKDIR) -p $$DESTDIR$(BINDIR)

@@ -12,10 +12,15 @@ void gui(); /* The GUI loop used in interactive mode */
 
 int main(int argc, char **argv)
 {
-    char *envv = NULL;
+    char *envv, *flib;
     batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
     debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
-  
+
+#define CPP_XSTR(s) CPP_STR(s)
+#define CPP_STR(s) #s
+    if ((flib=getenv("FEMTOLIB")) == NULL)
+        flib = CPP_XSTR(SCRIPTDIR);
+
     /* buffers */
     setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
     curbp = find_buffer(str_scratch, TRUE);
@@ -28,7 +33,7 @@ int main(int argc, char **argv)
     
     /* Lisp */
     setup_keys();
-    if (init_lisp(argc, argv))
+    if (init_lisp(argc, argv, flib))
         fatal("fLisp initialization failed");
     load_config();
 
@@ -125,11 +130,11 @@ void load_config()
     if (init_file == NULL)
         init_file = E_INITFILE;
 
-    debug("load_config(), init_file: %s\n", init_file);
+    debug("load_config(): init_file=\"%s\"\n", init_file);
      
-    if ((fd = open(init_file, O_RDONLY)) == -1) {
+    if ((fd = open(init_file, O_RDONLY)) == -1)
         (void)call_lisp("(message \"failed to open init file\")");
-    } else {
+    else {
         output = load_file(fd);
         close(fd);
         if (!batch_mode) {
