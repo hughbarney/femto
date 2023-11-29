@@ -167,3 +167,4 @@
     (if (eq -1 start_p) (message "could not find start of s-expression"))
     (if (eq -1 end_p) (message "could not find end of s-expression"))) ))
 
+(provide 'femto)

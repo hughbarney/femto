@@ -101,3 +101,4 @@
 (set-key "c-x e" "mymacro")
 (set-key "esc-e" "mymacro")
 
+(provide 'defmacro)

@@ -293,3 +293,4 @@ then select one of the following letters to operate on the file
 (set-key "c-c c-c" "cc-commit")
 (set-key "c-c c-q" "cc-cancel")
 
+(provide 'git)

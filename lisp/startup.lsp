@@ -19,3 +19,5 @@
     (insert-string (get-version-string))
     (insert-string "\n\n\n")
     (end-of-buffer))))
+
+(provide 'startup)

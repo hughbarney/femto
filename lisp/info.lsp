@@ -57,3 +57,4 @@
    (get-clipboard))
 
 
+(provide 'info)

@@ -1,0 +1,131 @@
+;; -*-Lisp-*-
+;;
+;; FEMTO an extended Atto Emacs with a tiny lisp extension language
+;; hughbarney AT googlemail.com
+;;
+;; The editor provides only basic buffer movement and edit functions
+;; everything else is done by extending the user interface using the
+;; lisp extension language. Functions can be bound to keys using set-key.
+;; For example: (set-key "c-k" "(kill-to-eol)")
+;;
+
+(defun string (s)
+  ;; Convert argument to string.
+  ;; Common Lisp
+  (cond
+    ((eq nil s)    "")
+    ((numberp s) (number->string s))
+    ((stringp s) s)
+    ((symbolp s) (symbol-name s))
+    ((eq nil (atom s)) (string.append (string (car s)) (string (cdr s))))
+    (t (signal "cannot convert object of this type to string"))))
+
+(defun concat args
+  ;; Concatenate all arguments to a string.
+  ;; Elisp
+  (cond
+    ((eq nil args) "")
+    ((eq nil (cdr args)) (string (car args)))
+    (t (string.append (string (car args)) (concat (cdr args)))) ))
+
+(defun memq (o l)
+  ;; if object o in list l return sublist of l starting with o, else nil.
+  ;; Elisp
+  (cond
+    ((eq nil o) nil)
+    ((eq nil l) nil)
+    ((eq o (car l)) l)
+    (t (memq o (cdr l)))))
+
+;; Features
+(setq features nil)
+
+(defun provide args
+  ;; args: (feature [subfeature ..])
+  (setq features (cons (car args) features)))
+
+(defun require args
+  ;; args: (feature [filename [noerror]])
+  (setq feature (car args))
+  (cond ((memq feature features) feature)
+	(t
+	 ;; Emacs optionally uses provided filename here
+	 (setq path (concat script_dir "/" (symbol-name feature) ".lsp"))
+	 (load path)
+	 ;; Emacs checks if load fails and returns nil instead of feature.
+	 (cond ((memq feature features)	feature)))))
+
+;; Note: should be made interactive and renamed to load-library
+(defun load-script(fn)
+  (load (concat script_dir "/" fn)))
+
+(defun getopts (opts pos)
+  (setq o (car opts))
+  (cond
+    ((null o))
+    ((eq o "+") (getopts (cdr opts) 0))
+    ((eq (string.ref o 0) "+")
+     (getopts (cdr opts) (string->number (string.substring o 1 (- (string.length o) 1)))))
+    (t
+     (find-file o)
+     (goto-line pos)
+     (getopts (cdr opts) 0))))
+
+
+;; Femto backwards compatible defun`s
+(setq number? numberp)
+(setq number->string number-to-string) ; Elisp
+(setq string? stringp)
+
+(provide 'core)
+
+;;
+;;  Load extensions
+;;
+
+(require 'femto)
+(require 'bufmenu)
+(require 'dired)
+(require 'grep)
+(require 'defmacro)
+(require 'startup)
+(require 'info)
+;; Put oxo and git into your personal configuration
+;; Note: both segfault if (required), they can be (load-script)ed though
+;; (load-script "oxo.lsp")
+;; (load-script "git.lsp")
+
+;;
+;;  Key Bindings, setkey is used to bind keys to user defined functions in lisp
+;;
+
+(set-key "c-x @" "shell-command") ;; femto
+(set-key "esc !" "shell-command")
+(set-key "c-x i" "insert-file")
+
+(set-key "esc-right" "delete-next-word")
+(set-key "esc-left" "delete-previous-word")
+(set-key "c-k" "kill-to-eol")
+(set-key "c-x ?" "describe-key")
+(set-key "c-]" "find_and_eval_sexp")
+(set-key "c-x c-o" "oxo")
+(set-key "c-x c-b" "buffer-menu")
+(set-key "c-x c-d" "dired")
+(set-key "c-x c" "edit-config")
+(set-key "c-x h" "show-info")
+(set-key "c-x g" "grep-command")
+
+(show-startup-message)
+
+;; Load and edit user specific config
+(setq config_dir ".config/femto")
+(setq config_file "femto.rc")
+(defun confn(fn)
+  (concat (os.getenv "HOME") "/" config_dir "/" fn))
+
+(defun edit-config()
+  (find-file (confn config_file)))
+
+(load (confn config_file))
+
+(getopts argv 0)

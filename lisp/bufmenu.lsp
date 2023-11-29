@@ -216,3 +216,5 @@
        (log-var "bufm-obuf" bufm-obuf)
        (log-var "bufm-buf" bufm-buf)
        (log-debug "\n\n"))))
+
+(provide 'bufmenu)

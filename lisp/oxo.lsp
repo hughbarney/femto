@@ -196,3 +196,4 @@
 ;; set to 't' to obtain debug trace
 (setq debug_oxo nil)
 
+(provide 'oxo)

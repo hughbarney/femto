@@ -40,3 +40,5 @@
   (setq grep-match-line (string->number (get-clipboard)))
   (find-file grep-fname)
   (goto-line grep-match-line))
+
+(provide 'grep)
