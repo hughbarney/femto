@@ -15,7 +15,7 @@ ok femto-3 empty input succeeds silently
 IN='(' OUT='error: unexpected end of stream in list'
 flisp_expr; ok reader-1 incomplete sexp error msg
 
-IN="'(nil 'atom)" OUT='(nil (quote atom))'
+IN="'(nil 'symbol)" OUT='(nil (quote symbol))'
 flisp_expr; ok reader-2 read "'" ok, writer succeeds
 
 # Special forms
@@ -64,8 +64,7 @@ flisp_expr 2; ok progn-3 two args evaluate in sequence
 # princ
 
 ## Objects
-# consp <- should be a primitive?
-# atom -> should be (not consp) and in stdlib?
+# consp
 # numberp
 # stringp
 # symbolp

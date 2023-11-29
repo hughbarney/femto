@@ -26,7 +26,7 @@
     ((numberp s) (number->string s))
     ((stringp s) s)
     ((symbolp s) (symbol-name s))
-    ((eq nil (atom s)) (string.append (string (car s)) (string (cdr s))))
+    ((consp s) (string.append (string (car s)) (string (cdr s))))
     (t (signal "cannot convert object of this type to string"))))
 
 (defun concat args

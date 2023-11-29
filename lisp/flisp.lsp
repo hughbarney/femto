@@ -32,9 +32,7 @@
       nil
       (cons (quote cond) (map1 list args))))
 
-;; Note: make primitive, then
-;; (defun atom (x) (eq nil (consp x)))
-(defun consp (x) (eq nil (atom x)))
+(defun atom (x) (eq nil (consp x)))
 
 ;; Note: should be: (defun listp (x) (eq nil x) (consp x))
 ;;   but cond seems flaky
