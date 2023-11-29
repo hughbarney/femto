@@ -1,5 +1,6 @@
 # test executable and fLisp functionality
 # leg20231128: Femto
+tap 16
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -10,27 +11,96 @@ ok femto-2 w/o femto.rc femto succeds silently
 (: | femto >/dev/null)
 ok femto-3 empty input succeeds silently
 
-[ "$(echo "(" | FEMTORC=- femto 2>&1)" \
-      = "error: unexpected end of stream in list
-t" ]
-ok reader-1 incomplete sexp error msg
+# repl
+IN='(' OUT='error: unexpected end of stream in list'
+flisp_expr; ok reader-1 incomplete sexp error msg
 
-[ "$( echo "'(nil 'atom)" | femto )" = "(nil (quote atom))
-t" ]
-ok reader-2 read "'" ok, writer succeeds
+IN="'(nil 'atom)" OUT='(nil (quote atom))'
+flisp_expr; ok reader-2 read "'" ok, writer succeeds
+
+# Special forms
+IN='(quote)' OUT='error: #<Primitive quote> expects at least 1 arguments'
+flisp_expr; ok quote-1 w/o arg error message
+
+IN="(setq var 'val)" OUT=val
+flisp_expr; ok setq-1 assignment returns value
+
+IN="(setq var 'val) var" OUT=val
+flisp_expr; ok setq-2 var evaluates to val
+
+IN='(setq)' OUT=nil
+flisp_expr; ok setq-3 no args evaluate to nil
+
+IN='(setq var1)' OUT='error: #<Primitive setq> expects a multiple of 2 arguments'
+flisp_expr; ok setq-4 one arg fails
+
+EXPR="(setq var1 'val1  var2 'val2)"
+IN="$EXPR" OUT=val2
+flisp_expr; ok setq-5 four args returns last value
+
+IN="$EXPR var1" OUT=val1
+flisp_expr; ok setq-6 four args first var evaluates to first value
+
+IN="$EXPR var2" OUT=val2
+flisp_expr; ok setq-7 four args second var evaluates to second value
+
+IN='(progn)' OUT=nil
+flisp_expr; ok progn-1 no args evaluate to nil
+
+IN="(progn 'one)" OUT=one
+flisp_expr; ok progn-2 one arg evaluates to arg
+
+IN="(progn (princ 'first) 'second)" OUT=firstsecond
+flisp_expr 2; ok progn-3 two args evaluate in sequence
+
+# if <- to be moved to std
+# cond
+# lambda
+# macro
 
 # Primitives
-[ "$( echo '(quote)' | femto)" = "error: #<Primitive quote> expects at least 1 arguments
-t" ]
-ok quote-1 w/o arg error message
+## Write
+# print
+# princ
 
-[ "$( echo '(quote t)' | femto)" = "t
-t" ]
-ok quote-2 constant yields itself
+## Objects
+# consp <- should be a primitive?
+# atom -> should be (not consp) and in stdlib?
+# numberp
+# stringp
+# symbolp
+# symbol-name
+# eq
 
-[ "$( echo '(quote symbol)' | femto)" = "symbol
-t" ]
-ok quote-3 symbol yields symbol
+## Cons'es
+# car
+# cdr
+# cons
+
+## Arithmetic
+# + - * / %
+# = <= > >=
+
+## Strings
+# string.length
+# string.append
+# string.substring
+# string.ref
+# string->number
+# number-to-string
+# ascii
+# ascii->number
+
+
+## I/O
+# signal
+# exit
+# os.getenv
+# get-temp-file
+
+# Text buffers
+# ...
+
 
 # Local Variables:
 # mode: sh

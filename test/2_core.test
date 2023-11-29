@@ -1,0 +1,28 @@
+# test the fLisp core library
+# leg20231129: Femto
+tap 6
+
+# list
+IN='(list)' OUT=nil
+flisp_expr; ok list-1 empty list
+
+IN="(list 'element)" OUT='(element)'
+flisp_expr; ok list-2 single element
+
+IN="(list 'first 'second)" OUT='(first second)'
+flisp_expr; ok list-3 two elements
+
+# defmacro
+true; ok TODO defmacro 
+
+# defun
+true; ok TODO defun
+
+# consp should be a primitive
+
+# listp
+true; ok TODO listp
+
+# Local Variables:
+# mode: sh
+# End:

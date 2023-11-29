@@ -75,15 +75,21 @@ main.o: main.c header.h
 	  -D E_INITFILE=$(INITFILE) \
 	  -c main.c
 
-clean:
+test: femto FORCE
+	(cd test && ./run)
+
+clean: FORCE
 	-$(RM) -f $(OBJ) femto
 
-install: femto femto.rc
+install: femto femto.rc FORCE
 	-$(MKDIR) -p $$DESTDIR$(BINDIR)
 	-$(CP) femto $$DESTDIR$(BINDIR)
 	-$(MKDIR) -p $$DESTDIR$(DATADIR)/femto
 	-$(CP) lisp/*.lsp femto.rc $$DESTDIR$(DATADIR)/femto
 
-uninstall:
+uninstall: FORCE
 	-$(RM) -f $$DESTDIR$(BINDIR)/femto
 	-$(RM) -rf $$DESTDIR$(DATADIR)/femto
+
+# Used as dependency forces rebuild, aka .PHONY in GNU make
+FORCE: ;
