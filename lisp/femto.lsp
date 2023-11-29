@@ -2,6 +2,8 @@
 ;; Basic Femto extensions
 ;;
 
+(require 'flisp)
+
 ;; max value
 (defun max(a b)
   (if (> a b) a b))

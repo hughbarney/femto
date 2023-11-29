@@ -84,8 +84,9 @@ clean: FORCE
 install: femto femto.rc FORCE
 	-$(MKDIR) -p $$DESTDIR$(BINDIR)
 	-$(CP) femto $$DESTDIR$(BINDIR)
-	-$(MKDIR) -p $$DESTDIR$(DATADIR)/femto
+	-$(MKDIR) -p $$DESTDIR$(DATADIR)/femto/examples
 	-$(CP) lisp/*.lsp femto.rc $$DESTDIR$(DATADIR)/femto
+	-$(CP) lisp/examples/*.lsp femto.rc $$DESTDIR$(DATADIR)/femto/examples
 
 uninstall: FORCE
 	-$(RM) -f $$DESTDIR$(BINDIR)/femto

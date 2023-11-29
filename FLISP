@@ -1,0 +1,35 @@
+Turning Tiny Lisp into fLisp
+============================
+
+Hugh Barney alread expanded Tiny Lisp substantially:
+
+- New type: string
+- Loading Lisp from files
+- Reading/Writing Lisp input/output from "streams".
+- Editor functions
+
+Georg Lehner added:
+- batch mode
+- debug mode
+- init file provisioning
+
+Georg Lehner considers:
+- Tiny Lisp segfaults reproducible, e.g. with some macros.
+- cond and if are redundant
+- cond is not working correctly
+- atom is seldom used, consp (the negation) however often, so consp
+  should be the primitive and atom derived from it.
+- The std library is somewhat arbitrary, some of it's features is not
+  even used.  It should be moved out of C code.
+
+Femto's Lisp is not Tiny Lisp anymore. It could get it's own live,
+e.g. as 'fLisp' (femtolisp is already taken by a 10^6f Lisp)
+
+Design principles
+- Less C, more Lisp, provide only the minimum C primitives and do the
+  rest with libraries
+- If a function is needed, emulate
+  - first Elisp
+  - then Common Lisp
+- Emulated function should have the same interface as the original,
+  but can/should be as simplified as possible.

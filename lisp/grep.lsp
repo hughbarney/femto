@@ -4,6 +4,8 @@
 ;; visit next match using "c-x `"
 ;;
 
+(require 'flisp)
+
 (setq grep-buf "*grep*")
 (setq grep-line 1)
 (setq grep-cmd "grep -ni")

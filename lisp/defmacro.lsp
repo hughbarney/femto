@@ -6,6 +6,7 @@
 ;;   c-x e  ;; executes the macro
 ;;   esc-e  ;; executes the macro
 ;;
+(require 'flisp)
 
 (setq dm-buffer "*macro*")
 (setq dm-max-ops 30)

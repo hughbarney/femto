@@ -11,6 +11,8 @@ BUGS encountered during fLisp refactoring and batch mode
 
   (IF t "then" "else") -> segfault
 
+- cond behaves strange when first pred is not a list or nil
+
 - The status line has a ' ' space before the buffer name, but none after.
 
 - On startup with (startup-message) and a small terminal window, the *scratch*

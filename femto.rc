@@ -9,6 +9,15 @@
 ;; For example: (set-key "c-k" "(kill-to-eol)")
 ;;
 
+(setq list (lambda args args))
+
+(setq defmacro
+      (macro (name params . body)
+	     (list (quote setq) name (list (quote macro) params . body))))
+
+(defmacro defun (name params . body)
+  (list (quote setq) name (list (quote lambda) params . body)))
+
 (defun string (s)
   ;; Convert argument to string.
   ;; Common Lisp
@@ -55,9 +64,7 @@
 	 ;; Emacs checks if load fails and returns nil instead of feature.
 	 (cond ((memq feature features)	feature)))))
 
-;; Note: should be made interactive and renamed to load-library
-(defun load-script(fn)
-  (load (concat script_dir "/" fn)))
+(provide 'core)
 
 (defun getopts (opts pos)
   (setq o (car opts))
@@ -71,25 +78,20 @@
      (goto-line pos)
      (getopts (cdr opts) 0))))
 
-
-;; Femto backwards compatible defun`s
-(setq number? numberp)
-(setq number->string number-to-string) ; Elisp
-(setq string? stringp)
-
-(provide 'core)
-
 ;;
 ;;  Load extensions
 ;;
 
+(require 'flisp)
 (require 'femto)
 (require 'bufmenu)
 (require 'dired)
 (require 'grep)
 (require 'defmacro)
 (require 'startup)
-(require 'info)
+;;(require 'info) ; Note: segfaults
+(load-script "info.lsp")
+
 ;; Put oxo and git into your personal configuration
 ;; Note: both segfault if (required), they can be (load-script)ed though
 ;; (load-script "oxo.lsp")

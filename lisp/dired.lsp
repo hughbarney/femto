@@ -19,6 +19,7 @@
 ;; (dired)                   ;; to call
 ;;
 ;;
+(require 'flisp)
 
 (setq dired-dir (concat (os.getenv "HOME")))
 (setq dired-ls-cmd "ls -la ")

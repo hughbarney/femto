@@ -45,6 +45,8 @@
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(require 'flisp)
+
 (setq bufm-line 3)   
 (setq bufm-start-line 3)
 (setq bufm-last-line 3)
