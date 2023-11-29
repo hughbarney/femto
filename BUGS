@@ -15,9 +15,7 @@ BUGS encountered during fLisp refactoring and batch mode
 
 - The status line has a ' ' space before the buffer name, but none after.
 
-- On startup with (startup-message) and a small terminal window, the *scratch*
-  buffer seems frozen.  Now after introducing batch mode things get worse:
-  The status line is on top and only a terminal resize refreshes the display.
+- Loading a file with syntax error segfaults
 
 
 Valgrind

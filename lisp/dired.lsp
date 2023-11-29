@@ -36,7 +36,7 @@
 (setq de-ops 0)
 (setq de-max-ops 300)
 
-(defun dired()
+(defun dired ()
   (delete-other-windows)
   (setq de-obuf (get-buffer-name))
   (kill-buffer dired-buffer)

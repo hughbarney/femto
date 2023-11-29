@@ -2,15 +2,24 @@
 # leg20231129: Femto
 tap 6
 
+flisp_core() {
+    IN=$(cat <<EOF
+(load "../femto.rc")
+$IN
+EOF
+      )
+    flisp_expr "$@"
+}
+
 # list
 IN='(list)' OUT=nil
-flisp_expr; ok list-1 empty list
+flisp_core; ok list-1 empty list
 
 IN="(list 'element)" OUT='(element)'
-flisp_expr; ok list-2 single element
+flisp_core; ok list-2 single element
 
 IN="(list 'first 'second)" OUT='(first second)'
-flisp_expr; ok list-3 two elements
+flisp_core; ok list-3 two elements
 
 # defmacro
 true; ok TODO defmacro 
@@ -18,10 +27,21 @@ true; ok TODO defmacro
 # defun
 true; ok TODO defun
 
-# consp should be a primitive
+# string
+true; ok TODO string
 
-# listp
-true; ok TODO listp
+# concat
+true; ok TODO concat
+
+# memq
+true; ok TODO memq
+
+# provide
+true; ok TODO provide
+
+# require
+true; ok TODO require
+
 
 # Local Variables:
 # mode: sh
