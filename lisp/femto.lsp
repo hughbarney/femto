@@ -21,8 +21,8 @@
 ;;   powerful system interaction in the future
 (defun shell-command arg
   (cond
-    ((eq nil arg) (setq command (prompt-filename "Command: ")))
-    (t setq command arg))
+    (arg (setq command arg))
+    (t (setq command (prompt-filename "Command: "))))
   (cond (command (shell-exec command))))
 
 (defun shell-exec (command)
