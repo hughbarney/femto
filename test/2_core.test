@@ -1,6 +1,6 @@
 # test the fLisp core library
 # leg20231129: Femto
-tap 6
+tap 10
 
 flisp_core() {
     IN=$(cat <<EOF
@@ -22,25 +22,25 @@ IN="(list 'first 'second)" OUT='(first second)'
 flisp_core; ok list-3 two elements
 
 # defmacro
-true; ok TODO defmacro 
+true; ok defmacro \# TODO 
 
 # defun
-true; ok TODO defun
+true; ok defun \# TODO
 
 # string
-true; ok TODO string
+true; ok string \# TODO
 
 # concat
-true; ok TODO concat
+true; ok concat \# TODO
 
 # memq
-true; ok TODO memq
+true; ok memq \# TODO
 
 # provide
-true; ok TODO provide
+true; ok provide \# TODO
 
 # require
-true; ok TODO require
+true; ok require \# TODO
 
 
 # Local Variables:

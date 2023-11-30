@@ -22,7 +22,7 @@
   ;; Convert argument to string.
   ;; Common Lisp
   (cond
-    ((eq nil s)    "")
+    ((eq nil s) "")
     ((numberp s) (number->string s))
     ((stringp s) s)
     ((symbolp s) (symbol-name s))
@@ -69,7 +69,7 @@
 (defun getopts (opts pos)
   (setq o (car opts))
   (cond
-    ((null o))
+    ((eq nil o))
     ((eq o "+") (getopts (cdr opts) 0))
     ((eq (string.ref o 0) "+")
      (getopts (cdr opts) (string->number (string.substring o 1 (- (string.length o) 1)))))
@@ -128,6 +128,7 @@
 (defun edit-config()
   (find-file (confn config_file)))
 
-(load (confn config_file))
+;; Note: catch exception
+(eq nil (load (confn config_file)))
 
 (getopts argv 0)

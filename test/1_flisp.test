@@ -1,6 +1,6 @@
 # test executable and fLisp functionality
 # leg20231128: Femto
-tap 16
+tap 31
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -55,6 +55,52 @@ flisp_expr 2; ok progn-3 two args evaluate in sequence
 
 # if <- to be moved to std
 # cond
+IN='(cond)'  OUT=nil
+flisp_expr; ok cond-1 empty cond gives nil
+
+IN='(cond nil)' OUT=nil
+flisp_expr; ok cond-2 cond with nil gives nil
+
+IN='(cond ())' OUT=nil
+flisp_expr; ok cond-3 cond with empty list gives nil
+
+IN='(cond ("a"))' OUT='"a"'
+flisp_expr; ok cond-4 cond with single string predictate gives string
+
+IN='(cond (0))' OUT=0
+flisp_expr; ok cond-5 cond with single number predicate gives number
+
+IN='(cond (nil))' OUT=nil
+flisp_expr; ok cond-6 cond with single nil predicate gives nil
+
+IN='(cond (t))' OUT=t
+flisp_expr; ok cond-7 cond with single t predictate gives t
+
+IN='(cond ("a" "b"))' OUT='"b"'
+flisp_expr; ok cond-8 fix test, cond with two string list gives second string
+
+IN='(cond nil (t "else"))' OUT='"else"'
+flisp_expr; ok cond-9 cond with t clause
+
+IN='(cond nil nil)' OUT=nil
+flisp_expr; ok cond-10 cond with nils gives nil
+
+IN='(cond nil ())' OUT=nil
+flisp_expr; ok cond-11 cond with nil and empty list gives nil
+
+IN='(cond nil ("a"))' OUT='"a"'
+flisp_expr; ok cond-12 cond with last expresion single string list gives its value
+
+IN="(cond nil ((consp (quote (a b)))))" OUT=t
+flisp_expr; ok cond-13 cond with last expresion funcall gives result
+
+IN='(cond . "a")' OUT='error: "a" is not a list'
+flisp_expr; ok cond-14 fail if not called with a cons
+
+IN='(cond "a" ())' OUT='error: "a" is not a list'
+flisp_expr; ok cond-14 fail if clause is not a cons
+
+
 # lambda
 # macro
 

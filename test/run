@@ -15,7 +15,7 @@ available tests:
 
 $(
     for TESTFILE in *.test; do
-        printf "\t%s\t%s" "$TESTFILE" "$(head -1 $TESTFILE)"
+        printf "\t%s\t%s\n" "$TESTFILE" "$(head -1 $TESTFILE)"
     done
 )
 
@@ -29,7 +29,11 @@ EOF
 
 # print tap header line
 tap() {
-    [ "$1" ] && echo TAP version 14 && echo 1..$1 ||
+    [ "$1" ] && {
+	echo TAP version 14
+	echo 1..$1
+	echo \# $test
+    } ||
 	trap '[ $? = 0 ] || echo Bail out!; echo 1..$TEST' EXIT
 }
 
@@ -48,9 +52,10 @@ femto () { ../femto "$@"; }
 # pipe expr $IN to fLisp, extract $1 last values of output, default 1. Filters trailing 't.
 # Compare output with $OUT
 flisp_expr () {
-    [ "$( echo -n "$IN" | FEMTO_BATCH=1 FEMTORC=- FEMTOLIB=../lisp ../femto | tail -n $((1+2)) )" = "$OUT
+    [ "$( echo -n "$IN" | FEMTO_BATCH=1 FEMTORC=- FEMTOLIB=../lisp ../femto | tail -n $(($1+3)) )" = "$OUT
 t" ]
 }
+
 
 for test; do  (
     #mkdir -p tmp

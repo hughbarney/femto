@@ -1489,7 +1489,7 @@ Object *e_load(Object ** args, GC_PARAM)
 		writeString(ebuf, &ostream);
 		return nil;
 	}
-	    
+
 	char *out = load_file(fd);
 	close(fd);
 	/* Note: in batch_mode incidentially out is NULL: don't rely on this! */
@@ -1831,21 +1831,36 @@ Object *evalIf(Object ** args, Object ** env, GC_PARAM)
 
 Object *evalCond(Object ** args, Object ** env, GC_PARAM)
 {
-	if (*args == nil)
-		return nil;
-	else if ((*args)->car->type != TYPE_CONS)
-		exceptionWithObject((*args)->car, "is not a list");
-	else {
-		GC_TRACE(gcCar, (*args)->car->car);
-		GC_TRACE(gcCdr, (*args)->car->cdr);
+	if (*args == nil) return nil;
 
-		if ((*gcCar = evalExpr(gcCar, env, GC_ROOTS)) != nil)
-			return (*gcCdr != nil) ? evalProgn(gcCdr, env, GC_ROOTS) : *gcCar;
-		else {
-			GC_TRACE(gcArgs, (*args)->cdr);
-			return evalCond(gcArgs, env, GC_ROOTS);
-		}
+	if ((*args)->type != TYPE_CONS)
+		exceptionWithObject(*args, "is not a list");
+
+	Object *clause = (*args)->car;
+
+	if (clause == nil) {
+	cond_cdr:
+		if ((*args)->cdr == nil) return nil;
+
+		GC_TRACE(gcArgs, (*args)->cdr);
+		return evalCond(gcArgs, env, GC_ROOTS);
 	}
+	if (clause->type != TYPE_CONS)
+		exceptionWithObject(clause, "is not a list");
+
+	Object *pred = clause->car;
+	if (pred == nil)
+		goto cond_cdr;
+
+	GC_TRACE(gcPred, pred);
+	if ((*gcPred = evalExpr(gcPred, env, GC_ROOTS)) == nil)
+		goto cond_cdr;
+
+	if (clause->cdr == nil)
+		return *gcPred;
+
+	GC_TRACE(gcCdr, clause->cdr);
+	return evalProgn(gcCdr, env, GC_ROOTS);
 }
 
 Object *evalLambda(Object ** args, Object ** env, GC_PARAM)

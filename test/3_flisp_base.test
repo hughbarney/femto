@@ -1,0 +1,49 @@
+# test the fLisp library
+# leg20231129: Femto
+tap 10
+
+flisp() {
+    IN=$(cat <<EOF
+(load "../femto.rc")
+(require 'flisp)
+$IN
+EOF
+      )
+    flisp_expr
+}
+
+# backwards compatible functions should vanish
+false; ok refactor backward compatible defuns \# TODO
+
+# null
+IN='(null nil)' OUT=t
+flisp; ok null-1 nil is null
+
+IN="(null t)" OUT=nil
+flisp; ok null-2 t is not null
+
+IN="(null 'symbol)" OUT=nil
+flisp; ok null-3 symbol is not null
+
+IN="(null (cons nil nil))" OUT=nil
+flisp 2; ok null-3 cons is not null
+
+# not
+true; ok not \# TODO
+
+# listp
+IN='(listp nil)' OUT=t
+flisp; ok listp-1 nil is list
+
+IN='(listp t)' OUT=nil
+flisp; ok listp-2 constant is not list
+
+IN="(listp '())" OUT=t
+flisp; ok listp-3 single element list is list
+
+IN="(listp '(a 0))" OUT=t
+flisp -1; ok listp-4 two element list is list
+
+# Local Variables:
+# mode: sh
+# End:

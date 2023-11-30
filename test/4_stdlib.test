@@ -1,0 +1,32 @@
+# test the Lisp standard library
+# leg20231129
+tap 8
+
+# and
+true; ok and \# TODO
+
+# map1
+true; ok map1 \# TODO
+
+# or
+true; ok or \# TODO
+
+# atom
+true; ok atom \# TODO
+
+# zerop
+true; ok zerop \# TODO
+
+# equal
+true; ok equal \# TODO
+
+# nth
+true; ok nth \# TODO
+
+# append
+true; ok append \# TODO
+
+
+# Local Variables:
+# mode: sh
+# End:

@@ -12,6 +12,11 @@
 
 (defun null (x) (eq x nil))
 (setq not null)
+(defun listp (x) (cond ((eq nil x)) ((consp x))))
+
+;; Note: consider moving to std from here
+(defun atom (x) (eq nil (consp x)))
+(defun zerop (x) (= x 0))
 
 ;; Note: contains if
 (defmacro and args
@@ -32,15 +37,6 @@
       nil
       (cons (quote cond) (map1 list args))))
 
-(defun atom (x) (eq nil (consp x)))
-
-;; Note: should be: (defun listp (x) (eq nil x) (consp x))
-;;   but cond seems flaky
-(defun listp (x) (cond ((eq nil x) t) ((consp x) t)))
-
-(defun zerop (x) (= x 0))
-
-;; Note: consider moving to std from here
 (defun equal (x y)
   (or (and (atom x) (atom y)
 	   (eq x y))
