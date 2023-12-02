@@ -1652,7 +1652,6 @@ Primitive primitives[] = {
 	{"quote", 1, 1 /* special form */ },
 	{"setq", 0, -2 /* special form */ },
 	{"progn", 0, -1 /* special form */ },
-	{"if", 2, 3 /* special form */ },
 	{"cond", 0, -1 /* special form */ },
 	{"lambda", 1, -1 /* special form */ },
 	{"macro", 1, -1 /* special form */ },
@@ -1762,7 +1761,6 @@ enum {
 	PRIMITIVE_QUOTE,
 	PRIMITIVE_SETQ,
 	PRIMITIVE_PROGN,
-	PRIMITIVE_IF,
 	PRIMITIVE_COND,
 	PRIMITIVE_LAMBDA,
 	PRIMITIVE_MACRO
@@ -1770,7 +1768,7 @@ enum {
 
 // EVALUATION /////////////////////////////////////////////////////////////////
 
-/* Scheme-style tail recursive evaluation. evalProgn, evalIf and evalCond
+/* Scheme-style tail recursive evaluation. evalProgn and evalCond
  * return the object in the tail recursive position to be evaluated by
  * evalExpr. Macros are expanded in-place the first time they are evaluated.
  */
@@ -1818,18 +1816,6 @@ Object *evalProgn(Object ** args, Object ** env, GC_PARAM)
 
 	evalExpr(gcObject, env, GC_ROOTS);
 	return evalProgn(gcArgs, env, GC_ROOTS);
-}
-
-Object *evalIf(Object ** args, Object ** env, GC_PARAM)
-{
-	GC_TRACE(gcObject, (*args)->car);
-
-	if (evalExpr(gcObject, env, GC_ROOTS) != nil)
-		return (*args)->cdr->car;
-	else if ((*args)->cdr->cdr != nil)
-		return (*args)->cdr->cdr->car;
-	else
-		return nil;
 }
 
 Object *evalCond(Object ** args, Object ** env, GC_PARAM)
@@ -1973,9 +1959,6 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 				return evalSetq(gcArgs, gcEnv, GC_ROOTS);
 			case PRIMITIVE_PROGN:
 				*gcObject = evalProgn(gcArgs, gcEnv, GC_ROOTS);
-				break;
-			case PRIMITIVE_IF:
-				*gcObject = evalIf(gcArgs, gcEnv, GC_ROOTS);
 				break;
 			case PRIMITIVE_COND:
 				*gcObject = evalCond(gcArgs, gcEnv, GC_ROOTS);

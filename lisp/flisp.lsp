@@ -18,6 +18,9 @@
 (defun atom (x) (eq nil (consp x)))
 (defun zerop (x) (= x 0))
 
+(defmacro if args
+  (list 'cond (list (car args) (car (cdr args))) (cons 't (cdr (cdr args)))))
+
 ;; Note: contains if
 (defmacro and args
   (cond ((eq nil args) t)

@@ -100,6 +100,8 @@ flisp_expr; ok cond-14 fail if not called with a cons
 IN='(cond "a" ())' OUT='error: "a" is not a list'
 flisp_expr; ok cond-14 fail if clause is not a cons
 
+IN='(cond (t . t))' OUT='error: t is not a list'
+flisp_expr; ok cond-15 fail if clause action is not a cons
 
 # lambda
 # macro
