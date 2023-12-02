@@ -1806,15 +1806,18 @@ Object *evalProgn(Object ** args, Object ** env, GC_PARAM)
 {
 	if (*args == nil)
 		return nil;
-	else if ((*args)->cdr == nil)
-		return (*args)->car;
-	else {
-		GC_TRACE(gcObject, (*args)->car);
-		GC_TRACE(gcArgs, (*args)->cdr);
 
-		evalExpr(gcObject, env, GC_ROOTS);
-		return evalProgn(gcArgs, env, GC_ROOTS);
-	}
+	if ((*args)->type != TYPE_CONS)
+		exceptionWithObject(*args, "is not a list");
+
+	if ((*args)->cdr == nil)
+		return (*args)->car;
+
+	GC_TRACE(gcObject, (*args)->car);
+	GC_TRACE(gcArgs, (*args)->cdr);
+
+	evalExpr(gcObject, env, GC_ROOTS);
+	return evalProgn(gcArgs, env, GC_ROOTS);
 }
 
 Object *evalIf(Object ** args, Object ** env, GC_PARAM)
