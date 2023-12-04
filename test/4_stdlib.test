@@ -1,21 +1,42 @@
 # test the Lisp standard library
 # leg20231129
-tap 8
+tap 11
 
-# and
-true; ok and \# TODO
-
-# map1
-true; ok map1 \# TODO
-
-# or
-true; ok or \# TODO
+stdlib() {
+    IN=$(cat <<EOF
+(load "../femto.rc")
+(require 'stdlib)
+$IN
+EOF
+      )
+    flisp_expr $1
+}
 
 # atom
-true; ok atom \# TODO
+IN='(atom 0)' OUT=t
+stdlib; ok atom-1 number is atom
+
+IN='(atom "a")' OUT=t
+stdlib; ok atom-2 string is atom
+
+IN="(atom 'symbol)" OUT=t
+stdlib; ok atom-3 symbol is atom
+
+IN='(atom nil)' OUT=t
+stdlib; ok atom-4 nil is atom
+
+IN="(atom '(0 'b))" OUT=nil
+stdlib; ok atom-5 list is not atom
 
 # zerop
-true; ok zerop \# TODO
+IN='(zerop 0)' OUT=t
+stdlib; ok zerop-1 0 is zero
+
+IN='(zerop 1)' OUT=nil
+stdlib; ok zerop-2 1 is not zero
+
+IN='(zerop "a")' OUT='error: "a" is not a number'
+stdlib; ok zerop-3 with string fails \#TODO fix test harness to deal with exceptions
 
 # equal
 true; ok equal \# TODO

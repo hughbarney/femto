@@ -14,31 +14,23 @@
 (setq not null)
 (defun listp (x) (cond ((eq nil x)) ((consp x))))
 
+(defmacro and args
+  (cond
+    ((eq nil args))
+    ((eq nil (cdr args)) (car args))
+    (t (list 'cond (list (car args) (cons 'and (cdr args)))))))
+
+(defun map1 (func xs)
+  (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))
+
+(defmacro or args
+  (cond (args (cons (quote cond) (map1 list args)))))
+
+
 ;; Note: consider moving to std from here
-(defun atom (x) (eq nil (consp x)))
-(defun zerop (x) (= x 0))
 
 (defmacro if args
   (list 'cond (list (car args) (car (cdr args))) (cons 't (cdr (cdr args)))))
-
-;; Note: contains if
-(defmacro and args
-  (cond ((eq nil args) t)
-	((eq nil (cdr args)) (car args))
-	(t (list (quote if) (car args) (cons (quote and) (cdr args))))))
-
-;; Note: contains if
-(defun map1 (func xs)
-  (if (eq nil xs)
-      nil
-      (cons (func (car xs))
-	    (map1 func (cdr xs)))))
-
-;; Note: contains if
-(defmacro or args
-  (if (eq nil args)
-      nil
-      (cons (quote cond) (map1 list args))))
 
 (defun equal (x y)
   (or (and (atom x) (atom y)

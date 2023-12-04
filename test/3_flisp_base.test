@@ -1,6 +1,6 @@
 # test the fLisp library
 # leg20231129: Femto
-tap 10
+tap 29
 
 flisp() {
     IN=$(cat <<EOF
@@ -29,7 +29,7 @@ IN="(null (cons nil nil))" OUT=nil
 flisp 2; ok null-3 cons is not null
 
 # not
-true; ok not \# TODO
+true; ok not \# Skip not is null
 
 # listp
 IN='(listp nil)' OUT=t
@@ -43,6 +43,65 @@ flisp; ok listp-3 single element list is list
 
 IN="(listp '(a 0))" OUT=t
 flisp -1; ok listp-4 two element list is list
+
+# and
+IN='(and)' OUT=t
+flisp; ok and-1  no args is t
+
+IN='(and t)' OUT=t
+flisp; ok and-2  t is t
+
+IN='(and nil)' OUT=nil
+flisp; ok and-3  nil is nil
+
+IN='(and t nil)' OUT=nil
+flisp; ok and-4  t nil is nil
+
+IN='(and nil t)' OUT=nil
+flisp; ok and-5  nil t is nil
+
+IN='(and nil nil)' OUT=nil
+flisp; ok and-6  nil nil is nil
+
+IN='(and t t)' OUT=t
+flisp; ok and-7 t t is t
+
+IN='(and "a")' OUT='"a"'
+flisp; ok and-8 single not nil is itself
+
+IN='(and t "a")' OUT='"a"'
+flisp; ok and-9 not nil at end is itself
+
+IN='(and "a" 0 t)' OUT=t
+flisp; ok and-10 triple t is true
+
+
+false; ok \# TODO map1
+
+
+IN='(or)' OUT=nil
+flisp; ok or-1 empty or is false
+
+IN='(or t)' OUT=t
+flisp; ok or-2 t is t
+
+IN='(or "a")' OUT='"a"'
+flisp; ok or-3 not nil is itself
+
+IN='(or t nil)' OUT=t
+flisp; ok or-4 t nil is t
+
+IN='(or nil t)' OUT=t
+flisp; ok or-5 nil t is t
+
+IN='(or nil 0)' OUT=0
+flisp; ok or-6 nil not nil is itself
+
+IN='(or nil nil nil)' OUT=nil
+flisp; ok or-7 triple nil is nil
+
+IN='(or nil nil nil "a" "b" nil)' OUT='"a"'
+flisp; ok or-8 nil with not nil is first itself
 
 # Local Variables:
 # mode: sh
