@@ -55,6 +55,10 @@ flisp_expr () {
     [ "$( echo -n "$IN" | FEMTO_BATCH=1 FEMTORC=- FEMTOLIB=../lisp ../femto | tail -n $(($1+3)) )" = "$OUT
 t" ]
 }
+flisp_err () {
+    [ "$( echo -n "$IN" | FEMTO_BATCH=1 FEMTORC=- FEMTOLIB=../lisp ../femto | tail -n $(($1+3)) )" = "$OUT
+nil" ]
+}
 
 
 for test; do  (

@@ -90,4 +90,4 @@
 (load "/home/jorge/.config/femto/femto.rc")
 (log-debug "user config loaded\n")
 (getopts argv 0)
-
+(log-debug "options processed\n")

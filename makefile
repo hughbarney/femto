@@ -75,11 +75,15 @@ main.o: main.c header.h
 	  -D E_INITFILE=$(INITFILE) \
 	  -c main.c
 
+doxygen: FORCE
+	doxygen
+
 test: femto FORCE
 	(cd test && ./run)
 
 clean: FORCE
 	-$(RM) -f $(OBJ) femto
+	-$(RM) -rf doxygen
 
 install: femto femto.rc FORCE
 	-$(MKDIR) -p $$DESTDIR$(BINDIR)

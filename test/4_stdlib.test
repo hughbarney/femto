@@ -2,16 +2,16 @@
 # leg20231129
 tap 11
 
-stdlib() {
+_stdlib() {
     IN=$(cat <<EOF
 (load "../femto.rc")
 (require 'stdlib)
 $IN
 EOF
       )
-    flisp_expr $1
 }
-
+stdlib() { _stdlib; flisp_expr $1; }
+stdlib_err() { _stdlib; flisp_err $1; } 
 # atom
 IN='(atom 0)' OUT=t
 stdlib; ok atom-1 number is atom
@@ -36,7 +36,7 @@ IN='(zerop 1)' OUT=nil
 stdlib; ok zerop-2 1 is not zero
 
 IN='(zerop "a")' OUT='error: "a" is not a number'
-stdlib; ok zerop-3 with string fails \#TODO fix test harness to deal with exceptions
+stdlib_err; ok zerop-3 with string fails
 
 # equal
 true; ok equal \# TODO

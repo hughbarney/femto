@@ -74,7 +74,6 @@ struct Object {
   };
 };
 
-static Object *symbols = NULL;
 static Object *nil = &(Object) { TYPE_SYMBOL,.string = "nil" };
 static Object *t = &(Object) { TYPE_SYMBOL,.string = "t" };
 
@@ -91,17 +90,33 @@ typedef struct Stream {
 	off_t offset, size;
 } Stream;
 
-//Stream istream = { .type = STREAM_TYPE_FILE,.fd = STDIN_FILENO };
-Stream ostream = { .type = STREAM_TYPE_FILE, .buffer = NULL, .fd = STDOUT_FILENO };
-
 typedef struct Memory {
 	size_t capacity, fromOffset, toOffset;
 	void *fromSpace, *toSpace;
 } Memory;
 
-static Memory *memory = &(Memory) { MEMORY_SIZE };
 
-static jmp_buf exceptionEnv;
+// The interpreter struct holds all pieces together which are needed
+// to execute Lisp code.
+//
+// Note: WIP, relevant procedures must get a handle to the
+//   Interpreter, instead of accessing the static allocated flisp.
+//   init_lisp() must allocate the memory by itself and return an
+//   Interpreter to be used by call_lisp().
+
+typedef struct Interpreter {
+	jmp_buf *stackframe;
+	Object *theRoot;
+	Object **theEnv;
+	Object *symbols;
+	Object root; /* reified root node */
+	Stream ostream;
+	Memory *memory;
+} Interpreter;
+
+static Memory *memory = &(Memory) { MEMORY_SIZE };
+static Interpreter flisp;
+
 
 // EXCEPTION HANDLING /////////////////////////////////////////////////////////
 
@@ -188,11 +203,11 @@ void exceptionWithObject(Object * object, char *format, ...)
 {
 	static char buf[WRITE_FMT_BUFSIZ];
 
-	writeString("error: ", &ostream);
+	writeString("error: ", &flisp.ostream);
 
 	if (object) {
-		writeObject(object, true, &ostream);
-		writeChar(' ', &ostream);
+		writeObject(object, true, &flisp.ostream);
+		writeChar(' ', &flisp.ostream);
 	}
 
 	va_list args;
@@ -200,10 +215,10 @@ void exceptionWithObject(Object * object, char *format, ...)
 	vsnprintf(buf, WRITE_FMT_BUFSIZ, format, args);
 	va_end(args);
 
-	writeString(buf, &ostream);
-	writeChar('\n', &ostream);
+	writeString(buf, &flisp.ostream);
+	writeChar('\n', &flisp.ostream);
 
-	longjmp(exceptionEnv, 1);
+	longjmp(*flisp.stackframe, 1);
 }
 
 // GARBAGE COLLECTION /////////////////////////////////////////////////////////
@@ -264,7 +279,7 @@ void exceptionWithObject(Object * object, char *format, ...)
 Object *gcMoveObject(Object * object)
 {
 	// skip object if it is not within from-space (i.e. on the stack)
-	if (object < (Object *) memory->fromSpace || object >= (Object *) ((char *)memory->fromSpace + memory->fromOffset))
+	if (object < (Object *) flisp.memory->fromSpace || object >= (Object *) ((char *)flisp.memory->fromSpace + flisp.memory->fromOffset))
 		return object;
 
 	// if the object has already been moved, return its new location
@@ -272,9 +287,9 @@ Object *gcMoveObject(Object * object)
 		return object->forward;
 
 	// copy object to to-space
-	Object *forward = (Object *) ((char *)memory->toSpace + memory->toOffset);
+	Object *forward = (Object *) ((char *)flisp.memory->toSpace + flisp.memory->toOffset);
 	memcpy(forward, object, object->size);
-	memory->toOffset += object->size;
+	flisp.memory->toOffset += object->size;
 
 	// mark object as moved and set forwarding pointer
 	object->type = (Type) - 1;
@@ -285,16 +300,16 @@ Object *gcMoveObject(Object * object)
 
 void gc(GC_PARAM)
 {
-	memory->toOffset = 0;
+	flisp.memory->toOffset = 0;
 
 	// move symbols and root objects
-	symbols = gcMoveObject(symbols);
+	flisp.symbols = gcMoveObject(flisp.symbols);
 
 	for (Object * object = GC_ROOTS; object != nil; object = object->cdr)
 		object->car = gcMoveObject(object->car);
 
 	// iterate over objects in to-space and move all objects they reference
-	for (Object * object = memory->toSpace; object < (Object *) ((char *)memory->toSpace + memory->toOffset); object = (Object *) ((char *)object + object->size)) {
+	for (Object * object = flisp.memory->toSpace; object < (Object *) ((char *)flisp.memory->toSpace + flisp.memory->toOffset); object = (Object *) ((char *)object + object->size)) {
 
 		switch (object->type) {
 		case TYPE_NUMBER:
@@ -321,10 +336,10 @@ void gc(GC_PARAM)
 	}
 
 	// swap from- and to-space
-	void *swap = memory->fromSpace;
-	memory->fromSpace = memory->toSpace;
-	memory->toSpace = swap;
-	memory->fromOffset = memory->toOffset;
+	void *swap = flisp.memory->fromSpace;
+	flisp.memory->fromSpace = flisp.memory->toSpace;
+	flisp.memory->toSpace = swap;
+	flisp.memory->fromOffset = flisp.memory->toOffset;
 }
 
 // MEMORY MANAGEMENT //////////////////////////////////////////////////////////
@@ -339,23 +354,23 @@ Object *memoryAllocObject(Type type, size_t size, GC_PARAM)
 	size = memoryAlign(size, sizeof(void *));
 
 	// allocate from- and to-space
-	if (!memory->fromSpace) {
-		if (!(memory->fromSpace = mmap(NULL, memory->capacity * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)))
+	if (!flisp.memory->fromSpace) {
+		if (!(flisp.memory->fromSpace = mmap(NULL, flisp.memory->capacity * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)))
 			exception("mmap() failed, %s", strerror(errno));
 
-		memory->toSpace = (char *)memory->fromSpace + memory->capacity;
+		flisp.memory->toSpace = (char *)flisp.memory->fromSpace + flisp.memory->capacity;
 	}
 	// run garbage collection if capacity exceeded
-	if (memory->fromOffset + size >= memory->capacity)
+	if (flisp.memory->fromOffset + size >= flisp.memory->capacity)
 		gc(GC_ROOTS);
-	if (memory->fromOffset + size >= memory->capacity)
+	if (flisp.memory->fromOffset + size >= flisp.memory->capacity)
 		exception("out of memory, %lu bytes", (unsigned long)size);
 
 	// allocate object in from-space
-	Object *object = (Object *) ((char *)memory->fromSpace + memory->fromOffset);
+	Object *object = (Object *) ((char *)flisp.memory->fromSpace + flisp.memory->fromOffset);
 	object->type = type;
 	object->size = size;
-	memory->fromOffset += size;
+	flisp.memory->fromOffset += size;
 
 	return object;
 }
@@ -450,7 +465,7 @@ Object *newCons(Object ** car, Object ** cdr, GC_PARAM)
 
 Object *newSymbolWithLength(char *string, size_t length, GC_PARAM)
 {
-	for (Object * object = symbols; object != nil; object = object->cdr)
+	for (Object * object = flisp.symbols; object != nil; object = object->cdr)
 		if (memcmp(object->car->string, string, length) == 0 && object->car->string[length] == '\0')
 			return object->car;
 
@@ -458,7 +473,7 @@ Object *newSymbolWithLength(char *string, size_t length, GC_PARAM)
 	memcpy((*gcObject)->string, string, length);
 	(*gcObject)->string[length] = '\0';
 
-	symbols = newCons(gcObject, &symbols, GC_ROOTS);
+	flisp.symbols = newCons(gcObject, &flisp.symbols, GC_ROOTS);
 
 	return *gcObject;
 }
@@ -1002,15 +1017,15 @@ Object *primitiveCons(Object ** args, GC_PARAM)
 
 Object *primitivePrint(Object ** args, GC_PARAM)
 {
-	writeChar('\n', &ostream);
-	writeObject((*args)->car, true, &ostream);
-	writeChar(' ', &ostream);
+	writeChar('\n', &flisp.ostream);
+	writeObject((*args)->car, true, &flisp.ostream);
+	writeChar(' ', &flisp.ostream);
 	return (*args)->car;
 }
 
 Object *primitivePrinc(Object ** args, GC_PARAM)
 {
-	writeObject((*args)->car, false, &ostream);
+	writeObject((*args)->car, false, &flisp.ostream);
 	return (*args)->car;
 }
 
@@ -1469,31 +1484,30 @@ char *load_file(int infd);
 Object *e_load(Object ** args, GC_PARAM)
 {
 	int fd;
-	char ebuf[81];
 
 	ONE_STRING_ARG();
 
 	if (first->type != TYPE_STRING)
 	    exceptionWithObject(first, "is not a string");
 
-	debug("(load %s)\n", first->string);
+	debug("(load \"%s\")\n", first->string);
 
 	if (!strcmp(first->string, "-"))
 		fd = 0;
 	else if ((fd = open(first->string, O_RDONLY)) == -1) {
-		// Note: we wanted the next line, but it segfaults when
-		//   used in init_config():
-		//   exceptionWithObject(nil, "open() failed");
-		snprintf(ebuf, 80, "failed to open %s\n", first->string);
-		ebuf[80] ='\0';
-		writeString(ebuf, &ostream);
-		return nil;
+		exceptionWithObject(nil, "open(%s) failed", first->string);
 	}
 
 	char *out = load_file(fd);
+	debug("close(%d)\n", fd);
 	close(fd);
 	/* Note: in batch_mode incidentially out is NULL: don't rely on this! */
 	if (out == NULL) return t;
+	char* err = strstr(out, "error: ");
+	if (err)
+		debug("(load \"%s\") => %s\n", first->string, err);
+	else
+		debug("(load \"%s\") => %d chars\n", first->string, strlen(out));
 	return (NULL == strstr(out, "error:")) ? t : nil;
 }
 
@@ -2025,10 +2039,6 @@ Object *newRootEnv(GC_PARAM, int arg, char **argv, char* flib)
 	return *gcEnv;
 }
 
-Object *theRoot;
-Object temp_root;
-Object **theEnv;
-
 void set_stream_file(Stream *stream, int fd)
 {
 	assert(stream != NULL);
@@ -2052,7 +2062,7 @@ void set_input_stream_buffer(Stream *stream, char *buffer)
 
 void reset_output_stream()
 {
-	Stream *stream = &ostream; /* we only want 1 output stream */
+	Stream *stream = &flisp.ostream; /* we only want 1 output stream */
 	if (batch_mode) {
 	  stream->type = STREAM_TYPE_FILE;
 	  stream->fd = STDOUT_FILENO;
@@ -2064,86 +2074,109 @@ void reset_output_stream()
 		free(stream->buffer);
 		stream->buffer = NULL;
 	}
+	// Note: initialize buffer, in case nothing is written ever
+	writeString("", stream);
 }
 
 int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 {
-	//debug("load_file_body\n");
+	jmp_buf *up, exceptionEnv;
+
+	up = flisp.stackframe;
+	flisp.stackframe = &exceptionEnv;
+
 	GC_TRACE(gcObject, nil);
 
-	if (setjmp(exceptionEnv))
+	if (setjmp(exceptionEnv)) {
+		debug("exception in load_file_body()\n");
+		free(input_stream->buffer);
+		flisp.stackframe = up;
 		return 1;
-
+	}
 	while (peekNext(input_stream) != EOF) {
 		*gcObject = nil;
 		*gcObject = readExpr(input_stream, GC_ROOTS);
-		*gcObject = evalExpr(gcObject, theEnv, GC_ROOTS);
-		writeObject(*gcObject, true, &ostream);
-		writeChar('\n', &ostream);
+		*gcObject = evalExpr(gcObject, flisp.theEnv, GC_ROOTS);
+		writeObject(*gcObject, true, &flisp.ostream);
+		writeChar('\n', &flisp.ostream);
 	}
 	free(input_stream->buffer);
+	flisp.stackframe = up;
 	return 0;
 }
+
 char *load_file(int infd)
 {
 	debug("load_file(%d)\n", infd);
 	Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
 	set_stream_file(&input_stream, infd);
 	reset_output_stream();
-	if (load_file_body(theEnv, theRoot, &input_stream) && !batch_mode)
-		debug("load_file(%d) failed: %s\n", infd, ostream.buffer);
-	return ostream.buffer;
+	if (load_file_body(flisp.theEnv, flisp.theRoot, &input_stream)) {
+		debug("load_file(%d) failed\n", infd);
+		return "error: load_file() failed";
+	}
+	debug("load_file(%d) finished, returning ostream.buffer: %p\n", infd, flisp.ostream.buffer);
+	return flisp.ostream.buffer;
 }
 
 int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
 {
+	jmp_buf *up, exceptionEnv;
+
+	up = flisp.stackframe;
+	flisp.stackframe = &exceptionEnv;
+
 	GC_TRACE(gcObject, nil);
 
 	for (;;) {
-		if (setjmp(exceptionEnv))
+		if (setjmp(exceptionEnv)) {
+			debug("exception in call_lisp_body\n");
+			flisp.stackframe = up;
 			return 1;
-
+		}
 		*gcObject = nil;
 
 		if (peekNext(input_stream) == EOF) {
-			writeChar('\n', &ostream);
+			writeChar('\n', &flisp.ostream);
+			flisp.stackframe = up;
 			return 0;
 		}
 
 		*gcObject = readExpr(input_stream, GC_ROOTS);
 		*gcObject = evalExpr(gcObject, env, GC_ROOTS);
-		writeObject(*gcObject, true, &ostream);
-		writeChar('\n', &ostream);
+		writeObject(*gcObject, true, &flisp.ostream);
+		writeChar('\n', &flisp.ostream);
 	}
+	flisp.stackframe = up;
 	return 0;
 }
 
 /*
- * 3 interface functions that enable lisp to be embedded in an application (eg Editor)
+ * 2 interface functions that enable lisp to be embedded in an application (eg Editor)
  */
+
 int init_lisp(int argc, char **argv, char *flib)
 {
 
 	debug("init_lisp(%d, %p, \"%s\")\n", argc, argv, flib);
 
-	theRoot = nil;
+	flisp.stackframe = NULL;
+	flisp.memory = memory;
+	set_stream_file(&flisp.ostream, STDOUT_FILENO);
 
-	//set_stream_file(&istream, STDIN_FILENO);
-	set_stream_file(&ostream, STDOUT_FILENO);
+	flisp.theRoot = nil;
 
-	if (setjmp(exceptionEnv))
-		return 1;
+	flisp.symbols = nil;
+	flisp.symbols = newCons(&nil, &flisp.symbols, flisp.theRoot);
+	flisp.symbols = newCons(&t, &flisp.symbols, flisp.theRoot);
 
-	symbols = nil;
-	symbols = newCons(&nil, &symbols, theRoot);
-	symbols = newCons(&t, &symbols, theRoot);
+	flisp.root.type = TYPE_CONS;
+	flisp.root.car = newRootEnv(flisp.theRoot, argc, argv, flib);
+	flisp.root.cdr = flisp.theRoot;
 
-	temp_root.type = TYPE_CONS;
-	temp_root.car = newRootEnv(theRoot, argc, argv, flib);
-	temp_root.cdr = theRoot;
+	flisp.theEnv = &flisp.root.car;
+	flisp.theRoot = &flisp.root;
 
-	theEnv = &temp_root.car;
-	theRoot = &temp_root;
 	return 0;
 }
 
@@ -2155,9 +2188,9 @@ char *call_lisp(char *input)
 	Stream is = { .type = STREAM_TYPE_STRING };
 	set_input_stream_buffer(&is, input);
 	reset_output_stream();
-	if (call_lisp_body(theEnv, theRoot, &is) && !batch_mode)
-		debug("call_lisp() failed: %s\n", ostream.buffer);
-	return ostream.buffer;
+	if (call_lisp_body(flisp.theEnv, flisp.theRoot, &is))
+		debug("call_lisp(%s) failed: %s\n", input, flisp.ostream.buffer);
+	return flisp.ostream.buffer;
 }
 
 /*

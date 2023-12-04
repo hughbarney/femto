@@ -1,6 +1,6 @@
 # test executable and fLisp functionality
 # leg20231128: Femto
-tap 31
+tap 32
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -13,14 +13,14 @@ ok femto-3 empty input succeeds silently
 
 # repl
 IN='(' OUT='error: unexpected end of stream in list'
-flisp_expr; ok reader-1 incomplete sexp error msg
+flisp_err; ok reader-1 incomplete sexp error msg
 
 IN="'(nil 'symbol)" OUT='(nil (quote symbol))'
 flisp_expr; ok reader-2 read "'" ok, writer succeeds
 
 # Special forms
 IN='(quote)' OUT='error: #<Primitive quote> expects at least 1 arguments'
-flisp_expr; ok quote-1 w/o arg error message
+flisp_err; ok quote-1 w/o arg error message
 
 IN="(setq var 'val)" OUT=val
 flisp_expr; ok setq-1 assignment returns value
@@ -32,7 +32,7 @@ IN='(setq)' OUT=nil
 flisp_expr; ok setq-3 no args evaluate to nil
 
 IN='(setq var1)' OUT='error: #<Primitive setq> expects a multiple of 2 arguments'
-flisp_expr; ok setq-4 one arg fails
+flisp_err; ok setq-4 one arg fails
 
 EXPR="(setq var1 'val1  var2 'val2)"
 IN="$EXPR" OUT=val2
@@ -95,13 +95,13 @@ IN="(cond nil ((consp (quote (a b)))))" OUT=t
 flisp_expr; ok cond-13 cond with last expresion funcall gives result
 
 IN='(cond . "a")' OUT='error: "a" is not a list'
-flisp_expr; ok cond-14 fail if not called with a cons
+flisp_err; ok cond-14 fail if not called with a cons
 
 IN='(cond "a" ())' OUT='error: "a" is not a list'
-flisp_expr; ok cond-14 fail if clause is not a cons
+flisp_err; ok cond-14 fail if clause is not a cons
 
 IN='(cond (t . t))' OUT='error: t is not a list'
-flisp_expr; ok cond-15 fail if clause action is not a cons
+flisp_err; ok cond-15 fail if clause action is not a cons
 
 # lambda
 # macro

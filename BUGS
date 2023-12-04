@@ -5,7 +5,7 @@ BUGS encountered during fLisp refactoring and batch mode
 
 - The status line has a ' ' space before the buffer name, but none after.
 
-- Loading a file with syntax error segfaults
+- (insert-file) is not documented.
 
 
 Valgrind

@@ -8,15 +8,18 @@
 
 #include "header.h"
 
+
 void load_config(); /* Load configuration/init file */
 void gui(); /* The GUI loop used in interactive mode */
 
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
 
+
 int main(int argc, char **argv)
 {
     char *envv, *flib;
+
     batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
     debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
 
@@ -140,7 +143,7 @@ void debug(char *format, ...)
     va_list args;
 
     if (!debug_mode) return;
-     
+
     va_start (args, format);
 
     static FILE *debug_fp = NULL;
