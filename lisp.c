@@ -2091,7 +2091,7 @@ char *load_file(int infd)
 	set_stream_file(&input_stream, infd);
 	reset_output_stream();
 	if (load_file_body(theEnv, theRoot, &input_stream) && !batch_mode)
-		debug("load_file(%d) failed: %s\n", ostream.buffer);
+		debug("load_file(%d) failed: %s\n", infd, ostream.buffer);
 	return ostream.buffer;
 }
 
