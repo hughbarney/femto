@@ -4,14 +4,6 @@
 
 (require 'flisp)
 
-;; max value
-(defun max(a b)
-  (if (> a b) a b))
-
-;; min value
-(defun min(a b)
-  (if (< a b) a b))
-
 (defun repeat (n func)  
   (cond ((> n 0) (func) (repeat (- n 1) func))))
 

@@ -1,16 +1,17 @@
 # test the fLisp library
 # leg20231129: Femto
-tap 29
+tap 42
 
-flisp() {
+load_flisp() {
     IN=$(cat <<EOF
 (load "../femto.rc")
 (require 'flisp)
 $IN
 EOF
       )
-    flisp_expr
 }
+flisp() { load_flisp; flisp_expr $1; }
+flisp_fail() { load_flisp; flisp_err $1; }
 
 # backwards compatible functions should vanish
 false; ok refactor backward compatible defuns \# TODO
@@ -26,7 +27,7 @@ IN="(null 'symbol)" OUT=nil
 flisp; ok null-3 symbol is not null
 
 IN="(null (cons nil nil))" OUT=nil
-flisp 2; ok null-3 cons is not null
+flisp; ok null-3 cons is not null
 
 # not
 true; ok not \# Skip not is null
@@ -42,7 +43,7 @@ IN="(listp '())" OUT=t
 flisp; ok listp-3 single element list is list
 
 IN="(listp '(a 0))" OUT=t
-flisp -1; ok listp-4 two element list is list
+flisp; ok listp-4 two element list is list
 
 # and
 IN='(and)' OUT=t
@@ -102,6 +103,48 @@ flisp; ok or-7 triple nil is nil
 
 IN='(or nil nil nil "a" "b" nil)' OUT='"a"'
 flisp; ok or-8 nil with not nil is first itself
+
+false; ok reduce-1 \#TODO
+
+IN='(max)'
+OUT="error: (wrong-number-of-arguments max 0) wrong-number-of-arguments"
+flisp_fail; ok max-1 with nil fails
+
+IN='(max "a")'
+OUT='error: (wrong-type-argument "not a number" "a") wrong-type-argument'
+flisp_fail; ok max-2 with not number fails
+
+IN='(max 0)' OUT=0
+flisp; ok max-3 with single number yields number
+
+IN='(max 2 1)' OUT=2
+flisp; ok max-4 with 'a>b' yields a
+
+IN='(max 1 2)' OUT=2
+flisp; ok max-5 with 'a<b' yields b
+
+IN='(max 1 2 3)' OUT=3
+flisp; ok max-6 with more then two args
+
+IN='(min)'
+OUT="error: (wrong-number-of-arguments min 0) wrong-number-of-arguments"
+flisp_fail; ok min-1 with nil fails
+
+IN='(min "a")'
+OUT='error: (wrong-type-argument "not a number" "a") wrong-type-argument'
+flisp_fail; ok min-2 with not number fails
+
+IN='(min 0)' OUT=0
+flisp; ok min-3 with single number yields number
+
+IN='(min 1 2)' OUT=1
+flisp; ok min-4 with 'a<b' yields a
+
+IN='(min 2 1)' OUT=1
+flisp; ok min-5 with 'a>b' yields b
+
+IN='(min 1 2 3)' OUT=1
+flisp; ok min-6 with more then two args
 
 # Local Variables:
 # mode: sh
