@@ -45,7 +45,7 @@
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(require 'flisp)
+(require 'femto)
 
 (setq bufm-line 3)   
 (setq bufm-start-line 3)
@@ -70,21 +70,21 @@
 
 
 (defun buffer-menu()
-    (bufm-debug "buffer-menu")
-    (setq bufm-ops 0)
-    (setq bufm-obuf (get-buffer-name))
-    (setq bufm-oclip (get-clipboard))
-    (list-buffers)
-    (setq bufm-line bufm-start-line)   
-    (setq bufm-last-line (+ bufm-start-line (get-buffer-count)))
-    (setq bufm-last-line (- bufm-last-line 2))
-    (setq bufm-stop nil)
-    (goto-line bufm-line)
-    (delete-other-windows)
-    (setq bufm-buf (bufm-get-bufn))
-    (bufm-loop-payload)
-    (set-clipboard bufm-oclip)
-    (update-display))
+  (bufm-debug "buffer-menu")
+  (setq bufm-ops 0)
+  (setq bufm-obuf (get-buffer-name))
+  (setq bufm-oclip (get-clipboard))
+  (list-buffers)
+  (setq bufm-line bufm-start-line)   
+  (setq bufm-last-line (+ bufm-start-line (get-buffer-count)))
+  (setq bufm-last-line (- bufm-last-line 2))
+  (setq bufm-stop nil)
+  (goto-line bufm-line)
+  (delete-other-windows)
+  (setq bufm-buf (bufm-get-bufn))
+  (bufm-loop-payload)
+  (set-clipboard bufm-oclip)
+  (update-display))
 
 ;;
 ;; (bufm-loop-payload)
@@ -96,17 +96,16 @@
 ;;
 
 (defun bufm-loop-payload()
-    (bufm-debug "bufm-payload")
-    (setq bufm-ops (+ bufm-ops 1))
-    (message "buffer menu: 1,2,s,k,x")
-    (update-display)
-    (setq bufm-key (get-key))
-    (if (eq bufm-key "")
-	 (bufm-handle-bound-key)
-         (bufm-handle-single-key bufm-key))
-    (cond
-      ((or (> bufm-ops bufm-max-ops) bufm-stop) (setq bufm-stop t))
-      (t (bufm-loop-payload))))
+  (bufm-debug "bufm-payload")
+  (setq bufm-ops (+ bufm-ops 1))
+  (message "buffer menu: 1,2,s,k,x")
+  (update-display)
+  (setq bufm-key (get-key))
+  (cond ((eq bufm-key "") (bufm-handle-bound-key))
+        (t (bufm-handle-single-key bufm-key)))
+  (cond
+    ((or (> bufm-ops bufm-max-ops) bufm-stop) (setq bufm-stop t))
+    (t (bufm-loop-payload))))
 
 ;;
 ;; (bufm-handle-bound-key)
@@ -118,11 +117,11 @@
 ;;
 
 (defun bufm-handle-bound-key()
-    (bufm-debug "bufm-handle-bound-key")
-    (setq bufm-key (get-key-funcname))
-    (if (eq bufm-key "previous-line") (bufm-move-line -1))
-    (if (eq bufm-key "next-line") (bufm-move-line 1))
-    (setq bufm-buf (bufm-get-bufn)))
+  (bufm-debug "bufm-handle-bound-key")
+  (setq bufm-key (get-key-funcname))
+  (cond ((eq bufm-key "previous-line") (bufm-move-line -1))
+	((eq bufm-key "next-line") (bufm-move-line 1)))
+  (setq bufm-buf (bufm-get-bufn)))
 
 ;;
 ;; (bufm-handle-single-key)
@@ -135,38 +134,38 @@
 ;;
 
 (defun bufm-handle-single-key(k)
-   (bufm-debug "bufm-handle-single-key")
-   (setq bufm_count (get-buffer-count))
-   (cond   ( (or (eq k "x") (eq k "q"))
-             (goto-line bufm-start-line)
-             (beginning-of-line)
-             (if (search-forward bufm-obuf)
-                   (select-buffer bufm-obuf)
-                   (select-buffer "*scratch*"))
-             (setq bufm-stop t)
-	     (update-display))
-           ( (and (eq k "1") (> bufm_count 1))
-             (select-buffer bufm-buf)
-             (delete-other-windows)
-             (setq bufm-stop t))
-           ( (and (eq k "2") (> bufm_count 1))
-             (select-buffer bufm-buf)
-             (split-window)
-             (select-buffer bufm-obuf)
-             (other-window)
-             (setq bufm-stop t))
-           ( (and (eq k "s") (> bufm_count 1))
-             (save-buffer bufm-buf)
-             (list-buffers)
-             (goto-line bufm-line))
-           ( (and (eq k "k") (> bufm_count 1))
-	     (kill-buffer bufm-buf)
-             (list-buffers)
-             (setq bufm-last-line (+ bufm-start-line (get-buffer-count)))
-             (setq bufm-last-line (- bufm-last-line 2))
-             (bufm-move-line 0)
-             (goto-line bufm-line)
-             (setq bufm-buf (bufm-get-bufn)))))
+  (bufm-debug "bufm-handle-single-key")
+  (setq bufm_count (get-buffer-count))
+  (cond
+    ((memq k '("x" "q"))
+     (goto-line bufm-start-line)
+     (beginning-of-line)
+     (cond ((search-forward bufm-obuf) (select-buffer bufm-obuf))
+           (t (select-buffer "*scratch*")))
+     (setq bufm-stop t)
+     (update-display))
+    ((and (eq k "1") (> bufm_count 1))
+     (select-buffer bufm-buf)
+     (delete-other-windows)
+     (setq bufm-stop t))
+    ((and (eq k "2") (> bufm_count 1))
+     (select-buffer bufm-buf)
+     (split-window)
+     (select-buffer bufm-obuf)
+     (other-window)
+     (setq bufm-stop t))
+    ((and (eq k "s") (> bufm_count 1))
+     (save-buffer bufm-buf)
+     (list-buffers)
+     (goto-line bufm-line))
+    ((and (eq k "k") (> bufm_count 1))
+     (kill-buffer bufm-buf)
+     (list-buffers)
+     (setq bufm-last-line (+ bufm-start-line (get-buffer-count)))
+     (setq bufm-last-line (- bufm-last-line 2))
+     (bufm-move-line 0)
+     (goto-line bufm-line)
+     (setq bufm-buf (bufm-get-bufn)))))
 
 
 ;;
@@ -177,15 +176,15 @@
 ;;
 
 (defun bufm-get-bufn()
-   (bufm-debug "buf-get-bufn")
-   (goto-line bufm-line)
-   (beginning-of-line)
-   (repeat 11 forward-char)
-   (set-mark)
-   (repeat 17 forward-char)
-   (copy-region)
-   (beginning-of-line)
-   (string.trim (get-clipboard)))
+  (bufm-debug "bufm-get-bufn")
+  (goto-line bufm-line)
+  (beginning-of-line)
+  (repeat 11 forward-char)
+  (set-mark)
+  (repeat 17 forward-char)
+  (copy-region)
+  (beginning-of-line)
+  (string.trim (get-clipboard)))
 
 ;;
 ;; (bufm-move-line)
@@ -195,28 +194,25 @@
 ;; and adjust the value if required
 ;;
 (defun bufm-move-line(n)
-   (bufm-debug "buf-move-line")
-   (setq bufm-line (max bufm-start-line (min (+ bufm-line n) bufm-last-line))))
+  (bufm-debug "bufm-move-line")
+  (setq bufm-line (max bufm-start-line (min (+ bufm-line n) bufm-last-line))))
 
 ;;
 ;; procedures to assist debugging and tracing
 ;; output is sent to file debug.out
 ;;
 
-(defun log-var(n v)
-  (if (string? v)
-   (log-debug (concat n "=" v "\n"))
-   (log-debug (concat n "=" (number->string v) "\n"))))
+(defmacro log-var (var)
+  (list 'log-debug (list 'concat (symbol-name var) "=" var "\n")))
 
 (defun bufm-debug(msg)
-  (if bufm-debugging
-     (progn
-       (log-debug (string.append msg "\n"))
-       (log-var "bufm-line" bufm-line)
-       (log-var "bufm-start-line" bufm-start-line)
-       (log-var "bufm-last-line" bufm-last-line)
-       (log-var "bufm-obuf" bufm-obuf)
-       (log-var "bufm-buf" bufm-buf)
-       (log-debug "\n\n"))))
+  (cond (bufm-debugging
+	 (log-debug (string.append msg "\n"))
+	 (log-var bufm-line)
+	 (log-var bufm-start-line)
+	 (log-var bufm-last-line)
+	 (log-var bufm-obuf)
+	 (log-var bufm-buf)
+	 (log-debug "\n\n"))))
 
 (provide 'bufmenu)

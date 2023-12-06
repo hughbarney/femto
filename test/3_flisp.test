@@ -1,6 +1,6 @@
 # test the fLisp library
 # leg20231129: Femto
-tap 42
+tap 47
 
 load_flisp() {
     IN=$(cat <<EOF
@@ -145,6 +145,22 @@ flisp; ok min-5 with 'a>b' yields b
 
 IN='(min 1 2 3)' OUT=1
 flisp; ok min-6 with more then two args
+
+IN='(nthcdr -1 nil)' OUT='error: (args-out-of-range "negativ index" n) args-out-of-range'
+flisp_fail; ok nthcdr-1 negativ index fails
+
+IN="(nthcdr 0 '(a b c))" OUT='(a b c)'
+flisp; ok nthcdr-2 0 index yields list
+
+IN="(nthcdr 2 '(a b c))" OUT='(c)'
+flisp; ok nthcdr-3 last index yields last element list
+
+IN="(nthcdr 40 '(a b c))" OUT=nil
+flisp; ok nthcdr-4 index over length yields nil
+
+IN="(nth 1 '(a b c))" OUT=b
+flisp; ok nth-1 yields element
+
 
 # Local Variables:
 # mode: sh

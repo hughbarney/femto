@@ -7,6 +7,9 @@ BUGS encountered during fLisp refactoring and batch mode
 
 - (insert-file) is not documented.
 
+- dired:
+  - when entering the second subdirectory loop stops
+  - sometimes scrolling up down loop stops
 
 Valgrind
 ========

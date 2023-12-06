@@ -21,8 +21,8 @@
   (setq o (car opts))
   (cond
     ((eq nil o))
-    ((eq o "+") (getopts (cdr opts) 0))
-    ((eq (string.ref o 0) "+")
+    ((eq "+" o) (getopts (cdr opts) 0))
+    ((eq "+" (string.ref o 0))
      (getopts (cdr opts) (string->number (string.substring o 1 (- (string.length o) 1)))))
     (t
      (find-file o)
@@ -40,23 +40,20 @@
 ;;
 ;;  Load extensions
 ;;
-(require 'flisp)
-(require 'femto)
+(require 'defmacro)
 (require 'bufmenu)
 (require 'dired)
 (require 'grep)
-(require 'defmacro)
 
-;; Put oxo and git into your personal configuration
-;; (require 'oxo)
-;; Note: git segfaults if (required), can be (load-script)ed though
-;; (load-script "git.lsp")
-
-;; Note: segfaults when loaded directly
-;; autoload with c-x h
 (defun show-info ()
+  ;; autoload info with c-x h
   (require 'info)
   (show-info))
+
+(defun oxo ()
+  ;; autoload oxo with c-x o
+  (require 'oxo)
+  (oxo))
 
 ;;
 ;;  Key Bindings, setkey is used to bind keys to user defined functions in lisp
@@ -85,9 +82,5 @@
  config_dir ".config/femto"
  config_file "femto.rc")
 
-;; Note: catch exception
-;;(eq nil (load (confn config_file))) ; segfaults
-(load "/home/jorge/.config/femto/femto.rc")
-(log-debug "user config loaded\n")
+(load (concat ~ "/" config_dir "/" config_file))
 (getopts argv 0)
-(log-debug "options processed\n")

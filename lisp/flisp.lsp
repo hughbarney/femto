@@ -52,27 +52,13 @@
 	(cdr args)
 	(car args)))))
 
-;; Note: consider moving to std from here
+(defun nthcdr (n list)
+  (cond 
+    ((> 0 n) (signal 'args-out-of-range '("negativ index" n)))
+    ((= 0 n) list)
+    (t (nthcdr (- n 1) (cdr list)))))
 
-(defmacro if args
-  (list 'cond (list (car args) (car (cdr args))) (cons 't (cdr (cdr args)))))
-
-(defun equal (x y)
-  (or (and (atom x) (atom y)
-	   (eq x y))
-      (and (consp x) (consp y)
-	   (equal (car x) (car y))
-	   (equal (cdr x) (cdr y)))))
-
-(defun nth (n xs)
-  (if (= 0 n)
-      (car xs)
-      (nth (- n 1) (cdr xs))))
-
-(defun append (xs y)
-  (if (eq nil xs)
-      y
-      (cons (car xs) (append (cdr xs) y))))
-
+(defun nth (n list)
+  (car (nthcdr n list)))
 
 (provide 'flisp)

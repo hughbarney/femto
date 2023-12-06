@@ -19,7 +19,7 @@
 ;; (dired)                   ;; to call
 ;;
 ;;
-(require 'flisp)
+(require 'femto)
 
 (setq dired-dir (concat (os.getenv "HOME")))
 (setq dired-ls-cmd "ls -la ")
@@ -69,8 +69,8 @@
   (insert-string "  ")
   (previous-line)
   (beginning-of-line)
-  (if (not (eq " " (get-char)))
-    (de-insert-space)))
+  (cond ((eq " " (get-char)))
+	(t (de-insert-space))))
 
 (defun de-get-last-line()
   (setq de-last-line 1)
@@ -80,55 +80,53 @@
   (de-count-line))
 
 (defun de-count-line()
-  (if (> (get-point) 0)
-  (progn
-    (setq de-last-line (+ 1 de-last-line))
-    (previous-line)
-    (beginning-of-line)
-    (de-count-line))))
-
+  (cond
+    ((> (get-point) 0)
+     (setq de-last-line (+ 1 de-last-line))
+     (previous-line)
+     (beginning-of-line)
+     (de-count-line))))
 
 (defun de-loop()
   (setq de-ops (+ de-ops 1))
-  (if (< de-ops de-max-ops)
-  (progn
-    (message "dired menu: f,x")
-    (update-display)
-    (setq de-key (get-key))
-    (if (eq de-key "")
-      (de-handle-arrow-key)
-      (de-handle-command-key de-key))
-    (de-loop))))
+  (cond
+    ((< de-ops de-max-ops)
+     (message "dired menu: f,x")
+     (update-display)
+     (setq de-key (get-key))
+     (cond
+       ((eq de-key "") (de-handle-arrow-key (get-key-funcname)))
+       (t (de-handle-command-key de-key)))
+     (de-loop))))
 
-(defun de-handle-arrow-key()
-  (setq de-key (get-key-funcname))
-  (if (eq de-key "previous-line") (de-move-line -1))
-  (if (eq de-key "next-line") (de-move-line 1))
+(defun de-handle-arrow-key(de-key)
+  (cond
+    ((eq de-key "previous-line") (de-move-line -1))
+    ((eq de-key "next-line") (de-move-line 1)))
   (de-get-info))
 
-
 (defun de-handle-command-key(k)
-   (if (eq k "x")
-   (progn
-        (select-buffer de-obuf)
-        (kill-buffer dired-buffer)
-        (setq de-ops (+ de-max-ops 1))))
-   (if (or (eq k "f") (eq k "\n"))
-   (progn
-        (if de-is-dir (de-open-dir) (de-open-file))
-        (kill-buffer dired-buffer)
-        (setq de-ops (+ de-max-ops 1)))))
+  (cond
+    ((memq k '("x" "q"))
+     (select-buffer de-obuf)
+     (kill-buffer dired-buffer)
+     (setq de-ops (+ de-max-ops 1)))
+    ((memq k '("f" "\n"))
+     (cond
+       (de-is-dir (de-open-dir))
+       (t (de-open-file)))
+     (kill-buffer dired-buffer)
+     (setq de-ops (+ de-max-ops 1)))
+    (t (log-debug (concat "command key=" k "\n")))))
 
 
 (defun de-open-file()
   (find-file (concat dired-dir "/" de-name)))
 
 (defun de-open-dir()
-  (if (eq ".." de-name)
-  (progn
-    (setq dired-dir (de-up-dir dired-dir)))
-  (progn
-    (setq dired-dir (concat dired-dir "/" de-name))))
+  (cond
+    ((eq ".." de-name) (setq dired-dir (de-up-dir dired-dir)))
+    (t (setq dired-dir (concat dired-dir "/" de-name))))
   (dired))
 
 (defun de-move-line(n)
@@ -141,20 +139,20 @@
   (setq ch (get-char))
   (setq de-is-dir (eq "d" ch))
   (setq de-is-link (eq "l" ch))
-  (if de-is-link
-  (progn
-    (end-of-line)
-    (search-backward " ")
-    (search-backward " ")
-    (search-backward " "))
-  (progn
-    (end-of-line)
-    (search-backward " ")))
+  (cond
+    (de-is-link
+     (end-of-line)
+     (search-backward " ")
+     (search-backward " ")
+     (search-backward " "))
+    (t
+     (end-of-line)
+     (search-backward " ")))
   (forward-char)
   (forward-char)
   (set-mark)
   (setq p (get-point))
-  (if de-is-link (search-forward " ") (end-of-line))
+  (cond (de-is-link (search-forward " ")) (t (end-of-line)))
   (copy-region)
   (set-point p)
   (setq de-name (string.trim (get-clipboard))))

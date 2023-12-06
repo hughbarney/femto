@@ -6,7 +6,7 @@
 ;;   c-x e  ;; executes the macro
 ;;   esc-e  ;; executes the macro
 ;;
-(require 'flisp)
+(require 'femto)
 
 (setq dm-buffer "*macro*")
 (setq dm-max-ops 30)
@@ -15,21 +15,21 @@
 
 (defun dm-record-key(k)
   (setq dm-obuf (get-buffer-name))
-  (if (eq k "\n")
-  (progn
-    (insert-string "\n")
-    (select-buffer dm-buffer)
-    (insert-string "\n (insert-string \"\\n\")")
-    (select-buffer dm-obuf)
-    (update-display))
-  (progn
-    (insert-string k)
-    (select-buffer dm-buffer)
-    (insert-string "\n (insert-string \"")
-    (insert-string k)
-    (insert-string "\")")
-    (select-buffer dm-obuf)
-    (update-display))))
+  (cond
+    ((eq k "\n")
+     (insert-string "\n")
+     (select-buffer dm-buffer)
+     (insert-string "\n (insert-string \"\\n\")")
+     (select-buffer dm-obuf)
+     (update-display))
+    (t
+     (insert-string k)
+     (select-buffer dm-buffer)
+     (insert-string "\n (insert-string \"")
+     (insert-string k)
+     (insert-string "\")")
+     (select-buffer dm-obuf)
+     (update-display))))
 
 (defun dm-record-action(k)
   (setq dm-obuf (get-buffer-name))
@@ -56,42 +56,35 @@
   (dm-get-key))
 
 (defun dm-end-macro()
-  (if (eq dm-recording nil)
-  (progn
-    (message "macro recording is not in progress"))
-  (progn
-    (setq dm-recording nil)
-    (setq dm-obuf (get-buffer-name))
-    (select-buffer dm-buffer)
-    (insert-string ")\n")
-    (setq dm-point (get-point))
-    (set-point 0)
-    (set-mark)
-    (set-point dm-point)
-    (eval-block)
-    (select-buffer dm-obuf)
-    (setq dm-ops (+ 1 dm-max-ops))
-    (message "c-x ) macro recording completed"))))
+  (cond
+    (dm-recording
+     (setq dm-recording nil)
+     (setq dm-obuf (get-buffer-name))
+     (select-buffer dm-buffer)
+     (insert-string ")\n")
+     (setq dm-point (get-point))
+     (set-point 0)
+     (set-mark)
+     (set-point dm-point)
+     (eval-block)
+     (select-buffer dm-obuf)
+     (setq dm-ops (+ 1 dm-max-ops))
+     (message "c-x ) macro recording completed"))
+    (t (message "macro recording is not in progress")) ))
 
 ;; prompt for string and return response, handle backspace, cr and c-g
 (defun dm-get-key()
-  (setq dm-ops (+ 1 dm-ops))
-  (if (> dm-ops dm-max-ops)
-  (progn
-    (dm-end-macro))
-  (progn
-    (setq key (get-key))
-    (if (not (eq key ""))
-    (progn
-       (dm-record-key key)
-       (dm-get-key))
-    (progn
-      (cond
-        ((eq "(dm-end-macro)" (get-key-funcname)) (dm-end-macro))
-        ((is_ctl_g key) t)
-        (t (dm-record-action (get-key-funcname)) (dm-get-key)))  )))))
-
-
+  (setq key (get-key))
+  (cond
+    ((> (setq dm-ops (+ 1 dm-ops)) dm-max-ops) (dm-end-macro))
+    ((eq key "")
+     (cond
+       ((eq "(dm-end-macro)" (get-key-funcname)) (dm-end-macro))
+       ((is_ctl_g key))
+       (t (dm-record-action (get-key-funcname)) (dm-get-key))))
+    (t
+     (dm-record-key key)
+     (dm-get-key))))
 
 ;;
 ;; define the key bindings

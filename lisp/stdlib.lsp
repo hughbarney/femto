@@ -3,9 +3,26 @@
 ;;
 ;; Only uses core functions
 
-;; Note: only for testing while moving things over, remove afterwards
-
 (defun atom (x) (eq nil (consp x)))
 (defun zerop (x) (= x 0))
+
+(defmacro if args
+  (list 'cond (list (car args) (car (cdr args))) (cons 't (cdr (cdr args)))))
+
+(require 'flisp)
+;; Note: not yet refactored to core functions
+;;  only do with unit tests
+(defun equal (x y)
+  (or (and (atom x) (atom y)
+	   (eq x y))
+      (and (consp x) (consp y)
+	   (equal (car x) (car y))
+	   (equal (cdr x) (cdr y)))))
+
+(defun append (xs y)
+  (if (eq nil xs)
+      y
+      (cons (car xs) (append (cdr xs) y))))
+
 
 (provide 'stdlib)

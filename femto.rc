@@ -27,7 +27,7 @@
     ((stringp s) s)
     ((symbolp s) (symbol-name s))
     ((consp s) (string.append (string (car s)) (string (cdr s))))
-    (t (signal "cannot convert object of this type to string"))))
+    (t (signal 'wrong-type-argument (list "cannot convert to string" s)))))
 
 (defun concat args
   ;; Concatenate all arguments to a string.
@@ -38,7 +38,7 @@
     (t (string.append (string (car args)) (concat (cdr args)))) ))
 
 (defun memq (o l)
-  ;; if object o in list l return sublist of l starting with o, else nil.
+  ;; If object o in list l return sublist of l starting with o, else nil.
   ;; Elisp
   (cond
     ((eq nil o) nil)
@@ -51,10 +51,12 @@
 
 (defun provide args
   ;; args: (feature [subfeature ..])
+  ;; Elisp, subfeatures not implemented
   (setq features (cons (car args) features)))
 
 (defun require args
   ;; args: (feature [filename [noerror]])
+  ;; Elisp, optional parameters not implemented
   (setq feature (car args))
   (cond ((memq feature features) feature)
 	(t
@@ -69,7 +71,6 @@
 (setq
  ~ (os.getenv "HOME")
  env-batch-mode (os.getenv "FEMTO_BATCH"))
-(log-debug (concat "env-batch-mode=" env-batch-mode "\n"))
 
 (cond
   ((eq "0" env-batch-mode) (require 'startup))

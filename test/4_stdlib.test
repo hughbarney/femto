@@ -1,6 +1,6 @@
 # test the Lisp standard library
 # leg20231129
-tap 11
+tap 10
 
 _stdlib() {
     IN=$(cat <<EOF
@@ -40,9 +40,6 @@ stdlib_err; ok zerop-3 with string fails
 
 # equal
 true; ok equal \# TODO
-
-# nth
-true; ok nth \# TODO
 
 # append
 true; ok append \# TODO
