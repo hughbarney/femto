@@ -1,3 +1,7 @@
+## Femto 2.16 08 December 2023
+* code reformatted into K&R using 4 spaces for indents
+* version number bumped but no functional changes
+
 ## Femto 2.15 25 November 2023
 * fixed compiler warnings
 

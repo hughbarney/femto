@@ -21,8 +21,8 @@ keymap_t *key_return;
 keymap_t *khead = NULL;
 keymap_t *ktail = NULL;
 
-buffer_t *curbp;			/* current buffer */
-buffer_t *bheadp;			/* head of list of buffers */
+buffer_t *curbp;                /* current buffer */
+buffer_t *bheadp;               /* head of list of buffers */
 window_t *curwp;
 window_t *wheadp;
 command_t *cheadp = NULL;
