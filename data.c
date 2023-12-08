@@ -1,10 +1,12 @@
 /*
- * data.c, femto, Hugh Barney, Public Domain, 2017
+ * data.c, femto, Hugh Barney, Public Domain, 2023
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 
 #include "header.h"
 
+int batch_mode = 0;
+int debug_mode = 0;
 int done;
 int result;
 int global_undo_mode = 1;

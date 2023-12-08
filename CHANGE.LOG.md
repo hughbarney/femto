@@ -1,3 +1,9 @@
+## Femto 2.17 08 December 2023
+* When the environment variable FEMTO_BATCH exists, femto runs in batch mode
+* When the environment variable FEMTO_DEBUG exists, femto writes some internal logging to debug.log
+* When the environment variable FEMTORC is set, femto interprets its value as the path to the init file and tries to load it instead of the default init_file.
+* A new primitive (signal 'error-symbol error-details) has been added. It throws an exception. The interface is built analogous to Elisp. It was just used for testing, but might be useful in the future anyway.
+
 ## Femto 2.16 08 December 2023
 * code reformatted into K&R using 4 spaces for indents
 * version number bumped but no functional changes

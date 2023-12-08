@@ -52,7 +52,6 @@ typedef long point_t;
 typedef struct Object Object;
 
 
-
 typedef enum Type {
     TYPE_NUMBER,
     TYPE_STRING,
@@ -1005,7 +1004,22 @@ Object *primitivePrinc(Object ** args, GC_PARAM)
     return (*args)->car;
 }
 
-/************************* Editer Extensions **************************************/
+Object *primitiveSignal(Object ** args, GC_PARAM)
+{
+    Object *first = (*args)->car;
+    Object *second = (*args)->cdr->car;
+    
+    if (first->type != TYPE_SYMBOL)
+        exceptionWithObject(first , "is not a symbol");
+    if (second != nil && second->type != TYPE_CONS)
+        exceptionWithObject(second, "is not a list");
+
+    GC_TRACE(e, newCons(&first, &second, GC_ROOTS));
+    exceptionWithObject(*e, first->string);
+    return *e;
+}
+    
+/************************* Editor Extensions **************************************/
 
 #define DEFINE_EDITOR_FUNC(name)                \
     extern void name();                         \
@@ -1149,10 +1163,8 @@ Object *e_insert_file(Object ** args, GC_PARAM) {
 
     mflag = (first->cdr != nil && first->cdr->car != nil);
     mflag = FALSE;
-    if (insert_file(first->string, mflag) == TRUE)
-        return t;
-    else
-        return nil;
+
+    return ((insert_file(first->string, mflag) == TRUE) ? t : nil);
 }
 
 Object *e_getfilename(Object **args, GC_PARAM) {
@@ -1451,6 +1463,7 @@ Object *e_load(Object ** args, GC_PARAM)
     if (first->type != TYPE_STRING)
         exceptionWithObject(first, "is not a string");
 
+    debug("(load %s)\n", first->string);
     if ((fd = open(first->string, O_RDONLY)) == -1) {
         snprintf(ebuf, 80, "failed to open %s\n", first->string);
         ebuf[80] ='\0';
@@ -1630,6 +1643,7 @@ Primitive primitives[] = {
     {"cons", 2, 2, primitiveCons},
     {"print", 1, 1, primitivePrint},
     {"princ", 1, 1, primitivePrinc},
+    {"signal", 2, 2, primitiveSignal},
     {"+", 0, -1, primitiveAdd},
     {"-", 1, -1, primitiveSubtract},
     {"*", 0, -1, primitiveMultiply},
@@ -2032,6 +2046,7 @@ Object *newRootEnv(GC_PARAM, int arg, char **argv)
     *gcVal = newString(*argv, GC_ROOTS);
     argv++;
     envSet(gcVar, gcVal, gcEnv, GC_ROOTS);
+
     *gcVar = newSymbol("argv", GC_ROOTS);
     *gcVal = nil;
     Object **i = gcVal;
@@ -2074,11 +2089,17 @@ void set_input_stream_buffer(Stream *stream, char *buffer)
 void reset_output_stream()
 {
     Stream *stream = &ostream; /* we only want 1 output stream */
-    stream->type = STREAM_TYPE_STRING;
-    stream->length = 0;
-    if (stream->buffer != NULL) {
-        free(stream->buffer);
+    if (batch_mode) {
+        stream->type = STREAM_TYPE_FILE;
+        stream->fd = STDOUT_FILENO;
         stream->buffer = NULL;
+    } else {
+        stream->type = STREAM_TYPE_STRING;
+        stream->length = 0;
+        if (stream->buffer != NULL) {
+            free(stream->buffer);
+            stream->buffer = NULL;
+        }
     }
 }
 
@@ -2152,19 +2173,19 @@ char *call_lisp(char *input)
     assert(input != NULL);
     Stream is = { .type = STREAM_TYPE_STRING };
 
-    //debug("START: call_lisp() '%s'\n", input);
+    debug("START: call_lisp() '%s'\n", input);
     set_input_stream_buffer(&is, input);
     call_lisp_body(theEnv, theRoot, &is);
-    //debug("END: call_lisp() '%s'\n", input);
+    debug("END: call_lisp() '%s'\n", input);
     return ostream.buffer;
 }
 
 char *load_file(int infd)
 {
-    //debug("START: load_file fd=%d\n", infd);
+    debug("load_file(%d)\n", infd);
     Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
     set_stream_file(&input_stream, infd);
     load_file_body(theEnv, theRoot, &input_stream);
-    //debug("END: load_file fd=%d\n", infd);
+    debug("END: load_file fd=%d\n", infd);
     return ostream.buffer;
 }

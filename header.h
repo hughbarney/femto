@@ -1,5 +1,5 @@
 /*
- * header.h, femto, Hugh Barney, 2017
+ * header.h, femto, Hugh Barney, 2023
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 #define _XOPEN_SOURCE 500
@@ -20,7 +20,7 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.16"
+#define E_VERSION       "2.17"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND    "<not bound>"
 #ifndef E_INITFILE
@@ -182,6 +182,8 @@ extern command_t *cheadp;
  */
 #define MAX_SIZE_T      ((unsigned long) (size_t) ~0)
 
+extern int debug_mode;          /* Enable debugging */
+extern int batch_mode;          /* If True GUI is not run */
 extern int done;                /* Quit flag. */
 extern int msgflag;             /* True if msgline should be displayed. */
 extern int global_undo_mode;    /* True if we are undo mode is allowed by default */
@@ -429,6 +431,8 @@ extern void debug_stats(char *s);
 extern void fatal(char *msg);
 extern void load_config();
 extern void msg(char *m, ...);
+extern void gui();              /* The GUI loop used in interactive mode */
+
 
 /* functions in replace.c */
 extern void query_replace(void);

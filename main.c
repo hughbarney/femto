@@ -3,15 +3,37 @@
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 
+#include <stdarg.h>
+#include <stdio.h>
 #include "header.h"
 
 int main(int argc, char **argv)
 {
+    batch_mode = (getenv("FEMTO_BATCH") != NULL);
+    debug_mode = (getenv("FEMTO_DEBUG") != NULL);
+  
+    /* buffers */
+    setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
+    curbp = find_buffer(str_scratch, TRUE);
+    strncpy(curbp->b_bname, str_scratch, STRBUF_S);
+    beginning_of_buffer();
+
+    /* Lisp */
     setup_keys();
     (void)init_lisp(argc, argv);
+    load_config();
 
+    if (!batch_mode) gui();
 
-    setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
+    debug("main(): shutdown\n");
+    // Note: exit frees all memory, do we need this here?
+    if (scrap != NULL) free(scrap);
+    return 0;
+}
+
+void gui()
+{
+    debug("gui(): init\n");
     if (initscr() == NULL) fatal(f_initscr);
     raw();
     noecho();
@@ -27,24 +49,19 @@ int main(int argc, char **argv)
     init_pair(ID_SINGLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* single quoted strings */
     init_pair(ID_DOUBLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* double quoted strings */
     init_pair(ID_BRACE, COLOR_BLACK, COLOR_CYAN);            /* brace highlight */
-    
-    curbp = find_buffer(str_scratch, TRUE);
-    strncpy(curbp->b_bname, str_scratch, STRBUF_S);
 
     wheadp = curwp = new_window();
     one_window(curwp);
     associate_b2w(curbp, curwp);
 
-    beginning_of_buffer();
-    load_config();
-
+    debug("gui(): loop\n");
     while (!done) {
         update_display();
         input = get_key(khead, &key_return);
 
-        if (key_return != NULL) {
+        if (key_return != NULL)
             (key_return->k_func)();
-        } else {
+        else {
             /*
              * if first char of input is a control char then
              * key is not bound, except TAB and NEWLINE
@@ -60,20 +77,20 @@ int main(int argc, char **argv)
         /* debug_stats("main loop:"); */
         match_parens();
     }
-
-    if (scrap != NULL) free(scrap);
+    debug("gui(): shutdown\n");
     move(LINES-1, 0);
     refresh();
     noraw();
     endwin();
-    return 0;
 }
 
 void fatal(char *msg)
 {
-    if (curscr != NULL) {
-        noraw();
-        endwin();
+    if (!batch_mode) {
+        if (curscr != NULL) {
+            noraw();
+            endwin();
+        }
     }
     printf("\n%s %s:\n%s\n", E_NAME, E_VERSION, msg);
     exit(1);
@@ -86,49 +103,61 @@ void msg(char *m, ...)
     (void) vsprintf(msgline, m, args);
     va_end(args);
     msgflag = TRUE;
+
+    if (batch_mode) {
+        puts(msgline);
+        fflush(stdout);
+    }
 }
 
 void load_config()
 {
+    char *init_file;
     char *output;
     int fd;
 
-    reset_output_stream();
+    init_file = getenv("FEMTORC");
+    if (init_file == NULL)
+        init_file = E_INITFILE;
 
-    if ((fd = open(E_INITFILE, O_RDONLY)) == -1)
-        fatal("failed to open init file: " E_INITFILE);
+    debug("load_config(), init_file: %s\n", init_file);
+     
+    if ((fd = open(init_file, O_RDONLY)) == -1) {
+        (void)call_lisp("(message \"failed to open init file\")");
+    } else {
+        reset_output_stream();
+        output = load_file(fd);
+        close(fd);
+        assert(output != NULL);
 
-    reset_output_stream();
-    output = load_file(fd);
-    assert(output != NULL);
-    close(fd);
-
-    /* all exceptions start with the word error: */
-    if (NULL != strstr(output, "error:"))
-        fatal(output);
-    reset_output_stream();
+        /* all exceptions start with the word error: */
+        if (NULL != strstr(output, "error:"))
+            (void)call_lisp("signal 'error-init '(\"init file throws exception\")");
+        reset_output_stream();
+    }
 }
 
 void debug(char *format, ...)
 {
-    char buffer[256]; /* warning this is limited size, we should use vnsprintf */
-
+    char buffer[256];
     va_list args;
+
+    if (!debug_mode) return;
+     
     va_start (args, format);
 
     static FILE *debug_fp = NULL;
 
-    if (debug_fp == NULL) {
+    if (debug_fp == NULL)
         debug_fp = fopen("debug.out","w");
-    }
 
-    vsprintf (buffer, format, args);
+    vsnprintf (buffer, sizeof(buffer), format, args);
     va_end(args);
-
     fprintf(debug_fp,"%s", buffer);
     fflush(debug_fp);
 }
 
-void debug_stats(char *s) {
+void debug_stats(char *s)
+{
     debug("%s bsz=%d p=%d m=%d gap=%d egap=%d\n", s, curbp->b_ebuf - curbp->b_buf, curbp->b_point, curbp->b_mark, curbp->b_gap - curbp->b_buf, curbp->b_egap - curbp->b_buf);
 }
