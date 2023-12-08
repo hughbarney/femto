@@ -82,5 +82,5 @@
  config_dir ".config/femto"
  config_file "femto.rc")
 
-(load (concat ~ "/" config_dir "/" config_file))
+(trap (load (conffn config_file)))
 (getopts argv 0)

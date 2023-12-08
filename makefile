@@ -4,7 +4,9 @@
 
 CC      = cc
 CPP     = cpp
-CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DNDEBUG
+CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE
+# Note: lisp still needs assertions
+#CPPFLAGS += -DNDEBUG
 CFLAGS += -O2 -std=c11 -Wall -pedantic -g
 LD      = cc
 LDFLAGS =

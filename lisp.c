@@ -537,7 +537,7 @@ Object *newEnv(Object ** func, Object ** vals, GC_PARAM)
 			else if (param != nil && param->type == TYPE_SYMBOL)
 				break;
 			else if (val != nil && val->type != TYPE_CONS)
-				exceptionWithObject(val, "is not a list");
+				exceptionWithObject(val, "(env) is not a list: val %d", nArgs);
 			else if (param == nil && val != nil)
 				exceptionWithObject(*func, "expects at most %d arguments", nArgs);
 			else if (param != nil && val == nil) {
@@ -992,7 +992,7 @@ Object *primitiveCar(Object ** args, GC_PARAM)
 	else if (first->type == TYPE_CONS)
 		return first->car;
 	else
-		exceptionWithObject(first, "is not a list");
+		exceptionWithObject(first, "(car) is not a list: first");
 }
 
 Object *primitiveCdr(Object ** args, GC_PARAM)
@@ -1004,7 +1004,7 @@ Object *primitiveCdr(Object ** args, GC_PARAM)
 	else if (first->type == TYPE_CONS)
 		return first->cdr;
 	else
-		exceptionWithObject(first, "is not a list");
+		exceptionWithObject(first, "(cdr) is not a list: first");
 }
 
 Object *primitiveCons(Object ** args, GC_PARAM)
@@ -1014,6 +1014,32 @@ Object *primitiveCons(Object ** args, GC_PARAM)
 
 	return newCons(gcFirst, gcSecond, GC_ROOTS);
 }
+
+Object *expandMacroTo(Object**, Object**, Object**, Object*);
+// Note: this might be a costly extra
+Object *primitiveMacroExpandOne(Object ** args, GC_PARAM)
+{
+	/* One (or two) parameters */
+	// Note: CL/Elisp allow a second optional parameter env.
+
+	Object *form = (*args)->car;
+	
+	if (form == nil || form->type != TYPE_CONS)
+		exceptionWithObject(form, "wrong-argument-type - form");
+
+	//if (form->car->type != TYPE_MACRO)
+	//	exceptionWithObject(form->car, "wrong-argument-type - macro");
+
+	
+	Object *expansion = newCons(&nil, &nil, GC_ROOTS);
+	(void)expandMacroTo(&form->car, &form->cdr, &expansion, GC_ROOTS);
+	Object *flag  = newCons(
+				(expansion->car->type == TYPE_MACRO) ? &t: &nil,
+				&nil ,
+				GC_ROOTS);
+	return newCons(&expansion, &flag, GC_ROOTS);
+}
+
 
 Object *primitivePrint(Object ** args, GC_PARAM)
 {
@@ -1035,9 +1061,9 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
 	Object *second = (*args)->cdr->car;
 
 	if (first->type != TYPE_SYMBOL)
-		exceptionWithObject(first , "is not a symbol");
+		exceptionWithObject(first , "(signal) is not a symbol: first");
 	if (second != nil && second->type != TYPE_CONS)
-		exceptionWithObject(second, "is not a list");
+		exceptionWithObject(second, "(signal) is not a list: second");
 
 	GC_TRACE(e, newCons(&first, &second, GC_ROOTS));
 	exceptionWithObject(*e, first->string);
@@ -1669,6 +1695,8 @@ Primitive primitives[] = {
 	{"cond", 0, -1 /* special form */ },
 	{"lambda", 1, -1 /* special form */ },
 	{"macro", 1, -1 /* special form */ },
+	{"trap", 1, 1, /* special form */ },
+	{"macroexpand-1", 1, 2, primitiveMacroExpandOne },
 	{"consp", 1, 1, primitiveConsP},
 	{"symbolp", 1, 1, primitiveSymbolP},
 	{"symbol-name", 1, 1, primitiveSymbolName},
@@ -1777,7 +1805,8 @@ enum {
 	PRIMITIVE_PROGN,
 	PRIMITIVE_COND,
 	PRIMITIVE_LAMBDA,
-	PRIMITIVE_MACRO
+	PRIMITIVE_MACRO,
+	PRIMITIVE_TRAP,
 };
 
 // EVALUATION /////////////////////////////////////////////////////////////////
@@ -1820,7 +1849,7 @@ Object *evalProgn(Object ** args, Object ** env, GC_PARAM)
 		return nil;
 
 	if ((*args)->type != TYPE_CONS)
-		exceptionWithObject(*args, "is not a list");
+		exceptionWithObject(*args, "(progn) is not a list: args");
 
 	if ((*args)->cdr == nil)
 		return (*args)->car;
@@ -1829,6 +1858,7 @@ Object *evalProgn(Object ** args, Object ** env, GC_PARAM)
 	GC_TRACE(gcArgs, (*args)->cdr);
 
 	evalExpr(gcObject, env, GC_ROOTS);
+	assert((*gcArgs)->type == TYPE_CONS);
 	return evalProgn(gcArgs, env, GC_ROOTS);
 }
 
@@ -1837,7 +1867,7 @@ Object *evalCond(Object ** args, Object ** env, GC_PARAM)
 	if (*args == nil) return nil;
 
 	if ((*args)->type != TYPE_CONS)
-		exceptionWithObject(*args, "is not a list");
+		exceptionWithObject(*args, "(cond) is not a list: args");
 
 	Object *clause = (*args)->car;
 
@@ -1849,7 +1879,7 @@ Object *evalCond(Object ** args, Object ** env, GC_PARAM)
 		return evalCond(gcArgs, env, GC_ROOTS);
 	}
 	if (clause->type != TYPE_CONS)
-		exceptionWithObject(clause, "is not a list");
+		exceptionWithObject(clause, "(cond) is not a list: clause");
 
 	Object *pred = clause->car;
 	if (pred == nil)
@@ -1876,6 +1906,9 @@ Object *evalLambda(Object ** args, Object ** env, GC_PARAM)
 
 Object *evalMacro(Object ** args, Object ** env, GC_PARAM)
 {
+	// Note: needed? (see primitives[])
+	assert((*args) == nil || (*args)->type == TYPE_CONS);
+	
 	GC_TRACE(gcParams, (*args)->car);
 	GC_TRACE(gcBody, (*args)->cdr);
 
@@ -1884,9 +1917,12 @@ Object *evalMacro(Object ** args, Object ** env, GC_PARAM)
 
 Object *expandMacro(Object ** macro, Object ** args, GC_PARAM)
 {
+	assert((*args) == nil || (*args)->type == TYPE_CONS);
+	
 	GC_TRACE(gcEnv, newEnv(macro, args, GC_ROOTS));
 	GC_TRACE(gcBody, (*macro)->body);
 
+	assert((*gcBody)->type == TYPE_CONS);
 	GC_TRACE(gcObject, evalProgn(gcBody, gcEnv, GC_ROOTS));
 	*gcObject = evalExpr(gcObject, gcEnv, GC_ROOTS);
 
@@ -1923,6 +1959,26 @@ Object *evalList(Object ** args, Object ** env, GC_PARAM)
 	}
 }
 
+
+Object *evalTrap(Object ** args, Object ** env,  GC_PARAM)
+{
+	jmp_buf *up, exceptionEnv;
+
+	up = flisp.stackframe;
+	flisp.stackframe = &exceptionEnv;
+	if (setjmp(exceptionEnv)) {
+		debug("exception trapped\n");
+		flisp.stackframe = up;
+		// Note: we want the signal/exception information
+		// here, but that is another story
+		GC_TRACE(gcObject, *args);
+		return newCons(&t, gcObject, GC_ROOTS);
+	}
+
+	GC_TRACE(gcObject, evalExpr(&(*args)->car, env, GC_ROOTS));
+	return newCons(&nil, gcObject, GC_ROOTS);
+}
+
 Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 {
 	GC_TRACE(gcObject, *object);
@@ -1948,6 +2004,7 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 			*gcBody = (*gcFunc)->body;
 			*gcArgs = evalList(gcArgs, gcEnv, GC_ROOTS);
 			*gcEnv = newEnv(gcFunc, gcArgs, GC_ROOTS);
+			assert((*gcBody)->type == TYPE_CONS);
 			*gcObject = evalProgn(gcBody, gcEnv, GC_ROOTS);
 		} else if ((*gcFunc)->type == TYPE_MACRO) {
 			*gcObject = expandMacroTo(gcFunc, gcArgs, gcObject, GC_ROOTS);
@@ -1957,7 +2014,7 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 
 			for (Object * args = *gcArgs; args != nil; args = args->cdr, nArgs++)
 				if (args->type != TYPE_CONS)
-					exceptionWithObject(args, "is not a list");
+					exceptionWithObject(args, "(primitive) is not a list: arg %d", nArgs);
 
 			if (nArgs < primitive->nMinArgs)
 				exceptionWithObject(*gcFunc, "expects at least %d arguments", primitive->nMinArgs);
@@ -1972,6 +2029,7 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 			case PRIMITIVE_SETQ:
 				return evalSetq(gcArgs, gcEnv, GC_ROOTS);
 			case PRIMITIVE_PROGN:
+				assert((*gcArgs)->type == TYPE_CONS);
 				*gcObject = evalProgn(gcArgs, gcEnv, GC_ROOTS);
 				break;
 			case PRIMITIVE_COND:
@@ -1981,6 +2039,8 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 				return evalLambda(gcArgs, gcEnv, GC_ROOTS);
 			case PRIMITIVE_MACRO:
 				return evalMacro(gcArgs, gcEnv, GC_ROOTS);
+			case PRIMITIVE_TRAP:
+				return evalTrap(gcArgs, gcEnv, GC_ROOTS);
 			default:
 				*gcArgs = evalList(gcArgs, gcEnv, GC_ROOTS);
 				return primitive->eval(gcArgs, GC_ROOTS);
@@ -2085,14 +2145,15 @@ int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 	up = flisp.stackframe;
 	flisp.stackframe = &exceptionEnv;
 
-	GC_TRACE(gcObject, nil);
-
 	if (setjmp(exceptionEnv)) {
 		debug("exception in load_file_body()\n");
 		free(input_stream->buffer);
 		flisp.stackframe = up;
 		return 1;
 	}
+
+	GC_TRACE(gcObject, nil);
+
 	while (peekNext(input_stream) != EOF) {
 		*gcObject = nil;
 		*gcObject = readExpr(input_stream, GC_ROOTS);
@@ -2112,7 +2173,7 @@ char *load_file(int infd)
 	set_stream_file(&input_stream, infd);
 	reset_output_stream();
 	if (load_file_body(flisp.theEnv, flisp.theRoot, &input_stream)) {
-		debug("load_file(%d) failed\n", infd);
+		debug("load_file(%d) failed: %s\n", infd, flisp.ostream.buffer);
 		return "error: load_file() failed";
 	}
 	debug("load_file(%d) finished, returning ostream.buffer: %p\n", infd, flisp.ostream.buffer);

@@ -47,7 +47,12 @@ command_t *register_command(char *cmd_name, void (*func)(void))
     strcpy(cmdp->c_name, cmd_name);
     cmdp->c_func = func;
     cmdp->c_next = NULL;
-    assert(func != NULL);
+    // Note: we had here:
+    //   assert(func != NULL);
+    //   but maybe interfaces have changed and nobody notices, because
+    //   assertions were turned off
+    if (func == NULL)
+        debug("WARNING: register_command(%s, %p): func=NULL\n", cmd_name, func);
 
     /* find the place in the list to insert this command */
     if (cheadp == NULL) {
