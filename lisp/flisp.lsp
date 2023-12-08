@@ -14,11 +14,17 @@
 (setq not null)
 (defun listp (x) (cond ((eq nil x)) ((consp x))))
 
+;; (defmacro and args
+;;   (cond
+;;     ((eq nil args))
+;;     ((eq nil (cdr args)) (car args))
+;;     (t (list 'cond (list (car args) (cons 'and (cdr args)))))))
 (defmacro and args
   (cond
     ((eq nil args))
     ((eq nil (cdr args)) (car args))
-    (t (list 'cond (list (car args) (cons 'and (cdr args)))))))
+    ((consp args) (list 'cond (list (car args) (cons 'and (cdr args)))))
+    (t (car args)) ))
 
 (defun map1 (func xs)
   (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))

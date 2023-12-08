@@ -75,12 +75,15 @@
   (forward-char)
   (kill-region))
 
-;; kill to end of line, uses if and progn
 (defun kill-to-eol()
   (cond
     ((eq (get-point) (get-point-max)) nil)
     ((eq "\n" (get-char)) (delete))
-    (t (set-mark) (end-of-line) (if (eq (get-point) (get-mark)) (delete) (kill-region)))))
+    (t
+     (set-mark)
+     (end-of-line)
+     (cond ((eq (get-point) (get-mark)) (delete))
+	   (t (kill-region))) )))
 
 ;; shrink string by dropping off last char
 (defun shrink(s)
@@ -149,16 +152,17 @@
   (setq rb_count 0)
   (setq start_p -1)
   (setq end_p (find_end_p))
-  (if (> end_p -1) (setq start_p (find_start_p)))
-  (if (and (> start_p -1) (> end_p -1))
-  (progn
-    (set-point start_p)
-    (set-mark)
-    (set-point end_p)
-    (eval-block))
-  (progn
-    (set-point o_point)
-    (if (eq -1 start_p) (message "could not find start of s-expression"))
-    (if (eq -1 end_p) (message "could not find end of s-expression"))) ))
+  (cond ((> end_p -1) (setq start_p (find_start_p))))
+  (cond
+    ((and (> start_p -1) (> end_p -1))
+     (set-point start_p)
+     (set-mark)
+     (set-point end_p)
+     (eval-block))
+    (t
+     (set-point o_point)
+     (cond
+       ((eq -1 start_p) (message "could not find start of s-expression"))
+       ((eq -1 end_p) (message "could not find end of s-expression"))) )))
 
 (provide 'femto)

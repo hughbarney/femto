@@ -70,7 +70,7 @@ then select one of the following letters to operate on the file
 
 (defun git-menu()
   (delete-other-windows)
-  (if (eq git-obuf "") (setq git-obuf (get-buffer-name)))
+  (cond ((eq git-obuf "") (setq git-obuf (get-buffer-name))))
   (kill-buffer git-buffer)
   (shell-command git-status-cmd)
   (rename-buffer git-buffer)
@@ -104,45 +104,47 @@ then select one of the following letters to operate on the file
   (git-count-line))
 
 (defun git-count-line()
-  (if (> (get-point) 0)
-  (progn
-    (setq git-last-line (+ 1 git-last-line))
-    (previous-line)
-    (beginning-of-line)
-    (git-count-line))))
+  (cond
+    ((> (get-point) 0)
+     (setq git-last-line (+ 1 git-last-line))
+     (previous-line)
+     (beginning-of-line)
+     (git-count-line))))
 
 (defun git-loop()
   (setq git-ops (+ git-ops 1))
-  (if (< git-ops git-max-ops)
-  (progn
-    (message (concat git-status "(" git-name ") git menu: c,d,s,u,p,x h=help"))
-    (update-display)
-    (setq git-key (get-key))
-    (if (eq git-key "")
-      (git-handle-arrow-key)
-      (git-handle-command-key git-key))
-    (git-loop))))
+  (cond
+    ((< git-ops git-max-ops)
+     (message (concat git-status "(" git-name ") git menu: c,d,s,u,p,x h=help"))
+     (update-display)
+     (setq git-key (get-key))
+     (cond
+       ((eq git-key "") (git-handle-arrow-key))
+       (t (git-handle-command-key git-key)))
+     (git-loop))))
 
 (defun git-handle-arrow-key()
   (setq git-key (get-key-funcname))
-  (if (eq git-key "previous-line") (git-move-line -1))
-  (if (eq git-key "next-line") (git-move-line 1))
+  (cond
+    ((eq git-key "previous-line") (git-move-line -1))
+    ((eq git-key "next-line") (git-move-line 1)))
   (git-get-info))
 
 (defun git-handle-command-key(k)
   (cond
-    ((or (eq k "x") (eq k "q"))
+    ((memq k '("x" "q"))
       (select-buffer git-obuf)
       (kill-buffer git-buffer)
       (setq git-ops (+ git-max-ops 1)))
     ((eq k "s")
-      (if (eq git-status2 "D") (setq git-minus-u "-u ") (setq git-minus-u "")) 
-      (shell-command (concat "git add " git-minus-u git-name))
-      (kill-buffer out-buffer)
-      (git-menu))
+     (cond ((eq git-status2 "D") (setq git-minus-u "-u ")) (t (setq git-minus-u ""))) 
+     (shell-command (concat "git add " git-minus-u git-name))
+     (kill-buffer out-buffer)
+     (git-menu))
     ((eq k "c")
-      (if (eq "commit" (git-get-commit-string))
-        (shell-command (concat "git commit -F " git-commit-file)))
+     (cond
+       ((eq "commit" (git-get-commit-string))
+        (shell-command (concat "git commit -F " git-commit-file))))
       (git-menu))
     ((eq k "p")
       (message "pushing commits to master ...")
@@ -195,36 +197,35 @@ then select one of the following letters to operate on the file
   (message "c-c c-c to commit, c-c c-q to cancel")
   (update-display)
   (setq r (get-commit-key))
-  (if (eq r "commit")
-    (progn
-      (setq git-commit-file (get-temp-file))
-      (select-buffer git-commit-buffer)
-      (beginning-of-buffer)
-      (set-mark)
-      (end-of-buffer)
-      (copy-region)
-      (find-file git-commit-file)
-      (yank)
-      (save-buffer (get-buffer-name))
-      (kill-buffer (get-buffer-name))
-      (kill-buffer git-commit-buffer)
-      "commit")
-    (progn
-      "cancel")))
+  (cond
+    ((eq r "commit")
+     (setq git-commit-file (get-temp-file))
+     (select-buffer git-commit-buffer)
+     (beginning-of-buffer)
+     (set-mark)
+     (end-of-buffer)
+     (copy-region)
+     (find-file git-commit-file)
+     (yank)
+     (save-buffer (get-buffer-name))
+     (kill-buffer (get-buffer-name))
+     (kill-buffer git-commit-buffer)
+     "commit")
+    (t "cancel")))
 
 (defun get-commit-key()
   (update-display)
   (setq k (get-key))
-  (if (eq k "")
-  (progn
-    (setq git-key (get-key-funcname))
-    (cond
-      ((eq git-key "cc-commit") "commit")
-      ((eq git-key "cc-cancel") "cancel")
-      (t (execute-key) (get-commit-key))))
-  (progn
-    (insert-string k)
-    (get-commit-key))))
+  (cond
+    ((eq k "")
+     (setq git-key (get-key-funcname))
+     (cond
+       ((eq git-key "cc-commit") "commit")
+       ((eq git-key "cc-cancel") "cancel")
+       (t (execute-key) (get-commit-key))))
+    (t
+     (insert-string k)
+     (get-commit-key))))
 
 
 (defun view-file-to-quit()
@@ -238,16 +239,13 @@ then select one of the following letters to operate on the file
 
 (defun exec-view-key()
   (setq f (get-key-funcname))
-  (if (or 
-    (eq f "page-down") 
-    (eq f "page-up")
-    (eq f "next-line")
-    (eq f "previous-line")
-    (eq f "beginning-of-buffer")
-    (eq f "end-of-buffer"))
- (progn 
-   (execute-key)
-   (update-display))))
+  (cond
+    ((memq f
+	   '("page-down" "page-up"
+	     "next-line" "previous-line"
+	     "beginning-of-buffer""end-of-buffer"))
+     (execute-key)
+     (update-display))))
 
 (defun git-move-line(n)
   (setq git-line (max git-start-line (min (+ git-line n) git-last-line))))

@@ -20,9 +20,8 @@
 	   (equal (cdr x) (cdr y)))))
 
 (defun append (xs y)
-  (if (eq nil xs)
-      y
-      (cons (car xs) (append (cdr xs) y))))
+  (cond ((eq nil xs) y)
+	(t (cons (car xs) (append (cdr xs) y)))))
 
 
 (provide 'stdlib)
