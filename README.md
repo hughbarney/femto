@@ -402,6 +402,11 @@ The following enhancements are envisaged.
 
 Goto-line will fail to go to the very last line.  This is a special case that could easily be fixed.
 
+## Coding Style
+
+See style.md
+
+
 ## Copying
 
 Femto code is released to the public domain. hughbarney@gmail.com November 2017
