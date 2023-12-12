@@ -11,7 +11,69 @@
 
 <p><i>fLisp</i>&nbsp;originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was integrated into Femto by Hugh Barnes (pre 2016) and compacted by Georg Lehner in 2023.</p>
 
-<h3>fLisp Data Types</h3>
+<blockquote>
+<p>A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing left to take away.</p>
+
+<p>&mdash; Antoine de Saint-Exupery</p>
+</blockquote>
+
+<h3>fLisp Interpreter</h3>
+
+<p>When <i>fLisp</i> is invoked it follows a three step process:</p>
+
+<ol>
+	<li>Read: program text is read in and converted into an internal representation.</li>
+	<li>Evaluate: the internal representation is evaluated</li>
+	<li>Print: the result of the evaluation is returned to the invoker.</li>
+</ol>
+
+<p>Core functions of the language operate on internal objects only. The interpreter is extended with additional functions in order to interact with external objects.&nbsp; With respect to the interpreter, extension functions behave the same as core functions.</p>
+
+<h3>Syntax</h3>
+
+<p>Program text is written as a sequence of symbolic expressions - <abbr><dfn>sexp</dfn></abbr>&#39;s in parenthesized form. A sexp is either a&nbsp;single object or a function invocation enclosed in parens. Function invocations can be infinitely nested.</p>
+
+<p>The following characters are special to the reader:</p>
+
+<dl>
+	<dt>(</dt>
+	<dd>Starts a function invocation, list or cons object (see &quot;Objects and Data Types&quot;).</dd>
+	<dt>)</dt>
+	<dd>Finishes a function invocation, list or cons object.</dd>
+	<dt>&quot;</dt>
+	<dd>Encloses strings.</dd>
+	<dt>&#39;</dt>
+	<dd>With a single quote prefix before a sexp, the sexp is expanded to <code>(quote <var>sexp</var>)</code> before it is evaluated.</dd>
+	<dt>.</dt>
+	<dd>The expresion<code> (<var>a</var> . <var>b</var>)</code>&nbsp;evaluates to a cons object, holding the objects <var>a</var> and <var>b</var>.</dd>
+</dl>
+
+<p>Numbers are represented in decimal notation.</p>
+
+<p>A list of objects has the form:</p>
+
+<blockquote>
+<p><code><font face="monospace">(</font></code><font face="monospace">[</font><code><font face="monospace"><var>element</var></font></code><font face="monospace"> ..]</font><code><font face="monospace">)</font></code></p>
+</blockquote>
+
+<p>A function invocation has the form:</p>
+
+<blockquote>
+<p><code>(<var>name</var> </code>[<code><var>param</var> </code>..]<code>)</code></p>
+</blockquote>
+
+<p>There are two predefined objects. Their symbols are:</p>
+
+<dl>
+	<dt><code>nil</code></dt>
+	<dd>represents:&nbsp;the empty list:&nbsp;(),&nbsp;the end of a list marker,&nbsp;the false value in logical operations.</dd>
+	<dt><code>t</code></dt>
+	<dd>a fixed, non-false&nbsp;value.</dd>
+</dl>
+
+<h3>Objects and Data Types</h3>
+
+<p><i>fLisp</i> objects have exactly one of the following data types:</p>
 
 <dl>
 	<dt><dfn>number</dfn></dt>
@@ -21,13 +83,25 @@
 	<dt><dfn>cons</dfn></dt>
 	<dd>object holding two pointers to objects</dd>
 	<dt><dfn>symbol</dfn></dt>
-	<dd>string with restricted character set: <code>[A-Z][a-z]!#$%&amp;*+-./:&lt;=&gt;?@^_~</code></dd>
+	<dd>string with restricted character set: <code>[A-Z][0-9][a-z]!#$%&amp;*+-./:&lt;=&gt;?@^_~</code></dd>
 	<dt><dfn>lambda</dfn></dt>
 	<dd>anonymous function with parameter evaluation</dd>
-	<dt>macro</dt>
+	<dt><dfn>macro</dfn></dt>
 	<dd>anonymous function without parameter evaluation</dd>
 </dl>
 
-<p>&nbsp;</p>
+<p>Objects are unmutable, all fLisp function create new objects from existing ones.</p>
+
+<h3>Symbols, Environments and Functions</h3>
+
+<p>All operations of the interpreter take place in a root environment. An <dfn>environment</dfn> is a collection of named objects. The object names have the <var>symbol</var> datatype.</p>
+
+<p><var>lambda</var> and <var>macro</var> objects are functions. They have a parameter list and a body. When they are invoked, they receive zero or more named objects, bind them one by one to the symbols in the paramter list, evaluate the body and return a result.</p>
+
+<p>When a function executed within the function body want&#39;s to use a named object it is first looked up in the new environment, and then recursively in the environments from which the <var>lambda</var>&nbsp;or <var>macro</var> was invoked.</p>
+
+<p><var>lambda</var>s evaluate each parameter then create a new environment containing the parameters before evaluating the body.</p>
+
+<p><code>macro</code>s evaluate the body which typically returns a new expresions in terms of the parameters. The expresion is then evaluated in a new environment containing the parameters.</p>
 </body>
 </html>
