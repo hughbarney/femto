@@ -9,7 +9,7 @@
 
 <p><i>fLisp</i> is a tiny but practical interpreter for a dialect of the Lisp programming language. It is used as extension language for the <a href="https://github.com/matp/tiny-lisp">Femto</a> text editor.</p>
 
-<p><i>fLisp</i>&nbsp;originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was integrated into Femto by Hugh Barnes (pre 2016) and compacted by Georg Lehner in 2023.</p>
+<p><i>fLisp</i>&nbsp;originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barnes (pre 2016) and compacted by Georg Lehner in 2023.</p>
 
 <blockquote>
 <p>A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing left to take away.</p>
@@ -17,7 +17,9 @@
 <p>&mdash; Antoine de Saint-Exupery</p>
 </blockquote>
 
-<h3>fLisp Interpreter</h3>
+<h3>Lisp</h3>
+
+<h4>fLisp Interpreter</h4>
 
 <p>When <i>fLisp</i> is invoked it follows a three step process:</p>
 
@@ -29,22 +31,22 @@
 
 <p>Core functions of the language operate on internal objects only. The interpreter is extended with additional functions in order to interact with external objects.&nbsp; With respect to the interpreter, extension functions behave the same as core functions.</p>
 
-<h3>Syntax</h3>
+<h4>Syntax</h4>
 
 <p>Program text is written as a sequence of symbolic expressions - <abbr><dfn>sexp</dfn></abbr>&#39;s in parenthesized form. A sexp is either a&nbsp;single object or a function invocation enclosed in parens. Function invocations can be infinitely nested.</p>
 
 <p>The following characters are special to the reader:</p>
 
 <dl>
-	<dt>(</dt>
+	<dt><code>(</code></dt>
 	<dd>Starts a function invocation, list or cons object (see &quot;Objects and Data Types&quot;).</dd>
-	<dt>)</dt>
+	<dt><code>)</code></dt>
 	<dd>Finishes a function invocation, list or cons object.</dd>
-	<dt>&quot;</dt>
+	<dt><code>&quot;</code></dt>
 	<dd>Encloses strings.</dd>
-	<dt>&#39;</dt>
+	<dt><code>&#39;</code></dt>
 	<dd>With a single quote prefix before a sexp, the sexp is expanded to <code>(quote <var>sexp</var>)</code> before it is evaluated.</dd>
-	<dt>.</dt>
+	<dt><code>.</code></dt>
 	<dd>The expresion<code> (<var>a</var> . <var>b</var>)</code>&nbsp;evaluates to a cons object, holding the objects <var>a</var> and <var>b</var>.</dd>
 </dl>
 
@@ -71,17 +73,17 @@
 	<dd>a fixed, non-false&nbsp;value.</dd>
 </dl>
 
-<h3>Objects and Data Types</h3>
+<h4>Objects and Data Types</h4>
 
 <p><i>fLisp</i> objects have exactly one of the following data types:</p>
 
 <dl>
 	<dt><dfn>number</dfn></dt>
-	<dd>double precision signed integer</dd>
+	<dd><a href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format">double precision floating point number.</a></dd>
 	<dt><dfn>string</dfn></dt>
-	<dd>byte array</dd>
+	<dd>byte array.</dd>
 	<dt><dfn>cons</dfn></dt>
-	<dd>object holding two pointers to objects</dd>
+	<dd>object holding two pointers to objects.</dd>
 	<dt><dfn>symbol</dfn></dt>
 	<dd>string with restricted character set: <code>[A-Z][0-9][a-z]!#$%&amp;*+-./:&lt;=&gt;?@^_~</code></dd>
 	<dt><dfn>lambda</dfn></dt>
@@ -90,9 +92,9 @@
 	<dd>anonymous function without parameter evaluation</dd>
 </dl>
 
-<p>Objects are unmutable, all fLisp function create new objects from existing ones.</p>
+<p>Objects are unmutable, all fLisp functions create new objects from existing ones.</p>
 
-<h3>Symbols, Environments and Functions</h3>
+<h4>Symbols, Environments and Functions</h4>
 
 <p>All operations of the interpreter take place in a root environment. An <dfn>environment</dfn> is a collection of named objects. The object names have the <var>symbol</var> datatype.</p>
 
@@ -102,6 +104,110 @@
 
 <p><var>lambda</var>s evaluate each parameter then create a new environment containing the parameters before evaluating the body.</p>
 
-<p><code>macro</code>s evaluate the body which typically returns a new expresions in terms of the parameters. The expresion is then evaluated in a new environment containing the parameters.</p>
+<p><code>macro</code>s evaluate the body which typically returns a new expresions in terms of the parameters. The expression is then evaluated in a new environment containing the parameters.</p>
+
+<h4>Functions</h4>
+
+<h5>Interpreter</h5>
+
+<dl>
+	<dt><code>(progn</code> [<code><var>expr</var></code> ..]<code>)</code></dt>
+	<dd>Each <var>expr</var> is evaluated, the value of the last is returned.&nbsp;</dd>
+	<dt><code>(cond</code> [<code><var>clause</var></code> ..]<code>)</code></dt>
+	<dd>Each <var>clause</var> is of the form <code>(<var>pred</var> [<var>action</var>])</code>. <code>cond</code> evaluates each <var>clause</var> in turn:&nbsp;if <var>pred</var> evaluates to <code>nil</code>, the next <var>clause</var> is tested. Otherwise: if there is no <var>action</var> the value of <var>pred</var> is returned, otherwise <code>(progn <var>action</var>)</code> is returned and no more <var>clause</var>s are evaluated.</dd>
+	<dt><code>(setq <var>symbol</var> <var>value</var></code> [<code><var>symbol</var> <var>value</var></code>]..<code>)</code></dt>
+	<dd>Create or update named objects: If <var>symbol</var> is the name of an existing named object in the current or a parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is created in the current environment. <code>setq</code> returns the last <var>value</var>.</dd>
+	<dt><code>(lambda&nbsp;<var>params</var> <var>body</var>)</code></dt>
+	<dd>Returns a <var>lambda</var> function which accepts 0 or more arguments, which are passed as list in the parameter <var>params</var>.</dd>
+	<dt><code>(lambda (</code>[<code><var>param</var></code> ..]<code>) <var>body</var>)</code></dt>
+	<dd>Returns a <var>lambda</var> function which accepts the exact number of arguments given in the list of&nbsp;<var>param</var>s.</dd>
+	<dt><code>(lambda (<var>param</var></code> [<code><var>param</var></code> ..]<code> . opt)</code></dt>
+	<dd>Returns a <var>lambda</var> function which requires at least the exact number of arguments given in the list of <var>param</var>s. All extra arguments are passed as a list in the parameter <var>opt</var>.</dd>
+	<dt><code>(macro&nbsp;<var>params</var> <var>body</var>)</code></dt>
+	<dd>These forms return a <var>macro</var> function with the same parameter handling as with <var>lambda</var>.</dd>
+	<dt><code>(macro (</code>[<code><var>param</var></code> ..]<code>) <var>body</var>)</code></dt>
+	<dd>-</dd>
+	<dt><code>(macro (<var>param</var></code> [<code><var>param</var></code> ..]<code> . opt)</code></dt>
+	<dd>-</dd>
+	<dt><code>(quote <var>expr</var>)</code></dt>
+	<dt>quote returns <var>expr</var>&nbsp;without evaluating it.</dt>
+	<dd>&nbsp;</dd>
+</dl>
+
+<p>Objects</p>
+
+<dl>
+	<dt><code>(symbolp <var>object</var>)</code><span style="display: none;">&nbsp;</span><span style="display: none;">&nbsp;</span></dt>
+	<dd>Returns <code>t</code> if <var>object</var> is of type <i>symbol,&nbsp;</i>otherwise <code>nil</code>.</dd>
+	<dt><code>(symbol-name <var>object</var>)</code></dt>
+	<dd>If <var>object</var> is of type <i>symbol</i> return its value as string.</dd>
+	<dt><code>(numberp <var>object</var>)</code></dt>
+	<dd>Returns <code>t</code> if <var>object</var> is of type <i>number</i>,&nbsp;otherwise <code>nil</code>.</dd>
+	<dt><code>(stringp <var>object</var>)</code> Returns <code>t</code> if <var>object</var> is of type <i>string</i>, otherwise <code>nil</code>.</dt>
+	<dd>&nbsp;</dd>
+	<dt><code>(consp <var>object</var>)</code></dt>
+	<dd>Returns <code>t</code> if <var>object</var> is of type <i>cons</i>, otherwise <code>nil</code>.</dd>
+	<dt><code>(cons <var>car</var> <var>cdr</var>)</code></dt>
+	<dd>Returns a new <i>cons</i> with the first object set to the value of <var>car</var> and the second to the value of <var>cdr</var>.</dd>
+	<dt><code>(car <var>cons</var>)</code></dt>
+	<dd>Returns the first object of <var>cons</var>.</dd>
+	<dt><code>(cdr <var>cons</var>)</code></dt>
+	<dd>Returns the second object of <var>cons</var>.</dd>
+	<dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
+	<dd>Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, <code>nil</code> otherwise.</dd>
+	<dt><code>(print <var>object</var>)</code></dt>
+	<dd>Formats <var>object</var> into a string which can be read by the reader and returns it. As a side effect, the string is printed to the output stream with a leading and a closing newline.&nbsp;<code>print</code> escapes quotes in strings with a backslash.</dd>
+	<dt><code>(princ <var>object</var>)</code></dt>
+	<dt>Formats <var>object</var> into a string and returns it, As a side effect, the string is printed to the output stream.</dt>
+</dl>
+
+<p>String operations</p>
+
+<dl>
+	<dt><code>(string.length <var>string</var>)</code></dt>
+	<dd>Returns the length of <var>string</var> as a <i>number</i>.</dd>
+	<dt><code>(string.substring <var>string</var> <var>start</var> <var>end</var>)</code></dt>
+	<dd>Returns the substring from <var>string</var> which starts with the character&nbsp;at index <var>start</var> and ends with index <var>end</var>. String indexes are zero based.</dd>
+	<dt><code>(string.append <var>string1</var> <var>string2</var>)</code></dt>
+	<dd>Returns a new string consisting of the concatenation of <var>string1</var> with <var>string2</var>.</dd>
+	<dt><code>(string-to-number <var>string</var>)</code></dt>
+	<dd>Converts <var>string</var> into a corresponding <i>number</i> object. String is interpreted as decimal based integer.</dd>
+	<dt><var><code>(number-to-string number)</code></var></dt>
+	<dd>Converts <var>number</var> into a <i>string</i> object.</dd>
+	<dt><code>(ascii <var>number</var>)</code></dt>
+	<dd>Converts <var>number</var> into a <i>string</i> with one character, which corresponds to the ASCII representation of <var>number</var>.</dd>
+	<dt><code>(ascii-&gt;number <var>string</var>)</code></dt>
+	<dd>Converts the first character of <var>string</var> into a <i>number</i> which corresponds to its&nbsp;ASCII value.</dd>
+	<dt>&nbsp;</dt>
+</dl>
+
+<p>Arithmetic Operations</p>
+
+<dl>
+	<dt><code>(+</code> [<code><var>arg</var></code>&nbsp;..]<code>)</code></dt>
+	<dd>Returns the sum of all <var>arg</var>s or&nbsp;<code>0</code>&nbsp;if none given.</dd>
+	<dt><code>(*</code> [<code><var>arg</var></code> ..]<code>)</code></dt>
+	<dd>Returns the product of all <var>arg</var>s or <code>1</code> if none given.</dd>
+	<dt><code>(-</code> [<code><var>arg</var></code>&nbsp;..]<code>)</code></dt>
+	<dd>Returns 0 if no <var>arg</var> is given, -<var>arg</var> if only one is given,&nbsp;<var>arg</var> minus the sum of all others&nbsp;otherwise.</dd>
+	<dt><code>(/ <var>arg</var></code> [<code><var>div</var></code> ..]<code>)</code></dt>
+	<dd>Returns 1/<var>arg</var> if no <var>div</var> is given, <var>arg</var>/<var>div</var>[/<var>div</var>../] if one or more <var>div</var>s are given, <code>inf</code> if one of the <var>div</var>s is <code>0</code> and the sum of the signs of all operands is even, <code>-inf</code> if it is odd.</dd>
+	<dt><code>(% <var>arg</var></code> [<code><var>div</var></code> ..]<code>)</code></dt>
+	<dd>Returns <code>1</code> if no <var>div</var> is given, <var>arg</var>%<var>div</var>[%<var>div</var> ..] if one or more <var>div</var>s are given. If one of the divs is <code>0</code>, the program exits with an arithmetic&nbsp;exception.</dd>
+	<dt><code>(= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
+	<dd>-</dd>
+	<dt><code>(&lt;&nbsp;<var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
+	<dd>-</dd>
+	<dt><code>(&gt;&nbsp;<var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
+	<dd>-</dd>
+	<dt><code>(&lt;= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
+	<dd>-</dd>
+	<dt><code>(&gt;= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
+	<dd>These predicate functions apply&nbsp;the respective comparision operator between all <var>arg</var>s and return the respective result as <code>t</code> or <code>nil</code>.</dd>
+</dl>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
 </body>
 </html>

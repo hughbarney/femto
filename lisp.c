@@ -1682,7 +1682,7 @@ Primitive primitives[] = {
 	{"princ", 1, 1, primitivePrinc},
 	{"signal", 2, 2, primitiveSignal},
 	{"+", 0, -1, primitiveAdd},
-	{"-", 1, -1, primitiveSubtract},
+	{"-", 0, -1, primitiveSubtract},
 	{"*", 0, -1, primitiveMultiply},
 	{"/", 1, -1, primitiveDivide},
 	{"%", 1, -1, primitiveMod},
