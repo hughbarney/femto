@@ -89,7 +89,7 @@
 ;message
 ;next-line
 ;number->string
-;number?
+;numberp
 ;os.getenv
 ;other-window
 ;page-down
@@ -113,7 +113,7 @@
 ;string.ref
 ;string.substring
 ;string.trim
-;string?
+;stringp
 ;update-display
 ;yank
 

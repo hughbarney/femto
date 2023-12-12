@@ -40,20 +40,20 @@
 ;;
 ;;  Load extensions
 ;;
-(require 'defmacro)
-(require 'bufmenu)
-(require 'dired)
-(require 'grep)
+;;(require 'defmacro)
+;;(require 'bufmenu)
+;;(require 'dired)
+;;(require 'grep)
 
 (defun show-info ()
   ;; autoload info with c-x h
   (require 'info)
   (show-info))
 
-(defun oxo ()
+;;(defun oxo ()
   ;; autoload oxo with c-x o
-  (require 'oxo)
-  (oxo))
+;;  (require 'oxo)
+;;  (oxo))
 
 ;;
 ;;  Key Bindings, setkey is used to bind keys to user defined functions in lisp
@@ -82,5 +82,5 @@
  config_dir ".config/femto"
  config_file "femto.rc")
 
-(trap (load (conffn config_file)))
+(trap (load (confn config_file)))
 (getopts argv 0)

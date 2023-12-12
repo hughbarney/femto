@@ -23,7 +23,7 @@
   ;; Common Lisp
   (cond
     ((eq nil s) "")
-    ((numberp s) (number->string s))
+    ((numberp s) (number-to-string s))
     ((stringp s) s)
     ((symbolp s) (symbol-name s))
     ((consp s) (string.append (string (car s)) (string (cdr s))))

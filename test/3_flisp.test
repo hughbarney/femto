@@ -13,9 +13,6 @@ EOF
 flisp() { load_flisp; flisp_expr $1; }
 flisp_fail() { load_flisp; flisp_err $1; }
 
-# backwards compatible functions should vanish
-false; ok refactor backward compatible defuns \# TODO
-
 # null
 IN='(null nil)' OUT=t
 flisp; ok null-1 nil is null

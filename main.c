@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 
     if ((init_file = getenv("FEMTORC")) == NULL)
         init_file = CPP_XSTR(E_INITFILE);
-
+    
     snprintf(cmd, TEMPBUF, "(load \"%s\")", init_file);
     (void)call_lisp(cmd);
 
