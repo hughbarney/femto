@@ -1,10 +1,5 @@
 ;; flisp Language
 
-;; Femto backwards compatible defun`s
-;; Note: The libraries should be refactored and this defuns deprecated
-(setq number? numberp)
-(setq number->string number-to-string) ; Elisp
-(setq string? stringp)
 (defun load-script(fn)
   (load (concat script_dir "/" fn)))
 
@@ -14,17 +9,12 @@
 (setq not null)
 (defun listp (x) (cond ((eq nil x)) ((consp x))))
 
-;; (defmacro and args
-;;   (cond
-;;     ((eq nil args))
-;;     ((eq nil (cdr args)) (car args))
-;;     (t (list 'cond (list (car args) (cons 'and (cdr args)))))))
 (defmacro and args
   (cond
     ((eq nil args))
     ((eq nil (cdr args)) (car args))
-    ((consp args) (list 'cond (list (car args) (cons 'and (cdr args)))))
-    (t (car args)) ))
+    ((eq nil (car args)) nil) ;; Note: unnecessary optimization?
+    (t (cons 'cond (list (list (car args) (cons 'and (cdr args)))))) ))
 
 (defun map1 (func xs)
   (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))

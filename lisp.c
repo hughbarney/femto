@@ -1015,32 +1015,6 @@ Object *primitiveCons(Object ** args, GC_PARAM)
 	return newCons(gcFirst, gcSecond, GC_ROOTS);
 }
 
-Object *expandMacroTo(Object**, Object**, Object**, Object*);
-// Note: this might be a costly extra
-Object *primitiveMacroExpandOne(Object ** args, GC_PARAM)
-{
-	/* One (or two) parameters */
-	// Note: CL/Elisp allow a second optional parameter env.
-
-	Object *form = (*args)->car;
-	
-	if (form == nil || form->type != TYPE_CONS)
-		exceptionWithObject(form, "wrong-argument-type - form");
-
-	//if (form->car->type != TYPE_MACRO)
-	//	exceptionWithObject(form->car, "wrong-argument-type - macro");
-
-	
-	Object *expansion = newCons(&nil, &nil, GC_ROOTS);
-	(void)expandMacroTo(&form->car, &form->cdr, &expansion, GC_ROOTS);
-	Object *flag  = newCons(
-				(expansion->car->type == TYPE_MACRO) ? &t: &nil,
-				&nil ,
-				GC_ROOTS);
-	return newCons(&expansion, &flag, GC_ROOTS);
-}
-
-
 Object *primitivePrint(Object ** args, GC_PARAM)
 {
 	writeChar('\n', &flisp.ostream);
@@ -1150,14 +1124,14 @@ Object *e_get_buffer_count(Object **args, GC_PARAM) { return newNumber(count_buf
 	Object *first = (*args)->car;                        \
 	Object *second = (*args)->cdr->car;                  \
 	if (first->type != TYPE_STRING)                      \
-	    exceptionWithObject(first, "is not a string");   \
+	    exceptionWithObject(first, "is not a string: first");   \
 	if (second->type != TYPE_STRING)                     \
-	    exceptionWithObject(second, "is not a string");
+	    exceptionWithObject(second, "is not a string: second");
 
 #define ONE_STRING_ARG()                                    \
 	Object *first = (*args)->car;                        \
 	if (first->type != TYPE_STRING)                      \
-	    exceptionWithObject(first, "is not a string");
+	    exceptionWithObject(first, "is not a string: first");
 
 
 Object *e_refresh(Object ** args, GC_PARAM)
@@ -1205,7 +1179,7 @@ Object *e_system(Object ** args, GC_PARAM) {
 
 Object *e_insert_file(Object ** args, GC_PARAM) {
 
-	// ToDo: want to give an optional modify flag, but then it segfaults
+	// Note: want to give an optional modify flag, but then it segfaults
 	Object *first = (*args)->car;
 	int mflag;
 
@@ -1350,7 +1324,7 @@ Object *stringToNumber(Object ** args, GC_PARAM)
 	Object *first = (*args)->car;
 
 	if (first->type != TYPE_STRING)
-	    exceptionWithObject(first, "is not a string");
+	    exceptionWithObject(first, "(string-to-number) is not a string: first");
 
 	double num = strtod(first->string, NULL);
 	return newNumber(num, GC_ROOTS);
@@ -1514,7 +1488,7 @@ Object *e_load(Object ** args, GC_PARAM)
 	ONE_STRING_ARG();
 
 	if (first->type != TYPE_STRING)
-	    exceptionWithObject(first, "is not a string");
+	    exceptionWithObject(first, "(load) is not a string: first");
 
 	debug("(load \"%s\")\n", first->string);
 
@@ -1696,7 +1670,7 @@ Primitive primitives[] = {
 	{"lambda", 1, -1 /* special form */ },
 	{"macro", 1, -1 /* special form */ },
 	{"trap", 1, 1, /* special form */ },
-	{"macroexpand-1", 1, 2, primitiveMacroExpandOne },
+	{"macroexpand-1", 1, 2 /* special form */ },
 	{"consp", 1, 1, primitiveConsP},
 	{"symbolp", 1, 1, primitiveSymbolP},
 	{"symbol-name", 1, 1, primitiveSymbolName},
@@ -1723,7 +1697,7 @@ Primitive primitives[] = {
 	{"string.append", 2, 2, stringAppend},
 	{"string.substring", 3, 3, stringSubstring},
 	{"string.ref", 2, 2, stringRef},
-	{"string->number", 1, 1, stringToNumber},
+	{"string-to-number", 1, 1, stringToNumber},
 	{"number-to-string", 1, 1, numberToString},
 	{"ascii", 1, 1, asciiToString},
 	{"ascii->number", 1, 1, asciiToNumber},
@@ -1807,6 +1781,7 @@ enum {
 	PRIMITIVE_LAMBDA,
 	PRIMITIVE_MACRO,
 	PRIMITIVE_TRAP,
+	PRIMITIVE_MACROEXPAND
 };
 
 // EVALUATION /////////////////////////////////////////////////////////////////
@@ -1858,7 +1833,6 @@ Object *evalProgn(Object ** args, Object ** env, GC_PARAM)
 	GC_TRACE(gcArgs, (*args)->cdr);
 
 	evalExpr(gcObject, env, GC_ROOTS);
-	assert((*gcArgs)->type == TYPE_CONS);
 	return evalProgn(gcArgs, env, GC_ROOTS);
 }
 
@@ -1866,20 +1840,20 @@ Object *evalCond(Object ** args, Object ** env, GC_PARAM)
 {
 	if (*args == nil) return nil;
 
-	if ((*args)->type != TYPE_CONS)
-		exceptionWithObject(*args, "(cond) is not a list: args");
-
 	Object *clause = (*args)->car;
 
-	if (clause == nil) {
-	cond_cdr:
-		if ((*args)->cdr == nil) return nil;
+	if (clause == nil)
+		goto cond_cdr;
 
-		GC_TRACE(gcArgs, (*args)->cdr);
-		return evalCond(gcArgs, env, GC_ROOTS);
-	}
 	if (clause->type != TYPE_CONS)
 		exceptionWithObject(clause, "(cond) is not a list: clause");
+
+	Object *action = clause->cdr;
+	// (p v) => (p . (v . nil))
+	// (p . nil) = (p)
+	// (p . v) x
+	if (action != nil && action->type != TYPE_CONS)
+		exceptionWithObject(clause, "(cond) is not a list: clause action");
 
 	Object *pred = clause->car;
 	if (pred == nil)
@@ -1893,7 +1867,15 @@ Object *evalCond(Object ** args, Object ** env, GC_PARAM)
 		return *gcPred;
 
 	GC_TRACE(gcCdr, clause->cdr);
-	return evalProgn(gcCdr, env, GC_ROOTS);
+	if ((*gcCdr)->type == TYPE_CONS)
+		return evalProgn(gcCdr, env, GC_ROOTS);
+	return evalExpr(gcCdr, env, GC_ROOTS);
+
+ cond_cdr:
+	if ((*args)->cdr == nil) return nil;
+
+	GC_TRACE(gcArgs, (*args)->cdr);
+	return evalCond(gcArgs, env, GC_ROOTS);
 }
 
 Object *evalLambda(Object ** args, Object ** env, GC_PARAM)
@@ -1908,7 +1890,7 @@ Object *evalMacro(Object ** args, Object ** env, GC_PARAM)
 {
 	// Note: needed? (see primitives[])
 	assert((*args) == nil || (*args)->type == TYPE_CONS);
-	
+
 	GC_TRACE(gcParams, (*args)->car);
 	GC_TRACE(gcBody, (*args)->cdr);
 
@@ -1918,7 +1900,7 @@ Object *evalMacro(Object ** args, Object ** env, GC_PARAM)
 Object *expandMacro(Object ** macro, Object ** args, GC_PARAM)
 {
 	assert((*args) == nil || (*args)->type == TYPE_CONS);
-	
+
 	GC_TRACE(gcEnv, newEnv(macro, args, GC_ROOTS));
 	GC_TRACE(gcBody, (*macro)->body);
 
@@ -1944,6 +1926,19 @@ Object *expandMacroTo(Object ** macro, Object ** args, Object ** cons, GC_PARAM)
 	return *cons;
 }
 
+Object *evalMacroExpand(Object **args, Object ** env, GC_PARAM)
+{
+	if ((*args)->type != TYPE_CONS)
+		return evalExpr(args, env, GC_ROOTS);
+
+	GC_TRACE(gcMacro, evalExpr(&(*args)->car, env, GC_ROOTS));
+	if ((*gcMacro)->type != TYPE_MACRO)
+		return (*args)->car;
+
+	GC_TRACE(gcParams, (*args)->cdr);
+	return expandMacro(gcMacro, gcParams, GC_ROOTS);
+}
+
 Object *evalList(Object ** args, Object ** env, GC_PARAM)
 {
 	if ((*args)->type != TYPE_CONS)
@@ -1958,7 +1953,6 @@ Object *evalList(Object ** args, Object ** env, GC_PARAM)
 		return newCons(gcObject, gcArgs, GC_ROOTS);
 	}
 }
-
 
 Object *evalTrap(Object ** args, Object ** env,  GC_PARAM)
 {
@@ -2023,13 +2017,14 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 			if (primitive->nMaxArgs < 0 && nArgs % -primitive->nMaxArgs)
 				exceptionWithObject(*gcFunc, "expects a multiple of %d arguments", -primitive->nMaxArgs);
 
+			//debug("evalExpr %s primitive\n", primitive->name);
 			switch ((*gcFunc)->primitive) {
 			case PRIMITIVE_QUOTE:
 				return (*gcArgs)->car;
 			case PRIMITIVE_SETQ:
 				return evalSetq(gcArgs, gcEnv, GC_ROOTS);
 			case PRIMITIVE_PROGN:
-				assert((*gcArgs)->type == TYPE_CONS);
+				assert((*gcArgs) == nil || (*gcArgs)->type == TYPE_CONS);
 				*gcObject = evalProgn(gcArgs, gcEnv, GC_ROOTS);
 				break;
 			case PRIMITIVE_COND:
@@ -2041,6 +2036,8 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 				return evalMacro(gcArgs, gcEnv, GC_ROOTS);
 			case PRIMITIVE_TRAP:
 				return evalTrap(gcArgs, gcEnv, GC_ROOTS);
+			case PRIMITIVE_MACROEXPAND:
+				return evalMacroExpand(gcArgs, gcEnv, GC_ROOTS);
 			default:
 				*gcArgs = evalList(gcArgs, gcEnv, GC_ROOTS);
 				return primitive->eval(gcArgs, GC_ROOTS);
@@ -2147,7 +2144,8 @@ int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 
 	if (setjmp(exceptionEnv)) {
 		debug("exception in load_file_body()\n");
-		free(input_stream->buffer);
+		if (input_stream->buffer != NULL)
+			free(input_stream->buffer);
 		flisp.stackframe = up;
 		return 1;
 	}
@@ -2189,6 +2187,7 @@ int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
 
 	GC_TRACE(gcObject, nil);
 
+	// Note: don't we need to free input_stream->body here also?
 	for (;;) {
 		if (setjmp(exceptionEnv)) {
 			debug("exception in call_lisp_body\n");

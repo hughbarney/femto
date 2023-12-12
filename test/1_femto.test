@@ -1,6 +1,6 @@
 # test executable and fLisp functionality
 # leg20231128: Femto
-tap 32
+tap 33
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -77,7 +77,7 @@ IN='(cond (t))' OUT=t
 flisp_expr; ok cond-7 cond with single t predictate gives t
 
 IN='(cond ("a" "b"))' OUT='"b"'
-flisp_expr; ok cond-8 fix test, cond with two string list gives second string
+flisp_expr; ok cond-8 cond with two string list gives second string
 
 IN='(cond nil (t "else"))' OUT='"else"'
 flisp_expr; ok cond-9 cond with t clause
@@ -94,14 +94,17 @@ flisp_expr; ok cond-12 cond with last expresion single string list gives its val
 IN="(cond nil ((consp (quote (a b)))))" OUT=t
 flisp_expr; ok cond-13 cond with last expresion funcall gives result
 
-IN='(cond . "a")' OUT='error: "a" is not a list'
+IN='(cond . "a")' OUT='error: "a" (primitive) is not a list: arg 0'
 flisp_err; ok cond-14 fail if not called with a cons
 
-IN='(cond "a" ())' OUT='error: "a" is not a list'
-flisp_err; ok cond-14 fail if clause is not a cons
+IN='(cond "a" ())' OUT='error: "a" (cond) is not a list: clause'
+flisp_err; ok cond-15 fail if clause is not a cons
 
-IN='(cond (t . t))' OUT='error: t is not a list'
-flisp_err; ok cond-15 fail if clause action is not a cons
+IN='(cond (nil . "a"))' OUT='error: unexpected dot at start of list'
+flisp_err; ok cond-16 fail if clause is cons with car nil - captured by reader
+
+IN='(cond (t . t))' OUT='error: (t . t) (cond) is not a list: clause action'
+flisp_err; ok cond-17 fail if t and clause action is not a list
 
 # lambda
 # macro
@@ -118,7 +121,6 @@ flisp_err; ok cond-15 fail if clause action is not a cons
 # symbolp
 # symbol-name
 # eq
-
 ## Cons'es
 # car
 # cdr

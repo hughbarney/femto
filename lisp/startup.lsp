@@ -44,6 +44,7 @@
 (require 'bufmenu)
 (require 'dired)
 (require 'grep)
+(require 'git)
 
 (defun show-info ()
   ;; autoload info with c-x h
@@ -51,7 +52,7 @@
   (show-info))
 
 (defun oxo ()
-  ;; autoload oxo with c-x o
+  autoload oxo with c-x o
   (require 'oxo)
   (oxo))
 
@@ -82,5 +83,5 @@
  config_dir ".config/femto"
  config_file "femto.rc")
 
-(trap (load (conffn config_file)))
+(trap (load (confn config_file)))
 (getopts argv 0)
