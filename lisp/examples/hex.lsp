@@ -11,7 +11,7 @@
   (progn
     (setq h2 (% n 16))
     (setq h1 (/ (- n h2) 16))
-    (concat (string.ref "0123456789abcdef" h1) (string.ref "0123456789abcdef" h2)))))
+    (concat (string.substring "0123456789abcdef" h1 h1) (string.substring "0123456789abcdef" h2 h2)))))
 
 (ascii->hex 127)
 "7f"

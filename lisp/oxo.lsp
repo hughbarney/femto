@@ -132,7 +132,7 @@
 (defun get-move()
   (oxo-debug "get-move\n")
   (setq m (inputat 7 "Your move (X): " ""))
-  (setq m (string->number m))
+  (setq m (string-to-number m))
   (cond
     ((or (> m 9) (< m 1)) (msg "Please select a free cell between 1 and 9" t) (get-move))
     ((not (is_free m)) (msg "That cell is taken" t) (get-move)) )
@@ -140,7 +140,7 @@
 
 (defun find_free(b)
   (cond
-    ((and (not (eq "X" (car b))) (not (eq "O" (car b))) (not (eq "E" (car b)))) (string->number (car b)))
+    ((and (not (eq "X" (car b))) (not (eq "O" (car b))) (not (eq "E" (car b)))) (string-to-number (car b)))
     (t (find_free (cdr b))) ))
 
 (defun is_free(n)

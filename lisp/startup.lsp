@@ -22,8 +22,8 @@
   (cond
     ((eq nil o))
     ((eq "+" o) (getopts (cdr opts) 0))
-    ((eq "+" (string.ref o 0))
-     (getopts (cdr opts) (string->number (string.substring o 1 (- (string.length o) 1)))))
+    ((eq "+" (string.substring o 0 0))
+     (getopts (cdr opts) (string-to-number (string.substring o 1 (- (string.length o) 1)))))
     (t
      (find-file o)
      (goto-line pos)
@@ -44,17 +44,22 @@
 (require 'bufmenu)
 (require 'dired)
 (require 'grep)
-(require 'git)
 
 (defun show-info ()
   ;; autoload info with c-x h
   (require 'info)
   (show-info))
 
+;; oxo and git fail when loaded on startup
 (defun oxo ()
-  autoload oxo with c-x o
+  ;; autoload oxo with c-x o
   (require 'oxo)
   (oxo))
+
+(defun git-menu ()
+  ;; autoload git with c-x g
+  (require 'git)
+  (git-menu))
 
 ;;
 ;;  Key Bindings, setkey is used to bind keys to user defined functions in lisp
@@ -75,6 +80,7 @@
 (set-key "c-x c" "edit-config")
 (set-key "c-x h" "show-info")
 (set-key "c-x g" "grep-command")
+(set-key "c-x c-g" "git-menu")
 
 (show-startup-message)
 

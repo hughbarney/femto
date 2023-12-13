@@ -88,7 +88,7 @@
 ;log-debug
 ;message
 ;next-line
-;number->string
+;number-to-string
 ;numberp
 ;os.getenv
 ;other-window
@@ -107,7 +107,7 @@
 ;set-point
 ;- shell-command
 ;split-window
-;string->number
+;string-to-number
 ;string.append
 ;string.length
 ;string.ref

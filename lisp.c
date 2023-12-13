@@ -1220,30 +1220,6 @@ Object *stringAppend(Object ** args, GC_PARAM)
 	return obj;
 }
 
-Object *stringRef(Object ** args, GC_PARAM)
-{
-	char ch[2];
-	Object *first = (*args)->car;
-	Object *second = (*args)->cdr->car;
-
-	if (first->type != TYPE_STRING)
-	    exceptionWithObject(first, "is not a string (string.ref)");
-	if (second->type != TYPE_NUMBER)
-	    exceptionWithObject(second, "is not a number (string.ref)");
-
-	char *str = first->string;
-	int ref = (int)(second->number);
-	int len = strlen(str);
-
-	if (ref < 0 || ref >= len)
-	    exceptionWithObject(second, "is out of bounds (string.ref)");
-
-	ch[0] = str[ref];
-	ch[1] = '\0';
-
-	return newStringWithLength(ch, 1, GC_ROOTS);
-}
-
 Object *stringSubstring(Object ** args, GC_PARAM)
 {
 	Object *first = (*args)->car;
@@ -1696,7 +1672,6 @@ Primitive primitives[] = {
 	{"string.length", 1, 1, stringLength},
 	{"string.append", 2, 2, stringAppend},
 	{"string.substring", 3, 3, stringSubstring},
-	{"string.ref", 2, 2, stringRef},
 	{"string-to-number", 1, 1, stringToNumber},
 	{"number-to-string", 1, 1, numberToString},
 	{"ascii", 1, 1, asciiToString},

@@ -39,7 +39,7 @@
   (search-forward ":")
   (backward-char)
   (copy-region)
-  (setq grep-match-line (string->number (get-clipboard)))
+  (setq grep-match-line (string-to-number (get-clipboard)))
   (find-file grep-fname)
   (goto-line grep-match-line))
 

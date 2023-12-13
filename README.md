@@ -336,21 +336,20 @@ Additional extensions loaded by `femto.rc`
 ;; string handling
 ;; 
 
-(string? s)                             ;; return true if s is a string
+(stringp s)                             ;; return true if s is a string
 (string.length "string")                ;; return the length of the string
-(string.ref s pos)                      ;; return the character at position pos (0 based) in string s
 (string.trim " abc ")                   ;; return a string with the spaces trimmed off the beginning and the end
 (string.append "string1" "string2")     ;; concatenate 2 strings returning a new string
 (string.substring string n1 n2)         ;; return a substring of string from ref n1 to n2
-(string->number s)                      ;; return a number converted from the string, eg "99" => 99
-(number->string n)                      ;; return a strung representation of the number, eg 99.56 => "99.56"
+(string-to-number s)                    ;; return a number converted from the string, eg "99" => 99
+(number-to-string n)                      ;; return a string representation of the number, eg 99.56 => "99.56"
 
 ;;
 ;; number handling
 ;;
 
-(number->string)                        ;; convert a number type to a string
-(number? var)                           ;; return t if the variable is a number
+(number-to-string)                        ;; convert a number type to a string
+(numberp var)                           ;; return t if the variable is a number
 (ascii 67)                              ;; return the ASCII character as a string for the number
 (ascii->number "C")                     ;; return the ASCII value for the character passed in as a single char string
 

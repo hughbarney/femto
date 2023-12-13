@@ -40,14 +40,17 @@
 ;; trim all spaces from front of a string
 (defun string.trim.front(s)
   (cond
-    ((not (eq (string.ref s 0) " ")) s)
+    ((= 0 (string.length s)) "")
+    ((not (eq (string.substring s 0 0) " ")) s)
     ((< (string.length s) 2) "")
     (t (string.trim.front (string.substring s 1 (- (string.length s) 1)))) ))
 
 ;; trim all spaces from back of a string
 (defun string.trim.back(s)
+  (setq p (- (string.length s) 1))
   (cond
-    ((not (eq (string.ref s (- (string.length s) 1)) " ")) s)
+    ((= p -1) "")
+    ((not (eq (string.substring s p p) " ")) s)
     ((< (string.length s) 2) "")
     (t (string.trim.back (string.substring s 0 (- (string.length s) 2)))) ))
 

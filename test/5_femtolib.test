@@ -1,0 +1,69 @@
+# test the femto Lisp extensions
+# leg20231213
+tap 3
+
+_femto() {
+    IN=$(cat <<EOF
+(load "../femto.rc")
+(require 'femto)
+$IN
+EOF
+      )
+}
+femto() { _femto; flisp_expr $1; }
+femto_err() { _femto; flisp_err $1; } 
+
+###IN='(atom 0)' OUT=t
+###femto; ok atom-1 number is atom
+
+###IN='(zerop "a")' OUT='error: "a" is not a number'
+###femto_err; ok zerop-3 with string fails
+
+# repeat
+# shell-command
+# shell-exec
+# insert-file
+
+# string.trim.front
+IN='(string.trim.front " x")'  OUT='"x"'
+femto; ok string.strim.front-1 remove single space before string
+IN='(string.trim.front " ")'  OUT='""'
+femto; ok string.strim.front-2 remove single space
+IN='(string.trim.front "    ")'  OUT='""'
+femto; ok string.strim.front-3 remove several spaces
+IN='(string.trim.front "")'  OUT='""'
+femto; ok string.strim.front-4 empty string
+
+# string.trim.back
+IN='(string.trim.back "x ")'  OUT='"x"'
+femto; ok string.strim.back-1 remove single space after string
+IN='(string.trim.back " ")'  OUT='""'
+femto; ok string.strim.back-2 remove single space
+IN='(string.trim.back "    ")'  OUT='""'
+femto; ok string.strim.back-3 remove several spaces
+IN='(string.trim.back "")'  OUT='""'
+femto; ok string.strim.back-4 empty string
+
+# string.trim
+IN='(string.trim " ")'  OUT='""'
+femto; ok string.strim-1 remove single space
+
+# delete-next-word
+# delete-previous-word
+# kill-to-eol
+# shrink
+# is_ctl_g
+# is_escape
+# is_backspace
+# is_ctl_s
+# is_control_char
+# describe-key
+# find_end_p
+# find_start_p
+# find_and_eval_sexp
+
+true
+
+# Local Variables:
+# mode: sh
+# End:

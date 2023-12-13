@@ -134,8 +134,7 @@ flisp_err; ok cond-17 fail if t and clause action is not a list
 # string.length
 # string.append
 # string.substring
-# string.ref
-# string->number
+# string-to-number
 # number-to-string
 # ascii
 # ascii->number
