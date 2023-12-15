@@ -3,6 +3,7 @@
 <head>
 	<title>fLisp Manual</title>
 	<meta content="text/html; charset=utf-8" http-equiv="content-type" /><meta content="Emacs, editor, Lisp, tiny, reference, manual" name="keywords" /><meta content="Reference and user manual for the fLisp programming language and interpreter" name="description" /><meta content="Georg Lehner &lt;jorge@magma-soft.at&gt;" name="author" /><meta content="2023" name="copyright" />
+	<link href="https://cdn.poshdoc.org/css/poshdoc.css" rel="stylesheet" />
 </head>
 <body>
 <h1>fLisp Manual</h1>
@@ -136,7 +137,7 @@
 	<dd>&nbsp;</dd>
 </dl>
 
-<p>Objects</p>
+<h5>Objects</h5>
 
 <dl>
 	<dt><code>(null <var>object</var>)</code></dt>
@@ -185,7 +186,7 @@
 	<dt>&nbsp;</dt>
 </dl>
 
-<p>Arithmetic Operations</p>
+<h5>Arithmetic Operations</h5>
 
 <dl>
 	<dt><code>(+</code> [<code><var>arg</var></code>&nbsp;..]<code>)</code></dt>
@@ -203,17 +204,74 @@
 	<dt><code>(&lt;&nbsp;<var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
 	<dd>-</dd>
 	<dt><code>(&gt;&nbsp;<var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>-</dd>
+	<dt>-</dt>
 	<dt><code>(&lt;= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
 	<dd>-</dd>
 	<dt><code>(&gt;= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>These predicate functions apply&nbsp;the respective comparision operator between all <var>arg</var>s and return the respective result as <code>t</code> or <code>nil</code>.</dd>
+	<dd>These predicate functions apply&nbsp;the respective comparison operator between all <var>arg</var>s and return the respective result as <code>t</code> or <code>nil</code>.</dd>
 </dl>
 
-<p>&nbsp;</p>
+<h3>Editor Extensions</h3>
+
+<h4>Buffers</h4>
+
+<p>Buffers store text and allow to manipulate it. A buffer has the following properties:</p>
+
+<dl>
+	<dt><var>Name</var></dt>
+	<dd>Buffers are identified by their name. If a buffer name is enclosed in *asterisks* the buffer receives special treatment.</dd>
+	<dt><var>Text</var></dt>
+	<dd>0 or more characters.</dd>
+	<dt><var>Point</var></dt>
+	<dd>The position&nbsp;in the text where text manipulation takes place.</dd>
+	<dt><var>Mark</var></dt>
+	<dd>An optional second position in the text. If the <var>mark</var> is set, the text between <var>point</var> and <var>mark</var> is called the <dfn>selection</dfn>.</dd>
+	<dt><var>Filename</var></dt>
+	<dd>A buffer can be associated with a file.</dd>
+	<dt><var>Flags</var></dt>
+	<dd>Different flags determine the behaviour of the buffer.</dd>
+</dl>
+
+<p>This section describes the buffer related functions added by Femto to fLisp. The description is separated in function related to buffer management and text manipulation. Buffer management creates, deletes buffers, or selects one of the existing buffers as the <q>current</q> buffer. Text manipulation always operates on the&nbsp;current buffer.</p>
+
+<h5>Text manipulation</h5>
+
+<dl>
+	<dt>(insert-string <var>string</var>)</dt>
+	<dd>tbd</dd>
+	<dt>(eval-block)</dt>
+	<dd>tbd</dd>
+	<dt>(insert-file-contents-literally)</dt>
+	<dd>tbd</dd>
+	<dt>(erase-buffer)</dt>
+	<dd>tbd</dd>
+	<dt>(set-clipboard string)</dt>
+	<dd>tbd</dd>
+	<dt>(delete)</dt>
+	<dd>tbd</dd>
+	<dt>(copy-region)</dt>
+	<dd>tbd</dd>
+	<dt>(kill-region)</dt>
+	<dd>tbd</dd>
+	<dt>(yank)</dt>
+	<dd>tbd</dd>
+	<dt>(backspace)</dt>
+	<dd>tbd</dd>
+	<dt>(get-clipboard)</dt>
+	<dd>tbd</dd>
+</dl>
+
+<h5>Positioning</h5>
 
 <p>&nbsp;</p>
 
+<h5>Buffer management</h5>
+
 <p>&nbsp;</p>
+
+<dl>
+	<dd>&nbsp;</dd>
+	<dt>&nbsp;</dt>
+</dl>
 </body>
 </html>
