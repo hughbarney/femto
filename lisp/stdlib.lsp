@@ -3,7 +3,7 @@
 ;;
 ;; Only uses core functions
 
-(defun atom (x) (eq nil (consp x)))
+(defun atom (x) (null (consp x)))
 (defun zerop (x) (= x 0))
 
 (defmacro if args
@@ -20,7 +20,7 @@
 	   (equal (cdr x) (cdr y)))))
 
 (defun append (xs y)
-  (cond ((eq nil xs) y)
+  (cond ((null xs) y)
 	(t (cons (car xs) (append (cdr xs) y)))))
 
 

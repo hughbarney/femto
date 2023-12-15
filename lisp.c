@@ -953,6 +953,11 @@ Object *envSet(Object ** var, Object ** val, Object ** env, GC_PARAM)
 
 // PRIMITIVES /////////////////////////////////////////////////////////////////
 
+Object *primitiveNullP(Object **args, GC_PARAM)
+{
+	return ((*args)->car == nil) ? t : nil;
+}
+
 Object *primitiveConsP(Object ** args, GC_PARAM)
 {
 	return ((*args)->car->type == TYPE_CONS) ? t : nil;
@@ -1647,6 +1652,7 @@ Primitive primitives[] = {
 	{"macro", 1, -1 /* special form */ },
 	{"trap", 1, 1, /* special form */ },
 	{"macroexpand-1", 1, 2 /* special form */ },
+	{"null", 1, 1, primitiveNullP},
 	{"consp", 1, 1, primitiveConsP},
 	{"symbolp", 1, 1, primitiveSymbolP},
 	{"symbol-name", 1, 1, primitiveSymbolName},
