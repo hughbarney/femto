@@ -20,7 +20,7 @@
 (defun getopts (opts pos)
   (setq o (car opts))
   (cond
-    ((eq nil o))
+    ((null o))
     ((eq "+" o) (getopts (cdr opts) 0))
     ((eq "+" (string.substring o 0 0))
      (getopts (cdr opts) (string-to-number (string.substring o 1 (- (string.length o) 1)))))

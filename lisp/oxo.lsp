@@ -112,7 +112,7 @@
 (defun check_for_win(l p)
   (oxo-debug (concat "check_for_win l=" l " - p=" p "\n"))
   (cond
-    ((eq nil l)
+    ((null l)
      (oxo-debug "empty l\n")
      'nil)
     ((check_win_line (car l) p)

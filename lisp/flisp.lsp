@@ -5,15 +5,14 @@
 
 ;; Expected Lisp idioms
 
-(defun null (x) (eq x nil))
 (setq not null)
-(defun listp (x) (cond ((eq nil x)) ((consp x))))
+(defun listp (x) (cond ((null x)) ((consp x))))
 
 (defmacro and args
   (cond
-    ((eq nil args))
-    ((eq nil (cdr args)) (car args))
-    ((eq nil (car args)) nil) ;; Note: unnecessary optimization?
+    ((null args))
+    ((null (cdr args)) (car args))
+    ((null (car args)) nil) ;; Note: unnecessary optimization?
     (t (cons 'cond (list (list (car args) (cons 'and (cdr args)))))) ))
 
 (defun map1 (func xs)
@@ -23,30 +22,25 @@
   (cond (args (cons (quote cond) (map1 list args)))))
 
 (defun reduce (func seq start)
-  (cond ((eq nil seq) start)
+  (cond ((null seq) start)
         (t (reduce func (cdr seq) (func (car seq) start)))))
 
-(defun max args
+(defun max (n . args)
   (cond
-    ((eq nil args) (signal 'wrong-number-of-arguments '(max 0)))
-    ((eq nil (cdr args))
-     (cond ((numberp (car args)) (car args))
-	   (t (signal 'wrong-type-argument (list "not a number" (car args))))))
+    ((null (numberp n))
+     (signal 'wrong-type-argument (list "not a number" n)))
+    ((null args) n)
     (t (reduce
 	(lambda (a b) (cond ((< a b) b) (t a)))
-	(cdr args)
-	(car args)))))
+	args n))))
 
-(defun min args
+(defun min (n . args)
   (cond
-    ((eq nil args) (signal 'wrong-number-of-arguments '(min 0)))
-    ((eq nil (cdr args))
-     (cond ((numberp (car args)) (car args))
-	   (t (signal 'wrong-type-argument (list "not a number" (car args))))))
-    (t (reduce
-	(lambda (a b) (cond ((< a b) a) (t b)))
-	(cdr args)
-	(car args)))))
+    ((null (numberp n))
+     (signal 'wrong-type-argument (list "not a number" n)))
+    ((null args) n)
+    (t (reduce (lambda (a b) (cond ((< a b) a) (t b)))
+	args n)) ))
 
 (defun nthcdr (n list)
   (cond 

@@ -1,6 +1,6 @@
 # test the fLisp library
 # leg20231129: Femto
-tap 47
+tap 46
 
 load_flisp() {
     IN=$(cat <<EOF
@@ -104,7 +104,7 @@ flisp; ok or-8 nil with not nil is first itself
 false; ok reduce-1 \#TODO
 
 IN='(max)'
-OUT="error: (wrong-number-of-arguments max 0) wrong-number-of-arguments"
+OUT="error: #<Lambda (n . args)> expects at least 1 arguments"
 flisp_fail; ok max-1 with nil fails
 
 IN='(max "a")'
@@ -124,7 +124,7 @@ IN='(max 1 2 3)' OUT=3
 flisp; ok max-6 with more then two args
 
 IN='(min)'
-OUT="error: (wrong-number-of-arguments min 0) wrong-number-of-arguments"
+OUT="error: #<Lambda (n . args)> expects at least 1 arguments"
 flisp_fail; ok min-1 with nil fails
 
 IN='(min "a")'

@@ -1,6 +1,6 @@
 # test the femto Lisp extensions
 # leg20231213
-tap 3
+tap 9
 
 _femto() {
     IN=$(cat <<EOF

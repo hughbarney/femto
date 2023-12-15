@@ -1,0 +1,4 @@
+*.o
+debug.out
+femto
+*~
