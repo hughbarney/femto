@@ -127,13 +127,24 @@
 	<dt><code>(lambda (<var>param</var></code> [<code><var>param</var></code> ..]<code> . opt)</code></dt>
 	<dd>Returns a <var>lambda</var> function which requires at least the exact number of arguments given in the list of <var>param</var>s. All extra arguments are passed as a list in the parameter <var>opt</var>.</dd>
 	<dt><code>(macro&nbsp;<var>params</var> <var>body</var>)</code></dt>
-	<dd>These forms return a <var>macro</var> function with the same parameter handling as with <var>lambda</var>.</dd>
+	<dd>
+	<p>These forms return a <var>macro</var> function with the same parameter handling as with <var>lambda</var>.</p>
+	</dd>
 	<dt><code>(macro (</code>[<code><var>param</var></code> ..]<code>) <var>body</var>)</code></dt>
-	<dd>-</dd>
+	<dd>
+	<p>-</p>
+	</dd>
 	<dt><code>(macro (<var>param</var></code> [<code><var>param</var></code> ..]<code> . opt)</code></dt>
-	<dd>-</dd>
+	<dd>
+	<p>-</p>
+	</dd>
 	<dt><code>(quote <var>expr</var>)</code></dt>
-	<dt>quote returns <var>expr</var>&nbsp;without evaluating it.</dt>
+	<dd>quote returns <var>expr</var>&nbsp;without evaluating it.</dd>
+	<dt>(signal symbol list)</dt>
+	<dd>tbd</dd>
+	<dt>(trap list)</dt>
+	<dd>tbd</dd>
+	<dt>&nbsp;</dt>
 	<dd>&nbsp;</dd>
 </dl>
 
@@ -166,21 +177,25 @@
 	<dt>Formats <var>object</var> into a string and returns it, As a side effect, the string is printed to the output stream.</dt>
 </dl>
 
-<p>String operations</p>
+<h5>String operations</h5>
 
 <dl>
 	<dt><code>(string.length <var>string</var>)</code></dt>
 	<dd>Returns the length of <var>string</var> as a <i>number</i>.</dd>
+	<dd>&nbsp;</dd>
 	<dt><code>(string.substring <var>string</var> <var>start</var> <var>end</var>)</code></dt>
 	<dd>Returns the substring from <var>string</var> which starts with the character&nbsp;at index <var>start</var> and ends with index <var>end</var>. String indexes are zero based.</dd>
 	<dt><code>(string.append <var>string1</var> <var>string2</var>)</code></dt>
-	<dd>Returns a new string consisting of the concatenation of <var>string1</var> with <var>string2</var>.</dd>
+	<dd>Returns a new string consisting of the concatenation of <var>string1</var> with <var>string2</var>.<br />
+	&nbsp;</dd>
 	<dt><code>(string-to-number <var>string</var>)</code></dt>
 	<dd>Converts <var>string</var> into a corresponding <i>number</i> object. String is interpreted as decimal based integer.</dd>
 	<dt><var><code>(number-to-string number)</code></var></dt>
-	<dd>Converts <var>number</var> into a <i>string</i> object.</dd>
+	<dd>Converts <var>number</var> into a <i>string</i> object.<br />
+	&nbsp;</dd>
 	<dt><code>(ascii <var>number</var>)</code></dt>
-	<dd>Converts <var>number</var> into a <i>string</i> with one character, which corresponds to the ASCII representation of <var>number</var>.</dd>
+	<dd>Converts <var>number</var> into a <i>string</i> with one character, which corresponds to the ASCII representation of <var>number</var>.<br />
+	&nbsp;</dd>
 	<dt><code>(ascii-&gt;number <var>string</var>)</code></dt>
 	<dd>Converts the first character of <var>string</var> into a <i>number</i> which corresponds to its&nbsp;ASCII value.</dd>
 	<dt>&nbsp;</dt>
@@ -200,11 +215,14 @@
 	<dt><code>(% <var>arg</var></code> [<code><var>div</var></code> ..]<code>)</code></dt>
 	<dd>Returns <code>1</code> if no <var>div</var> is given, <var>arg</var>%<var>div</var>[%<var>div</var> ..] if one or more <var>div</var>s are given. If one of the divs is <code>0</code>, the program exits with an arithmetic&nbsp;exception.</dd>
 	<dt><code>(= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>-</dd>
+	<dd>-<br />
+	&nbsp;</dd>
 	<dt><code>(&lt;&nbsp;<var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>-</dd>
+	<dd>-<br />
+	&nbsp;</dd>
 	<dt><code>(&gt;&nbsp;<var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dt>-</dt>
+	<dd>-<br />
+	&nbsp;</dd>
 	<dt><code>(&lt;= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
 	<dd>-</dd>
 	<dt><code>(&gt;= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
@@ -237,41 +255,181 @@
 <h5>Text manipulation</h5>
 
 <dl>
-	<dt>(insert-string <var>string</var>)</dt>
+	<dt><code>(insert-string <var>string</var>)</code></dt>
+	<dd>tbd<br />
+	&nbsp;</dd>
+	<dt><code>(insert-file-contents-literally <var>string</var> ???)</code></dt>
+	<dd>tbd<br />
+	&nbsp;</dd>
+	<dt><code>(erase-buffer)</code></dt>
+	<dd>tbd<br />
+	&nbsp;</dd>
+	<dt><code>(delete)</code></dt>
+	<dd>tbd<br />
+	&nbsp;</dd>
+	<dt><code>(copy-region)</code></dt>
+	<dd>tbd<br />
+	&nbsp;</dd>
+	<dt><code>(kill-region)</code></dt>
+	<dd>tbd<br />
+	&nbsp;</dd>
+	<dt><code>(yank)</code></dt>
+	<dd>tbd<br />
+	&nbsp;</dd>
+	<dt><code>(backspace)</code></dt>
+	<dd>tbd<br />
+	&nbsp;</dd>
+	<dt><code>(get-char)</code></dt>
+	<dd><code>tbd</code></dd>
+</dl>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
+<h5>Selection</h5>
+
+<p>(get-mark)</p>
+
+<p>(get-point)</p>
+
+<p>(get-point-max) ???</p>
+
+<dl>
 	<dd>tbd</dd>
-	<dt>(eval-block)</dt>
-	<dd>tbd</dd>
-	<dt>(insert-file-contents-literally)</dt>
-	<dd>tbd</dd>
-	<dt>(erase-buffer)</dt>
-	<dd>tbd</dd>
-	<dt>(set-clipboard string)</dt>
-	<dd>tbd</dd>
-	<dt>(delete)</dt>
-	<dd>tbd</dd>
-	<dt>(copy-region)</dt>
-	<dd>tbd</dd>
-	<dt>(kill-region)</dt>
-	<dd>tbd</dd>
-	<dt>(yank)</dt>
-	<dd>tbd</dd>
-	<dt>(backspace)</dt>
-	<dd>tbd</dd>
+	<dt><code>(set-clipboard <var>variable</var>)</code></dt>
+</dl>
+
+<dl>
 	<dt>(get-clipboard)</dt>
 	<dd>tbd</dd>
 </dl>
 
-<h5>Positioning</h5>
+<h5>&nbsp;</h5>
 
-<p>&nbsp;</p>
+<h5>Cursor Movement</h5>
+
+<p>(set-point number)</p>
+
+<p>(goto-line number)</p>
+
+<p>(search-forward string)</p>
+
+<p>(search-backward string)</p>
+
+<p>(beginning-of-buffer)</p>
+
+<p>(end-of-buffer)</p>
+
+<p>(beginning-of-line)</p>
+
+<p>(end-of-line)</p>
+
+<p>(forward-char)</p>
+
+<p>(forward-word)</p>
+
+<p>(forward-page)</p>
+
+<p>(backward-char)</p>
+
+<p>(backward-word)</p>
+
+<p>(backward-page)</p>
+
+<p>(next-line)</p>
+
+<p>(previous-line)</p>
 
 <h5>Buffer management</h5>
 
-<p>&nbsp;</p>
+<p>(select-buffer string)</p>
+
+<p>(add-mode-global mode)</p>
+
+<p>(get-buffer-name)</p>
+
+<p>(list-buffers)</p>
+
+<p>(rename-buffer string)</p>
+
+<p>(save-buffer ???)</p>
+
+<p>(kill-buffer string)</p>
+
+<p>(find-file string)</p>
+
+<p>(get-buffer-count)</p>
 
 <dl>
-	<dd>&nbsp;</dd>
-	<dt>&nbsp;</dt>
+</dl>
+
+<h5>&nbsp;</h5>
+
+<h4>User Interaction</h4>
+
+<p>(message string)</p>
+
+<p>(clear-message-line)</p>
+
+<p>(prompt prompt default)</p>
+
+<p>(show-prompt prompt default)</p>
+
+<p>(prompt-filename prompt)</p>
+
+<p>(getch)</p>
+
+<p>(update-display)</p>
+
+<p>(refresh)</p>
+
+<p>(describe-bindings)</p>
+
+<p>(describe-functions)</p>
+
+<p>(exit)</p>
+
+<h5>Window Handling</h5>
+
+<p>(delete-other-windows)</p>
+
+<p>(split-window)</p>
+
+<p>(other-window)</p>
+
+<h5>Keyboard Handling</h5>
+
+<p>(set-key key-name lisp-func)</p>
+
+<p>(get-key-name)</p>
+
+<p>(get-key-funcname)</p>
+
+<h4>Programming and System Interaction</h4>
+
+<p>(log-message string)</p>
+
+<p>(log-debug string)</p>
+
+<p>(eval-block)</p>
+
+<dl>
+	<dt>
+	<p>(get-version-string)</p>
+
+	<p>(execute-key) Execute the function of the last bound key</p>
+
+	<p>(system string)</p>
+
+	<h3>Implementation Details</h3>
+
+	<p>tbd.: Memory consumption, limits, hacking, ...</p>
+
+	<p>&nbsp;</p>
+
+	<p>&nbsp;</p>
+	</dt>
 </dl>
 </body>
 </html>
