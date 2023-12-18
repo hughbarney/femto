@@ -3,7 +3,6 @@
 <head>
 	<title>fLisp Manual</title>
 	<meta content="text/html; charset=utf-8" http-equiv="content-type" /><meta content="Emacs, editor, Lisp, tiny, reference, manual" name="keywords" /><meta content="Reference and user manual for the fLisp programming language and interpreter" name="description" /><meta content="Georg Lehner &lt;jorge@magma-soft.at&gt;" name="author" /><meta content="2023" name="copyright" />
-	<link href="https://cdn.poshdoc.org/css/poshdoc.css" rel="stylesheet" />
 </head>
 <body>
 <h1>fLisp Manual</h1>
@@ -21,6 +20,23 @@
 </blockquote>
 
 <h3>Lisp</h3>
+
+<h4>Notation Convention</h4>
+
+<p>fLisp fancies to converge toward Emacs Lisp. Functions descriptions are annoted with a compatibility scale:</p>
+
+<dl>
+	<dt><u>C</u></dt>
+	<dd>Interface compatible, though probably less featureful.</dd>
+	<dt><u>D</u></dt>
+	<dd>Same name, but different behavior.</dd>
+	<dt><u>S: <var>name</var></u></dt>
+	<dd><var>name</var> is a similar but not compatible function in Emacs Lisp.</dd>
+	<dt><u>B</u></dt>
+	<dd>Buggy/incompatible implementation.</dd>
+</dl>
+
+<p>Annotation is omitted if the function does not exist in Emacs Lisp.</p>
 
 <h4>fLisp Interpreter</h4>
 
@@ -42,15 +58,18 @@
 
 <dl>
 	<dt><code>(</code></dt>
-	<dd>Starts a function invocation, list or cons object (see &quot;Objects and Data Types&quot;).</dd>
+	<dd>Starts a function invocation, <i>list</i> or <i>cons</i> object (see &quot;Objects and Data Types&quot;).<br />
+	&nbsp;</dd>
 	<dt><code>)</code></dt>
-	<dd>Finishes a function invocation, list or cons object.</dd>
+	<dd>Finishes a function invocation, <i>list</i> or <i>cons</i> object.<br />
+	&nbsp;</dd>
 	<dt><code>&quot;</code></dt>
-	<dd>Encloses strings.</dd>
+	<dd>Encloses strings.<br />
+	&nbsp;</dd>
 	<dt><code>&#39;</code></dt>
-	<dd>With a single quote prefix before a sexp, the sexp is expanded to <code>(quote <var>sexp</var>)</code> before it is evaluated.</dd>
+	<dd>With a single quote prefix before a <i>sexp</i>, the <i>sexp</i> is expanded to <code>(quote <var>sexp</var>)</code> before it is evaluated.</dd>
 	<dt><code>.</code></dt>
-	<dd>The expresion<code> (<var>a</var> . <var>b</var>)</code>&nbsp;evaluates to a cons object, holding the objects <var>a</var> and <var>b</var>.</dd>
+	<dd>The expresion<code> (<var>a</var> . <var>b</var>)</code>&nbsp;evaluates to a <i>cons</i> object, holding the objects <var>a</var> and <var>b</var>.</dd>
 </dl>
 
 <p>Numbers are represented in decimal notation.</p>
@@ -71,7 +90,8 @@
 
 <dl>
 	<dt><code>nil</code></dt>
-	<dd>represents:&nbsp;the empty list:&nbsp;(),&nbsp;the end of a list marker,&nbsp;the false value in logical operations.</dd>
+	<dd>represents:&nbsp;the empty list:&nbsp;(),&nbsp;the end of a list marker or&nbsp;the false value in logical operations.<br />
+	&nbsp;</dd>
 	<dt><code>t</code></dt>
 	<dd>a fixed, non-false&nbsp;value.</dd>
 </dl>
@@ -84,7 +104,7 @@
 	<dt><dfn>number</dfn></dt>
 	<dd><a href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format">double precision floating point number.</a></dd>
 	<dt><dfn>string</dfn></dt>
-	<dd>byte array.</dd>
+	<dd>character array.</dd>
 	<dt><dfn>cons</dfn></dt>
 	<dd>object holding two pointers to objects.</dd>
 	<dt><dfn>symbol</dfn></dt>
@@ -97,6 +117,8 @@
 
 <p>Objects are unmutable, all fLisp functions create new objects from existing ones.</p>
 
+<p>Characters do not have their own type. A single character is represented by a <i>string</i> with length 1.</p>
+
 <h4>Symbols, Environments and Functions</h4>
 
 <p>All operations of the interpreter take place in a root environment. An <dfn>environment</dfn> is a collection of named objects. The object names have the <var>symbol</var> datatype.</p>
@@ -107,7 +129,7 @@
 
 <p><var>lambda</var>s evaluate each parameter then create a new environment containing the parameters before evaluating the body.</p>
 
-<p><code>macro</code>s evaluate the body which typically returns a new expresions in terms of the parameters. The expression is then evaluated in a new environment containing the parameters.</p>
+<p><i>macros</i> evaluate the body which typically returns a new expresions in terms of the parameters. The expression is then evaluated in a new environment containing the parameters.</p>
 
 <h4>Functions</h4>
 
@@ -115,7 +137,8 @@
 
 <dl>
 	<dt><code>(progn</code> [<code><var>expr</var></code> ..]<code>)</code></dt>
-	<dd>Each <var>expr</var> is evaluated, the value of the last is returned.&nbsp;</dd>
+	<dd>Each <var>expr</var> is evaluated, the value of the last is returned.<br />
+	&nbsp;</dd>
 	<dt><code>(cond</code> [<code><var>clause</var></code> ..]<code>)</code></dt>
 	<dd>Each <var>clause</var> is of the form <code>(<var>pred</var> [<var>action</var>])</code>. <code>cond</code> evaluates each <var>clause</var> in turn:&nbsp;if <var>pred</var> evaluates to <code>nil</code>, the next <var>clause</var> is tested. Otherwise: if there is no <var>action</var> the value of <var>pred</var> is returned, otherwise <code>(progn <var>action</var>)</code> is returned and no more <var>clause</var>s are evaluated.</dd>
 	<dt><code>(setq <var>symbol</var> <var>value</var></code> [<code><var>symbol</var> <var>value</var></code>]..<code>)</code></dt>
@@ -139,7 +162,8 @@
 	<p>-</p>
 	</dd>
 	<dt><code>(quote <var>expr</var>)</code></dt>
-	<dd>quote returns <var>expr</var>&nbsp;without evaluating it.</dd>
+	<dd>quote returns <var>expr</var>&nbsp;without evaluating it.<br />
+	&nbsp;</dd>
 	<dt>(signal symbol list)</dt>
 	<dd>tbd</dd>
 	<dt>(trap list)</dt>
@@ -224,7 +248,8 @@
 	<dd>-<br />
 	&nbsp;</dd>
 	<dt><code>(&lt;= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>-</dd>
+	<dd>-<br />
+	&nbsp;</dd>
 	<dt><code>(&gt;= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
 	<dd>These predicate functions apply&nbsp;the respective comparison operator between all <var>arg</var>s and return the respective result as <code>t</code> or <code>nil</code>.</dd>
 </dl>
@@ -243,7 +268,7 @@
 	<dt><var>Point</var></dt>
 	<dd>The position&nbsp;in the text where text manipulation takes place.</dd>
 	<dt><var>Mark</var></dt>
-	<dd>An optional second position in the text. If the <var>mark</var> is set, the text between <var>point</var> and <var>mark</var> is called the <dfn>selection</dfn>.</dd>
+	<dd>An optional second position in the text. If the <var>mark</var> is set, the text between <var>point</var> and <var>mark</var> is called the <dfn>selection</dfn>&nbsp;or <dfn>region</dfn>.</dd>
 	<dt><var>Filename</var></dt>
 	<dd>A buffer can be associated with a file.</dd>
 	<dt><var>Flags</var></dt>
@@ -252,57 +277,61 @@
 
 <p>This section describes the buffer related functions added by Femto to fLisp. The description is separated in function related to buffer management and text manipulation. Buffer management creates, deletes buffers, or selects one of the existing buffers as the <q>current</q> buffer. Text manipulation always operates on the&nbsp;current buffer.</p>
 
+<p>Femto provides a single temporary string storage named <dfn>clipboard</dfn>&nbsp;to support text manipulation.</p>
+
 <h5>Text manipulation</h5>
 
 <dl>
 	<dt><code>(insert-string <var>string</var>)</code></dt>
-	<dd>tbd<br />
-	&nbsp;</dd>
-	<dt><code>(insert-file-contents-literally <var>string</var> ???)</code></dt>
-	<dd>tbd<br />
-	&nbsp;</dd>
+	<dd>Inserts&nbsp;<var>string</var> at <i>point</i>. <u>S: insert</u>.</dd>
+	<dt><code>(insert-file-contents-literally <var>string</var>&nbsp;</code>[<code><var>flag</var></code>]<code>)</code></dt>
+	<dd>
+	<p>Inserts the file <var>string</var>&nbsp;after&nbsp;<i>point</i>. If <var>flag</var> is not nil the buffer is marked as not modified. <u>B</u></p>
+	</dd>
+	<dd>
+	<p>Note: Currently the flag is forced to nil. The function should return <code>(<var>filename</var> <var>count</var>)</code>&nbsp;but it returns a flag indicating if the operation succeeded.</p>
+	</dd>
 	<dt><code>(erase-buffer)</code></dt>
-	<dd>tbd<br />
-	&nbsp;</dd>
+	<dd>Erases all text in&nbsp;the current buffer. <u>C</u></dd>
 	<dt><code>(delete)</code></dt>
-	<dd>tbd<br />
-	&nbsp;</dd>
-	<dt><code>(copy-region)</code></dt>
-	<dd>tbd<br />
-	&nbsp;</dd>
-	<dt><code>(kill-region)</code></dt>
-	<dd>tbd<br />
-	&nbsp;</dd>
-	<dt><code>(yank)</code></dt>
-	<dd>tbd<br />
-	&nbsp;</dd>
+	<dd>Deletes the character after <i>point</i>. <u>S: delete-char</u></dd>
 	<dt><code>(backspace)</code></dt>
-	<dd>tbd<br />
-	&nbsp;</dd>
+	<dd>Deletes the character to the left of <i>point</i>. <u>S:&nbsp;delete-backward-char</u></dd>
 	<dt><code>(get-char)</code></dt>
-	<dd><code>tbd</code></dd>
+	<dd>Returns the character to the left of <i>point</i>. <u>S:&nbsp;get-byte</u></dd>
+	<dt><code>(copy-region)</code></dt>
+	<dd>Copies&nbsp;<i>region</i> to&nbsp;the <i>clipboard</i>. <u>S:&nbsp;copy-region-as-kill</u></dd>
+	<dt><code>(kill-region)</code></dt>
+	<dd>Deletes the text in&nbsp;the <i>region</i> and copies&nbsp;it to the <i>clipboard</i>. <u>D</u></dd>
+	<dt><code>(yank)</code></dt>
+	<dd>Pastes the <i>clipboard</i>&nbsp;before <i>point</i>. <u>C</u></dd>
 </dl>
-
-<p>&nbsp;</p>
-
-<p>&nbsp;</p>
 
 <h5>Selection</h5>
 
+<p>(set-mark)</p>
+
+<p>Sets <var>mark</var> to <var>point</var>. <u>D</u></p>
+
 <p>(get-mark)</p>
 
+<p>Returns the position of <var>mark</var>, -1 if <var>mark</var> is unset. <u>S: mark</u></p>
+
 <p>(get-point)</p>
+
+<p>Returns the position of <var>point</var>. <u>S: point</u></p>
 
 <p>(get-point-max) ???</p>
 
 <dl>
 	<dd>tbd</dd>
 	<dt><code>(set-clipboard <var>variable</var>)</code></dt>
+	<dd><code>Sets <i>clipboard</i> to the contents of <var>variable</var>.</code></dd>
 </dl>
 
 <dl>
-	<dt>(get-clipboard)</dt>
-	<dd>tbd</dd>
+	<dt><code>(get-clipboard)</code></dt>
+	<dd>Returns the <i>clipboard</i> contents.</dd>
 </dl>
 
 <h5>&nbsp;</h5>
