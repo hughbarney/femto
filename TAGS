@@ -1,0 +1,648 @@
+
+buffer.c,666
+void buffer_init(7,118
+void zero_buffer(30,526
+point_t document_size(40,775
+int buffer_is_empty(45,877
+buffer_t *find_buffer(find_buffer57,1169
+buffer_t *find_buffer_by_fname(find_buffer_by_fname112,2470
+void add_mode(128,2784
+void delete_mode(137,2973
+int delete_buffer(147,3191
+void next_buffer(172,3725
+char* get_buffer_name(181,3910
+char* get_buffer_filename(187,4002
+char* get_buffer_modeline_name(193,4098
+int count_buffers(200,4220
+int modified_buffers(211,4339
+int delete_buffer_byname(222,4523
+int select_buffer(243,4932
+int save_buffer_byname(257,5201
+char *get_current_bufname(get_current_bufname268,5406
+void list_buffers(274,5495
+
+command.c,1800
+void beginning_of_buffer(8,172
+void end_of_buffer(13,228
+void quit_ask(19,376
+int yesno(31,613
+void quit(43,818
+void redraw(48,849
+void left(55,927
+void right(63,1048
+int utf8_size(81,1483
+int prev_utf8_char_size(89,1669
+void up(98,1861
+void down(103,1956
+void lnbegin(108,2053
+void lnend(113,2158
+void backward_word(122,2436
+void forward_page(131,2680
+void backward_page(140,2955
+void forward_word(149,3102
+void insert(159,3385
+void insert_at(194,4842
+void backspace(223,6010
+void delete(245,6787
+void i_gotoline(265,7463
+int goto_line(275,7635
+void i_readfile(290,7871
+void readfile(298,8010
+void savebuffer(314,8452
+char *rename_current_buffer(rename_current_buffer325,8627
+void writefile(336,8816
+void kill_buffer(349,9314
+void i_set_mark(375,9934
+void set_mark(381,9992
+void unmark(386,10094
+void toggle_overwrite_mode(392,10168
+int i_check_region(399,10328
+void copy_region(413,10554
+void kill_region(418,10642
+void copy_cut(423,10729
+char *get_clipboard(get_clipboard467,12478
+unsigned char *get_scrap(get_scrap475,12613
+void set_scrap(484,12795
+void yank(491,12913
+void insert_string(496,12964
+void append_string(518,13664
+void log_debug_message(544,14422
+void log_message(556,14618
+void cursor_position(563,14755
+char* get_temp_file(580,15303
+void match_parens(597,15580
+void match_paren_forwards(633,16296
+void match_paren_backwards(656,16834
+int add_mode_global(679,17359
+void version(688,17511
+char *get_version_string(get_version_string693,17551
+void log_debug(698,17605
+void resize_terminal(703,17648
+char *get_char(get_char709,17734
+void set_point(716,17852
+point_t get_mark(723,17999
+point_t get_point(729,18086
+point_t get_point_max(735,18175
+void repl(751,18637
+void eval_block(774,19180
+void user_func(795,19704
+
+complete.c,23
+int getfilename(6,145
+
+data.c,2380
+int batch_mode 8,169
+int debug_mode 9,189
+int done;11,210
+int result;12,220
+int global_undo_mode 13,232
+point_t nscrap;14,258
+char_t *scrap;scrap15,274
+char_t *input;input16,289
+int msgflag;17,304
+char msgline[msgline18,317
+char response_buf[response_buf19,340
+char searchtext[searchtext20,368
+char replace[replace21,395
+keymap_t *key_return;key_return23,420
+keymap_t *khead khead24,442
+keymap_t *ktail ktail25,466
+buffer_t *curbp;curbp27,491
+buffer_t *bheadp;bheadp28,531
+window_t *curwp;curwp29,581
+window_t *wheadp;wheadp30,598
+command_t *cheadp cheadp31,616
+char *f_ok f_ok33,643
+char *f_error f_error34,690
+char *f_usage f_usage35,734
+char *f_initscr f_initscr36,786
+char *f_alloc f_alloc37,846
+char *m_ok m_ok38,907
+char *m_version m_version39,927
+char *m_alloc m_alloc40,960
+char *m_toobig m_toobig41,1005
+char *m_empty m_empty42,1057
+char *m_stat m_stat43,1095
+char *m_open m_open44,1141
+char *m_close m_close45,1187
+char *m_write m_write46,1235
+char *m_badname m_badname47,1283
+char *m_file m_file48,1336
+char *m_saved m_saved49,1377
+char *m_loaded m_loaded50,1425
+char *m_copied m_copied51,1473
+char *m_cut m_cut52,1511
+char *m_newfile m_newfile53,1543
+char *m_line m_line54,1576
+char *m_lnot_found m_lnot_found55,1602
+char *m_replace m_replace56,1645
+char *m_with m_with57,1682
+char *m_goto m_goto58,1707
+char *m_sprompt m_sprompt59,1737
+char *m_qreplace m_qreplace60,1767
+char *m_rephelp m_rephelp61,1815
+char *m_nomark m_nomark62,1872
+char *m_noregion m_noregion63,1903
+char *str_notsaved str_notsaved65,1979
+char *str_modified_buffers str_modified_buffers66,2027
+char *str_read str_read67,2103
+char *str_insert_file str_insert_file68,2135
+char *str_write str_write69,2175
+char *str_yes str_yes70,2209
+char *str_no str_no71,2233
+char *str_mark str_mark72,2256
+char *str_pos str_pos73,2285
+char *str_endpos str_endpos74,2348
+char *str_scratch str_scratch75,2404
+char *str_output str_output76,2437
+char *str_shell_cmd str_shell_cmd77,2468
+char *str_buffers str_buffers78,2509
+char *str_clip_too_big str_clip_too_big79,2542
+char *str_not_bound str_not_bound80,2618
+char *str_help_buf str_help_buf81,2654
+char *str_completions str_completions82,2685
+char *str_apropos str_apropos83,2726
+char *str_exec_command str_exec_command84,2759
+
+display.c,444
+point_t lnstart(9,235
+point_t segstart(22,562
+point_t segnext(44,1016
+point_t upup(63,1420
+point_t dndn(75,1694
+point_t lncolumn(81,1842
+void display_char(92,2102
+void display(103,2409
+void display_utf8(194,4908
+void modeline(206,5087
+void dispmsg(227,5669
+void clear_message_line(237,5778
+void display_prompt_and_response(245,5882
+void update_display(254,6095
+void w2b(288,6919
+void b2w(304,7444
+void b2w_all_windows(319,7904
+
+funcmap.c,457
+void free_string_list(5,79
+int count_string_list(17,274
+command_t *register_command(register_command29,481
+string_list_t *match_functions(match_functions79,1932
+void_func name_to_function(106,2593
+int match_string_position(117,2815
+int shortest_string_len(134,3120
+char *shortest_common_string(shortest_common_string150,3427
+void apropos(171,3909
+void describe_bindings(213,5003
+void describe_functions(232,5429
+void execute_command(251,5825
+
+gap.c,281
+int growgap(10,250
+point_t movegap(63,1674
+char_t * ptr(77,2068
+point_t pos(95,2462
+int posix_file(101,2635
+int save_buffer(113,2847
+void clear_buffer(142,3411
+int e_load_file(148,3481
+int insert_file(155,3599
+point_t line_to_point(188,4358
+void get_line_stats(205,4677
+
+hilite.c,194
+int state 5,109
+int next_state 6,133
+int skip_count 7,162
+char_t get_at(9,183
+static char_t symbols[symbols18,500
+int is_symbol(20,563
+void set_parse_state(29,711
+int parse_text(41,922
+
+key.c,383
+keymap_t *new_key(new_key8,168
+void make_key(24,575
+void create_keys(31,691
+int set_key_internal(92,2090
+int set_key(123,2962
+void setup_keys(128,3059
+char_t *get_key(get_key221,9624
+char *get_input_key(get_input_key272,10874
+char *get_key_funcname(get_key_funcname278,10995
+char *get_key_name(get_key_name284,11116
+void execute_key(290,11247
+int getinput(296,11322
+
+lisp.c,8182
+#define F_NONE 39,991
+#define F_CLEAR 40,1017
+typedef long point_t;41,1043
+#define MAP_ANONYMOUS 44,1115
+#define MEMORY_SIZE 48,1201
+typedef struct Object Object;50,1252
+typedef enum Type 52,1283
+	TYPE_NUMBER,53,1303
+	TYPE_STRING,54,1317
+	TYPE_SYMBOL,55,1331
+	TYPE_CONS,56,1345
+	TYPE_LAMBDA,57,1357
+	TYPE_MACRO,58,1371
+	TYPE_PRIMITIVE,59,1384
+	TYPE_ENV60,1401
+} Type;61,1411
+struct Object 63,1420
+	Type type;64,1436
+	size_t size;65,1448
+		struct { double number;67,1471
+		struct { char string[string68,1531
+		struct { Object *car,car69,1599
+		struct { Object *car, *cdr;cdr69,1599
+		struct { Object *params,params70,1657
+		struct { Object *params, *body,body70,1657
+		struct { Object *params, *body, *env;env70,1657
+		struct { int primitive;71,1724
+		struct { int primitive; char *name;name71,1724
+		struct { Object *parent,parent72,1787
+		struct { Object *parent, *vars,vars72,1787
+		struct { Object *parent, *vars, *vals;vals72,1787
+		struct { Object *forward;forward73,1844
+static Object *nil nil77,1925
+static Object *t t78,1989
+typedef enum StreamType 80,2050
+	STREAM_TYPE_STRING,81,2076
+	STREAM_TYPE_FILE82,2097
+} StreamType;83,2115
+typedef struct Stream 85,2130
+	StreamType type;86,2154
+	char *buffer;buffer87,2172
+	int fd;88,2187
+	size_t length,89,2196
+	size_t length, capacity;89,2196
+	off_t offset,90,2222
+	off_t offset, size;90,2222
+} Stream;91,2243
+typedef struct Memory 93,2254
+	size_t capacity,94,2278
+	size_t capacity, fromOffset,94,2278
+	size_t capacity, fromOffset, toOffset;94,2278
+	void *fromSpace,fromSpace95,2318
+	void *fromSpace, *toSpace;toSpace95,2318
+} Memory;96,2346
+typedef struct Interpreter 107,2692
+	jmp_buf *stackframe;stackframe108,2721
+	Object *theRoot;theRoot109,2743
+	Object **theEnv;theEnv110,2761
+	Object *symbols;symbols111,2779
+	Object root;112,2797
+	Stream ostream;113,2835
+	Memory *memory;memory114,2852
+} Interpreter;115,2869
+static Memory *memory memory117,2885
+static Interpreter flisp;118,2936
+#define exception(123,3045
+void exceptionWithObject(126,3130
+void writeFmt(129,3246
+#define WRITE_FMT_BUFSIZ 134,3401
+void writeString(136,3432
+void writeFmt(160,3901
+void writeChar(182,4328
+void exceptionWithObject(202,4624
+#define GC_ROOTS 267,7094
+#define GC_PARAM 268,7131
+#define GC_PASTE1(270,7178
+#define GC_PASTE2(271,7218
+#define GC_UNIQUE(272,7267
+#define GC_TRACE(274,7323
+Object *gcMoveObject(gcMoveObject279,7595
+void gc(301,8316
+size_t memoryAlign(347,9701
+Object *memoryAllocObject(memoryAllocObject352,9807
+Object *newObject(newObject380,10813
+Object *newObjectFrom(newObjectFrom385,10916
+Object *newNumber(newNumber392,11101
+Object *newObjectWithString(newObjectWithString399,11243
+Object *newStringWithLength(newStringWithLength407,11485
+Object *newString(newString453,12399
+Object *newCons(newCons458,12509
+Object *newSymbolWithLength(newSymbolWithLength466,12678
+Object *newSymbol(newSymbol481,13188
+Object *newObjectWithClosure(newObjectWithClosure486,13298
+Object *newLambda(newLambda507,13919
+Object *newMacro(newMacro512,14073
+Object *newPrimitive(newPrimitive517,14225
+Object *newEnv(newEnv525,14413
+int streamGetc(565,15743
+Stream *streamSeek(streamSeek629,17565
+int streamPeek(638,17736
+int readNext(650,17984
+int peekNext(662,18186
+int readWhile(670,18303
+Object *readUnary(readUnary680,18470
+Object *readString(readString694,18840
+int isSymbolChar(709,19305
+Object *readNumberOrSymbol(readNumberOrSymbol715,19428
+Object *reverseList(reverseList745,20315
+Object *readList(readList759,20504
+Object *readExpr(readExpr791,21426
+void writeObject(815,22031
+#define CASE(818,22123
+#undef CASE825,22516
+#define CASE(871,23532
+#undef CASE880,24075
+Object *envLookup(envLookup906,24895
+Object *envAdd(envAdd922,25235
+Object *envSet(envSet933,25536
+Object *primitiveNullP(primitiveNullP956,26090
+Object *primitiveConsP(primitiveConsP961,26184
+Object *primitiveSymbolP(primitiveSymbolP966,26291
+Object *primitiveSymbolName(primitiveSymbolName971,26402
+Object *primitiveEq(primitiveEq979,26616
+Object *primitiveCar(primitiveCar991,27018
+Object *primitiveCdr(primitiveCdr1003,27258
+Object *primitiveCons(primitiveCons1015,27498
+Object *primitivePrint(primitivePrint1023,27672
+Object *primitivePrinc(primitivePrinc1031,27865
+Object *primitiveSignal(primitiveSignal1037,27992
+#define DEFINE_EDITOR_FUNC(1054,28519
+DEFINE_EDITOR_FUNC(1062,28652
+Object *e_get_key(e_get_key1122,30694
+Object *e_get_key_name(e_get_key_name1123,30786
+Object *e_get_key_funcname(e_get_key_funcname1124,30882
+Object *e_get_clipboard(e_get_clipboard1125,30986
+Object *e_get_buffer_count(e_get_buffer_count1126,31084
+#define TWO_STRING_ARGS(1128,31186
+#define ONE_STRING_ARG(1136,31598
+Object *e_refresh(e_refresh1142,31833
+Object *e_set_key(e_set_key1148,31905
+Object *e_add_mode_global(e_add_mode_global1154,32039
+Object *e_set_clipboard(e_set_clipboard1160,32172
+Object *e_get_temp_file(e_get_temp_file1173,32490
+Object *e_system(e_system1179,32629
+Object *e_insert_file(e_insert_file1185,32758
+Object *e_getfilename(e_getfilename1200,33164
+Object *stringAppend(stringAppend1210,33369
+Object *stringSubstring(stringSubstring1228,33769
+Object *stringLength(stringLength1263,34802
+Object *e_show_prompt(e_show_prompt1272,35039
+Object *e_prompt(e_prompt1279,35184
+Object *primitiveStringP(primitiveStringP1291,35460
+Object *primitiveNumberP(primitiveNumberP1297,35611
+Object *stringToNumber(stringToNumber1303,35762
+Object *numberToString(numberToString1318,36178
+Object *os_getenv(os_getenv1334,36554
+Object *e_get_version_string(e_get_version_string1343,36738
+Object *e_goto_line(e_goto_line1349,36890
+Object *e_select_buffer(e_select_buffer1360,37132
+Object *e_rename_buffer(e_rename_buffer1369,37386
+Object *e_save_buffer(e_save_buffer1377,37598
+Object *e_kill_buffer(e_kill_buffer1384,37747
+Object *e_zero_buffer(e_zero_buffer1390,37897
+Object *e_find_file(e_find_file1397,38008
+Object *e_search_forward(e_search_forward1404,38115
+Object *e_search_backward(e_search_backward1412,38308
+Object *e_getch(e_getch1420,38504
+Object *e_get_buffer_name(e_get_buffer_name1428,38658
+Object *asciiToString(asciiToString1435,38824
+Object *asciiToNumber(asciiToNumber1450,39209
+Object *e_load(e_load1465,39539
+Object *e_message(e_message1495,40319
+Object *e_log_message(e_log_message1502,40419
+Object *e_log_debug(e_log_debug1509,40531
+Object *e_insert_string(e_insert_string1516,40635
+Object *e_set_point(e_set_point1528,40883
+Object *e_get_mark(e_get_mark1537,41088
+Object *e_get_point(e_get_point1542,41179
+Object *e_get_point_max(e_get_point_max1547,41272
+#define DEFINE_PRIMITIVE_ARITHMETIC(1552,41373
+Object *primitiveMod(primitiveMod1581,43236
+DEFINE_PRIMITIVE_ARITHMETIC(1610,43947
+#define DEFINE_PRIMITIVE_RELATIONAL(1615,44153
+typedef struct Primitive 1640,45540
+	char *name;name1641,45567
+	int nMinArgs,1642,45580
+	int nMinArgs, nMaxArgs;1642,45580
+	Object *(*eval)eval1643,45605
+} Primitive;1644,45650
+Primitive primitives[primitives1646,45664
+	PRIMITIVE_QUOTE,1758,49797
+	PRIMITIVE_SETQ,1759,49815
+	PRIMITIVE_PROGN,1760,49832
+	PRIMITIVE_COND,1761,49850
+	PRIMITIVE_LAMBDA,1762,49867
+	PRIMITIVE_MACRO,1763,49886
+	PRIMITIVE_TRAP,1764,49904
+	PRIMITIVE_MACROEXPAND1765,49921
+Object *evalSetq(evalSetq1777,50310
+Object *evalProgn(evalProgn1802,50910
+Object *evalCond(evalCond1820,51300
+Object *evalLambda(evalLambda1862,52257
+Object *evalMacro(evalMacro1870,52443
+Object *expandMacro(expandMacro1881,52720
+Object *expandMacroTo(expandMacroTo1895,53095
+Object *evalMacroExpand(evalMacroExpand1910,53476
+Object *evalList(evalList1923,53825
+Object *evalTrap(evalTrap1938,54184
+Object *evalExpr(evalExpr1957,54690
+Object *newRootEnv(newRootEnv2034,57290
+void set_stream_file(2080,58399
+void set_input_stream_buffer(2087,58526
+void reset_output_stream(2101,58842
+int load_file_body(2119,59273
+char *load_file(load_file2148,59957
+int call_lisp_body(2162,60446
+int init_lisp(2199,61275
+char *call_lisp(call_lisp2224,61860
+
+main.c,172
+#define CPP_XSTR(15,322
+#define CPP_STR(16,353
+int main(19,377
+void gui(61,1508
+void fatal(113,3202
+void msg(125,3408
+void debug(139,3630
+void debug_stats(161,4003
+
+replace.c,55
+void query_replace(7,159
+void replace_string(87,1925
+
+search.c,158
+void search(8,120
+void move_to_search_result(64,1413
+void display_search_result(72,1533
+point_t search_forward(85,1854
+point_t search_backwards(105,2197
+
+undo.c,582
+undo_tt *new_undo(new_undo5,76
+void add_undo(23,416
+undo_tt *execute_undo(execute_undo85,2549
+void undo_command(213,6371
+int get_undo_again(252,7172
+void append_undo_string(277,7677
+int get_buf_utf8_size(309,8624
+void discard_undo_history(318,8788
+void discard_buffer_undo_history(323,8858
+void free_undos(332,9057
+int count_undos(346,9308
+int get_total_undo_size(363,9568
+int get_undo_size(380,9826
+void debug_undo(387,9982
+char *get_undo_type_name(get_undo_type_name407,10532
+void list_undos(431,10947
+void dump_undos(437,11043
+void list_undo_stats(483,12515
+
+utils.c,126
+void make_buffer_name(16,232
+void make_buffer_name_uniq(31,497
+void remove_control_chars(54,937
+void safe_strncpy(66,1136
+
+window.c,526
+int win_cnt 5,78
+window_t* new_window(7,96
+void one_window(24,410
+void split_window(31,506
+window_t *split_current_window(split_current_window37,619
+void other_window(67,1251
+void delete_other_windows(76,1490
+void free_other_windows(83,1590
+window_t *find_window(find_window99,1947
+window_t *popup_window(popup_window118,2410
+void mark_all_windows(154,3076
+int count_windows(162,3190
+void hijack_window(177,3445
+void restore_hijacked_window(189,3665
+void associate_b2w(200,3869
+void disassociate_b(213,4139
+
+header.h,3662
+#define VALGRIND 1,0
+#define _XOPEN_SOURCE 7,154
+#define E_NAME 24,483
+#define E_VERSION 25,515
+#define E_LABEL 26,546
+#define E_NOT_BOUND	27,579
+#define E_SCRIPTDIR 29,633
+#define E_INITFILE 32,707
+#define E_VERSION_STR 34,772
+#define MSGLINE 36,883
+#define NOMARK 37,917
+#define NOPAREN 38,944
+#define CHUNK 39,971
+#define K_BUFFER_LENGTH 40,1001
+#define TEMPBUF 41,1029
+#define STRBUF_L 42,1057
+#define STRBUF_M 43,1085
+#define STRBUF_S 44,1112
+#define NBUFN 45,1139
+#define MAX_KNAME 46,1232
+#define MAX_KBYTES 47,1259
+#define MAX_KFUNC 48,1286
+#define LISP_IN_OUT 49,1313
+#define MIN_GAP_EXPAND 50,1342
+#define FWD_SEARCH 51,1370
+#define REV_SEARCH 52,1396
+#define TEMPFILE 53,1422
+#define ID_DEFAULT 55,1463
+#define ID_SYMBOL 56,1492
+#define ID_MODELINE 57,1521
+#define ID_DIGITS 58,1550
+#define ID_LINE_COMMENT 59,1579
+#define ID_BLOCK_COMMENT 60,1608
+#define ID_DOUBLE_STRING 61,1637
+#define ID_SINGLE_STRING 62,1666
+#define ID_BRACE 63,1695
+#define UNDO_T_NONE 66,1760
+#define UNDO_T_INSERT 67,1789
+#define UNDO_T_BACKSPACE 68,1818
+#define UNDO_T_KILL 69,1847
+#define UNDO_T_YANK 70,1876
+#define UNDO_T_DELETE 71,1905
+#define UNDO_T_INSAT 72,1934
+#define UNDO_T_REPLACE 73,1963
+#define STR_T_INSERT 75,1993
+#define STR_T_BACKSP 76,2029
+#define STR_T_KILL 77,2065
+#define STR_T_YANK 78,2101
+#define STR_T_DELETE 79,2137
+#define STR_T_INSAT 80,2173
+#define STR_T_REPLACE 81,2209
+#define STR_T_NONE 82,2245
+#define F_NONE 85,2310
+#define F_CLEAR 86,2336
+#define ZERO_STRING(87,2362
+typedef unsigned char char_t;89,2397
+typedef long point_t;90,2427
+typedef void (*void_func)void_func91,2449
+	B_MODIFIED 94,2498
+	B_OVERWRITE 95,2518
+	B_SPECIAL 96,2560
+	B_UNDO 97,2628
+} buffer_flags_t;98,2677
+typedef struct string_list_t100,2696
+	struct string_list_t *next;next102,2727
+	char *string;string103,2756
+} string_list_t;104,2771
+typedef struct keymap_t 106,2789
+	char k_name[k_name107,2815
+	char k_bytes[k_bytes108,2881
+	char k_funcname[k_funcname109,2944
+	void (*k_func)k_func110,3021
+	struct keymap_t *k_next;k_next111,3079
+} keymap_t;112,3142
+typedef struct command_t 114,3155
+        char c_name[c_name115,3182
+	void (*c_func)c_func116,3218
+	struct command_t *c_next;c_next117,3241
+} command_t;118,3268
+typedef struct undo_tt 124,3422
+	point_t  u_point;125,3447
+	char_t  *u_string;u_string126,3466
+	char_t  *u_replace;u_replace127,3486
+	char_t   u_type;128,3507
+	struct undo_tt *u_prev;u_prev129,3525
+} undo_tt;130,3550
+typedef struct buffer_t132,3562
+	struct buffer_t *b_next;b_next134,3588
+	point_t b_mark;135,3643
+	point_t b_point;136,3683
+	point_t b_paren;137,3726
+	point_t b_cpoint;138,3787
+	point_t b_page;139,3884
+	point_t b_epage;140,3931
+	point_t b_reframe;141,3976
+	int b_cnt;142,4040
+	int b_size;143,4114
+	int b_psize;144,4201
+	char_t *b_buf;b_buf145,4248
+	char_t *b_ebuf;b_ebuf146,4297
+	char_t *b_gap;b_gap147,4344
+	char_t *b_egap;b_egap148,4390
+	int b_row;149,4434
+	int b_col;150,4478
+	char b_fname[b_fname151,4522
+	char b_bname[b_bname152,4566
+	buffer_flags_t b_flags;153,4611
+	undo_tt *b_utail;b_utail154,4657
+	int b_ucnt;155,4714
+} buffer_t;156,4795
+typedef struct window_t158,4808
+	struct window_t *w_next;w_next160,4834
+	struct buffer_t *w_bufp;w_bufp161,4880
+	struct buffer_t *w_hijack;w_hijack162,4941
+	point_t w_point;163,5026
+	point_t w_mark;164,5044
+	point_t w_page;165,5061
+	point_t w_epage;166,5078
+	char w_top;167,5096
+	char w_rows;168,5146
+	int w_row;169,5203
+	int w_col;170,5241
+	int w_update;171,5279
+	char w_name[w_name172,5294
+} window_t;173,5318
+#define MAX_SIZE_T 188,5808
