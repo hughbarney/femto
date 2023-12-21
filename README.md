@@ -45,7 +45,7 @@ Femto is an extended version of Atto Emacs with its own extension languauge
 * **Zepl** was an initial project that established the suitability of Tiny-Lisp for use within an Emacs type editor. The results surpassed expectations.
 * In late 2017 Hugh Barney decided to return to the **Femto** editor and extend it using Tiny-Lisp.
 
-For a full version history please refer to the file CHANGE.LOG.md
+For a full version history please refer to the file [CHANGE.LOG.md](./CHANGE.LOG.md)
 
 
 ## Comparisons with Other Emacs Implementations
@@ -398,13 +398,29 @@ The following enhancements are envisaged.
 
 * Directory and file manegement (Dired) functionality.  A basic start has been made with dired.lsp
 
+* file-read-hook - function to be called when a file is loaded by the user
+
+* Ability to configure the syntax highlighter to different languages based on file extension
+  Add python triple quoted comments for python
+
+* Buffer Mode flags that can be set to turn off single and double quote matching so that syntax hightlighting 
+  does not look messy when looking at a text file
+
+* Ability to load a file in read-only-mode
+
+* Ability to setup themes of colors that can be applied to different buffers
+  This will allow users to control their own colour scheme
+
+* Pipe a buffer through a shell command and read the output back into a different buffer
+
 ## Known Issues
 
 Goto-line will fail to go to the very last line.  This is a special case that could easily be fixed.
 
+
 ## Coding Style
 
-See style.md
+See [STYLE.MD](./style.md)
 
 
 ## Copying
