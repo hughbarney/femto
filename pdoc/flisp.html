@@ -309,38 +309,29 @@
 
 <h5>Selection</h5>
 
-<p>(set-mark)</p>
-
-<p>Sets <var>mark</var> to <var>point</var>. <u>D</u></p>
-
-<p>(get-mark)</p>
-
-<p>Returns the position of <var>mark</var>, -1 if <var>mark</var> is unset. <u>S: mark</u></p>
-
-<p>(get-point)</p>
-
-<p>Returns the position of <var>point</var>. <u>S: point</u></p>
-
-<p>(get-point-max) ???</p>
-
 <dl>
-	<dd>tbd</dd>
+	<dt>(set-mark)</dt>
+	<dd>Sets <var>mark</var> to <var>point</var>. <u>D</u></dd>
+	<dt>(get-mark)</dt>
+	<dd>Returns the position of <var>mark</var>, -1 if <var>mark</var> is unset. <u>S: mark</u></dd>
+	<dt>(get-point)</dt>
+	<dd>Returns the position of <var>point</var>. <u>S: point</u></dd>
+	<dt>(get-point-max)</dt>
+	<dd>Returns the maximum accessible value of point in the current buffer. <u>S: point-max</u></dd>
 	<dt><code>(set-clipboard <var>variable</var>)</code></dt>
-	<dd><code>Sets <i>clipboard</i> to the contents of <var>variable</var>.</code></dd>
-</dl>
-
-<dl>
+	<dd><code>Sets <i>clipboard</i> to the contents of <var>variable</var>.</code>&nbsp;<u>S:&nbsp;gui-set-selection</u></dd>
 	<dt><code>(get-clipboard)</code></dt>
-	<dd>Returns the <i>clipboard</i> contents.</dd>
+	<dd>Returns the <i>clipboard</i> contents.&nbsp;&nbsp;<u>S:&nbsp;gui-get-selection</u></dd>
 </dl>
-
-<h5>&nbsp;</h5>
 
 <h5>Cursor Movement</h5>
 
-<p>(set-point number)</p>
-
-<p>(goto-line number)</p>
+<dl>
+	<dt><code>(set-point <var>number</var>)</code></dt>
+	<dd>Sets the point to in the current buffer to the position <var>number</var>. <u>S: goto-char</u></dd>
+	<dt><code>(goto-line <var>number</var>)</code></dt>
+	<dd>Sets the point in the current buffer to the first character on line <var>number</var>. <u>S: goto-line</u>, not an Elisp function.</dd>
+</dl>
 
 <p>(search-forward string)</p>
 
@@ -392,8 +383,6 @@
 
 <dl>
 </dl>
-
-<h5>&nbsp;</h5>
 
 <h4>User Interaction</h4>
 
@@ -454,10 +443,6 @@
 	<h3>Implementation Details</h3>
 
 	<p>tbd.: Memory consumption, limits, hacking, ...</p>
-
-	<p>&nbsp;</p>
-
-	<p>&nbsp;</p>
 	</dt>
 </dl>
 </body>
