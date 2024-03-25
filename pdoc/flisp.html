@@ -363,44 +363,68 @@
 
 <h5>Buffer management</h5>
 
-<p>(select-buffer string)</p>
-
-<p>(add-mode-global mode)</p>
-
-<p>(get-buffer-name)</p>
-
-<p>(list-buffers)</p>
-
-<p>(rename-buffer string)</p>
-
-<p>(save-buffer ???)</p>
-
-<p>(kill-buffer string)</p>
-
-<p>(find-file string)</p>
-
-<p>(get-buffer-count)</p>
+<p>Note: Descriptions copied over from original README.md, tbd.: verify with code, compare with Elisp.</p>
 
 <dl>
+	<dt><code>(list-buffers)</code></dt>
+	<dd>Lists all the buffers in a buffer called <samp>*buffers*</samp>.</dd>
+	<dt><code>(get-buffer-count)</code></dt>
+	<dd>Returns the number of buffers, includes all special buffers and <samp>*buffers*</samp>.</dd>
+	<dt><code>(select-buffer <var>string</var>)</code></dt>
+	<dd>Makes the buffer named <var>string</var> the current buffer.</dd>
+	<dt><code>(rename-buffer <var>string</var>)</code></dt>
+	<dd>Rename the current buffer to <var>string</var>.</dd>
+	<dt><code>(kill-buffer <var>string</var>)</code></dt>
+	<dd>Kill the buffer names <var>string</var>. Unsaved changes are discarded.</dd>
+	<dt><code>(get-buffer-name)</code></dt>
+	<dd>Return the name of the current buffer.</dd>
+	<dt><code>(add-mode-global <var>string</var>)</code></dt>
+	<dd>Sets global mode&nbsp;<var>string</var> for all buffers. Currently the only global mode is <kbd>undo</kbd>.</dd>
+	<dt><code>(find-file <var>string</var>)</code></dt>
+	<dd>Loads file with path string into a new buffer.</dd>
+	<dt><code>(save-buffer <var>string</var>)</code></dt>
+	<dd>Saves the buffer named <var>string</var> to disk.</dd>
 </dl>
 
 <h4>User Interaction</h4>
 
-<p>(message string)</p>
+<p>Note: Descriptions copied over from original README.md, tbd.: verify with code, compare with Elisp.</p>
+
+<p>(message <var>string</var>)</p>
+
+<p>Displays&nbsp;<var>string</var> in the message line.</p>
 
 <p>(clear-message-line)</p>
 
-<p>(prompt prompt default)</p>
+<p>Displays the empty string in the message line.</p>
 
-<p>(show-prompt prompt default)</p>
+<p>(prompt <var>prompt</var> <var>default</var>)</p>
 
-<p>(prompt-filename prompt)</p>
+<p>Displays&nbsp;<var>prompt</var> in the command line and sets <var>default</var> as initial value for the user respones. The user can edit the response. When hitting return, the final response is returned.</p>
+
+<p>(show-prompt <var>prompt</var> <var>default</var>)</p>
+
+<p>Displays <var>prompt</var> and <var>default</var> in the commandline, but does not allow editing. Returns <samp>t</samp>.</p>
+
+<p>(prompt-filename <var>prompt</var>)</p>
+
+<p>Displays <var>prompt</var> in the commandline and allows to enter or search for a file name. Returns the relative path to the selected file name or the response typed by the user.</p>
 
 <p>(getch)</p>
 
+<p>Waits for a key to be pressed and returns the key as string. Note: tbd. non character keys.</p>
+
+<p>(get-key-name)</p>
+
+<p>(get-key-funcname)</p>
+
 <p>(update-display)</p>
 
+<p>Updates all modified windows.</p>
+
 <p>(refresh)</p>
+
+<p>Marks all windows as modified and then (update-display).</p>
 
 <p>(describe-bindings)</p>
 
