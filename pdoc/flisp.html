@@ -331,35 +331,35 @@
 	<dd>Sets the point to in the current buffer to the position <var>number</var>. <u>S: goto-char</u></dd>
 	<dt><code>(goto-line <var>number</var>)</code></dt>
 	<dd>Sets the point in the current buffer to the first character on line <var>number</var>. <u>S: goto-line</u>, not an Elisp function.</dd>
+	<dt><code>(search-forward <var>string</var>)</code></dt>
+	<dd>Searches for <var>string</var> in the current buffer, starting from point forward. If string is found, sets the point after the first occurrence of <var>string</var> and returns <samp>t</samp>, otherwise leaves point alone and returns <samp>nil</samp>. <u>D</u></dd>
+	<dt><code>(search-backward <var>string</var>)</code></dt>
+	<dd>Searches for <var>string</var> in the current buffer, starting from point backwards. If string is found, sets the point before the first occurrence of <var>string</var> and returns <samp>t</samp>, otherwise leaves point alone and returns <samp>nil</samp>. <u>D</u></dd>
+	<dt><code>(beginning-of-buffer)</code></dt>
+	<dd>Sets the point in the current buffer to the first buffer position, leaving mark in its current position. <u>C</u></dd>
+	<dt><code>(end-of-buffer)</code></dt>
+	<dd>Sets the point in the current buffer to the last buffer position, leaving mark in its current position. <u>C</u></dd>
+	<dt><code>(beginning-of-line)</code></dt>
+	<dd>Sets point before the first character of the current line, leaving mark in its current position. <u>S: move-beginning-of-line</u></dd>
+	<dt><code>(end-of-line)</code></dt>
+	<dd>Sets point after the last character of the current line, i.e. before the end-of-line character sequence, leaving mark in its current position. <u>S: move-end-of-line</u></dd>
+	<dt><code>(forward-word)</code></dt>
+	<dd>Moves the point in the current buffer forward before the first char of the next word. If there is no word left the point is set to the end of the buffer. If the point is already at the start or within a word, the current word is skipped. <u>D</u>: <b>Note</b>: Elisp moves to the <em>end</em> of the the next word.</dd>
+	<dt><code>(backward-word)</code></dt>
+	<dd>Moves the point in the current buffer backward after the last char of the previous word. If there is no word left the point is set to the beginning of the buffer. If the point is already at the end or within a word, the current word is skipped. <u>D</u>: <b>Note</b>: Elisp moves to the <em>beginning</em> of the previous word.</dd>
+	<dt><code>(forward-char)</code></dt>
+	<dd>Moves the point in the current buffer one character forward, but not past the end of the buffer. <u>C</u></dd>
+	<dt><code>(backward-char)</code></dt>
+	<dd>Moves the point in the current buffer one character backward, but not before the end of the buffer. <u>C</u></dd>
+	<dt><code>(forward-page)</code></dt>
+	<dd>Moves the point of the current buffer to the beginning of the last visible line of the associated screen and scrolls the screen up to show it as the first line. <u>S: scroll-up</u></dd>
+	<dt><code>(backward-page)</code></dt>
+	<dd>Moves the point of the current buffer to the beginning of the first visible line of the associoated screen and scrolls the screen down to show it as the last line. <u>S: scroll-down</u></dd>
+	<dt><code>(next-line)</code></dt>
+	<dd>Moves the point in the current buffer to the same character position in the next line, or to the end of the next line if there are not enough characters. In the last line of the buffer moves the point to the end of the buffer. <u>C</u></dd>
+	<dt><code>(previous-line)</code></dt>
+	<dd>Movest the point in the current buffer to the same character position in the previous line, or to the end of the previous line if there are not enough characters. In the first line of the buffer the point is not moved. <u>C</u></dd>
 </dl>
-
-<p>(search-forward string)</p>
-
-<p>(search-backward string)</p>
-
-<p>(beginning-of-buffer)</p>
-
-<p>(end-of-buffer)</p>
-
-<p>(beginning-of-line)</p>
-
-<p>(end-of-line)</p>
-
-<p>(forward-char)</p>
-
-<p>(forward-word)</p>
-
-<p>(forward-page)</p>
-
-<p>(backward-char)</p>
-
-<p>(backward-word)</p>
-
-<p>(backward-page)</p>
-
-<p>(next-line)</p>
-
-<p>(previous-line)</p>
 
 <h5>Buffer management</h5>
 
