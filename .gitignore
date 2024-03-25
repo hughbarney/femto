@@ -1,4 +1,5 @@
 *.o
 debug.out
 femto
+TAGS
 *~
