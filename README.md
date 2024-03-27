@@ -58,7 +58,7 @@ Femto has almost the same level of functionality as MicroEmacs 3.10 for a codeba
     atto           atto       33002     1.9k     10
     pEmacs         pe         59465     5.7K     16
     Esatz-Emacs    ee         59050     5.7K     14
-    femto          femto     356399     6.3k     18 **
+    femto          femto     108408     6.7k     18/31 **
     GNOME          GNOME      55922     9.8k     13
     Zile           zile      257360    11.7k     48
     Mg             mg        585313    16.5K     50
@@ -69,6 +69,11 @@ Femto has almost the same level of functionality as MicroEmacs 3.10 for a codeba
     Qemacs         qe        379968    36.9k     59
     ue3.10         uemacs    171664    52.4K     16 ++
     GNUEmacs       emacs   14632920   358.0k    186
+
+Since femto 2.12 C code has been moved out to Lisp. The first number
+in the files count are the C-files plus the minimal required femto.rc
+Lisp file. The second number includes all provided Lisp files.
+
 
 ## Femto Key Bindings
     C-A   begining-of-line
