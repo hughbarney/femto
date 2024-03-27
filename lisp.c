@@ -145,7 +145,7 @@ void writeString(char *str, Stream *stream)
         return;
 
     case STREAM_TYPE_STRING:
-    default:
+    default:        
         len = strlen(str);
         new = realloc(stream->buffer, stream->length + len + 1);
         assert(new != NULL);
@@ -193,7 +193,7 @@ void writeChar(char ch, Stream *stream)
         return;
 
     case STREAM_TYPE_STRING:
-    default:
+    default:        
         writeString(str, stream);
         return;
     }
@@ -274,7 +274,7 @@ void exceptionWithObject(Object * object, char *format, ...)
 #define GC_TRACE(name, init)                                            \
     Object GC_UNIQUE(GC_ROOTS) = { TYPE_CONS, .car = init, .cdr = GC_ROOTS }; \
     Object **name = &GC_UNIQUE(GC_ROOTS).car;                           \
-                                        GC_ROOTS = &GC_UNIQUE(GC_ROOTS)
+    GC_ROOTS = &GC_UNIQUE(GC_ROOTS)
 
 Object *gcMoveObject(Object * object)
 {
@@ -868,11 +868,11 @@ void writeObject(Object * object, bool readably, Stream *stream)
         }
         writeChar(')', stream);
         break;
-#define CASE(type, name, object)                        \
-        case type:                                      \
-            writeFmt(stream, "#<%s ", name);            \
-            writeObject(object, readably, stream);      \
-            writeChar('>', stream);                     \
+#define CASE(type, name, object)                    \
+        case type:                                  \
+            writeFmt(stream, "#<%s ", name);        \
+            writeObject(object, readably, stream);  \
+            writeChar('>', stream);                 \
             break
         CASE(TYPE_LAMBDA, "Lambda", object->params);
         CASE(TYPE_MACRO, "Macro", object->params);
@@ -1048,7 +1048,7 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
     exceptionWithObject(*e, first->string);
     return *e;
 }
-
+    
 /************************* Editor Extensions **************************************/
 
 #define DEFINE_EDITOR_FUNC(name)                \
@@ -1173,7 +1173,7 @@ Object *e_set_clipboard(Object ** args, GC_PARAM)
 Object *e_get_temp_file(Object ** args, GC_PARAM)
 {
     char *fn = get_temp_file();
-    return newStringWithLength(fn, strlen(fn), GC_ROOTS);
+    return newStringWithLength(fn, strlen(fn), GC_ROOTS);    
 }
 
 Object *e_system(Object ** args, GC_PARAM) {
@@ -1200,10 +1200,10 @@ Object *e_insert_file(Object ** args, GC_PARAM) {
 Object *e_getfilename(Object **args, GC_PARAM) {
 
     ONE_STRING_ARG();
-
+    
     if (FALSE == getfilename(first->string, (char*) response_buf, NAME_MAX))
         return nil;
-
+    
     return newString(response_buf, GC_ROOTS);
 }
 
@@ -1234,9 +1234,9 @@ Object *stringSubstring(Object ** args, GC_PARAM)
     if (first->type != TYPE_STRING)
         exceptionWithObject(first, "is not a string (string.substring)");
     if (second->type != TYPE_NUMBER)
-        exceptionWithObject(second, "is not a number");
+        exceptionWithObject(second, "is not a number");  
     if (third->type != TYPE_NUMBER)
-        exceptionWithObject(third, "is not a number");
+        exceptionWithObject(third, "is not a number");  
 
     int start = (int)(second->number);
     int end = (int)(third->number);
@@ -1266,7 +1266,7 @@ Object *stringLength(Object ** args, GC_PARAM)
     if (first->type != TYPE_STRING)
         exceptionWithObject(first, "is not a string (string.length)");
 
-    return newNumber(strlen(first->string), GC_ROOTS);
+    return newNumber(strlen(first->string), GC_ROOTS);    
 }
 
 Object *e_show_prompt(Object ** args, GC_PARAM)

@@ -45,7 +45,7 @@ point_t document_size(buffer_t *bp)
 int buffer_is_empty(buffer_t *bp)
 {
     if (bp->b_gap == bp->b_buf && bp->b_egap == bp->b_ebuf)
-	return 1;
+        return 1;
     return 0;
 }
 
@@ -62,45 +62,45 @@ buffer_t *find_buffer(char *bname, int cflag)
     debug("find-buffer(%s, %d)\n", bname, cflag);
     bp = bheadp;
     while (bp != NULL) {
-	if (strcmp(bname, bp->b_bname) == 0) {
-	    return (bp);
-	}
-	bp = bp->b_next;
+        if (strcmp(bname, bp->b_bname) == 0) {
+            return (bp);
+        }
+        bp = bp->b_next;
     }
 
     if (cflag != FALSE) {
-	if ((bp = (buffer_t *) malloc (sizeof (buffer_t))) == NULL)
-	    return (0);
+        if ((bp = (buffer_t *) malloc (sizeof (buffer_t))) == NULL)
+            return (0);
 
-	buffer_init(bp);
-	assert(bp != NULL);
+        buffer_init(bp);
+        assert(bp != NULL);
 
-	/* find the place in the list to insert this buffer */
-	if (bheadp == NULL) {
-	    bheadp = bp;
-	} else if (strcmp(bheadp->b_bname, bname) > 0) {
-	    /* insert at the begining */
-	    bp->b_next = bheadp;
-	    bheadp = bp;
-	} else {
-	    for (sb = bheadp; sb->b_next != NULL; sb = sb->b_next)
-		if (strcmp (sb->b_next->b_bname, bname) > 0)
-		    break;
+        /* find the place in the list to insert this buffer */
+        if (bheadp == NULL) {
+            bheadp = bp;
+        } else if (strcmp(bheadp->b_bname, bname) > 0) {
+            /* insert at the begining */
+            bp->b_next = bheadp;
+            bheadp = bp;
+        } else {
+            for (sb = bheadp; sb->b_next != NULL; sb = sb->b_next)
+                if (strcmp (sb->b_next->b_bname, bname) > 0)
+                    break;
 
-	    /* and insert it */
-	    bp->b_next = sb->b_next;
-	    sb->b_next = bp;
-	}
+            /* and insert it */
+            bp->b_next = sb->b_next;
+            sb->b_next = bp;
+        }
 
-	safe_strncpy(bp->b_bname, bname, NBUFN);
-	if (bp->b_bname[0] == '*')
-	    add_mode(bp, B_SPECIAL); /* special buffers start with * in the name */
-	else if (global_undo_mode)
-	    add_mode(bp, B_UNDO);
+        safe_strncpy(bp->b_bname, bname, NBUFN);
+        if (bp->b_bname[0] == '*')
+            add_mode(bp, B_SPECIAL); /* special buffers start with * in the name */
+        else if (global_undo_mode)
+            add_mode(bp, B_UNDO);
 
-	/* a newly created buffer needs to have a gap otherwise it is not ready for insertion */
-	if (!growgap(bp, MIN_GAP_EXPAND))
-	    msg(f_alloc);
+        /* a newly created buffer needs to have a gap otherwise it is not ready for insertion */
+        if (!growgap(bp, MIN_GAP_EXPAND))
+            msg(f_alloc);
     }
     return bp;
 }
@@ -112,12 +112,12 @@ buffer_t *find_buffer(char *bname, int cflag)
 buffer_t *find_buffer_by_fname(char *fname)
 {
     buffer_t *bp;
-    char	 bname[NBUFN];
+    char     bname[NBUFN];
 
     bp = bheadp;
     for (bp = bheadp; bp != NULL; bp = bp->b_next)
-	if (strcmp(fname, bp->b_fname) == 0)
-	    return (bp);
+        if (strcmp(fname, bp->b_fname) == 0)
+            return (bp);
 
     make_buffer_name(bname, fname);
     make_buffer_name_uniq(bname);
@@ -129,7 +129,7 @@ void add_mode(buffer_t *bp, buffer_flags_t mode)
 {
     /* we dont allow undo mode for special buffers */
     if ( mode == B_UNDO && (bp->b_flags & B_SPECIAL))
-	return;
+        return;
 
     bp->b_flags |= mode;
 }
@@ -153,13 +153,13 @@ int delete_buffer(buffer_t *bp)
 
     /* if buffer is the head buffer */
     if (bp == bheadp) {
-	bheadp = bp->b_next;
+        bheadp = bp->b_next;
     } else {
-	/* find place where the bp buffer is next */
-	for (sb = bheadp; sb->b_next != bp && sb->b_next != NULL; sb = sb->b_next)
-	    ;
-	assert(sb->b_next == bp || sb->b_next == NULL);
-	sb->b_next = bp->b_next;
+        /* find place where the bp buffer is next */
+        for (sb = bheadp; sb->b_next != bp && sb->b_next != NULL; sb = sb->b_next)
+            ;
+        assert(sb->b_next == bp || sb->b_next == NULL);
+        sb->b_next = bp->b_next;
     }
 
     /* now we can delete */
@@ -193,7 +193,7 @@ char* get_buffer_filename(buffer_t *bp)
 char* get_buffer_modeline_name(buffer_t *bp)
 {
     if (bp->b_fname[0] != '\0')
-	return bp->b_fname;
+        return bp->b_fname;
     return bp->b_bname;
 }
 
@@ -203,7 +203,7 @@ int count_buffers()
     int i;
 
     for (i=0, bp=bheadp; bp != NULL; bp = bp->b_next)
-	i++;
+        i++;
 
     return i;
 }
@@ -213,8 +213,8 @@ int modified_buffers()
     buffer_t* bp;
 
     for (bp=bheadp; bp != NULL; bp = bp->b_next)
-	if (!(bp->b_flags & B_SPECIAL) && bp->b_flags & B_MODIFIED)
-	    return TRUE;
+        if (!(bp->b_flags & B_SPECIAL) && bp->b_flags & B_MODIFIED)
+            return TRUE;
 
     return FALSE;
 }
@@ -228,12 +228,12 @@ int delete_buffer_byname(char *bname)
 
     /* if last buffer, create a scratch buffer */
     if (bcount == 1) {
-	bp = find_buffer(str_scratch, TRUE);
+        bp = find_buffer(str_scratch, TRUE);
     }
 
     /* switch out of buffer if we are the current buffer */
     if (bp == curbp)
-	next_buffer();
+        next_buffer();
     assert(bp != curbp);
     delete_buffer(bp);
     return TRUE;
@@ -294,15 +294,15 @@ void list_buffers()
 
     bp = bheadp;
     while (bp != NULL) {
-	if (bp != list_bp) {
-	    mod_ch  = ((bp->b_flags & B_MODIFIED) ? '*' : ' ');
-	    over_ch = ((bp->b_flags & B_OVERWRITE) ? 'O' : ' ');
-	    bn = (bp->b_bname[0] != '\0' ? bp->b_bname : blank);
-	    fn = (bp->b_fname[0] != '\0' ? bp->b_fname : blank);
-	    sprintf(report_line, "%c%c %7d %-16s %s\n",  mod_ch, over_ch, bp->b_size, bn, fn);
-	    insert_string(report_line);
-	}
-	bp = bp->b_next;
+        if (bp != list_bp) {
+            mod_ch  = ((bp->b_flags & B_MODIFIED) ? '*' : ' ');
+            over_ch = ((bp->b_flags & B_OVERWRITE) ? 'O' : ' ');
+            bn = (bp->b_bname[0] != '\0' ? bp->b_bname : blank);
+            fn = (bp->b_fname[0] != '\0' ? bp->b_fname : blank);
+            sprintf(report_line, "%c%c %7d %-16s %s\n",  mod_ch, over_ch, bp->b_size, bn, fn);
+            insert_string(report_line);
+        }
+        bp = bp->b_next;
     }
 }
 

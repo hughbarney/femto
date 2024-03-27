@@ -5,7 +5,6 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-
 #include "header.h"
 
 
@@ -139,7 +138,6 @@ void msg(char *m, ...)
 void debug(char *format, ...)
 {
     char buffer[256];
-
     va_list args;
 
     if (!debug_mode) return;
@@ -153,7 +151,6 @@ void debug(char *format, ...)
 
     vsnprintf (buffer, sizeof(buffer), format, args);
     va_end(args);
-
     fprintf(debug_fp,"%s", buffer);
     fflush(debug_fp);
 }

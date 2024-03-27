@@ -41,7 +41,7 @@ void make_buffer_name_uniq(char *bname)
 
     while(TRUE) {
         sprintf(bufn, "%s%d", basen, num++);
-		
+        
         if (NULL == find_buffer(bufn, FALSE)) {
             strcpy(bname, bufn);
             return;

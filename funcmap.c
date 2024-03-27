@@ -80,7 +80,7 @@ string_list_t *match_functions(const char *fname)
 {
     command_t       *fn;
     string_list_t   *head, *sl;
-    int          len;
+    int         len;
     int              count = 0;
 
     len = strlen(fname);
@@ -219,7 +219,7 @@ void describe_bindings()
     bp = find_buffer(str_help_buf, TRUE);
     assert(bp != NULL);
     zero_buffer(bp);
-
+    
     for (ky = khead; ky != NULL; ky = ky->k_next) {
         sprintf(binding, "%-16s %s\n", ky->k_name, ky->k_funcname);
         append_string(bp, binding);
@@ -368,18 +368,16 @@ void execute_command()
         if (funct == NULL || funct == user_func) {
             char funcname[80];
             sprintf(funcname, "(%s)", command_name);
-            // Note: exec_command() is never called in batch mode, therefore
-            //   output is never NULL, is it?!
             char *output = call_lisp(funcname);
 
             /* show errors on message line */
-            /* can probably make this a common function */
+            /* can probably make this a common function */                
             if (NULL != strstr(output, "error:")) {
                 char buf[81];
                 strncpy(buf, output, 80);
                 buf[80] ='\0';
                 msg(buf);
-            }
+            }    
         } else {
             (funct)();
         }

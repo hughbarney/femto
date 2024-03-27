@@ -72,7 +72,7 @@ void create_keys()
         ctrx_map2[4] = ch + 96;
         ctrx_bytes[1] = ch + 96;
         make_key(ctrx_map2, ctrx_bytes);
-    }
+    }    
 
     /* control-c control-a to z */
     for (ch = 1; ch <= 26; ch++) {
@@ -92,7 +92,7 @@ void create_keys()
 int set_key_internal(char *name, char *funcname, char *bytes, void (*func)(void))
 {
     keymap_t *kp;
-
+    
     /* check if we have an existing key, if so update it */
     for (kp = khead; kp->k_next != NULL; kp = kp->k_next) {
         if (0 == strcmp(kp->k_name, name)) {
@@ -165,7 +165,7 @@ void setup_keys()
     set_key_internal("esc-w",   "copy-region"           , "\x1B\x77", copy_region);
     set_key_internal("esc-x",   "execute-command"       , "\x1B\x78", execute_command);
 
-    set_key_internal("esc-up",    "beginning-of-buffer" , "\x1B\x1B\x5B\x41", beginning_of_buffer);
+    set_key_internal("esc-up",    "beginning-of-buffer" , "\x1B\x1B\x5B\x41", beginning_of_buffer);    
     set_key_internal("esc-down",  "end-of-buffer"       , "\x1B\x1B\x5B\x42", end_of_buffer);
     set_key_internal("esc-right", "user-func"           , "\x1B\x1B\x5B\x43", user_func);
     set_key_internal("esc-left",  "user-func"           , "\x1B\x1B\x5B\x44", user_func);
@@ -192,9 +192,9 @@ void setup_keys()
     set_key_internal("backspace", "backspace",            "\x7f", backspace);
 
     set_key_internal("c-x c-c",   "exit"                  , "\x18\x03", quit_ask);
-    set_key_internal("c-x c-f",   "find-file"             , "\x18\x06", i_readfile);
+    set_key_internal("c-x c-f",   "find-file"             , "\x18\x06", i_readfile);  
     set_key_internal("c-x c-n",   "next-buffer"           , "\x18\x0E", next_buffer);
-    set_key_internal("c-x c-s",   "save-buffer"           , "\x18\x13", savebuffer);
+    set_key_internal("c-x c-s",   "save-buffer"           , "\x18\x13", savebuffer);  
     set_key_internal("c-x c-w",   "write-file"            , "\x18\x17", writefile);
     set_key_internal("c-x 1",     "delete-other-windows"  , "\x18\x31", delete_other_windows);
     set_key_internal("c-x 2",     "split-window"          , "\x18\x32", split_window);

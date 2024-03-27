@@ -1,7 +1,7 @@
 #define VALGRIND 0
 
 /*
- * header.h, femto, Hugh Barney, 2017
+ * header.h, femto, Hugh Barney, 2023
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 #define _XOPEN_SOURCE 500
@@ -31,7 +31,7 @@ int mkstemp(char *);
 #ifndef E_INITFILE
 #define E_INITFILE      "/usr/local/share/femto/femto.rc"
 #endif
-#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, November 2023, by Hugh Barney,  No warranty."
+#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, December 2023, by Hugh Barney,  No warranty."
 
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
@@ -42,7 +42,7 @@ int mkstemp(char *);
 #define STRBUF_L        256
 #define STRBUF_M        64
 #define STRBUF_S        16
-#define NBUFN           17              /* size of buffer name 16 chars + null terminator */
+#define NBUFN           17      /* size of buffer name 16 chars + null terminator */
 #define MAX_KNAME       12
 #define MAX_KBYTES      12
 #define MAX_KFUNC       30
@@ -94,7 +94,7 @@ typedef enum {
     B_MODIFIED = 0x01,
     B_OVERWRITE = 0x02,         /* overwite mode */
     B_SPECIAL = 0x04,           /* is a special buffer name of form '*name*' */
-    B_UNDO = 0x08,                  /* undo mode */
+    B_UNDO = 0x08,              /* undo mode */
 } buffer_flags_t;
 
 typedef struct string_list_t
@@ -131,49 +131,49 @@ typedef struct undo_tt {
 
 typedef struct buffer_t
 {
-    struct buffer_t *b_next;  /* Link to next buffer_t */
-    point_t b_mark;               /* the mark */
-    point_t b_point;          /* the point */
-    point_t b_paren;          /* matching paren to the point */
-    point_t b_cpoint;         /* the original current point, used for mutliple window displaying */
-    point_t b_page;           /* start of page */
-    point_t b_epage;          /* end of page */
-    point_t b_reframe;        /* force a reframe of the display */
-    int b_cnt;                /* count of windows referencing this buffer */
-    int b_size;               /* current size of text being edited (not including gap) */
-    int b_psize;              /* previous size */
-    char_t *b_buf;            /* start of buffer */
-    char_t *b_ebuf;           /* end of buffer */
-    char_t *b_gap;            /* start of gap */
-    char_t *b_egap;           /* end of gap */
-    int b_row;                /* cursor row */
-    int b_col;                /* cursor col */
+    struct buffer_t *b_next;    /* Link to next buffer_t */
+    point_t b_mark;             /* the mark */
+    point_t b_point;            /* the point */
+    point_t b_paren;            /* matching paren to the point */
+    point_t b_cpoint;           /* the original current point, used for mutliple window displaying */
+    point_t b_page;             /* start of page */
+    point_t b_epage;            /* end of page */
+    point_t b_reframe;          /* force a reframe of the display */
+    int b_cnt;                  /* count of windows referencing this buffer */
+    int b_size;                 /* current size of text being edited (not including gap) */
+    int b_psize;                /* previous size */
+    char_t *b_buf;              /* start of buffer */
+    char_t *b_ebuf;             /* end of buffer */
+    char_t *b_gap;              /* start of gap */
+    char_t *b_egap;             /* end of gap */
+    int b_row;                  /* cursor row */
+    int b_col;                  /* cursor col */
     char b_fname[NAME_MAX + 1]; /* filename */
-    char b_bname[NBUFN];      /* buffer name */
-    buffer_flags_t b_flags;   /* buffer flags */
-    undo_tt *b_utail;         /* recent end of undo list */
-    int b_ucnt;               /* count of how many chars to undo on current undo */
+    char b_bname[NBUFN];        /* buffer name */
+    buffer_flags_t b_flags;     /* buffer flags */
+    undo_tt *b_utail;           /* recent end of undo list */
+    int b_ucnt;                 /* count of how many chars to undo on current undo */
 } buffer_t;
 
 typedef struct window_t
 {
-    struct window_t *w_next;   /* Next window */
-    struct buffer_t *w_bufp;   /* Buffer displayed in window */
-    struct buffer_t *w_hijack; /* holds the buffer association for a hijacked window */
+    struct window_t *w_next;    /* Next window */
+    struct buffer_t *w_bufp;    /* Buffer displayed in window */
+    struct buffer_t *w_hijack;  /* holds the buffer association for a hijacked window */
     point_t w_point;
     point_t w_mark;
     point_t w_page;
     point_t w_epage;
-    char w_top;     /* origin 0 top row of window */
-    char w_rows;        /* no. of rows of text in window */
-    int w_row;          /* cursor row */
-    int w_col;          /* cursor col */
+    char w_top;                 /* origin 0 top row of window */
+    char w_rows;                /* no. of rows of text in window */
+    int w_row;                  /* cursor row */
+    int w_col;                  /* cursor col */
     int w_update;
     char w_name[STRBUF_S];
 } window_t;
 
-extern buffer_t *curbp;                 /* current buffer */
-extern buffer_t *bheadp;                /* head of list of buffers */
+extern buffer_t *curbp;         /* current buffer */
+extern buffer_t *bheadp;        /* head of list of buffers */
 extern window_t *curwp;
 extern window_t *wheadp;
 extern command_t *cheadp;
@@ -189,7 +189,6 @@ extern command_t *cheadp;
 
 extern int debug_mode;          /* Enable debugging */
 extern int batch_mode;          /* If True GUI is not run */
-
 extern int done;                /* Quit flag. */
 extern int msgflag;             /* True if msgline should be displayed. */
 extern int global_undo_mode;    /* True if we are undo mode is allowed by default */
@@ -434,6 +433,8 @@ extern void debug(char *format, ...);
 extern void debug_stats(char *s);
 extern void fatal(char *msg);
 extern void msg(char *m, ...);
+extern void gui();              /* The GUI loop used in interactive mode */
+
 
 /* functions in replace.c */
 extern void query_replace(void);

@@ -29,7 +29,7 @@ int growgap(buffer_t *bp, point_t n)
             fatal(f_alloc);
         new = (char_t*) malloc((size_t) newlen);
         if (new == NULL)
-            fatal(f_alloc);     /* Cannot edit a file without a buffer. */
+            fatal(f_alloc);    /* Cannot edit a file without a buffer. */
     } else {
         if (newlen < 0 || MAX_SIZE_T < newlen) {
             msg(m_alloc);

@@ -391,7 +391,7 @@ void debug_undo(char *msg, undo_tt *up, buffer_t *bp) {
     if (up->u_string != NULL) {
         /*
          * make a summary of the string, we do not want
-         * to cause a SEGFAULT by overrunning the debug buffer
+         * to cause a SEGFAULT by overrunning the debug buffer 
          */
         len = strlen((char *)up->u_string);
         safe_strncpy((char *)str, (char *)up->u_string, 40);
@@ -399,7 +399,7 @@ void debug_undo(char *msg, undo_tt *up, buffer_t *bp) {
         strcpy(str,"");
     }
 
-    debug("%s: typ=%s pt=%ld str='%s' len=%d ucnt=%d\n",
+    debug("%s: typ=%s pt=%ld str='%s' len=%d ucnt=%d\n", 
           msg, get_undo_type_name(up), up->u_point, str, len, bp->b_ucnt);
 }
 

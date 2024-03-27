@@ -106,7 +106,7 @@ void display(window_t *wp, int flag)
     int i, j, k, nch;
     buffer_t *bp = wp->w_bufp;
     int token_type = ID_DEFAULT;
-	
+    
     /* find start of screen, handle scroll up off page or top of file  */
     /* point is always within b_page and b_epage */
     if (bp->b_point < bp->b_page)

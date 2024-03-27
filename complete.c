@@ -6,7 +6,7 @@
 int getfilename(char *prompt, char *buf, int nbuf)
 {
     static char temp_file[] = TEMPFILE;
-    int cpos = 0;	/* current character position in string */
+    int cpos = 0;    /* current character position in string */
     int k = 0, c, fd, didtry, iswild = 0;
 
     char sys_command[255];
@@ -14,7 +14,7 @@ int getfilename(char *prompt, char *buf, int nbuf)
     buf[0] ='\0';
 
     for (;;) {
-        didtry = (k == 0x09);	/* Was last command tab-completion? */
+        didtry = (k == 0x09);    /* Was last command tab-completion? */
         display_prompt_and_response(prompt, buf);
         k = getch(); /* get a character from the user */
 
