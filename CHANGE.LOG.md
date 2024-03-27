@@ -1,3 +1,24 @@
+## Femto 2.18 27 March 2024
+
+This version features a major refactoring of the Lisp related code,
+leading to a deviation from Tiny-Lisp. Since femto-lisp
+is already taken by a not-so-femto Lisp implementation we call this
+new dialect fLisp.
+
+Major visible changes are:
+* Core Lisp functionality is now closer to Emacs Elisp and Common Lisp and
+  less Scheme'ish.
+* Lisp defun's formerly compiled into the femto binary are moved out
+  into the `femto.lsp` and `stdlib.lsp` startup file. These are not
+  automatically loaded in batch mode.
+
+fLisp counts with an initial test suite runnable from the `makefile`
+and the Lisp documentation has been complemented to cover all callable
+functions and factored out into its own file.
+
+Some memory leaks and exceptions have been detected and fixed, both in
+Tiny-Lisp as in femto code.
+
 
 ## Femto 2.17 08 December 2023
 * When the environment variable FEMTO_BATCH exists, femto runs in batch mode
