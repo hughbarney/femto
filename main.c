@@ -5,7 +5,6 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-
 #include "header.h"
 
 void gui(); /* The GUI loop used in interactive mode */
@@ -131,14 +130,11 @@ void load_config()
         reset_output_stream();
         output = load_file(fd);
         close(fd);
-        //if (!batch_mode) {
         assert(output != NULL);
-	   
+
         /* all exceptions start with the word error: */
         if (NULL != strstr(output, "error:"))
-            //  fatal(output);
             (void)call_lisp("signal 'error-init '(\"init file throws exception\")");
-        //}
         reset_output_stream();
     }
 }
@@ -146,7 +142,6 @@ void load_config()
 void debug(char *format, ...)
 {
     char buffer[256];
-
     va_list args;
 
     if (!debug_mode) return;
@@ -160,7 +155,6 @@ void debug(char *format, ...)
 
     vsnprintf (buffer, sizeof(buffer), format, args);
     va_end(args);
-
     fprintf(debug_fp,"%s", buffer);
     fflush(debug_fp);
 }

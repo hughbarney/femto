@@ -1,5 +1,5 @@
 /*
- * data.c, femto, Hugh Barney, Public Domain, 2017
+ * data.c, femto, Hugh Barney, Public Domain, 2023
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 
@@ -7,7 +7,6 @@
 
 int batch_mode = 0;
 int debug_mode = 0;
-
 int done;
 int result;
 int global_undo_mode = 1;
@@ -24,8 +23,8 @@ keymap_t *key_return;
 keymap_t *khead = NULL;
 keymap_t *ktail = NULL;
 
-buffer_t *curbp;			/* current buffer */
-buffer_t *bheadp;			/* head of list of buffers */
+buffer_t *curbp;                /* current buffer */
+buffer_t *bheadp;               /* head of list of buffers */
 window_t *curwp;
 window_t *wheadp;
 command_t *cheadp = NULL;
