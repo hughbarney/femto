@@ -24,7 +24,7 @@ keymap_t *key_return;
 keymap_t *khead = NULL;
 keymap_t *ktail = NULL;
 
-buffer_t *curbp;			/* current buffer */
+buffer_t *curbp;	        	/* current buffer */
 buffer_t *bheadp;			/* head of list of buffers */
 window_t *curwp;
 window_t *wheadp;
@@ -82,3 +82,11 @@ char *str_help_buf = "*help*";
 char *str_completions = "*completions*";
 char *str_apropos = "apropos: ";
 char *str_exec_command = "Execute command: ";
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */
