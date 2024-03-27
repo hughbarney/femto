@@ -77,6 +77,14 @@ main.o: main.c header.h
 	  -D E_INITFILE=$(INITFILE) \
 	  -c main.c
 
+docs/flisp.md: pdoc/flisp.html
+	pandoc -o $@ -t gfm $<
+
+README.html: README.md
+	pandoc -o $@ -f gfm $<
+
+doc: docs/flisp.md README.html
+
 doxygen: FORCE
 	doxygen
 
@@ -86,6 +94,7 @@ test: femto FORCE
 clean: FORCE
 	-$(RM) -f $(OBJ) femto
 	-$(RM) -rf doxygen
+	-$(RM) -f docs/flisp.md README.html
 
 install: femto femto.rc FORCE
 	-$(MKDIR) -p $$DESTDIR$(BINDIR)

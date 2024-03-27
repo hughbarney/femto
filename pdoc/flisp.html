@@ -9,7 +9,7 @@
 
 <h3>Introduction</h3>
 
-<p><i>fLisp</i> is a tiny but practical interpreter for a dialect of the Lisp programming language. It is used as extension language for the <a href="https://github.com/matp/tiny-lisp">Femto</a> text editor.</p>
+<p><i>fLisp</i> is a tiny yet practical interpreter for a dialect of the Lisp programming language. It is used as extension language for the <a href="https://github.com/matp/tiny-lisp">Femto</a> text editor.</p>
 
 <p><i>fLisp</i>&nbsp;originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barnes (pre 2016) and compacted by Georg Lehner in 2023.</p>
 
@@ -363,110 +363,99 @@
 
 <h5>Buffer management</h5>
 
-<p>Note: Descriptions copied over from original README.md, tbd.: verify with code, compare with Elisp.</p>
-
 <dl>
 	<dt><code>(list-buffers)</code></dt>
 	<dd>Lists all the buffers in a buffer called <samp>*buffers*</samp>.</dd>
 	<dt><code>(get-buffer-count)</code></dt>
 	<dd>Returns the number of buffers, includes all special buffers and <samp>*buffers*</samp>.</dd>
 	<dt><code>(select-buffer <var>string</var>)</code></dt>
-	<dd>Makes the buffer named <var>string</var> the current buffer.</dd>
+	<dd>Makes the buffer named <var>string</var> the current buffer. Note: <u>C</u> to <code>set-buffer</code> in Elisp.</dd>
 	<dt><code>(rename-buffer <var>string</var>)</code></dt>
-	<dd>Rename the current buffer to <var>string</var>.</dd>
+	<dd>Rename the current buffer to <var>string</var>. <u>C</u></dd>
 	<dt><code>(kill-buffer <var>string</var>)</code></dt>
-	<dd>Kill the buffer names <var>string</var>. Unsaved changes are discarded.</dd>
+	<dd>Kill the buffer names <var>string</var>. Unsaved changes are discarded. <u>C</u></dd>
 	<dt><code>(get-buffer-name)</code></dt>
-	<dd>Return the name of the current buffer.</dd>
+	<dd>Return the name of the current buffer. Note: <u>C</u> to <code>buffer-name</code> in Elisp.</dd>
 	<dt><code>(add-mode-global <var>string</var>)</code></dt>
 	<dd>Sets global mode&nbsp;<var>string</var> for all buffers. Currently the only global mode is <kbd>undo</kbd>.</dd>
 	<dt><code>(find-file <var>string</var>)</code></dt>
-	<dd>Loads file with path string into a new buffer.</dd>
+	<dd>Loads file with path string into a new buffer. <u>C</u></dd>
 	<dt><code>(save-buffer <var>string</var>)</code></dt>
-	<dd>Saves the buffer named <var>string</var> to disk.</dd>
+	<dd>Saves the buffer named <var>string</var> to disk. <u>C</u></dd>
 </dl>
 
 <h4>User Interaction</h4>
 
-<p>Note: Descriptions copied over from original README.md, tbd.: verify with code, compare with Elisp.</p>
-
-<p>(message <var>string</var>)</p>
-
-<p>Displays&nbsp;<var>string</var> in the message line.</p>
-
-<p>(clear-message-line)</p>
-
-<p>Displays the empty string in the message line.</p>
-
-<p>(prompt <var>prompt</var> <var>default</var>)</p>
-
-<p>Displays&nbsp;<var>prompt</var> in the command line and sets <var>default</var> as initial value for the user respones. The user can edit the response. When hitting return, the final response is returned.</p>
-
-<p>(show-prompt <var>prompt</var> <var>default</var>)</p>
-
-<p>Displays <var>prompt</var> and <var>default</var> in the commandline, but does not allow editing. Returns <samp>t</samp>.</p>
-
-<p>(prompt-filename <var>prompt</var>)</p>
-
-<p>Displays <var>prompt</var> in the commandline and allows to enter or search for a file name. Returns the relative path to the selected file name or the response typed by the user.</p>
-
-<p>(getch)</p>
-
-<p>Waits for a key to be pressed and returns the key as string. Note: tbd. non character keys.</p>
-
-<p>(get-key-name)</p>
-
-<p>(get-key-funcname)</p>
-
-<p>(update-display)</p>
-
-<p>Updates all modified windows.</p>
-
-<p>(refresh)</p>
-
-<p>Marks all windows as modified and then (update-display).</p>
-
-<p>(describe-bindings)</p>
-
-<p>(describe-functions)</p>
-
-<p>(exit)</p>
-
-<h5>Window Handling</h5>
-
-<p>(delete-other-windows)</p>
-
-<p>(split-window)</p>
-
-<p>(other-window)</p>
+<dl>
+	<dt><code>(message <var>string</var>)</code></dt>
+	<dd>Displays&nbsp;<var>string</var> in the message line. <u>D</u>&nbsp;</dd>
+	<dt><code>(clear-message-line)</code></dt>
+	<dd>Displays the empty string in the message line.</dd>
+	<dt><code>(prompt <var>prompt</var> <var>default</var>)</code></dt>
+	<dd>Displays&nbsp;<var>prompt</var> in the command line and sets <var>default</var> as initial value for the user respones. The user can edit the response. When hitting return, the final response is returned.</dd>
+	<dt><code>(show-prompt <var>prompt</var> <var>default</var>)</code></dt>
+	<dd>Displays <var>prompt</var> and <var>default</var> in the commandline, but does not allow editing. Returns <samp>t</samp>.</dd>
+	<dt><code>(prompt-filename <var>prompt</var>)</code></dt>
+	<dd>Displays <var>prompt</var> in the commandline and allows to enter or search for a file name. Returns the relative path to the selected file name or the response typed by the user.</dd>
+	<dt><code>(getch)</code></dt>
+	<dd>Waits for a key to be pressed and returns the key as string. See also <code>get-key-name</code>, <code>get-key-funcname</code> and <code>execute-key</code>.</dd>
+	<dt>(exit)</dt>
+	<dd>Exit Femto without saving modified buffers.</dd>
+</dl>
 
 <h5>Keyboard Handling</h5>
 
-<p>(set-key key-name lisp-func)</p>
+<dl>
+	<dt><code>(set-key <var>key-name</var> <var>lisp-func</var>)</code></dt>
+	<dd>Binds key key-name to the lisp function <var>lisp-func</var>.</dd>
+	<dt><code>(get-key-name)</code></dt>
+	<dd>Returns the name of the currently pressed key, eg: <samp>c-k</samp> for control-k.</dd>
+	<dt><code>(get-key-funcname)</code></dt>
+	<dd>Return the name of the function bound to the currently pressed key.</dd>
+	<dt><code>(execute-key)</code></dt>
+	<dd>Executes the function of the last bound key. <mark>Tbd.&nbsp;bound or pressed?</mark></dd>
+	<dt><code>(describe-bindings)</code></dt>
+	<dd>Creates a listing of all current key bindings, in a buffer named <samp>*help*</samp> and displays it in a new window. <u>C</u></dd>
+	<dt><code>(describe-functions)</code></dt>
+	<dd>Creates a listing of all functions bound to keys in a buffer named <samp>*help*</samp> and displays it in a new window.</dd>
+</dl>
 
-<p>(get-key-name)</p>
-
-<p>(get-key-funcname)</p>
-
-<h4>Programming and System Interaction</h4>
-
-<p>(log-message string)</p>
-
-<p>(log-debug string)</p>
-
-<p>(eval-block)</p>
+<h5>Window Handling</h5>
 
 <dl>
+	<dt><code>(delete-other-windows)</code></dt>
+	<dt>&nbsp;Make current window the only window. <u>C</u></dt>
+	<dd>&nbsp;</dd>
+	<dt><code>(split-window)</code></dt>
+	<dd>Splits the current window. Creates a new window for the current buffer. <u>C</u></dd>
+	<dt><code>(other-window)</code></dt>
+	<dd>Moves the cursor to the next window down on the screen. Makes the buffer in that window the current buffer. <u>D</u></dd>
+	<dd>Note: Elisp <code>other-window</code> has a required parameter <var>count</var>, which specifies the number of windows to move down or up.</dd>
+	<dt><code>(update-display)</code></dt>
+	<dd>Updates all modified windows.</dd>
+	<dt><code>(refresh)</code></dt>
+	<dd>Updates all windows by marking them modified and calling <code>update-display</code>.</dd>
+</dl>
+
+<h5>Programming and System Interaction</h5>
+
+<dl>
+	<dt><code>(eval-block)</code></dt>
+	<dd>Evaluates the <var>region</var> in the current buffer, inserts the result at <var>point</var> and returns it. If <var>mark</var> in the current buffer is before <var>point</var> <code>eval-block</code> evaluates this <var>region</var>&nbsp;and inserts the result at <var>point</var>. If <var>point</var> is before <var>mark</var> <code>eval-block</code> does nothing but returning <samp>t</samp>.</dd>
+	<dt><code>(system <var>string</var>)</code></dt>
+	<dd>Executes the <a href="https://man7.org/linux/man-pages/man3/system.3.html">system(1)</a> function with <var>string</var> as parameter.</dd>
+	<dt><code>(os.getenv <var>string</var>) </code></dt>
+	<dd>Returns the value of the environment variable named <var>string</var>.</dd>
+	<dt><code>(log-message <var>string</var>)</code></dt>
+	<dd>Logs <var>string</var> to the <samp>*messages*</samp> buffer.&nbsp;</dd>
+	<dt><code>(log-debug <var>string</var>)</code></dt>
+	<dd>Logs string to the file <code>debug.out</code>.</dd>
+	<dt><code>(get-version-string)</code></dt>
+	<dd>Returns the complete version string of Femto, including the copyright.</dd>
 	<dt>
-	<p>(get-version-string)</p>
-
-	<p>(execute-key) Execute the function of the last bound key</p>
-
-	<p>(system string)</p>
-
 	<h3>Implementation Details</h3>
 
-	<p>tbd.: Memory consumption, limits, hacking, ...</p>
+	<p><mark>Tbd.: Memory consumption, limits, hacking, ...</mark></p>
 	</dt>
 </dl>
 </body>
