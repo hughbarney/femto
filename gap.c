@@ -78,7 +78,17 @@ char_t * ptr(buffer_t *bp, register point_t offset)
 {
     if (offset < 0)
         return (bp->b_buf);
+#if VALGRIND
+    return (bp->b_buf+offset +
+            (
+                bp->b_buf +
+                offset < bp->b_gap ?
+                0 : bp->b_egap-bp->b_gap - 1
+                )
+        );
+#else
     return (bp->b_buf+offset + (bp->b_buf + offset < bp->b_gap ? 0 : bp->b_egap-bp->b_gap));
+#endif
 }
 
 /* Given a pointer into the buffer, convert it to a buffer offset */
@@ -214,3 +224,11 @@ void get_line_stats(int *curline, int *lastline)
     if (curbp->b_point == end_p)
         *curline = *lastline;
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

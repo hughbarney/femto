@@ -81,3 +81,11 @@ int getfilename(char *prompt, char *buf, int nbuf)
         }
     }
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

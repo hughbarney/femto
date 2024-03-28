@@ -4,6 +4,8 @@
 ;; visit next match using "c-x `"
 ;;
 
+(require 'femto)
+
 (setq grep-buf "*grep*")
 (setq grep-line 1)
 (setq grep-cmd "grep -ni")
@@ -14,13 +16,13 @@
   (kill-buffer grep-buf)
   (setq grep-line 0)
   (setq grep-search (prompt "grep search for: " grep-search))
-  (if (> (string.length grep-search) 0)
-  (progn
-    (setq grep-search-files (prompt "grep search files: " grep-search-files))
-    (setq grep-query (concat grep-cmd " " grep-search " " grep-search-files))
-    (shell-command grep-query)
-    (set-key "c-x `" "grep-next")
-    (rename-buffer grep-buf))))
+  (cond
+    ((> (string.length grep-search) 0)
+     (setq grep-search-files (prompt "grep search files: " grep-search-files))
+     (setq grep-query (concat grep-cmd " " grep-search " " grep-search-files))
+     (shell-command grep-query)
+     (set-key "c-x `" "grep-next")
+     (rename-buffer grep-buf))))
 
 (defun grep-next()
   (select-buffer grep-buf)
@@ -37,6 +39,8 @@
   (search-forward ":")
   (backward-char)
   (copy-region)
-  (setq grep-match-line (string->number (get-clipboard)))
+  (setq grep-match-line (string-to-number (get-clipboard)))
   (find-file grep-fname)
   (goto-line grep-match-line))
+
+(provide 'grep)

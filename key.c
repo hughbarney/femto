@@ -348,3 +348,11 @@ int getinput(char *prompt, char *buf, int nbuf, int flag)
         }
     }
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

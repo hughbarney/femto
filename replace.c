@@ -115,3 +115,11 @@ void replace_string(buffer_t *bp, char *s, char *r, int slen, int rlen)
     add_undo(curbp, UNDO_T_REPLACE, curbp->b_point, (char_t *)s, (char_t *)r);
     curbp->b_point = found - (slen - rlen); /* set point to end of replacement */
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

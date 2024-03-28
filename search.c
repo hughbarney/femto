@@ -122,3 +122,11 @@ point_t search_backwards(char *stext)
     }
     return -1;
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

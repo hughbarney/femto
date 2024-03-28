@@ -738,22 +738,20 @@ point_t get_point_max()
 }
 
 /*
- * execute a lisp command type in atthe command prompt >
- * send any outout to the message line.  This avoids text
+ * execute a lisp command typed in at the command prompt >
+ * send any output to the message line.  This avoids text
  * being sent to the current buffer which means the file
  * contents could get corrupted if you are running commands
  * on the buffers etc.
  * 
  * If the output is too big for the message line then send it to
- * a temp buffer called *list_output* and popup the window
+ * a temp buffer called *lisp_output* and popup the window
  *
  */
 void repl()
 {
     char *output;
     buffer_t *bp;
-
-    reset_output_stream();
 
     if (getinput("> ", response_buf, TEMPBUF, F_CLEAR)) {
         output = call_lisp(response_buf);
@@ -766,8 +764,6 @@ void repl()
             (void)popup_window(bp->b_bname);
         }
     }
-
-    reset_output_stream();
 }
 
 /*
@@ -786,11 +782,9 @@ void eval_block()
     assert(scrap != NULL);
     assert(strlen(scrap) > 0);
 
-    reset_output_stream();
     output = call_lisp((char *)scrap);
     insert_string("\n");
     insert_string(output);
-    reset_output_stream();
 }
 
 /* this is called for every user key setup by a call to set_key */
@@ -805,7 +799,6 @@ void user_func()
         return;
     }
 
-    reset_output_stream();
     sprintf(funcname, "(%s)", key_return->k_funcname);
     output = call_lisp(funcname);
 
@@ -816,5 +809,12 @@ void user_func()
         buf[80] ='\0';
         msg(buf);
     }    
-    reset_output_stream();
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

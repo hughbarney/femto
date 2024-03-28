@@ -8,6 +8,10 @@ int skip_count = 0;
 
 char_t get_at(buffer_t *bp, point_t pt)
 {
+    // Note: ptr get's it wrong here when at the end
+    //   Valgrind complains, the pointer is behind 0 bytes
+    //   However somewhere else it is needed exactly this way
+    //   otherwise we get an extra zero byte at the end of the buffer.
     return (*ptr(bp, pt));
 }
 
@@ -103,3 +107,11 @@ int parse_text(buffer_t *bp, point_t pt)
 
     return (next_state = state);
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

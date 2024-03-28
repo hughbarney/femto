@@ -4,7 +4,9 @@
 
 CC      = cc
 CPP     = cpp
-CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DNDEBUG
+CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE
+# Note: lisp still needs assertions
+#CPPFLAGS += -DNDEBUG
 CFLAGS += -O2 -std=c11 -Wall -pedantic -g
 LD      = cc
 LDFLAGS =
@@ -16,11 +18,12 @@ MKDIR	= mkdir
 PREFIX  = /usr/local
 BINDIR  = $(PREFIX)/bin
 DATADIR = $(PREFIX)/share
-SCRIPTDIR = \"$(DATADIR)/femto\"
+SCRIPTDIR = "$(DATADIR)/femto"
+INITFILE = "$(SCRIPTDIR)/femto.rc"
 
 OBJ     = command.o display.o complete.o data.o gap.o key.o search.o buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o lisp.o main.o
 
-femto: $(OBJ) femto.rc
+femto: $(OBJ)
 	$(LD) $(LDFLAGS) -o femto $(OBJ) $(LIBS)
 
 complete.o: complete.c header.h
@@ -69,20 +72,40 @@ lisp.o: lisp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c lisp.c
 
 main.o: main.c header.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c main.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) \
+	  -D E_SCRIPTDIR=$(SCRIPTDIR) \
+	  -D E_INITFILE=$(INITFILE) \
+	  -c main.c
 
-femto.rc: femto.rc.in
-	$(CPP) -P -D SCRIPTDIR=$(SCRIPTDIR) $< $@
+docs/flisp.md: pdoc/flisp.html
+	pandoc -o $@ -t gfm $<
 
-clean:
-	-$(RM) -f $(OBJ) femto femto.rc
+README.html: README.md
+	pandoc -o $@ -f gfm $<
 
-install: femto femto.rc
+doc: docs/flisp.md README.html
+
+doxygen: FORCE
+	doxygen
+
+test: femto FORCE
+	(cd test && ./run)
+
+clean: FORCE
+	-$(RM) -f $(OBJ) femto
+	-$(RM) -rf doxygen
+	-$(RM) -f docs/flisp.md README.html
+
+install: femto femto.rc FORCE
 	-$(MKDIR) -p $$DESTDIR$(BINDIR)
 	-$(CP) femto $$DESTDIR$(BINDIR)
-	-$(MKDIR) -p $$DESTDIR$(DATADIR)/femto
+	-$(MKDIR) -p $$DESTDIR$(DATADIR)/femto/examples
 	-$(CP) lisp/*.lsp femto.rc $$DESTDIR$(DATADIR)/femto
+	-$(CP) lisp/examples/*.lsp femto.rc $$DESTDIR$(DATADIR)/femto/examples
 
-uninstall:
+uninstall: FORCE
 	-$(RM) -f $$DESTDIR$(BINDIR)/femto
 	-$(RM) -rf $$DESTDIR$(DATADIR)/femto
+
+# Used as dependency forces rebuild, aka .PHONY in GNU make
+FORCE: ;

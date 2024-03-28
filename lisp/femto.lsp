@@ -2,13 +2,7 @@
 ;; Basic Femto extensions
 ;;
 
-;; max value
-(defun max(a b)
-  (if (> a b) a b))
-
-;; min value
-(defun min(a b)
-  (if (< a b) a b))
+(require 'flisp)
 
 (defun repeat (n func)  
   (cond ((> n 0) (func) (repeat (- n 1) func))))
@@ -17,8 +11,10 @@
 ;; Note: this emulates the original femto shell-command.
 ;;   The move from C to Lisp allows implementation of more
 ;;   powerful system interaction in the future
-(defun shell-command ()
-  (setq command (prompt-filename "Command: "))
+(defun shell-command arg
+  (cond
+    (arg (setq command arg))
+    (t (setq command (prompt-filename "Command: "))))
   (cond (command (shell-exec command))))
 
 (defun shell-exec (command)
@@ -44,14 +40,17 @@
 ;; trim all spaces from front of a string
 (defun string.trim.front(s)
   (cond
-    ((not (eq (string.ref s 0) " ")) s)
+    ((= 0 (string.length s)) "")
+    ((not (eq (string.substring s 0 0) " ")) s)
     ((< (string.length s) 2) "")
     (t (string.trim.front (string.substring s 1 (- (string.length s) 1)))) ))
 
 ;; trim all spaces from back of a string
 (defun string.trim.back(s)
+  (setq p (- (string.length s) 1))
   (cond
-    ((not (eq (string.ref s (- (string.length s) 1)) " ")) s)
+    ((= p -1) "")
+    ((not (eq (string.substring s p p) " ")) s)
     ((< (string.length s) 2) "")
     (t (string.trim.back (string.substring s 0 (- (string.length s) 2)))) ))
 
@@ -79,12 +78,15 @@
   (forward-char)
   (kill-region))
 
-;; kill to end of line, uses if and progn
 (defun kill-to-eol()
   (cond
     ((eq (get-point) (get-point-max)) nil)
     ((eq "\n" (get-char)) (delete))
-    (t (set-mark) (end-of-line) (if (eq (get-point) (get-mark)) (delete) (kill-region)))))
+    (t
+     (set-mark)
+     (end-of-line)
+     (cond ((eq (get-point) (get-mark)) (delete))
+	   (t (kill-region))) )))
 
 ;; shrink string by dropping off last char
 (defun shrink(s)
@@ -153,15 +155,17 @@
   (setq rb_count 0)
   (setq start_p -1)
   (setq end_p (find_end_p))
-  (if (> end_p -1) (setq start_p (find_start_p)))
-  (if (and (> start_p -1) (> end_p -1))
-  (progn
-    (set-point start_p)
-    (set-mark)
-    (set-point end_p)
-    (eval-block))
-  (progn
-    (set-point o_point)
-    (if (eq -1 start_p) (message "could not find start of s-expression"))
-    (if (eq -1 end_p) (message "could not find end of s-expression"))) ))
+  (cond ((> end_p -1) (setq start_p (find_start_p))))
+  (cond
+    ((and (> start_p -1) (> end_p -1))
+     (set-point start_p)
+     (set-mark)
+     (set-point end_p)
+     (eval-block))
+    (t
+     (set-point o_point)
+     (cond
+       ((eq -1 start_p) (message "could not find start of s-expression"))
+       ((eq -1 end_p) (message "could not find end of s-expression"))) )))
 
+(provide 'femto)

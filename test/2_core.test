@@ -1,0 +1,48 @@
+# test the fLisp core library
+# leg20231129: Femto
+tap 10
+
+flisp_core() {
+    IN=$(cat <<EOF
+(load "../femto.rc")
+$IN
+EOF
+      )
+    flisp_expr "$@"
+}
+
+# list
+IN='(list)' OUT=nil
+flisp_core; ok list-1 empty list
+
+IN="(list 'element)" OUT='(element)'
+flisp_core; ok list-2 single element
+
+IN="(list 'first 'second)" OUT='(first second)'
+flisp_core; ok list-3 two elements
+
+# defmacro
+true; ok defmacro \# TODO 
+
+# defun
+true; ok defun \# TODO
+
+# string
+true; ok string \# TODO
+
+# concat
+true; ok concat \# TODO
+
+# memq
+true; ok memq \# TODO
+
+# provide
+true; ok provide \# TODO
+
+# require
+true; ok require \# TODO
+
+
+# Local Variables:
+# mode: sh
+# End:

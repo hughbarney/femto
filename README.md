@@ -44,6 +44,7 @@ Femto is an extended version of Atto Emacs with its own extension languauge
 * In late 2016 Hugh Barney decided to look for a smaller lisp implementation for Femto and settled on Tiny-Lisp[7] by Mattias Pirstitz.
 * **Zepl** was an initial project that established the suitability of Tiny-Lisp for use within an Emacs type editor. The results surpassed expectations.
 * In late 2017 Hugh Barney decided to return to the **Femto** editor and extend it using Tiny-Lisp.
+* In 2023/24 Georg Lehner refactored the Lisp infrastructure.
 
 For a full version history please refer to the file [CHANGE.LOG.md](./CHANGE.LOG.md)
 
@@ -57,7 +58,7 @@ Femto has almost the same level of functionality as MicroEmacs 3.10 for a codeba
     atto           atto       33002     1.9k     10
     pEmacs         pe         59465     5.7K     16
     Esatz-Emacs    ee         59050     5.7K     14
-    femto          femto     356399     6.3k     18 **
+    femto          femto     108408     6.7k     18/31 **
     GNOME          GNOME      55922     9.8k     13
     Zile           zile      257360    11.7k     48
     Mg             mg        585313    16.5K     50
@@ -68,6 +69,11 @@ Femto has almost the same level of functionality as MicroEmacs 3.10 for a codeba
     Qemacs         qe        379968    36.9k     59
     ue3.10         uemacs    171664    52.4K     16 ++
     GNUEmacs       emacs   14632920   358.0k    186
+
+Since femto 2.12 C code has been moved out to Lisp. The first number
+in the files count are the C-files plus the minimal required femto.rc
+Lisp file. The second number includes all provided Lisp files.
+
 
 ## Femto Key Bindings
     C-A   begining-of-line
@@ -203,6 +209,7 @@ The Femto editor itself provides only basic buffer movement and edit
 functions, everything else is done by extending the user interface
 using the Lisp extension language.
 
+
 The `lisp` subdirectory contains essential extensions to the Femto
 editor as well as examples.  With `make install` these are copied to a
 system wide location, together with the `femto.rc` file.
@@ -213,14 +220,29 @@ startup message in the *scratch* buffer.
 
 Just before showing the startup message a user specific `femto.rc`
 file is loaded from the directory `.config/femto` in your HOME
-directory if available.
+directory, if available.
 
-If `femto` should be run from the source directory build it with
+The `femto.rc` file and the extensions are loaded by default from
+`/usr/local/share/femto`.  This path is made available in the Lisp
+interpreter as `script_dir`.  This default directory can be changed at
+compile time by changing SCRIPTDIR.  At startup `femto` overrides the
+default with the value of the environment variable FEMTOLIB if set.
 
-    CPPFLAGS=-DE_INITFILE=\\\"femto.rc\\\" make SCRIPTDIR=\\\"lisp\\\"
 
-It will then read `femto.rc` the current directory and the extensions
-from the `lisp` subdirectory.
+## Batch Mode
+
+If the environment variable FEMTO_BATCH exists and is not set to `0`
+batch mode is enabled.  In batch mode the GUI is not started up and
+all Lisp output is sent to `stdout`.
+
+
+## Debugging
+
+If the environment variable FEMTO_DEBUG exists and is not set to `0`
+debug mode is enabled.  In debug mode, some internal workings are
+logged to the file `debug.out`, as well as the arguments of the
+invocations of the `log-debug` Lisp primitive.
+
 
 ## Basic Femto Extension
 
@@ -233,7 +255,7 @@ from the `lisp` subdirectory.
 * `concat` *`args`*, `string.trim.front` *`s`*, `string.trim.back` *`s`*, `string.trim` *`s`*, `shrink` *`s`* - string operations
 * `max` *`a b`*, `min` *`a b`*, `repeat` *`n func`* - Lisp functions
 * `is_ctl_g` *`k`*, `is_escape` *`k`*, `is_backspace` *`k`*, `is_ctl_s` *`k`*, `is_control_char` *`k`* - helper functions
-
+* `shell-command` - backwards compatibility wrapper for `system`.
 
 ## Femto Extensions
 
@@ -248,134 +270,23 @@ Additional extensions loaded by `femto.rc`
 
 
 ## Lisp Function Interface
-```lisp
 
-;;
-;; cursor movement
-;;
+The functionality of the embedded Lisp interpreter provides core
+Lisp functionality, and editor oriented extensions. Both are described
+in [flisp.html](pdoc/flisp.html) or [flisp.md](docs/flisp.md) respectively.
 
-(forward-char)                          ;; move the point forward 1 character
-(forward-word)                          ;; move the point forward by 1 word
-(forward-page)                          ;; move forward by 1 page
-(backward-char)                         ;; move backward 1 character
-(backward-word)                         ;; move forward 1 word
-(backward-page)                         ;; move backward by 1 page
-(next-line)                             ;; move to the next line
-(previous-line)                         ;; move to the previous line
-(beginning-of-line)                     ;; go to the beginning of the current line
-(end-of-line)                           ;; go to the end of the current line
-(beginning-of-buffer)                   ;; go to the beginning of the buffer
-(end-of-buffer)                         ;; go to the end of the buffer
-(goto-line 11)                          ;; go to the specified line
-(set-point 1234)                        ;; set the point to the value specified
-(get-point)                             ;; returns the current point
+## Building
 
-;;
-;; buffer handling
-;;
+### Documentation
 
-(get-buffer-count)                      ;; return the number of buffers, includes all special buffers and *buffers*
-(get-buffer-name)                       ;; return the name of the current buffer
-(select-buffer "mybuf.txt")             ;; select a buffer called mybuf.txt
-(kill-buffer "mybuf.txt")               ;; kill the buffer called mybuf.txt, unsaved changes are discarded
-(rename-buffer "newname.txt")           ;; rename the current buffer to a new name
-(list-buffers)                          ;; list all the buffers in a buffer called *buffers*
-(find-file "file.txt")                  ;; loads file into a new buffer
-(save-buffer)                           ;; saves the current buffer to disk
-(erase-buffer)                          ;; erases all text of the current buffer
+Femto comes with Markdown and HTML documentation. To rebuild the
+documentation [Pandoc](https://pandoc.org/) is required. Rebuild both
+documentation formats from their respective source files by running:
 
-;;
-;; window handling
-;;
-
-(delete-other-windows)                  ;; make current window the only window
-(other-window)                          ;; moves to the next window down on the screen
-(split-window)                          ;; splits the current window
-
-;;
-;; cut, copy, paste and the clipboard
-;;
-
-(set-mark)                              ;; sets the mark at the current point in the buffer
-(copy-region)                           ;; copies the current region into the clipboard
-(kill-region)                           ;; kills the current region and copies it into the clipboard
-(yank)                                  ;; pastes the clipboard into the current buffer
-(get-clipboard)                         ;; returns the contents of the clipboard as a string
-(set-clipboard var)                     ;; sets up clipboard with contents of string var
-(delete)                                ;; deletes the character at the point
-(backspace)                             ;; deletes the character to the left of the point
-
-;;
-;; keyboard handling
-;;
-
-(get-char)                              ;; return the character at the current position in the file
-(get-key)                               ;; wait for a key press, return the key or "" if the key was a command key
-(get-key-name)                          ;; return the name of the key pressed eg: c-k for control-k.
-(get-key-funcname)                      ;; return the name of the function bound to the key
-(getch)                                 ;; calls the c function getch and returns the keystroke
-(set-key "key-name" "lisp-func")        ;; binds a key to a lisp function, see keynames see "Keys Names below"
-
-;;
-;; string handling
-;; 
-
-(string? s)                             ;; return true if s is a string
-(string.length "string")                ;; return the length of the string
-(string.ref s pos)                      ;; return the character at position pos (0 based) in string s
-(string.trim " abc ")                   ;; return a string with the spaces trimmed off the beginning and the end
-(string.append "string1" "string2")     ;; concatenate 2 strings returning a new string
-(string.substring string n1 n2)         ;; return a substring of string from ref n1 to n2
-(string->number s)                      ;; return a number converted from the string, eg "99" => 99
-(number->string n)                      ;; return a strung representation of the number, eg 99.56 => "99.56"
-
-;;
-;; number handling
-;;
-
-(number->string)                        ;; convert a number type to a string
-(number? var)                           ;; return t if the variable is a number
-(ascii 67)                              ;; return the ASCII character as a string for the number
-(ascii->number "C")                     ;; return the ASCII value for the character passed in as a single char string
-
-;;
-;; interaction with the user
-;;
-
-(message str)                           ;; set the message line to the string
-(clear-message-line)                    ;; clear the message line
-(prompt "prompt" "initial response")    ;; prompts for a value on the command line and returns the response
-(show-prompt p r)                       ;; display the prompt and response but do not go into editing mode of the response
-(prompt-filename "prompt")              ;; display the prompt with file search
-(update-display)                        ;; calls the display function so that the screen is updated
-(refresh)                               ;; marks all windows for updates and the calls update-display
-
-;;
-;; lisp interaction
-;;
-
-(load "filename")                       ;; load and evaluate the lisp file
-(eval-block)                            ;; passes the marked region to be evaluated by lisp, displays the output
-(log-message string)                    ;; log the message to the *messages* buffer
-(log-debug string)                      ;; write the string to the debug.out file
-
-;;
-;; miscellaneous
-;;
-
-(insert-string "string")                ;; insert the string into the buffer at the current location
-(search-forward "accelerate")           ;; search forward from the point value passed in for the string supplied
-(search-backwards "string")             ;; search backwards from the point value passed in for the string supplied
-(get-version-string)                    ;; return the version string for this version of femto
-(shell-command cmd_string)              ;; send the cmd_string to the shell and colect the output in the *output* buffer
-(os.getenv("PATH")                      ;; return the value of the environment variable eg "PATH"
-(add-mode-global("undo")                ;; set a global mode on for all buffers (only supports "undo" at present)
-(exit)                                  ;; exit femto
+    make doc
 
 
-```
-
-## Building on Ubuntu (using UTF8 support in ncurse / ncursesw)
+### Building on Ubuntu (using UTF8 support in ncurse / ncursesw)
 
 When building on Ubuntu you will need to install the libcurses dev package.
 NOTE: As of Femto 1.2 you will also need the libncursesw (wide) library
@@ -412,6 +323,7 @@ The following enhancements are envisaged.
   This will allow users to control their own colour scheme
 
 * Pipe a buffer through a shell command and read the output back into a different buffer
+
 
 ## Known Issues
 

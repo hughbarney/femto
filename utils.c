@@ -68,3 +68,11 @@ void safe_strncpy(char *dest, char *src, int nchars)
     strncpy(dest, src, nchars);
     *(dest + nchars - 1) = '\0';  /* force null termination */
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

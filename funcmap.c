@@ -47,7 +47,12 @@ command_t *register_command(char *cmd_name, void (*func)(void))
     strcpy(cmdp->c_name, cmd_name);
     cmdp->c_func = func;
     cmdp->c_next = NULL;
-    assert(func != NULL);
+    // Note: we had here:
+    //   assert(func != NULL);
+    //   but maybe interfaces have changed and nobody notices, because
+    //   assertions were turned off
+    if (func == NULL)
+        debug("WARNING: register_command(%s, %p): func=NULL\n", cmd_name, func);
 
     /* find the place in the list to insert this command */
     if (cheadp == NULL) {
@@ -362,7 +367,6 @@ void execute_command()
 
         if (funct == NULL || funct == user_func) {
             char funcname[80];
-            reset_output_stream();
             sprintf(funcname, "(%s)", command_name);
             char *output = call_lisp(funcname);
 
@@ -374,7 +378,6 @@ void execute_command()
                 buf[80] ='\0';
                 msg(buf);
             }    
-            reset_output_stream();
         } else {
             (funct)();
         }
@@ -382,3 +385,11 @@ void execute_command()
 
     mark_all_windows(); /* a lot has gone on, mark every window for update */
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -216,3 +216,11 @@ void disassociate_b(window_t *wp)
     assert(wp->w_bufp != NULL);
     wp->w_bufp->b_cnt--;
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

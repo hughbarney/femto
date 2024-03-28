@@ -7,22 +7,48 @@
 #include <stdio.h>
 #include "header.h"
 
+
+void load_config(); /* Load configuration/init file */
+void gui(); /* The GUI loop used in interactive mode */
+
+#define CPP_XSTR(s) CPP_STR(s)
+#define CPP_STR(s) #s
+
+
 int main(int argc, char **argv)
 {
-    batch_mode = (getenv("FEMTO_BATCH") != NULL);
-    debug_mode = (getenv("FEMTO_DEBUG") != NULL);
-  
+    char *envv, *flib;
+
+    batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
+    debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
+
+    if ((flib=getenv("FEMTOLIB")) == NULL)
+        flib = CPP_XSTR(E_SCRIPTDIR);
+
     /* buffers */
     setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
     curbp = find_buffer(str_scratch, TRUE);
     strncpy(curbp->b_bname, str_scratch, STRBUF_S);
     beginning_of_buffer();
+    /* windows */
+    wheadp = curwp = new_window();
+    associate_b2w(curbp, curwp);
 
     /* Lisp */
     setup_keys();
-    (void)init_lisp(argc, argv);
-    load_config();
+    if (init_lisp(argc, argv, flib))
+        fatal("fLisp initialization failed");
 
+    /* Init file */
+    char *init_file, cmd[TEMPBUF];
+
+    if ((init_file = getenv("FEMTORC")) == NULL)
+        init_file = CPP_XSTR(E_INITFILE);
+
+    snprintf(cmd, TEMPBUF, "(load \"%s\")", init_file);
+    (void)call_lisp(cmd);
+
+    /* GUI */
     if (!batch_mode) gui();
 
     debug("main(): shutdown\n");
@@ -50,9 +76,8 @@ void gui()
     init_pair(ID_DOUBLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* double quoted strings */
     init_pair(ID_BRACE, COLOR_BLACK, COLOR_CYAN);            /* brace highlight */
 
-    wheadp = curwp = new_window();
+    /* windows */
     one_window(curwp);
-    associate_b2w(curbp, curwp);
 
     debug("gui(): loop\n");
     while (!done) {
@@ -110,40 +135,13 @@ void msg(char *m, ...)
     }
 }
 
-void load_config()
-{
-    char *init_file;
-    char *output;
-    int fd;
-
-    init_file = getenv("FEMTORC");
-    if (init_file == NULL)
-        init_file = E_INITFILE;
-
-    debug("load_config(), init_file: %s\n", init_file);
-     
-    if ((fd = open(init_file, O_RDONLY)) == -1) {
-        (void)call_lisp("(message \"failed to open init file\")");
-    } else {
-        reset_output_stream();
-        output = load_file(fd);
-        close(fd);
-        assert(output != NULL);
-
-        /* all exceptions start with the word error: */
-        if (NULL != strstr(output, "error:"))
-            (void)call_lisp("signal 'error-init '(\"init file throws exception\")");
-        reset_output_stream();
-    }
-}
-
 void debug(char *format, ...)
 {
     char buffer[256];
     va_list args;
 
     if (!debug_mode) return;
-     
+
     va_start (args, format);
 
     static FILE *debug_fp = NULL;
@@ -161,3 +159,11 @@ void debug_stats(char *s)
 {
     debug("%s bsz=%d p=%d m=%d gap=%d egap=%d\n", s, curbp->b_ebuf - curbp->b_buf, curbp->b_point, curbp->b_mark, curbp->b_gap - curbp->b_buf, curbp->b_egap - curbp->b_buf);
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

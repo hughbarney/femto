@@ -88,8 +88,8 @@
 ;log-debug
 ;message
 ;next-line
-;number->string
-;number?
+;number-to-string
+;numberp
 ;os.getenv
 ;other-window
 ;page-down
@@ -107,13 +107,13 @@
 ;set-point
 ;- shell-command
 ;split-window
-;string->number
+;string-to-number
 ;string.append
 ;string.length
 ;string.ref
 ;string.substring
 ;string.trim
-;string?
+;stringp
 ;update-display
 ;yank
 

@@ -326,3 +326,11 @@ void b2w_all_windows(buffer_t *bp)
         }
     }
 }
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

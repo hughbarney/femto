@@ -1,3 +1,5 @@
+#define VALGRIND 0
+
 /*
  * header.h, femto, Hugh Barney, 2023
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
@@ -20,9 +22,12 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.17"
+#define E_VERSION       "2.18"
 #define E_LABEL         "Femto:"
-#define E_NOT_BOUND    "<not bound>"
+#define E_NOT_BOUND     "<not bound>"
+#ifndef E_SCRIPTDIR
+#define E_SCRIPTDIR    "/usr/local/share/femto"
+#endif
 #ifndef E_INITFILE
 #define E_INITFILE      "/usr/local/share/femto/femto.rc"
 #endif
@@ -175,7 +180,7 @@ extern command_t *cheadp;
 
 /*
  * Some compilers define size_t as a unsigned 16 bit number while
- * point_t and off_t might be defined as a signed 32 bit number.  
+ * point_t and off_t might be defined as a signed 32 bit number.
  * malloc(), realloc(), fread(), and fwrite() take size_t parameters,
  * which means there will be some size limits because size_t is too
  * small of a type.
@@ -420,16 +425,13 @@ extern void setup_keys();
 
 /* functions in lisp.c */
 extern char *call_lisp(char *);
-extern char *load_file(int);
-extern int init_lisp();
-extern void reset_output_stream(void);
+extern int init_lisp(int, char**, char*);
 
 /* functions in main.c */
 extern int main(int argc, char **);
 extern void debug(char *format, ...);
 extern void debug_stats(char *s);
 extern void fatal(char *msg);
-extern void load_config();
 extern void msg(char *m, ...);
 extern void gui();              /* The GUI loop used in interactive mode */
 
@@ -487,3 +489,11 @@ extern window_t *find_window(char *);
 extern window_t* new_window();
 extern window_t *popup_window(char *);
 extern window_t *split_current_window();
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */
