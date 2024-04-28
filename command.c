@@ -780,7 +780,7 @@ void eval_block()
 
     copy_region();
     assert(scrap != NULL);
-    assert(strlen(scrap) > 0);
+    assert(strlen((char *)scrap) > 0);
 
     output = call_lisp((char *)scrap);
     insert_string("\n");

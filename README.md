@@ -261,10 +261,29 @@ invocations of the `log-debug` Lisp primitive.
 
 Additional extensions loaded by `femto.rc`
 
+* **dired** - enbles directory editing (Emacs style filemanager)
+   * **C-x C-d** to invoke, then single character keystrokes provide menu options
+   * **f** load file on current line
+   * **x** exit dired (other features to be added)
+   
 * **grep** - enables searching for text in files and loading of the files at the location of the match into the editor.
+   * **C-x g** to invoke, will request a search string and files to search
+   * **C-x `** to load the next matching file
+
 * **bufmenu** - the classic Emacs buffer menu
+   * **C-x C-b** to invoke, then single character keystrokes provide menu options
+   * **1** loads the file on the current line in one window
+   * **2** loads the file on the current line in a split window
+   * **s** saves the file on the current line to disk
+   * **k** unloads the file without saving
+   * **x** exits bufmenu
+   
 * **git** - a simple interface to the git version control tool (similar to GNU Emacs magit).
+  * **C-x g** to invoke, then single character keystrokes menu options
+  
 * **oxo** - a basic implementation of tick-tack-toe that runs in the Editor.
+   * **C-x C-o** to invoke
+
 
 ![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-oxo.jpg)
 
