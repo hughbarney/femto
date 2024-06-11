@@ -1,462 +1,670 @@
 <!DOCTYPE html>
 <html lang="en" xml:lang="en">
-<head>
-	<title>fLisp Manual</title>
-	<meta content="text/html; charset=utf-8" http-equiv="content-type" /><meta content="Emacs, editor, Lisp, tiny, reference, manual" name="keywords" /><meta content="Reference and user manual for the fLisp programming language and interpreter" name="description" /><meta content="Georg Lehner &lt;jorge@magma-soft.at&gt;" name="author" /><meta content="2023" name="copyright" />
-</head>
-<body>
-<h1>fLisp Manual</h1>
-
-<h3>Introduction</h3>
-
-<p><i>fLisp</i> is a tiny yet practical interpreter for a dialect of the Lisp programming language. It is used as extension language for the <a href="https://github.com/matp/tiny-lisp">Femto</a> text editor.</p>
-
-<p><i>fLisp</i>&nbsp;originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barnes (pre 2016) and compacted by Georg Lehner in 2023.</p>
-
-<blockquote>
-<p>A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing left to take away.</p>
-
-<p>&mdash; Antoine de Saint-Exupery</p>
-</blockquote>
-
-<h3>Lisp</h3>
-
-<h4>Notation Convention</h4>
-
-<p>fLisp fancies to converge toward Emacs Lisp. Functions descriptions are annoted with a compatibility scale:</p>
-
-<dl>
-	<dt><u>C</u></dt>
-	<dd>Interface compatible, though probably less featureful.</dd>
-	<dt><u>D</u></dt>
-	<dd>Same name, but different behavior.</dd>
-	<dt><u>S: <var>name</var></u></dt>
-	<dd><var>name</var> is a similar but not compatible function in Emacs Lisp.</dd>
-	<dt><u>B</u></dt>
-	<dd>Buggy/incompatible implementation.</dd>
-</dl>
-
-<p>Annotation is omitted if the function does not exist in Emacs Lisp.</p>
-
-<h4>fLisp Interpreter</h4>
-
-<p>When <i>fLisp</i> is invoked it follows a three step process:</p>
-
-<ol>
-	<li>Read: program text is read in and converted into an internal representation.</li>
-	<li>Evaluate: the internal representation is evaluated</li>
-	<li>Print: the result of the evaluation is returned to the invoker.</li>
-</ol>
-
-<p>Core functions of the language operate on internal objects only. The interpreter is extended with additional functions in order to interact with external objects.&nbsp; With respect to the interpreter, extension functions behave the same as core functions.</p>
-
-<h4>Syntax</h4>
-
-<p>Program text is written as a sequence of symbolic expressions - <abbr><dfn>sexp</dfn></abbr>&#39;s in parenthesized form. A sexp is either a&nbsp;single object or a function invocation enclosed in parens. Function invocations can be infinitely nested.</p>
-
-<p>The following characters are special to the reader:</p>
-
-<dl>
-	<dt><code>(</code></dt>
-	<dd>Starts a function invocation, <i>list</i> or <i>cons</i> object (see &quot;Objects and Data Types&quot;).<br />
-	&nbsp;</dd>
-	<dt><code>)</code></dt>
-	<dd>Finishes a function invocation, <i>list</i> or <i>cons</i> object.<br />
-	&nbsp;</dd>
-	<dt><code>&quot;</code></dt>
-	<dd>Encloses strings.<br />
-	&nbsp;</dd>
-	<dt><code>&#39;</code></dt>
-	<dd>With a single quote prefix before a <i>sexp</i>, the <i>sexp</i> is expanded to <code>(quote <var>sexp</var>)</code> before it is evaluated.</dd>
-	<dt><code>.</code></dt>
-	<dd>The expresion<code> (<var>a</var> . <var>b</var>)</code>&nbsp;evaluates to a <i>cons</i> object, holding the objects <var>a</var> and <var>b</var>.</dd>
-</dl>
-
-<p>Numbers are represented in decimal notation.</p>
-
-<p>A list of objects has the form:</p>
-
-<blockquote>
-<p><code><font face="monospace">(</font></code><font face="monospace">[</font><code><font face="monospace"><var>element</var></font></code><font face="monospace"> ..]</font><code><font face="monospace">)</font></code></p>
-</blockquote>
-
-<p>A function invocation has the form:</p>
-
-<blockquote>
-<p><code>(<var>name</var> </code>[<code><var>param</var> </code>..]<code>)</code></p>
-</blockquote>
-
-<p>There are two predefined objects. Their symbols are:</p>
-
-<dl>
-	<dt><code>nil</code></dt>
-	<dd>represents:&nbsp;the empty list:&nbsp;(),&nbsp;the end of a list marker or&nbsp;the false value in logical operations.<br />
-	&nbsp;</dd>
-	<dt><code>t</code></dt>
-	<dd>a fixed, non-false&nbsp;value.</dd>
-</dl>
-
-<h4>Objects and Data Types</h4>
-
-<p><i>fLisp</i> objects have exactly one of the following data types:</p>
-
-<dl>
-	<dt><dfn>number</dfn></dt>
-	<dd><a href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format">double precision floating point number.</a></dd>
-	<dt><dfn>string</dfn></dt>
-	<dd>character array.</dd>
-	<dt><dfn>cons</dfn></dt>
-	<dd>object holding two pointers to objects.</dd>
-	<dt><dfn>symbol</dfn></dt>
-	<dd>string with restricted character set: <code>[A-Z][0-9][a-z]!#$%&amp;*+-./:&lt;=&gt;?@^_~</code></dd>
-	<dt><dfn>lambda</dfn></dt>
-	<dd>anonymous function with parameter evaluation</dd>
-	<dt><dfn>macro</dfn></dt>
-	<dd>anonymous function without parameter evaluation</dd>
-</dl>
-
-<p>Objects are unmutable, all fLisp functions create new objects from existing ones.</p>
-
-<p>Characters do not have their own type. A single character is represented by a <i>string</i> with length 1.</p>
-
-<h4>Symbols, Environments and Functions</h4>
-
-<p>All operations of the interpreter take place in a root environment. An <dfn>environment</dfn> is a collection of named objects. The object names have the <var>symbol</var> datatype.</p>
-
-<p><var>lambda</var> and <var>macro</var> objects are functions. They have a parameter list and a body. When they are invoked, they receive zero or more named objects, bind them one by one to the symbols in the paramter list, evaluate the body and return a result.</p>
-
-<p>When a function executed within the function body want&#39;s to use a named object it is first looked up in the new environment, and then recursively in the environments from which the <var>lambda</var>&nbsp;or <var>macro</var> was invoked.</p>
-
-<p><var>lambda</var>s evaluate each parameter then create a new environment containing the parameters before evaluating the body.</p>
-
-<p><i>macros</i> evaluate the body which typically returns a new expresions in terms of the parameters. The expression is then evaluated in a new environment containing the parameters.</p>
-
-<h4>Functions</h4>
-
-<h5>Interpreter</h5>
-
-<dl>
-	<dt><code>(progn</code> [<code><var>expr</var></code> ..]<code>)</code></dt>
-	<dd>Each <var>expr</var> is evaluated, the value of the last is returned.<br />
-	&nbsp;</dd>
-	<dt><code>(cond</code> [<code><var>clause</var></code> ..]<code>)</code></dt>
-	<dd>Each <var>clause</var> is of the form <code>(<var>pred</var> [<var>action</var>])</code>. <code>cond</code> evaluates each <var>clause</var> in turn:&nbsp;if <var>pred</var> evaluates to <code>nil</code>, the next <var>clause</var> is tested. Otherwise: if there is no <var>action</var> the value of <var>pred</var> is returned, otherwise <code>(progn <var>action</var>)</code> is returned and no more <var>clause</var>s are evaluated.</dd>
-	<dt><code>(setq <var>symbol</var> <var>value</var></code> [<code><var>symbol</var> <var>value</var></code>]..<code>)</code></dt>
-	<dd>Create or update named objects: If <var>symbol</var> is the name of an existing named object in the current or a parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is created in the current environment. <code>setq</code> returns the last <var>value</var>.</dd>
-	<dt><code>(lambda&nbsp;<var>params</var> <var>body</var>)</code></dt>
-	<dd>Returns a <var>lambda</var> function which accepts 0 or more arguments, which are passed as list in the parameter <var>params</var>.</dd>
-	<dt><code>(lambda (</code>[<code><var>param</var></code> ..]<code>) <var>body</var>)</code></dt>
-	<dd>Returns a <var>lambda</var> function which accepts the exact number of arguments given in the list of&nbsp;<var>param</var>s.</dd>
-	<dt><code>(lambda (<var>param</var></code> [<code><var>param</var></code> ..]<code> . opt)</code></dt>
-	<dd>Returns a <var>lambda</var> function which requires at least the exact number of arguments given in the list of <var>param</var>s. All extra arguments are passed as a list in the parameter <var>opt</var>.</dd>
-	<dt><code>(macro&nbsp;<var>params</var> <var>body</var>)</code></dt>
-	<dd>
-	<p>These forms return a <var>macro</var> function with the same parameter handling as with <var>lambda</var>.</p>
-	</dd>
-	<dt><code>(macro (</code>[<code><var>param</var></code> ..]<code>) <var>body</var>)</code></dt>
-	<dd>
-	<p>-</p>
-	</dd>
-	<dt><code>(macro (<var>param</var></code> [<code><var>param</var></code> ..]<code> . opt)</code></dt>
-	<dd>
-	<p>-</p>
-	</dd>
-	<dt><code>(quote <var>expr</var>)</code></dt>
-	<dd>quote returns <var>expr</var>&nbsp;without evaluating it.<br />
-	&nbsp;</dd>
-	<dt>(signal symbol list)</dt>
-	<dd>tbd</dd>
-	<dt>(trap list)</dt>
-	<dd>tbd</dd>
-	<dt>&nbsp;</dt>
-	<dd>&nbsp;</dd>
-</dl>
-
-<h5>Objects</h5>
-
-<dl>
-	<dt><code>(null <var>object</var>)</code></dt>
-	<dd>Returns <code>t</code> if <var>object</var>&nbsp;is&nbsp;<code>nil</code>, otherwise <code>nil</code>.</dd>
-	<dt><code>(symbolp <var>object</var>)</code><span style="display: none;">&nbsp;</span><span style="display: none;">&nbsp;</span></dt>
-	<dd>Returns <code>t</code> if <var>object</var> is of type <i>symbol,&nbsp;</i>otherwise <code>nil</code>.</dd>
-	<dt><code>(symbol-name <var>object</var>)</code></dt>
-	<dd>If <var>object</var> is of type <i>symbol</i> return its value as string.</dd>
-	<dt><code>(numberp <var>object</var>)</code></dt>
-	<dd>Returns <code>t</code> if <var>object</var> is of type <i>number</i>,&nbsp;otherwise <code>nil</code>.</dd>
-	<dt><code>(stringp <var>object</var>)</code> Returns <code>t</code> if <var>object</var> is of type <i>string</i>, otherwise <code>nil</code>.</dt>
-	<dd>&nbsp;</dd>
-	<dt><code>(consp <var>object</var>)</code></dt>
-	<dd>Returns <code>t</code> if <var>object</var> is of type <i>cons</i>, otherwise <code>nil</code>.</dd>
-	<dt><code>(cons <var>car</var> <var>cdr</var>)</code></dt>
-	<dd>Returns a new <i>cons</i> with the first object set to the value of <var>car</var> and the second to the value of <var>cdr</var>.</dd>
-	<dt><code>(car <var>cons</var>)</code></dt>
-	<dd>Returns the first object of <var>cons</var>.</dd>
-	<dt><code>(cdr <var>cons</var>)</code></dt>
-	<dd>Returns the second object of <var>cons</var>.</dd>
-	<dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
-	<dd>Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, <code>nil</code> otherwise.</dd>
-	<dt><code>(print <var>object</var>)</code></dt>
-	<dd>Formats <var>object</var> into a string which can be read by the reader and returns it. As a side effect, the string is printed to the output stream with a leading and a closing newline.&nbsp;<code>print</code> escapes quotes in strings with a backslash.</dd>
-	<dt><code>(princ <var>object</var>)</code></dt>
-	<dt>Formats <var>object</var> into a string and returns it, As a side effect, the string is printed to the output stream.</dt>
-</dl>
-
-<h5>String operations</h5>
-
-<dl>
-	<dt><code>(string.length <var>string</var>)</code></dt>
-	<dd>Returns the length of <var>string</var> as a <i>number</i>.</dd>
-	<dd>&nbsp;</dd>
-	<dt><code>(string.substring <var>string</var> <var>start</var> <var>end</var>)</code></dt>
-	<dd>Returns the substring from <var>string</var> which starts with the character&nbsp;at index <var>start</var> and ends with index <var>end</var>. String indexes are zero based.</dd>
-	<dt><code>(string.append <var>string1</var> <var>string2</var>)</code></dt>
-	<dd>Returns a new string consisting of the concatenation of <var>string1</var> with <var>string2</var>.<br />
-	&nbsp;</dd>
-	<dt><code>(string-to-number <var>string</var>)</code></dt>
-	<dd>Converts <var>string</var> into a corresponding <i>number</i> object. String is interpreted as decimal based integer.</dd>
-	<dt><var><code>(number-to-string number)</code></var></dt>
-	<dd>Converts <var>number</var> into a <i>string</i> object.<br />
-	&nbsp;</dd>
-	<dt><code>(ascii <var>number</var>)</code></dt>
-	<dd>Converts <var>number</var> into a <i>string</i> with one character, which corresponds to the ASCII representation of <var>number</var>.<br />
-	&nbsp;</dd>
-	<dt><code>(ascii-&gt;number <var>string</var>)</code></dt>
-	<dd>Converts the first character of <var>string</var> into a <i>number</i> which corresponds to its&nbsp;ASCII value.</dd>
-	<dt>&nbsp;</dt>
-</dl>
-
-<h5>Arithmetic Operations</h5>
-
-<dl>
-	<dt><code>(+</code> [<code><var>arg</var></code>&nbsp;..]<code>)</code></dt>
-	<dd>Returns the sum of all <var>arg</var>s or&nbsp;<code>0</code>&nbsp;if none given.</dd>
-	<dt><code>(*</code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>Returns the product of all <var>arg</var>s or <code>1</code> if none given.</dd>
-	<dt><code>(-</code> [<code><var>arg</var></code>&nbsp;..]<code>)</code></dt>
-	<dd>Returns 0 if no <var>arg</var> is given, -<var>arg</var> if only one is given,&nbsp;<var>arg</var> minus the sum of all others&nbsp;otherwise.</dd>
-	<dt><code>(/ <var>arg</var></code> [<code><var>div</var></code> ..]<code>)</code></dt>
-	<dd>Returns 1/<var>arg</var> if no <var>div</var> is given, <var>arg</var>/<var>div</var>[/<var>div</var>../] if one or more <var>div</var>s are given, <code>inf</code> if one of the <var>div</var>s is <code>0</code> and the sum of the signs of all operands is even, <code>-inf</code> if it is odd.</dd>
-	<dt><code>(% <var>arg</var></code> [<code><var>div</var></code> ..]<code>)</code></dt>
-	<dd>Returns <code>1</code> if no <var>div</var> is given, <var>arg</var>%<var>div</var>[%<var>div</var> ..] if one or more <var>div</var>s are given. If one of the divs is <code>0</code>, the program exits with an arithmetic&nbsp;exception.</dd>
-	<dt><code>(= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>-<br />
-	&nbsp;</dd>
-	<dt><code>(&lt;&nbsp;<var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>-<br />
-	&nbsp;</dd>
-	<dt><code>(&gt;&nbsp;<var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>-<br />
-	&nbsp;</dd>
-	<dt><code>(&lt;= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>-<br />
-	&nbsp;</dd>
-	<dt><code>(&gt;= <var>arg</var></code> [<code><var>arg</var></code> ..]<code>)</code></dt>
-	<dd>These predicate functions apply&nbsp;the respective comparison operator between all <var>arg</var>s and return the respective result as <code>t</code> or <code>nil</code>.</dd>
-</dl>
-
-<h3>Editor Extensions</h3>
-
-<h4>Buffers</h4>
-
-<p>Buffers store text and allow to manipulate it. A buffer has the following properties:</p>
-
-<dl>
-	<dt><var>Name</var></dt>
-	<dd>Buffers are identified by their name. If a buffer name is enclosed in *asterisks* the buffer receives special treatment.</dd>
-	<dt><var>Text</var></dt>
-	<dd>0 or more characters.</dd>
-	<dt><var>Point</var></dt>
-	<dd>The position&nbsp;in the text where text manipulation takes place.</dd>
-	<dt><var>Mark</var></dt>
-	<dd>An optional second position in the text. If the <var>mark</var> is set, the text between <var>point</var> and <var>mark</var> is called the <dfn>selection</dfn>&nbsp;or <dfn>region</dfn>.</dd>
-	<dt><var>Filename</var></dt>
-	<dd>A buffer can be associated with a file.</dd>
-	<dt><var>Flags</var></dt>
-	<dd>Different flags determine the behaviour of the buffer.</dd>
-</dl>
-
-<p>This section describes the buffer related functions added by Femto to fLisp. The description is separated in function related to buffer management and text manipulation. Buffer management creates, deletes buffers, or selects one of the existing buffers as the <q>current</q> buffer. Text manipulation always operates on the&nbsp;current buffer.</p>
-
-<p>Femto provides a single temporary string storage named <dfn>clipboard</dfn>&nbsp;to support text manipulation.</p>
-
-<h5>Text manipulation</h5>
-
-<dl>
-	<dt><code>(insert-string <var>string</var>)</code></dt>
-	<dd>Inserts&nbsp;<var>string</var> at <i>point</i>. <u>S: insert</u>.</dd>
-	<dt><code>(insert-file-contents-literally <var>string</var>&nbsp;</code>[<code><var>flag</var></code>]<code>)</code></dt>
-	<dd>
-	<p>Inserts the file <var>string</var>&nbsp;after&nbsp;<i>point</i>. If <var>flag</var> is not nil the buffer is marked as not modified. <u>B</u></p>
-	</dd>
-	<dd>
-	<p>Note: Currently the flag is forced to nil. The function should return <code>(<var>filename</var> <var>count</var>)</code>&nbsp;but it returns a flag indicating if the operation succeeded.</p>
-	</dd>
-	<dt><code>(erase-buffer)</code></dt>
-	<dd>Erases all text in&nbsp;the current buffer. <u>C</u></dd>
-	<dt><code>(delete)</code></dt>
-	<dd>Deletes the character after <i>point</i>. <u>S: delete-char</u></dd>
-	<dt><code>(backspace)</code></dt>
-	<dd>Deletes the character to the left of <i>point</i>. <u>S:&nbsp;delete-backward-char</u></dd>
-	<dt><code>(get-char)</code></dt>
-	<dd>Returns the character to the left of <i>point</i>. <u>S:&nbsp;get-byte</u></dd>
-	<dt><code>(copy-region)</code></dt>
-	<dd>Copies&nbsp;<i>region</i> to&nbsp;the <i>clipboard</i>. <u>S:&nbsp;copy-region-as-kill</u></dd>
-	<dt><code>(kill-region)</code></dt>
-	<dd>Deletes the text in&nbsp;the <i>region</i> and copies&nbsp;it to the <i>clipboard</i>. <u>D</u></dd>
-	<dt><code>(yank)</code></dt>
-	<dd>Pastes the <i>clipboard</i>&nbsp;before <i>point</i>. <u>C</u></dd>
-</dl>
-
-<h5>Selection</h5>
-
-<dl>
-	<dt>(set-mark)</dt>
-	<dd>Sets <var>mark</var> to <var>point</var>. <u>D</u></dd>
-	<dt>(get-mark)</dt>
-	<dd>Returns the position of <var>mark</var>, -1 if <var>mark</var> is unset. <u>S: mark</u></dd>
-	<dt>(get-point)</dt>
-	<dd>Returns the position of <var>point</var>. <u>S: point</u></dd>
-	<dt>(get-point-max)</dt>
-	<dd>Returns the maximum accessible value of point in the current buffer. <u>S: point-max</u></dd>
-	<dt><code>(set-clipboard <var>variable</var>)</code></dt>
-	<dd><code>Sets <i>clipboard</i> to the contents of <var>variable</var>.</code>&nbsp;<u>S:&nbsp;gui-set-selection</u></dd>
-	<dt><code>(get-clipboard)</code></dt>
-	<dd>Returns the <i>clipboard</i> contents.&nbsp;&nbsp;<u>S:&nbsp;gui-get-selection</u></dd>
-</dl>
-
-<h5>Cursor Movement</h5>
-
-<dl>
-	<dt><code>(set-point <var>number</var>)</code></dt>
-	<dd>Sets the point to in the current buffer to the position <var>number</var>. <u>S: goto-char</u></dd>
-	<dt><code>(goto-line <var>number</var>)</code></dt>
-	<dd>Sets the point in the current buffer to the first character on line <var>number</var>. <u>S: goto-line</u>, not an Elisp function.</dd>
-	<dt><code>(search-forward <var>string</var>)</code></dt>
-	<dd>Searches for <var>string</var> in the current buffer, starting from point forward. If string is found, sets the point after the first occurrence of <var>string</var> and returns <samp>t</samp>, otherwise leaves point alone and returns <samp>nil</samp>. <u>D</u></dd>
-	<dt><code>(search-backward <var>string</var>)</code></dt>
-	<dd>Searches for <var>string</var> in the current buffer, starting from point backwards. If string is found, sets the point before the first occurrence of <var>string</var> and returns <samp>t</samp>, otherwise leaves point alone and returns <samp>nil</samp>. <u>D</u></dd>
-	<dt><code>(beginning-of-buffer)</code></dt>
-	<dd>Sets the point in the current buffer to the first buffer position, leaving mark in its current position. <u>C</u></dd>
-	<dt><code>(end-of-buffer)</code></dt>
-	<dd>Sets the point in the current buffer to the last buffer position, leaving mark in its current position. <u>C</u></dd>
-	<dt><code>(beginning-of-line)</code></dt>
-	<dd>Sets point before the first character of the current line, leaving mark in its current position. <u>S: move-beginning-of-line</u></dd>
-	<dt><code>(end-of-line)</code></dt>
-	<dd>Sets point after the last character of the current line, i.e. before the end-of-line character sequence, leaving mark in its current position. <u>S: move-end-of-line</u></dd>
-	<dt><code>(forward-word)</code></dt>
-	<dd>Moves the point in the current buffer forward before the first char of the next word. If there is no word left the point is set to the end of the buffer. If the point is already at the start or within a word, the current word is skipped. <u>D</u>: <b>Note</b>: Elisp moves to the <em>end</em> of the the next word.</dd>
-	<dt><code>(backward-word)</code></dt>
-	<dd>Moves the point in the current buffer backward after the last char of the previous word. If there is no word left the point is set to the beginning of the buffer. If the point is already at the end or within a word, the current word is skipped. <u>D</u>: <b>Note</b>: Elisp moves to the <em>beginning</em> of the previous word.</dd>
-	<dt><code>(forward-char)</code></dt>
-	<dd>Moves the point in the current buffer one character forward, but not past the end of the buffer. <u>C</u></dd>
-	<dt><code>(backward-char)</code></dt>
-	<dd>Moves the point in the current buffer one character backward, but not before the end of the buffer. <u>C</u></dd>
-	<dt><code>(forward-page)</code></dt>
-	<dd>Moves the point of the current buffer to the beginning of the last visible line of the associated screen and scrolls the screen up to show it as the first line. <u>S: scroll-up</u></dd>
-	<dt><code>(backward-page)</code></dt>
-	<dd>Moves the point of the current buffer to the beginning of the first visible line of the associoated screen and scrolls the screen down to show it as the last line. <u>S: scroll-down</u></dd>
-	<dt><code>(next-line)</code></dt>
-	<dd>Moves the point in the current buffer to the same character position in the next line, or to the end of the next line if there are not enough characters. In the last line of the buffer moves the point to the end of the buffer. <u>C</u></dd>
-	<dt><code>(previous-line)</code></dt>
-	<dd>Movest the point in the current buffer to the same character position in the previous line, or to the end of the previous line if there are not enough characters. In the first line of the buffer the point is not moved. <u>C</u></dd>
-</dl>
-
-<h5>Buffer management</h5>
-
-<dl>
-	<dt><code>(list-buffers)</code></dt>
-	<dd>Lists all the buffers in a buffer called <samp>*buffers*</samp>.</dd>
-	<dt><code>(get-buffer-count)</code></dt>
-	<dd>Returns the number of buffers, includes all special buffers and <samp>*buffers*</samp>.</dd>
-	<dt><code>(select-buffer <var>string</var>)</code></dt>
-	<dd>Makes the buffer named <var>string</var> the current buffer. Note: <u>C</u> to <code>set-buffer</code> in Elisp.</dd>
-	<dt><code>(rename-buffer <var>string</var>)</code></dt>
-	<dd>Rename the current buffer to <var>string</var>. <u>C</u></dd>
-	<dt><code>(kill-buffer <var>string</var>)</code></dt>
-	<dd>Kill the buffer names <var>string</var>. Unsaved changes are discarded. <u>C</u></dd>
-	<dt><code>(get-buffer-name)</code></dt>
-	<dd>Return the name of the current buffer. Note: <u>C</u> to <code>buffer-name</code> in Elisp.</dd>
-	<dt><code>(add-mode-global <var>string</var>)</code></dt>
-	<dd>Sets global mode&nbsp;<var>string</var> for all buffers. Currently the only global mode is <kbd>undo</kbd>.</dd>
-	<dt><code>(find-file <var>string</var>)</code></dt>
-	<dd>Loads file with path string into a new buffer. <u>C</u></dd>
-	<dt><code>(save-buffer <var>string</var>)</code></dt>
-	<dd>Saves the buffer named <var>string</var> to disk. <u>C</u></dd>
-</dl>
-
-<h4>User Interaction</h4>
-
-<dl>
-	<dt><code>(message <var>string</var>)</code></dt>
-	<dd>Displays&nbsp;<var>string</var> in the message line. <u>D</u>&nbsp;</dd>
-	<dt><code>(clear-message-line)</code></dt>
-	<dd>Displays the empty string in the message line.</dd>
-	<dt><code>(prompt <var>prompt</var> <var>default</var>)</code></dt>
-	<dd>Displays&nbsp;<var>prompt</var> in the command line and sets <var>default</var> as initial value for the user respones. The user can edit the response. When hitting return, the final response is returned.</dd>
-	<dt><code>(show-prompt <var>prompt</var> <var>default</var>)</code></dt>
-	<dd>Displays <var>prompt</var> and <var>default</var> in the commandline, but does not allow editing. Returns <samp>t</samp>.</dd>
-	<dt><code>(prompt-filename <var>prompt</var>)</code></dt>
-	<dd>Displays <var>prompt</var> in the commandline and allows to enter or search for a file name. Returns the relative path to the selected file name or the response typed by the user.</dd>
-	<dt><code>(getch)</code></dt>
-	<dd>Waits for a key to be pressed and returns the key as string. See also <code>get-key-name</code>, <code>get-key-funcname</code> and <code>execute-key</code>.</dd>
-	<dt>(exit)</dt>
-	<dd>Exit Femto without saving modified buffers.</dd>
-</dl>
-
-<h5>Keyboard Handling</h5>
-
-<dl>
-	<dt><code>(set-key <var>key-name</var> <var>lisp-func</var>)</code></dt>
-	<dd>Binds key key-name to the lisp function <var>lisp-func</var>.</dd>
-	<dt><code>(get-key-name)</code></dt>
-	<dd>Returns the name of the currently pressed key, eg: <samp>c-k</samp> for control-k.</dd>
-	<dt><code>(get-key-funcname)</code></dt>
-	<dd>Return the name of the function bound to the currently pressed key.</dd>
-	<dt><code>(execute-key)</code></dt>
-	<dd>Executes the function of the last bound key. <mark>Tbd.&nbsp;bound or pressed?</mark></dd>
-	<dt><code>(describe-bindings)</code></dt>
-	<dd>Creates a listing of all current key bindings, in a buffer named <samp>*help*</samp> and displays it in a new window. <u>C</u></dd>
-	<dt><code>(describe-functions)</code></dt>
-	<dd>Creates a listing of all functions bound to keys in a buffer named <samp>*help*</samp> and displays it in a new window.</dd>
-</dl>
-
-<h5>Window Handling</h5>
-
-<dl>
-	<dt><code>(delete-other-windows)</code></dt>
-	<dt>&nbsp;Make current window the only window. <u>C</u></dt>
-	<dd>&nbsp;</dd>
-	<dt><code>(split-window)</code></dt>
-	<dd>Splits the current window. Creates a new window for the current buffer. <u>C</u></dd>
-	<dt><code>(other-window)</code></dt>
-	<dd>Moves the cursor to the next window down on the screen. Makes the buffer in that window the current buffer. <u>D</u></dd>
-	<dd>Note: Elisp <code>other-window</code> has a required parameter <var>count</var>, which specifies the number of windows to move down or up.</dd>
-	<dt><code>(update-display)</code></dt>
-	<dd>Updates all modified windows.</dd>
-	<dt><code>(refresh)</code></dt>
-	<dd>Updates all windows by marking them modified and calling <code>update-display</code>.</dd>
-</dl>
-
-<h5>Programming and System Interaction</h5>
-
-<dl>
-	<dt><code>(eval-block)</code></dt>
-	<dd>Evaluates the <var>region</var> in the current buffer, inserts the result at <var>point</var> and returns it. If <var>mark</var> in the current buffer is before <var>point</var> <code>eval-block</code> evaluates this <var>region</var>&nbsp;and inserts the result at <var>point</var>. If <var>point</var> is before <var>mark</var> <code>eval-block</code> does nothing but returning <samp>t</samp>.</dd>
-	<dt><code>(system <var>string</var>)</code></dt>
-	<dd>Executes the <a href="https://man7.org/linux/man-pages/man3/system.3.html">system(1)</a> function with <var>string</var> as parameter.</dd>
-	<dt><code>(os.getenv <var>string</var>) </code></dt>
-	<dd>Returns the value of the environment variable named <var>string</var>.</dd>
-	<dt><code>(log-message <var>string</var>)</code></dt>
-	<dd>Logs <var>string</var> to the <samp>*messages*</samp> buffer.&nbsp;</dd>
-	<dt><code>(log-debug <var>string</var>)</code></dt>
-	<dd>Logs string to the file <code>debug.out</code>.</dd>
-	<dt><code>(get-version-string)</code></dt>
-	<dd>Returns the complete version string of Femto, including the copyright.</dd>
-	<dt>
-	<h3>Implementation Details</h3>
-
-	<p><mark>Tbd.: Memory consumption, limits, hacking, ...</mark></p>
-	</dt>
-</dl>
-</body>
+  <head>
+    <title>fLisp Manual</title>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta content="Emacs, editor, Lisp, tiny, reference, manual" name="keywords" />
+    <meta content="Reference and user manual for the fLisp programming language and interpreter" name="description" />
+    <meta content="Georg Lehner &lt;jorge@magma-soft.at&gt;" name="author" />
+    <meta content="2023" name="copyright" />
+  </head>
+  <body>
+    <h1>fLisp Manual</h1>
+
+    <h3>Introduction</h3>
+    <blockquote>
+      <p>
+	A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing
+	left to take away.
+      </p>
+
+      <p>&mdash; Antoine de Saint-Exupery</p>
+    </blockquote>
+    <p>
+      <i>fLisp</i> is a tiny yet practical interpreter for a dialect of the Lisp programming language. It is used as
+      extension language for the <a href="https://github.com/matp/tiny-lisp">Femto</a> text editor.
+    </p>
+    <p>
+      <i>fLisp</i> originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was
+    integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barnes (pre 2016) and compacted by
+    Georg Lehner in 2023.
+    </p>
+    <p>This is a reference manual. If you want to learn about Lisp programming use other resources eg.</p>
+    <ul>
+      <li>The <a href="lisp-lang.org">Common Lisp</a> web site,</li>
+      <li>
+	<a href="https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html">An Introduction to Programming in
+	  Emacs Lisp</a> or
+      </li>
+      <li><a href="https://www.scheme.org/">The Scheme Programming Language</a>.</li>
+    </ul>
+    <h3>Lisp</h3>
+    <h4>Notation Convention</h4>
+
+    <p>
+      <i>fLisp</i> fancies to converge toward Emacs Lisp. Function descriptions are annoted with a compatibility
+      scale:
+    </p>
+    <dl>
+      <dt><u>C</u></dt>
+      <dd>Interface compatible, though probably less featureful.</dd>
+      <dt><u>D</u></dt>
+      <dd>Same name, but different behavior.</dd>
+      <dt><u>S: <var>name</var></u></dt>
+      <dd><var>name</var> is a similar but not compatible function in Emacs Lisp.</dd>
+      <dt><u>B</u></dt>
+      <dd>Buggy/incompatible implementation.</dd>
+    </dl>
+    <p>Annotation is omitted if the function does not exist in Emacs Lisp.</p>
+
+    <p>We use the following notation rule for the <i>fLisp</i> syntax:</p>
+    <dl>
+      <dt><code><var>name</var></code></dt>
+      <dd>
+	<var>name</var> is the name of a variable. In Markdown documents it is shown with guillements, like
+	this <code>«name»</code>.</dd>
+      <dt><code>[text]</code></dt>
+      <dd><code>text</code> can be given zero or one time.</dd>
+      <dt><code>[text..]</code></dt>
+      <dd><code>text</code> can be given zero or more times.</dd>
+      <dt><q><code> </code></q></dt>
+      <dd>A single space is used to denote an arbitrary sequence of whitespace.</dd>
+    </dl>
+
+    <p>Notes:</p>
+    <ul>
+      <li>
+	<i>fLisp</i> does not use <code>[</code>square brackets<code>]</code> and double-dots <code>..</code> as
+	syntactical elements.
+      </li>
+      <li>String and number notation and formating conventions are the same as in the C language</li>
+    </ul>
+    
+    <h4>fLisp Interpreter</h4>
+
+    <p>When <i>fLisp</i> is invoked it follows a three step process:</p>
+    <ol>
+      <li>Read: program text is read in and converted into an internal representation.</li>
+      <li>Evaluate: the internal representation is evaluated</li>
+      <li>Print: the result of the evaluation is returned to the invoker.</li>
+    </ol>
+    <p>
+      Core functions of the language operate on built-in objects only. <i>fLisp</i> is extended with additional
+      functions in order to interact with editor related objects. With respect to the interpreter, extension functions
+      behave the same as core functions.
+    </p>
+
+    <h4>Syntax</h4>
+
+    <p>
+      Program text is written as a sequence of symbolic expressions - <abbr><dfn>sexp</dfn></abbr>&#39;s - in
+      parenthesized form. A sexp is either a single object or a function invocation enclosed in parens. Function
+      invocations can be infinitely nested.
+    </p>
+    <p>The following characters are special to the reader:</p>
+    <dl>
+      <dt><code>(</code></dt>
+      <dd>Starts a function invocation, <i>list</i> or <i>cons</i> object (see <a href="#objects_and_data_types">Objects
+      and Data Types</a>).</dd>
+      <dt><code>)</code></dt>
+      <dd>Finishes a function invocation, <i>list</i> or <i>cons</i> object</dd>
+      <dt><code>&quot;</code></dt>
+      <dd>Encloses strings.</dd>
+      <dt><code>&#39;</code></dt>
+      <dd>With a single quote prefix before a <abbr>sexp</abbr>, the <abbr>sexp</abbr> is expanded
+      to <code>(quote <var>sexp</var>)</code> before it is evaluated.</dd>
+      <dt><code>.</code></dt>
+      <dd>The expresion<code> (<var>a</var> . <var>b</var>)</code> evaluates to a <i>cons</i> object, holding the
+      objects <var>a</var> and <var>b</var>.</dd>
+    </dl>
+    <p>Numbers are represented in decimal notation.</p>
+    <p>A list of objects has the form:</p>
+    <blockquote>
+      <code>([<var>element</var> ..])</code>
+    </blockquote>
+    <p>A function invocation has the form:</p>
+    <blockquote>
+      <code>(<var>name</var> [<var>param</var> ..])</code>
+    </blockquote>
+    <p>There are two predefined objects. Their symbols are:</p>
+    <dl>
+      <dt><code>nil</code></dt>
+      <dd>
+	represents: the empty list: <code>()</code>, the end of a list marker or the false value in logical operations.
+      </dd>
+      <dt><code>t</code></dt>
+      <dd><q>true</q>, a predefined, non-false value.</dd>
+    </dl>
+
+    <h4 id="objects_and_data_types">Objects and Data Types</h4>
+
+    <p><i>fLisp</i> objects have exactly one of the following data types:</p>
+    <dl>
+      <dt><dfn>number</dfn></dt>
+      <dd>
+	<a href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format">double precision floating point
+	  number.</a>
+      </dd>
+      <dt><dfn>string</dfn></dt>
+      <dd>character array.</dd>
+      <dt><dfn>cons</dfn></dt>
+      <dd>object holding two pointers to objects.</dd>
+      <dt><dfn>symbol</dfn></dt>
+      <dd>string with restricted character set: <code>[A-Z][0-9][a-z]!#$%&amp;*+-./:&lt;=&gt;?@^_~</code></dd>
+      <dt><dfn>lambda</dfn></dt>
+      <dd>anonymous function with parameter evaluation</dd>
+      <dt><dfn>macro</dfn></dt>
+      <dd>anonymous function without parameter evaluation</dd>
+    </dl>
+    <p>
+      Objects are unmutable, functions either create new objects or return existing ones.
+    </p>
+    <p>Characters do not have their own type. A single character is represented by a <i>string</i> with length one.</p>
+
+    <h4>Environments, Functions, Evaluation</h4>
+
+    <p>
+      All operations of the interpreter take place in an environment. An <dfn>environment</dfn> is a collection of named
+      objects. The object names are of type symbol.  An object in an environment is said to
+      be <dfn>bound</dfn> to its name. Environments can have a parent.  Each <i>fLisp</i> interpreter starts with
+      a <dfn>root</dfn> environment without a parent.
+    </p>
+    <p>
+      lambda and macro objects are functions. They have a parameter list and a sexp as body. When functions are invoked
+      a new environment is created as child of the current environment.  Functions receive zero or more objects from the
+      caller.  These are bound one by one to the symbols in the parameter list in the new environment.
+    </p>
+    <p>lambdas return the result of evaluating the body in the new environment.</p>
+    <p>
+      macros first evaluate the body in the calling environment. The resulting sexp is evaluated in the new environment
+      and that result is returned.  macro bodies are typically crafted to return new sexp's in terms of the
+      parameters.</p>
+    <p>
+      When a sexp is evaluated and encounters a symbol it looks it up in the current environment, and
+      then recursively in the environments from which the lambda or macro was invoked.  The symbol
+      of the first found binding is then replaced by its object.
+    </p>
+    <p>
+      <i>fLisp</i> counts with a set of built-in functions called <dfn>primitives</dfn>. They are grouped in the manual
+      by the type of objects they operate on. The primitives are bound in the global environment to the names under
+      which they are described.
+    </p>
+
+    <h4>Primitives</h4>
+
+    <h5>Interpreter Operations</h5>
+
+    <dl>
+      <dt><code>(progn[ <var>expr</var>..])</code></dt>
+      <dd>
+	Each <var>expr</var> is evaluated, the value of the last is returned. If no <var>expr</var> is
+	given, <code>progn</code> returns <code>nil</code>.
+      </dd>
+      <dt><code>(cond[ <var>clause</var>..])</code></dt>
+      <dd>
+	Each <var>clause</var> is of the form <code>(<var>pred</var>[ <var>action</var>])</code>. <code>cond</code>
+	evaluates each <var>clause</var> in turn. If <var>pred</var> evaluates to <code>nil</code>, the
+	next <var>clause</var> is tested. If <var>pred</var> evaluates not to <code>nil</code> and if there is
+	no <var>action</var> the value of <var>pred</var> is returned, otherwise <code>(progn <var>action</var>)</code>
+	is returned and no more <var>clause</var>s are evaluated.
+      </dd>
+      <dt><code>(setq <var>symbol</var> <var>value</var>[ <var>symbol</var> <var>value</var>..])</code></dt>
+      <dd>
+	Create or update named objects: If <var>symbol</var> is the name of an existing named object in the current or a
+	parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is
+	created in the current environment. <code>setq</code> returns the last <var>value</var>.
+      </dd>
+      <dt><code>(lambda <var>params</var> <var>body</var>)</code></dt>
+      <dd>
+	Returns a <var>lambda</var> function which accepts 0 or more arguments, which are passed as list in the
+	parameter <var>params</var>.
+      </dd> 
+      <dt><code>(lambda ([<var>param</var> ..]) <var>body</var>)</code></dt>
+      <dd>
+	Returns a <var>lambda</var> function which accepts the exact number of arguments given in the list
+	of <var>param</var>s.
+      </dd>
+      <dt><code>(lambda (<var>param</var>[ <var>param</var>..] . <var>opt</var>) <var>body</var>)</code></dt>
+      <dd>
+	Returns a <var>lambda</var> function which requires at least the exact number of arguments given in the list
+	of <var>param</var>s. All extra arguments are passed as a list in the parameter <var>opt</var>.
+      </dd>
+      <dt><code>(macro <var>params</var> <var>body</var>)</code></dt>
+      <dt><code>(macro ([<var>param</var> ..]) <var>body</var>)</code></dt>
+      <dt><code>(macro (<var>param</var>[ <var>param</var><..] . <var>opt</var>) <var>body</var>)</code></dt>
+      <dd>
+	These forms return a macro function. Parameter handling is the same as with lambda.
+      </dd>
+      <dt><code>(quote <var>expr</var>)</code></dt>
+      <dd>Returns <var>expr</var> without evaluating it.
+      </dd>
+      <dt><code>(signal <var>symbol</var> <var>list</var>)</code></dt>
+      <dd>tbd</dd>
+      <dt><code>(trap <var>list</var>)</code></dt>
+      <dd>tbd</dd>
+    </dl>
+
+    <h5>Object Operations</h5>
+
+    <dl>
+      <dt><code>(null <var>object</var>)</code></dt>
+      <dd>Returns <code>t</code> if <var>object</var> is <code>nil</code>, otherwise <code>nil</code>.</dd>
+      <dt><code>(symbolp <var>object</var>)</code></dt>
+      <dd>Returns <code>t</code> if <var>object</var> is of type symbol, otherwise <code>nil</code>.</dd>
+      <dt><code>(symbol-name <var>object</var>)</code></dt>
+      <dd>If <var>object</var> is of type symbol return its value as string.</dd>
+      <dt><code>(numberp <var>object</var>)</code></dt>
+      <dd>Returns <code>t</code> if <var>object</var> is of type number, otherwise <code>nil</code>.</dd>
+      <dt><code>(stringp <var>object</var>)</code></dt>
+      <dd>Returns <code>t</code> if <var>object</var> is of type string, otherwise <code>nil</code>.</dd>
+      <dt><code>(consp <var>object</var>)</code></dt>
+      <dd>Returns <code>t</code> if <var>object</var> is of type cons, otherwise <code>nil</code>.</dd>
+      <dt><code>(cons <var>car</var> <var>cdr</var>)</code></dt>
+      <dd>Returns a new cons with the first object set to the value of <var>car</var> and the second to the value of <var>cdr</var>.</dd>
+      <dt><code>(car <var>cons</var>)</code></dt>
+      <dd>Returns the first object of <var>cons</var>.</dd>
+      <dt><code>(cdr <var>cons</var>)</code></dt>
+      <dd>Returns the second object of <var>cons</var>.</dd>
+      <dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
+      <dd>Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, <code>nil</code> otherwise.</dd>
+      <dt><code>(print <var>object</var>)</code></dt>
+      <dd>
+	Formats <var>object</var> into a string which can be read by the reader and returns it. As a side effect, the
+	string is printed to the output stream with a leading and a closing newline. <code>print</code> escapes quotes
+	in strings with a backslash.
+      </dd>
+      <dt><code>(princ <var>object</var>)</code></dt>
+      <dd>
+	Formats <var>object</var> into a string and returns it, As a side effect, the string is printed to the output
+	stream.
+      </dd>
+    </dl>
+
+    <h5>String Operations</h5>
+
+    <dl>
+      <dt><code>(string.length <var>string</var>)</code></dt>
+      <dd>Returns the length of <var>string</var> as a <i>number</i>.</dd>
+      <dt><code>(string.substring <var>string</var> <var>start</var> <var>end</var>)</code></dt>
+      <dd>
+	Returns the substring from <var>string</var> which starts with the character at index <var>start</var> and ends
+	with index <var>end</var>. String indexes are zero based.
+      </dd>
+      <dt><code>(string.append <var>string1</var> <var>string2</var>)</code></dt>
+      <dd>Returns a new string consisting of the concatenation of <var>string1</var> with <var>string2</var>.</dd>
+      <dt><code>(string-to-number <var>string</var>)</code></dt>
+      <dd>
+	Converts <var>string</var> into a corresponding <i>number</i> object. String is interpreted as decimal based
+	integer.
+      </dd>
+      <dt><code>(number-to-string <var>number</var>)</code></dt>
+      <dd>Converts <var>number</var> into a <i>string</i> object.
+      </dd>
+      <dt><code>(ascii <var>number</var>)</code></dt>
+      <dd>
+	Converts <var>number</var> into a <i>string</i> with one character, which corresponds to the ASCII
+	representation of <var>number</var>.
+      </dd>
+      <dt><code>(ascii-&gt;number <var>string</var>)</code></dt>
+      <dd>
+	Converts the first character of <var>string</var> into a <i>number</i> which corresponds to its ASCII
+	value.
+      </dd>
+    </dl>
+
+    <h5>Arithmetic Operations</h5>
+
+    <dl>
+      <dt><code>(+[ <var>arg</var>..])</code></dt>
+      <dd>Returns the sum of all <var>arg</var>s or <code>0</code> if none is given.</dd>
+      <dt><code>(*[ <var>arg</var>..])</code></dt>
+      <dd>Returns the product of all <var>arg</var>s or <code>1</code> if none given.</dd>
+      <dt><code>(-[ <var>arg</var>..])</code></dt>
+      <dd>
+	Returns 0 if no <var>arg</var> is given, -<var>arg</var> if only one is given, <var>arg</var> minus the sum of
+	all others otherwise.
+      </dd>
+      <dt><code>(/ <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dd>
+	Returns 1/<var>arg</var> if no <var>div</var> is given, <var>arg</var>/<var>div</var>[/<var>div</var>..] if one
+	or more <var>div</var>s are given, <code>inf</code> if one of the <var>div</var>s is <code>0</code> and the sum
+	of the signs of all operands is even, <code>-inf</code> if it is odd.
+      </dd>
+      <dt><code>(% <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dd>
+	Returns <code>1</code> if no <var>div</var> is given, <var>arg</var>%<var>div</var>[%<var>div</var>..] if one
+	or more <var>div</var>s are given. If one of the divs is <code>0</code>, the program exits with an arithmetic
+	exception.
+      </dd>
+      <dt><code>(= <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dt><code>(&lt; <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dt><code>(&gt; <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dt><code>(&lt;= <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dt><code>(&gt;= <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dd>
+	These predicate functions apply the respective comparison operator between all <var>arg</var>s and return the
+	respective result as <code>t</code> or <code>nil</code>.  If only one <var>arg</var> is given they all
+	return <code>t</code>.
+      </dd>
+    </dl>
+
+    <h3>Editor Extension</h3>
+
+    <p>The editor extensions introduces several types of objects/functionality:</p>
+    <ul>
+      <li><dfn>Buffers</dfn> hold text</li>
+      <li><dfn>Windows</dfn> display buffer contents to the user</li>
+      <li><dfn>Keyboard Input</dfn> allows the user to interact with buffers and windows</li>
+      <li>The <dfn>Message Line</dfn> gives feedback to the user</li>
+      <li>Several other function for operating system or user interaction</li>
+    </ul>
+
+    <h4>Buffers</h4>
+
+    <p>
+      This section describes the buffer related functions added by Femto to fLisp. The description is separated in
+      function related to buffer management and text manipulation.  Text manipulation always operates on
+      the <dfn>current buffer</dfn>. Buffer management creates, deletes buffers, or selects one of the existing buffers
+      as the current buffer.  current buffercode.
+    </p>
+
+    <p>Buffers store text and allow to manipulate it. A buffer has the following properties:</p>
+    <dl>
+      <dt><var>name</var></dt>
+      <dd>
+	Buffers are identified by their name. If a buffer name is enclosed in <samp>*</samp>asterisks<samp>*</samp> the
+	buffer receives special treatment.
+      </dd>
+      <dt><var>text</var></dt>
+      <dd>0 or more characters.</dd>
+      <dt><var>point</var></dt>
+      <dd>The position in the text where text manipulation takes place.</dd>
+      <dt><var>mark</var></dt>
+      <dd>
+	An optional second position in the text. If the <var>mark</var> is set, the text between <var>point</var>
+	and <var>mark</var> is called the <dfn>selection</dfn> or <dfn>region</dfn>.
+      </dd>
+      <dt><var>filename</var></dt>
+      <dd>If set the buffer is associated with the respective file.</dd>
+      <dt><var>flags</var></dt>
+      <dd>Different flags determine the behaviour of the buffer.</dd>
+    </dl>
+
+    <p>In the following, all mentions of these variables refer to the current buffers properties.</p>
+    
+    <h5>Text manipulation</h5>
+
+    <dl>
+      <dt><code>(insert-string <var>string</var>)</code></dt>
+      <dd>Inserts <var>string</var> at <var>point</var>. <u>S: insert</u>.</dd>
+      <dt><code>(insert-file-contents-literally <var>string</var> </code>[<code><var>flag</var></code>]<code>)</code></dt>
+      <dd>
+	Inserts the file <var>string</var> after <var>point</var>. If <var>flag</var> is not nil the buffer is marked as not
+	modified. <u>B</u>
+      </dd>
+      <dd>
+	<p>
+	  Note: Currently the flag is forced to nil. The function should
+	  return <code>(<var>filename</var> <var>count</var>)</code> but it returns a flag indicating if the operation
+	  succeeded.
+	</p>
+      </dd>
+      <dt><code>(erase-buffer)</code></dt>
+      <dd>Erases all text in the current buffer. <u>C</u></dd>
+      <dt><code>(delete)</code></dt>
+      <dd>Deletes the character after <var>point</var>. <u>S: delete-char</u></dd>
+      <dt><code>(backspace)</code></dt>
+      <dd>Deletes the character to the left of <var>point</var>. <u>S: delete-backward-char</u></dd>
+      <dt><code>(get-char)</code></dt>
+      <dd>Returns the character to the left of <var>point</var>. <u>S: get-byte</u></dd>
+      <dt><code>(copy-region)</code></dt>
+      <dd>Copies <var>region</var> to the <var>clipboard</var>. <u>S: copy-region-as-kill</u></dd>
+      <dt><code>(kill-region)</code></dt>
+      <dd>Deletes the text in the <var>region</var> and copies it to the <var>clipboard</var>. <u>D</u></dd>
+      <dt><code>(yank)</code></dt>
+      <dd>Pastes the <var>clipboard</var> before <var>point</var>. <u>C</u></dd>
+    </dl>
+
+    <h5>Selection</h5>
+
+    <dl>
+      <dt><code>(set-mark)</code></dt>
+      <dd>Sets <var>mark</var> to <var>point</var>. <u>D</u></dd>
+      <dt><code>(get-mark)</code></dt>
+      <dd>Returns the position of <var>mark</var>, -1 if <var>mark</var> is unset. <u>S: mark</u></dd>
+      <dt><code>(get-point)</code></dt>
+      <dd>Returns the position of <var>point</var>. <u>S: point</u></dd>
+      <dt><code>(get-point-max)</code></dt>
+      <dd>Returns the maximum accessible value of point in the current buffer. <u>S: point-max</u></dd>
+      <dt><code>(set-clipboard <var>variable</var>)</code></dt>
+      <dd><code>Sets <var>clipboard</var> to the contents of <var>variable</var>.</code> <u>S: gui-set-selection</u></dd>
+      <dt><code>(get-clipboard)</code></dt>
+      <dd>Returns the <var>clipboard</var> contents.  <u>S: gui-get-selection</u></dd>
+    </dl>
+
+    <h5>Cursor Movement</h5>
+
+    <dl>
+      <dt><code>(set-point <var>number</var>)</code></dt>
+      <dd>Sets the point to in the current buffer to the position <var>number</var>. <u>S: goto-char</u></dd>
+      <dt><code>(goto-line <var>number</var>)</code></dt>
+      <dd>
+	Sets the point in the current buffer to the first character on line <var>number</var>. <u>S: goto-line</u>, not
+	an Elisp function.
+      </dd>
+      <dt><code>(search-forward <var>string</var>)</code></dt>
+      <dd>
+	Searches for <var>string</var> in the current buffer, starting from point forward. If string is found, sets the
+	point after the first occurrence of <var>string</var> and returns <samp>t</samp>, otherwise leaves point alone
+	and returns <samp>nil</samp>. <u>D</u>
+      </dd>
+      <dt><code>(search-backward <var>string</var>)</code></dt>
+      <dd>
+	Searches for <var>string</var> in the current buffer, starting from point backwards. If string is found, sets
+	the point before the first occurrence of <var>string</var> and returns <samp>t</samp>, otherwise leaves point
+	alone and returns <samp>nil</samp>. <u>D</u>
+      </dd>
+      <dt><code>(beginning-of-buffer)</code></dt>
+      <dd>
+	Sets the point in the current buffer to the first buffer position, leaving mark in its current
+	position. <u>C</u>
+      </dd>
+      <dt><code>(end-of-buffer)</code></dt>
+      <dd>
+	Sets the point in the current buffer to the last buffer position, leaving mark in its current position. <u>C</u>
+      </dd>
+      <dt><code>(beginning-of-line)</code></dt>
+      <dd>
+	Sets point before the first character of the current line, leaving mark in its current position. <u>S:
+	  move-beginning-of-line</u>
+      </dd>
+      <dt><code>(end-of-line)</code></dt>
+      <dd>
+	Sets point after the last character of the current line, i.e. before the end-of-line character sequence, leaving
+	mark in its current position. <u>S: move-end-of-line</u>
+      </dd>
+      <dt><code>(forward-word)</code></dt>
+      <dd>
+	Moves the point in the current buffer forward before the first char of the next word. If there is no word left
+	the point is set to the end of the buffer. If the point is already at the start or within a word, the current
+	word is skipped. <u>D</u>: <b>Note</b>: Elisp moves to the <em>end</em> of the the next word.
+      </dd>
+      <dt><code>(backward-word)</code></dt>
+      <dd>
+	Moves the point in the current buffer backward after the last char of the previous word. If there is no word
+	left the point is set to the beginning of the buffer. If the point is already at the end or within a word, the
+	current word is skipped. <u>D</u>: <b>Note</b>: Elisp moves to the <em>beginning</em> of the previous word.
+      </dd>
+      <dt><code>(forward-char)</code></dt>
+      <dd>Moves the point in the current buffer one character forward, but not past the end of the buffer. <u>C</u></dd>
+      <dt><code>(backward-char)</code></dt>
+      <dd>
+	Moves the point in the current buffer one character backward, but not before the end of the
+	buffer. <u>C</u>
+      </dd> 
+      <dt><code>(forward-page)</code></dt>
+      <dd>
+	Moves the point of the current buffer to the beginning of the last visible line of the associated screen and
+	scrolls the screen up to show it as the first line. <u>S: scroll-up</u>
+      </dd>
+      <dt><code>(backward-page)</code></dt>
+      <dd>
+	Moves the point of the current buffer to the beginning of the first visible line of the associoated screen and
+	scrolls the screen down to show it as the last line. <u>S: scroll-down</u>
+      </dd>
+      <dt><code>(next-line)</code></dt>
+      <dd>
+	Moves the point in the current buffer to the same character position in the next line, or to the end of the next
+	line if there are not enough characters. In the last line of the buffer moves the point to the end of the
+	buffer. <u>C</u>
+      </dd>
+      <dt><code>(previous-line)</code></dt>
+      <dd>
+	Moves the point in the current buffer to the same character position in the previous line, or to the end of the
+	previous line if there are not enough characters. In the first line of the buffer the point is not
+	moved. <u>C</u>
+      </dd>
+    </dl>
+
+    <h5>Buffer management</h5>
+
+    <dl>
+      <dt><code>(list-buffers)</code></dt>
+      <dd>Lists all the buffers in a buffer called <samp>*buffers*</samp>.</dd>
+      <dt><code>(get-buffer-count)</code></dt>
+      <dd>Returns the number of buffers, includes all special buffers and <samp>*buffers*</samp>.</dd>
+      <dt><code>(select-buffer <var>string</var>)</code></dt>
+      <dd>Makes the buffer named <var>string</var> the current buffer. Note: <u>C</u> to <code>set-buffer</code> in Elisp.</dd>
+      <dt><code>(rename-buffer <var>string</var>)</code></dt>
+      <dd>Rename the current buffer to <var>string</var>. <u>C</u></dd>
+      <dt><code>(kill-buffer <var>string</var>)</code></dt>
+      <dd>Kill the buffer names <var>string</var>. Unsaved changes are discarded. <u>C</u></dd>
+      <dt><code>(get-buffer-name)</code></dt>
+      <dd>Return the name of the current buffer. Note: <u>C</u> to <code>buffer-name</code> in Elisp.</dd>
+      <dt><code>(add-mode-global <var>string</var>)</code></dt>
+      <dd>Sets global mode <var>string</var> for all buffers. Currently the only global mode is <kbd>undo</kbd>.</dd>
+      <dt><code>(find-file <var>string</var>)</code></dt>
+      <dd>Loads file with path string into a new buffer. <u>C</u></dd>
+      <dt><code>(save-buffer <var>string</var>)</code></dt>
+      <dd>Saves the buffer named <var>string</var> to disk. <u>C</u></dd>
+    </dl>
+
+    <h4>User Interaction</h4>
+
+    <p>
+      This section lists function related to window and message line manipulation, keyboard input and system
+      interaction.
+    </p>
+
+    <h5>Window Handling</h5>
+
+    <dl>
+      <dt><code>(delete-other-windows)</code></dt>
+      <dd>Make current window the only window. <u>C</u></dd>
+      <dt><code>(split-window)</code></dt>
+      <dd>Splits the current window. Creates a new window for the current buffer. <u>C</u></dd>
+      <dt><code>(other-window)</code></dt>
+      <dd>
+	Moves the cursor to the next window down on the screen. Makes the buffer in that window the current
+	buffer. <u>D</u>
+      </dd> 
+      <dd>
+	<p>Note: Elisp <code>other-window</code> has a required parameter <var>count</var>, which specifies the number
+	  of windows to move down or up.
+	</p>
+      </dd>
+      <dt><code>(update-display)</code></dt>
+      <dd>Updates all modified windows.</dd>
+      <dt><code>(refresh)</code></dt>
+      <dd>Updates all windows by marking them modified and calling <code>update-display</code>.</dd>
+    </dl>
+
+    <h5>Message Line</h5>
+    <dl>
+      <dt><code>(message <var>string</var>)</code></dt>
+      <dd>Displays <var>string</var> in the message line. <u>D</u></dd>
+      <dt><code>(clear-message-line)</code></dt>
+      <dd>Displays the empty string in the message line.</dd>
+      <dt><code>(prompt <var>prompt</var> <var>default</var>)</code></dt>
+      <dd>
+	Displays <var>prompt</var> in the command line and sets <var>default</var> as initial value for the user
+	respones. The user can edit the response. When hitting return, the final response is returned.
+      </dd>
+      <dt><code>(show-prompt <var>prompt</var> <var>default</var>)</code></dt>
+      <dd>
+	Displays <var>prompt</var> and <var>default</var> in the commandline, but does not allow
+	editing. Returns <code>t</code>.
+      </dd>
+      <dt><code>(prompt-filename <var>prompt</var>)</code></dt>
+      <dd>
+	Displays <var>prompt</var> in the commandline and allows to enter or search for a file name. Returns the
+	relative path to the selected file name or the response typed by the user.
+      </dd>
+    </dl>
+
+    <h5>Keyboard Handling</h5>
+
+    <dl>
+      <dt><code>(set-key <var>key-name</var> <var>lisp-func</var>)</code></dt>
+      <dd>Binds key key-name to the lisp function <var>lisp-func</var>.</dd>
+      <dt><code>(get-key-name)</code></dt>
+      <dd>Returns the name of the currently pressed key, eg: <samp>c-k</samp> for control-k.</dd>
+      <dt><code>(get-key-funcname)</code></dt>
+      <dd>Return the name of the function bound to the currently pressed key.</dd>
+      <dt><code>(execute-key)</code></dt>
+      <dd>Executes the function of the last bound key. <mark>Tbd. bound or pressed?</mark></dd>
+      <dt><code>(describe-bindings)</code></dt>
+      <dd>
+	Creates a listing of all current key bindings, in a buffer named <samp>*help*</samp> and displays it in a new
+	window. <u>C</u>
+      </dd>
+      <dt><code>(describe-functions)</code></dt>
+      <dd>
+	Creates a listing of all functions bound to keys in a buffer named <samp>*help*</samp> and displays it in a new
+	window.
+      </dd>
+      <dt><code>(getch)</code></dt>
+      <dd>
+	Waits for a key to be pressed and returns the key as string. See
+	also <code>get-key-name</code>, <code>get-key-funcname</code> and <code>execute-key</code>.
+      </dd>
+    </dl>
+
+    <h5>Programming and System Interaction</h5>
+
+    <dl>
+      <dt><code>(exit)</code></dt>
+      <dd>Exit Femto without saving modified buffers.</dd>
+      <dt><code>(eval-block)</code></dt>
+      <dd>
+	Evaluates the <var>region</var> in the current buffer, inserts the result at <var>point</var> and returns
+	it. If <var>mark</var> in the current buffer is before <var>point</var> <code>eval-block</code> evaluates
+	this <var>region</var> and inserts the result at <var>point</var>. If <var>point</var> is
+	before <var>mark</var> <code>eval-block</code> does nothing but returning <samp>t</samp>.
+      </dd>
+      <dt><code>(system <var>string</var>)</code></dt>
+      <dd>
+	Executes the <a href="https://man7.org/linux/man-pages/man3/system.3.html">system(1)</a> function
+	with <var>string</var> as parameter.
+      </dd>
+      <dt><code>(os.getenv <var>string</var>) </code></dt>
+      <dd>Returns the value of the environment variable named <var>string</var>.</dd>
+      <dt><code>(log-message <var>string</var>)</code></dt>
+      <dd>Logs <var>string</var> to the <samp>*messages*</samp> buffer. </dd>
+      <dt><code>(log-debug <var>string</var>)</code></dt>
+      <dd>Logs string to the file <code>debug.out</code>.</dd>
+      <dt><code>(get-version-string)</code></dt>
+      <dd>Returns the complete version string of Femto, including the copyright.</dd>
+    </dl>
+    
+    <h3>Implementation Details</h3>
+
+    <p><mark>Tbd.: Memory consumption, limits, hacking, ...</mark></p>
+  </body>
 </html>
+<!--
+    Emacs:
+    Local Variables:
+    fill-column: 120
+    End:
+  -->

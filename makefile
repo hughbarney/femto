@@ -77,8 +77,8 @@ main.o: main.c header.h
 	  -D E_INITFILE=$(INITFILE) \
 	  -c main.c
 
-docs/flisp.md: pdoc/flisp.html
-	pandoc -o $@ -t gfm $<
+docs/flisp.md: pdoc/flisp.html pdoc/h2m.lua
+	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
 
 README.html: README.md
 	pandoc -o $@ -f gfm $<
