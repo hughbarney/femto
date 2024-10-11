@@ -273,6 +273,9 @@ void gc(GC_PARAM)
             object->vars = gcMoveObject(object->vars);
             object->vals = gcMoveObject(object->vals);
             break;
+        case TYPE_MOVED:
+            exceptionWithObject(object, "object already moved");
+            break;
         }
     }
 
@@ -819,6 +822,9 @@ void writeObject(Object * object, bool readably, Stream *stream)
         CASE(TYPE_MACRO, "Macro", object->params);
         CASE(TYPE_ENV, "Env", object->vars);
 #undef CASE
+    case TYPE_MOVED:
+        writeString("#<Error: gc moved object>", stream);
+        break;
     }
 }
 
