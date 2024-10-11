@@ -1,8 +1,12 @@
+;; -*-Lisp-*-
 ;;
 ;; Basic Femto extensions
 ;;
 
 (require 'flisp)
+
+(defun load-script(fn)
+  (load (concat script_dir "/" fn)))
 
 (defun repeat (n func)  
   (cond ((> n 0) (func) (repeat (- n 1) func))))
