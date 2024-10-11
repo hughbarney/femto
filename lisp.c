@@ -222,7 +222,7 @@ Object *gcMoveObject(Object * object)
         return object;
 
     // if the object has already been moved, return its new location
-    if (object->type == (Type) - 1)
+    if (object->type == TYPE_MOVED)
         return object->forward;
 
     // copy object to to-space
@@ -231,7 +231,7 @@ Object *gcMoveObject(Object * object)
     flisp.memory->toOffset += object->size;
 
     // mark object as moved and set forwarding pointer
-    object->type = (Type) - 1;
+    object->type = TYPE_MOVED;
     object->forward = forward;
 
     return object->forward;
@@ -239,6 +239,8 @@ Object *gcMoveObject(Object * object)
 
 void gc(GC_PARAM)
 {
+    debug("collecting garbage\n");
+
     flisp.memory->toOffset = 0;
 
     // move symbols and root objects
@@ -288,7 +290,7 @@ size_t memoryAlign(size_t size, size_t alignment)
     return (size + alignment - 1) & ~(alignment - 1);
 }
 
-Object *memoryAllocObject(Type type, size_t size, GC_PARAM)
+Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
 {
     size = memoryAlign(size, sizeof(void *));
 
@@ -316,7 +318,7 @@ Object *memoryAllocObject(Type type, size_t size, GC_PARAM)
 
 // CONSTRUCTING OBJECTS ///////////////////////////////////////////////////////
 
-Object *newObject(Type type, GC_PARAM)
+Object *newObject(ObjectType type, GC_PARAM)
 {
     return memoryAllocObject(type, sizeof(Object), GC_ROOTS);
 }
@@ -335,7 +337,7 @@ Object *newNumber(double number, GC_PARAM)
     return object;
 }
 
-Object *newObjectWithString(Type type, size_t size, GC_PARAM)
+Object *newObjectWithString(ObjectType type, size_t size, GC_PARAM)
 {
     size = (size > sizeof(((Object *) NULL)->string))
         ? size - sizeof(((Object *) NULL)->string)
@@ -422,7 +424,7 @@ Object *newSymbol(char *string, GC_PARAM)
     return newSymbolWithLength(string, strlen(string), GC_ROOTS);
 }
 
-Object *newObjectWithClosure(Type type, Object ** params, Object ** body, Object ** env, GC_PARAM)
+Object *newObjectWithClosure(ObjectType type, Object ** params, Object ** body, Object ** env, GC_PARAM)
 {
     Object *list;
 
