@@ -1,8 +1,5 @@
 ;; flisp Language
 
-(defun load-script(fn)
-  (load (concat script_dir "/" fn)))
-
 ;; Expected Lisp idioms
 
 (setq not null)
@@ -51,4 +48,5 @@
 (defun nth (n list)
   (car (nthcdr n list)))
 
+(require 'core)
 (provide 'flisp)
