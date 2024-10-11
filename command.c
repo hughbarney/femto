@@ -70,7 +70,7 @@ void right()
 
 
 /*
- * work out number of bytes based on first byte 
+ * work out number of bytes based on first byte
  *
  * 1 byte utf8 starts 0xxxxxxx  00 - 7F : 000 - 127
  * 2 byte utf8 starts 110xxxxx  C0 - DF : 192 - 223
@@ -134,7 +134,7 @@ void forward_page()
     while (0 < curbp->b_row--)
         down();
     /* this stops a reframe in display(), and epage is recalculated during display() */
-    curbp->b_epage = pos(curbp, curbp->b_ebuf); 
+    curbp->b_epage = pos(curbp, curbp->b_ebuf);
 }
 
 void backward_page()
@@ -175,7 +175,7 @@ void insert()
     } else {
         the_char[0] = *input == '\r' ? '\n' : *input;
         the_char[1] = '\0'; /* null terminate */
-        *curbp->b_gap++ = the_char[0]; 
+        *curbp->b_gap++ = the_char[0];
         curbp->b_point = pos(curbp, curbp->b_egap);
         /* the point is set so that and undo will backspace over the char */
         add_undo(curbp, UNDO_T_INSERT, curbp->b_point, the_char, NULL);
