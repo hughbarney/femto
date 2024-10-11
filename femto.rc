@@ -9,6 +9,8 @@
 ;; For example: (set-key "c-k" "(kill-to-eol)")
 ;;
 
+;; Core fLisp extensions - this is a copy of the core.lsp library
+
 (setq list (lambda args args))
 
 (setq defmacro
@@ -67,6 +69,8 @@
 	 (cond ((memq feature features)	feature)))))
 
 (provide 'core)
+
+;; Batch mode processing and Femto editor startup
 
 (setq
  ~ (os.getenv "HOME")
