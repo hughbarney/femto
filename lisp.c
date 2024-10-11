@@ -35,6 +35,7 @@
 #include <curses.h>
 
 #include "header.h"
+#include "lisp.h"
 
 #define F_NONE          0
 #define F_CLEAR         1
@@ -44,77 +45,16 @@ typedef long point_t;
 #define MAP_ANONYMOUS        MAP_ANON
 #endif
 
-//#define MEMORY_SIZE          131072UL
-#define MEMORY_SIZE          262144UL  /* 256k */
-
-typedef struct Object Object;
-
-typedef enum Type {
-    TYPE_NUMBER,
-    TYPE_STRING,
-    TYPE_SYMBOL,
-    TYPE_CONS,
-    TYPE_LAMBDA,
-    TYPE_MACRO,
-    TYPE_PRIMITIVE,
-    TYPE_ENV
-} Type;
-
-struct Object {
-    Type type;
-    size_t size;
-    union {
-        struct { double number; };                      // number
-        struct { char string[sizeof (Object *[3])]; };  // string, symbol
-        struct { Object *car, *cdr; };                  // cons
-        struct { Object *params, *body, *env; };        // lambda, macro
-        struct { int primitive; char *name; };          // primitive
-        struct { Object *parent, *vars, *vals; };       // env
-        struct { Object *forward; };                    // forwarding pointer
-    };
-};
-
-static Object *nil = &(Object) { TYPE_SYMBOL,.string = "nil" };
-static Object *t = &(Object) { TYPE_SYMBOL,.string = "t" };
-
-typedef enum StreamType {
-    STREAM_TYPE_STRING,
-    STREAM_TYPE_FILE
-} StreamType;
-
-typedef struct Stream {
-    StreamType type;
-    char *buffer;
-    int fd;
-    size_t length, capacity;
-    off_t offset, size;
-} Stream;
-
-typedef struct Memory {
-    size_t capacity, fromOffset, toOffset;
-    void *fromSpace, *toSpace;
-} Memory;
+Object *nil = &(Object) { TYPE_SYMBOL,.string = "nil" };
+Object *t = &(Object) { TYPE_SYMBOL,.string = "t" };
 
 
-// The interpreter struct holds all pieces together which are needed
-// to execute Lisp code.
-//
-// Note: WIP, relevant procedures must get a handle to the
-//   Interpreter, instead of accessing the static allocated flisp.
-//   init_lisp() must allocate the memory by itself and return an
-//   Interpreter to be used by call_lisp().
+Interpreter *lisp_interpreters = NULL;
 
-typedef struct Interpreter {
-    jmp_buf *stackframe;
-    Object *theRoot;
-    Object **theEnv;
-    Object *symbols;
-    Object root; /* reified root node */
-    Stream ostream;
-    Memory *memory;
-} Interpreter;
 
-static Memory *memory = &(Memory) { MEMORY_SIZE };
+/* flisp interpreter */
+// Note: future plan is to allocate these dynamically with lisp_init()
+static Memory *memory = &(Memory) { FLISP_MEMORY_SIZE };
 static Interpreter flisp;
 
 

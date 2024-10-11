@@ -423,10 +423,6 @@ extern void execute_key();
 extern void make_key(char *, char *);
 extern void setup_keys();
 
-/* functions in lisp.c */
-extern char *call_lisp(char *);
-extern int init_lisp(int, char**, char*);
-
 /* functions in main.c */
 extern int main(int argc, char **);
 extern void debug(char *format, ...);
@@ -489,6 +485,10 @@ extern window_t *find_window(char *);
 extern window_t* new_window();
 extern window_t *popup_window(char *);
 extern window_t *split_current_window();
+
+/* fLisp interpreter used for femto */
+extern Interpreter *flisp_interp;
+
 
 /*
  * Local Variables:
