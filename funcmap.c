@@ -366,18 +366,8 @@ void execute_command()
         funct = name_to_function(command_name);
 
         if (funct == NULL || funct == user_func) {
-            char funcname[80];
-            sprintf(funcname, "(%s)", command_name);
-            char *output = call_lisp(funcname);
-
-            /* show errors on message line */
-            /* can probably make this a common function */                
-            if (NULL != strstr(output, "error:")) {
-                char buf[81];
-                strncpy(buf, output, 80);
-                buf[80] ='\0';
-                msg(buf);
-            }    
+            if (lisp_eval(flisp_interp, "(%s)", command_name) != RESULT_OK)
+                msg("error: %s", flisp_interp->message);
         } else {
             (funct)();
         }
