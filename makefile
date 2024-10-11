@@ -29,7 +29,7 @@ femto: $(OBJ)
 complete.o: complete.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c complete.c
 
-command.o: command.c header.h
+command.o: command.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c command.c
 
 data.o: data.c header.h
@@ -59,7 +59,7 @@ buffer.o: buffer.c header.h
 undo.o: undo.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c undo.c
 
-funcmap.o: funcmap.c header.h
+funcmap.o: funcmap.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c funcmap.c
 
 utils.o: utils.c header.h
@@ -71,7 +71,7 @@ hilite.o: hilite.c header.h
 lisp.o: lisp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c lisp.c
 
-main.o: main.c header.h
+main.o: main.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	  -D E_SCRIPTDIR=$(SCRIPTDIR) \
 	  -D E_INITFILE=$(INITFILE) \
