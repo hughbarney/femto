@@ -2118,16 +2118,8 @@ void reset_output_stream()
 
 int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 {
-    jmp_buf *up, exceptionEnv;
-
-    up = flisp.stackframe;
-    flisp.stackframe = &exceptionEnv;
-
-    if (setjmp(exceptionEnv)) {
+    if (setjmp(*flisp.stackframe)) {
         debug("exception in load_file_body()\n");
-        if (input_stream->buffer != NULL)
-            free(input_stream->buffer);
-        flisp.stackframe = up;
         return 1;
     }
 
@@ -2141,45 +2133,47 @@ int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
         writeChar('\n', &flisp.ostream);
     }
     free(input_stream->buffer);
-    flisp.stackframe = up;
     return 0;
 }
 
 char *load_file(int infd)
-{
-    debug("load_file(%d)\n", infd);
-    Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
-    set_stream_file(&input_stream, infd);
-    reset_output_stream();
-    if (load_file_body(flisp.theEnv, flisp.theRoot, &input_stream)) {
-        debug("load_file(%d) failed: %s\n", infd, flisp.ostream.buffer);
-        return "error: load_file() failed";
-    }
-    debug("load_file(%d) finished, returning ostream.buffer: %p\n", infd, flisp.ostream.buffer);
-    return flisp.ostream.buffer;
-}
-
-int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
 {
     jmp_buf *up, exceptionEnv;
 
     up = flisp.stackframe;
     flisp.stackframe = &exceptionEnv;
 
+    debug("load_file(%d)\n", infd);
+    Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
+    set_stream_file(&input_stream, infd);
+    reset_output_stream();
+    if (load_file_body(flisp.theEnv, flisp.theRoot, &input_stream)) {
+        debug("load_file(%d) failed: %s\n", infd, flisp.ostream.buffer);
+        flisp.stackframe = up;
+        if (input_stream.buffer != NULL)
+            free(input_stream.buffer);
+        return "error: load_file() failed";
+    }
+    debug("load_file(%d) finished, returning ostream.buffer: %p\n", infd, flisp.ostream.buffer);
+    flisp.stackframe = up;
+    //if (input_stream.buffer != NULL)
+    //    free(input_stream.buffer);
+    return flisp.ostream.buffer;
+}
+
+int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
+{
     GC_TRACE(gcObject, nil);
 
-    // Note: don't we need to free input_stream->body here also?
     for (;;) {
-        if (setjmp(exceptionEnv)) {
+        if (setjmp(*flisp.stackframe)) {
             debug("exception in call_lisp_body\n");
-            flisp.stackframe = up;
             return 1;
         }
         *gcObject = nil;
 
         if (peekNext(input_stream) == EOF) {
             writeChar('\n', &flisp.ostream);
-            flisp.stackframe = up;
             return 0;
         }
 
@@ -2188,7 +2182,6 @@ int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
         writeObject(*gcObject, true, &flisp.ostream);
         writeChar('\n', &flisp.ostream);
     }
-    flisp.stackframe = up;
     return 0;
 }
 
@@ -2223,14 +2216,23 @@ int init_lisp(int argc, char **argv, char *flib)
 
 char *call_lisp(char *input)
 {
+    static jmp_buf *up, exceptionEnv;
+
+    up = flisp.stackframe;
+    flisp.stackframe = &exceptionEnv;
+
     debug("call_lisp(%s)\n", input);
 
     assert(input != NULL);
     Stream is = { .type = STREAM_TYPE_STRING };
     set_input_stream_buffer(&is, input);
     reset_output_stream();
-    if (call_lisp_body(flisp.theEnv, flisp.theRoot, &is))
+    if (call_lisp_body(flisp.theEnv, flisp.theRoot, &is)) {
+        flisp.stackframe = up;
         debug("call_lisp(%s) failed: %s\n", input, flisp.ostream.buffer);
+        return "error: call_lisp() failed";
+    }
+    flisp.stackframe = up;
     return flisp.ostream.buffer;
 }
 
