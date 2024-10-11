@@ -71,7 +71,6 @@ void writeFmt(Stream *, char *format, ...)
 #endif
 
 void writeObject(Object * object, bool readably, Stream *);
-#define WRITE_FMT_BUFSIZ 2048
 
 void writeString(char *str, Stream *stream)
 {
@@ -104,6 +103,7 @@ void writeFmt(Stream *stream, char *format, ...)
 
     va_list args;
     va_start(args, format);
+    // Note: potentially truncates output to WRITE_FMT_BUFSIZ
     nbytes = vsnprintf(buf, WRITE_FMT_BUFSIZ, format, args);
     va_end(args);
 
@@ -995,7 +995,7 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
     exceptionWithObject(*e, first->string);
     return *e;
 }
-    
+
 /************************* Editor Extensions **************************************/
 
 #define DEFINE_EDITOR_FUNC(name)                \
