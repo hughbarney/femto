@@ -6,14 +6,14 @@
  * by an application and to load Lisp files.
  *
  *   public:
- *   init_lisp() .. initialize the interpreter
- *   call_lisp() .. evaluate a string
- *   (load fn)   .. evalate contents of file fn, uses load_file()
+ *   lisp_init() .. initialize the interpreter
+ *   lisp_eval() .. evaluate a string
+ *   (load "fn")   .. evalate contents of file fn, uses load_file()
  *
  * Input and Output is a Stream abstraction layer.
  * There is 1 and only 1 output stream which is only cleared
  * after calling reset_output_stream().
- * Each call to call_lisp() or load_file() results in the creation of
+ * Each call to lisp_eval() or file_load() results in the creation of
  * a new input stream instance so that these calls do not fight over
  * the input stream.
  *
@@ -2101,14 +2101,19 @@ char *load_file(int infd)
     return flisp.ostream.buffer;
 }
 
-int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
+ResultCode eval(Interpreter *interp, Stream *input_stream)
 {
+    // gcRoots is needed by GC_TRACE
+    Object *gcRoots = interp->theRoot;
+
     GC_TRACE(gcObject, nil);
 
     for (;;) {
-        if (setjmp(*flisp.stackframe)) {
-            debug("exception in call_lisp_body\n");
-            return 1;
+        switch (setjmp(*interp->stackframe)) {
+        case RESULT_ERROR:
+            debug("general exception in eval\n");
+            return RESULT_ERROR;
+            break;
         }
         *gcObject = nil;
 
@@ -2116,26 +2121,47 @@ int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
             writeChar('\n', &flisp.ostream);
             return 0;
         }
-
         *gcObject = readExpr(input_stream, GC_ROOTS);
-        *gcObject = evalExpr(gcObject, env, GC_ROOTS);
+        *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
         writeObject(*gcObject, true, &flisp.ostream);
         writeChar('\n', &flisp.ostream);
     }
-    return 0;
+    return RESULT_OK;
 }
 
+
 /*
- * 2 interface functions that enable lisp to be embedded in an application (eg Editor)
+ * Public interface for embedding fLisp into an application.
  */
 
-int init_lisp(int argc, char **argv, char *flib)
+/** Initialize and return an fLisp interpreter.
+ *
+ * @param argc  argument count
+ * @param argv  null terminated array to arguments
+ * @param flib  path to Lisp library
+ *
+ * @returns On success: a pointer to an fLisp interpreter structure
+ * @returns On failures: NULL
+ *
+ * Note: at the moment we only initialize and the statically allocated
+ * interpreter `flisp` and return a pointer to it.
+ */
+Interpreter *lisp_init(int argc, char **argv, char *library_path)
 {
+    if (lisp_interpreters != NULL) {
+        debug("WARNING: unimplemented. Attempt to initialize more then one interpreter\n");
+        return NULL;
+    }
 
-    debug("init_lisp(%d, %p, \"%s\")\n", argc, argv, flib);
+    debug("lisp_init(%d, %p, \"%s\")\n", argc, argv, library_path);
+
+    flisp.result = RESULT_OK;
+    flisp.output = NULL;
+    flisp.message[0] = '\0';
 
     flisp.stackframe = NULL;
     flisp.memory = memory;
+
     set_stream_file(&flisp.ostream, STDOUT_FILENO);
 
     flisp.theRoot = nil;
@@ -2145,35 +2171,56 @@ int init_lisp(int argc, char **argv, char *flib)
     flisp.symbols = newCons(&t, &flisp.symbols, flisp.theRoot);
 
     flisp.root.type = TYPE_CONS;
-    flisp.root.car = newRootEnv(flisp.theRoot, argc, argv, flib);
+    flisp.root.car = newRootEnv(flisp.theRoot, argc, argv, library_path);
     flisp.root.cdr = flisp.theRoot;
 
     flisp.theEnv = &flisp.root.car;
     flisp.theRoot = &flisp.root;
 
-    return 0;
+    flisp.next = &flisp;
+    lisp_interpreters = &flisp;
+
+    return &flisp;
 }
 
-char *call_lisp(char *input)
+ResultCode lisp_eval(Interpreter *interp, char * format, ...)
 {
-    static jmp_buf *up, exceptionEnv;
+    char input[INPUT_FMT_BUFSIZ];
+    va_list args;
+    int size;
+    jmp_buf exceptionEnv;
+    ResultCode result = RESULT_OK;
 
-    up = flisp.stackframe;
-    flisp.stackframe = &exceptionEnv;
+    va_start (args, format);
 
-    debug("call_lisp(%s)\n", input);
+    size = vsnprintf (input, sizeof(input), format, args);
+    va_end(args);
 
-    assert(input != NULL);
+    // Note: instead of mitigation allocate dynamically and error only on OOM
+    if (size > INPUT_FMT_BUFSIZ) {
+        interp->result = RESULT_ERROR;
+        strncpy(interp->message, "error: input string larger then " "WRITE_FMT_BUFSIZ", WRITE_FMT_BUFSIZ);
+        interp->output = interp->message;
+        return interp->result;
+    }
+
+    debug("lisp_eval(%s)\n", input);
+
+    interp->stackframe = &exceptionEnv;
+
     Stream is = { .type = STREAM_TYPE_STRING };
     set_input_stream_buffer(&is, input);
+    interp->istream = &is;
     reset_output_stream();
-    if (call_lisp_body(flisp.theEnv, flisp.theRoot, &is)) {
-        flisp.stackframe = up;
-        debug("call_lisp(%s) failed: %s\n", input, flisp.ostream.buffer);
-        return "error: call_lisp() failed";
+    interp->message[0] = '\0';
+
+    if ((result = eval(interp, &is))) {
+        debug("lisp_eval() failed: %s\n", interp->message);
+        // interp->message already set by exception code
     }
-    flisp.stackframe = up;
-    return flisp.ostream.buffer;
+    interp->output = interp->ostream.buffer;
+    interp->result = result;
+    return result;
 }
 
 /*

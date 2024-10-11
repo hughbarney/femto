@@ -743,26 +743,29 @@ point_t get_point_max()
  * being sent to the current buffer which means the file
  * contents could get corrupted if you are running commands
  * on the buffers etc.
- * 
+ *
  * If the output is too big for the message line then send it to
  * a temp buffer called *lisp_output* and popup the window
  *
  */
 void repl()
 {
-    char *output;
     buffer_t *bp;
 
-    if (getinput("> ", response_buf, TEMPBUF, F_CLEAR)) {
-        output = call_lisp(response_buf);
+    if (!getinput("> ", response_buf, TEMPBUF, F_CLEAR))
+        return;
 
-        if (strlen(output) < 60) {
-            msg(output);
-        } else {
-            bp = find_buffer("*lisp_output*", TRUE);
-            append_string(bp, output);
-            (void)popup_window(bp->b_bname);
-        }
+    if (lisp_eval(flisp_interp, response_buf) != RESULT_OK) {
+        msg("error: %s", flisp_interp->message);
+        return;
+    }
+
+    if (strlen(flisp_interp->output) < 60) {
+        msg(flisp_interp->output);
+    } else {
+        bp = find_buffer("*lisp_output*", TRUE);
+        append_string(bp, flisp_interp->output);
+        (void)popup_window(bp->b_bname);
     }
 }
 
@@ -771,8 +774,6 @@ void repl()
  */
 void eval_block()
 {
-    char *output;
-
     if (curbp->b_mark == NOMARK || curbp->b_mark >= curbp->b_point) {
         msg("no block defined");
         return;
@@ -782,15 +783,19 @@ void eval_block()
     assert(scrap != NULL);
     assert(strlen((char *)scrap) > 0);
 
-    output = call_lisp((char *)scrap);
     insert_string("\n");
-    insert_string(output);
+    if (lisp_eval(flisp_interp, (char *)scrap) != RESULT_OK) {
+        msg("error: %s", flisp_interp->message);
+        insert_string("error: ");
+        insert_string(flisp_interp->message);
+        insert_string("\n");
+    }
+    insert_string(flisp_interp->output);
 }
 
 /* this is called for every user key setup by a call to set_key */
 void user_func()
 {
-    char *output;
     char funcname[80];
 
     assert(key_return != NULL);
@@ -800,15 +805,10 @@ void user_func()
     }
 
     sprintf(funcname, "(%s)", key_return->k_funcname);
-    output = call_lisp(funcname);
+    if (lisp_eval(flisp_interp, funcname) == RESULT_OK)
+        return;
 
-    /* show errors on message line */
-    if (NULL != strstr(output, "error:")) {
-        char buf[81];
-        strncpy(buf, output, 80);
-        buf[80] ='\0';
-        msg(buf);
-    }    
+    msg("error: %s", flisp_interp->message);
 }
 
 /*
