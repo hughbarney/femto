@@ -11,7 +11,54 @@
   <body>
     <h1>fLisp Manual</h1>
 
-    <h3>Introduction</h3>
+    <aside>
+      <p>Table of Contents</p>
+      <ol>
+	<li><a href="#introduction">Introduction</a></li>
+	<li><a href="#lisp">Lisp</a></li>
+	<ol>
+	  <li><a href="#notation">Notation Convention</a></li>
+	  <li><a href="#interpreter">fLisp Interpreter</a></li>
+	  <li><a href="#syntax">Syntax</a></li>
+	  <li><a href="#objects_and_data_types">Objects and Data Types</a></li>
+	  <li><a href="#evaluation">Environments, Functions, Evaluation</a></li>
+	  <li><a href="#primitives">Primitives</a></li>
+	  <ol>
+	    <li><a href="#interp_ops">Interpreter Operations</a></li>
+	    <li><a href="#object_ops">Object Operations</a></li>
+	    <li><a href="#string_ops">String Operations</a></li>
+	    <li><a href="#arithmetic_ops">Arithmetic Operations</a></li>
+	  </ol>
+	</ol>
+	<li><a href="#editor">Editor Extension</li>
+	<ol>
+	  <li><a href="#buffers">Buffers</a></li>
+	  <ol>
+	    <li><a href="#text">Text manipulation</a></li>
+	    <li><a href="#selection">Selection</a></li>
+	    <li><a href="#cursor">Cursor Movement</a></li>
+	    <li><a href="#buffer_management">Buffer management</a></li>
+	  </ol>
+	  <li><a href="#ui">User Interaction</a></li>
+	  <ol>
+	    <li><a href="#windows">Window Handling"</a></li>
+	    <li><a href="#message_line">Message Line</a></li>
+	    <li><a href="#keyboard">Keyboard Handling</a></li>
+	    <li><a href="#programming_system">Programming and System Interaction</a></li>
+	  </ol>
+	</ol>
+	<li><a href="#exceptions">Error Handling</a></li>
+	<li><a href="#embedding">Embedding fLisp</a></li>
+	<li><a href="#implementation">Implementation Details</a></li>
+	<ol>
+	  <li><a href="#gc">Garbage Collection</a></li>
+	  <li><a href="#memory">Memory Usage</a></li>
+	  <li><a href="#future">Future Directions</a></li>
+	</ol>
+      </ol>
+    </aside>
+
+    <h3 id="introduction">Introduction</h3>
     <blockquote>
       <p>
 	A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing
@@ -38,11 +85,11 @@
       </li>
       <li><a href="https://www.scheme.org/">The Scheme Programming Language</a>.</li>
     </ul>
-    <h3>Lisp</h3>
-    <h4>Notation Convention</h4>
+    <h3 id="lisp">Lisp</h3>
+    <h4 id="notation">Notation Convention</h4>
 
     <p>
-      <i>fLisp</i> fancies to converge toward Emacs Lisp. Function descriptions are annoted with a compatibility
+      <i>fLisp</i> fancies to converge toward Emacs Lisp. Function descriptions are annotated with a compatibility
       scale:
     </p>
     <dl>
@@ -61,7 +108,7 @@
     <dl>
       <dt><code><var>name</var></code></dt>
       <dd>
-	<var>name</var> is the name of a variable. In Markdown documents it is shown with guillements, like
+	<var>name</var> is the name of a variable. In Markdown documents it is shown with guillemots, like
 	this <code>«name»</code>.</dd>
       <dt><code>[text]</code></dt>
       <dd><code>text</code> can be given zero or one time.</dd>
@@ -77,10 +124,10 @@
 	<i>fLisp</i> does not use <code>[</code>square brackets<code>]</code> and double-dots <code>..</code> as
 	syntactical elements.
       </li>
-      <li>String and number notation and formating conventions are the same as in the C language</li>
+      <li>String and number notation and formatting conventions are the same as in the C language</li>
     </ul>
     
-    <h4>fLisp Interpreter</h4>
+    <h4 id="interpreter">fLisp Interpreter</h4>
 
     <p>When <i>fLisp</i> is invoked it follows a three step process:</p>
     <ol>
@@ -94,7 +141,7 @@
       behave the same as core functions.
     </p>
 
-    <h4>Syntax</h4>
+    <h4 id="syntax">Syntax</h4>
 
     <p>
       Program text is written as a sequence of symbolic expressions - <abbr><dfn>sexp</dfn></abbr>&#39;s - in
@@ -114,7 +161,7 @@
       <dd>With a single quote prefix before a <abbr>sexp</abbr>, the <abbr>sexp</abbr> is expanded
       to <code>(quote <var>sexp</var>)</code> before it is evaluated.</dd>
       <dt><code>.</code></dt>
-      <dd>The expresion<code> (<var>a</var> . <var>b</var>)</code> evaluates to a <i>cons</i> object, holding the
+      <dd>The expression<code> (<var>a</var> . <var>b</var>)</code> evaluates to a <i>cons</i> object, holding the
       objects <var>a</var> and <var>b</var>.</dd>
     </dl>
     <p>Numbers are represented in decimal notation.</p>
@@ -157,11 +204,11 @@
       <dd>anonymous function without parameter evaluation</dd>
     </dl>
     <p>
-      Objects are unmutable, functions either create new objects or return existing ones.
+      Objects are immutable, functions either create new objects or return existing ones.
     </p>
     <p>Characters do not have their own type. A single character is represented by a <i>string</i> with length one.</p>
 
-    <h4>Environments, Functions, Evaluation</h4>
+    <h4 id="evaluation">Environments, Functions, Evaluation</h4>
 
     <p>
       All operations of the interpreter take place in an environment. An <dfn>environment</dfn> is a collection of named
@@ -190,9 +237,9 @@
       which they are described.
     </p>
 
-    <h4>Primitives</h4>
+    <h4 id="primitives">Primitives</h4>
 
-    <h5>Interpreter Operations</h5>
+    <h5 id="interp_ops">Interpreter Operations</h5>
 
     <dl>
       <dt><code>(progn[ <var>expr</var>..])</code></dt>
@@ -238,13 +285,13 @@
       <dt><code>(quote <var>expr</var>)</code></dt>
       <dd>Returns <var>expr</var> without evaluating it.
       </dd>
-      <dt><code>(signal <var>symbol</var> <var>list</var>)</code></dt>
-      <dd>tbd</dd>
-      <dt><code>(trap <var>list</var>)</code></dt>
-      <dd>tbd</dd>
+      <dt><code>(signal <var>type</var> <var>list</var>)</code></dt>
+      <dd>Throws an exception, stopping any further evaluation.  Exceptions can be typed via the symbol <var>type</var>
+	and must contain a list of exception related objects.  <code>(signal 'error 'nil)</code> is probably the
+	simplest signal.</dd>
     </dl>
 
-    <h5>Object Operations</h5>
+    <h5 id="object_ops">Object Operations</h5>
 
     <dl>
       <dt><code>(null <var>object</var>)</code></dt>
@@ -280,14 +327,14 @@
       </dd>
     </dl>
 
-    <h5>String Operations</h5>
+    <h5 id="string_ops">String Operations</h5>
 
     <dl>
       <dt><code>(string.length <var>string</var>)</code></dt>
       <dd>Returns the length of <var>string</var> as a <i>number</i>.</dd>
       <dt><code>(string.substring <var>string</var> <var>start</var> <var>end</var>)</code></dt>
       <dd>
-	Returns the substring from <var>string</var> which starts with the character at index <var>start</var> and ends
+	Returns the sub string from <var>string</var> which starts with the character at index <var>start</var> and ends
 	with index <var>end</var>. String indexes are zero based.
       </dd>
       <dt><code>(string.append <var>string1</var> <var>string2</var>)</code></dt>
@@ -312,7 +359,7 @@
       </dd>
     </dl>
 
-    <h5>Arithmetic Operations</h5>
+    <h5 id="arithmetic_ops">Arithmetic Operations</h5>
 
     <dl>
       <dt><code>(+[ <var>arg</var>..])</code></dt>
@@ -332,9 +379,9 @@
       </dd>
       <dt><code>(% <var>arg</var>[ <var>div</var>..])</code></dt>
       <dd>
-	Returns <code>1</code> if no <var>div</var> is given, <var>arg</var>%<var>div</var>[%<var>div</var>..] if one
-	or more <var>div</var>s are given. If one of the divs is <code>0</code>, the program exits with an arithmetic
-	exception.
+	Returns <code>1</code> if no <var>div</var> is given, <var>arg</var>%<var>div</var>[%<var>div</var>..] if one or
+	more <var>div</var>s are given. If one of the <var>div</var>s is <code>0</code>, the program exits with an
+	arithmetic exception.
       </dd>
       <dt><code>(= <var>arg</var>[ <var>arg</var>..])</code></dt>
       <dt><code>(&lt; <var>arg</var>[ <var>arg</var>..])</code></dt>
@@ -348,7 +395,7 @@
       </dd>
     </dl>
 
-    <h3>Editor Extension</h3>
+    <h3 id="editor">Editor Extension</h3>
 
     <p>The editor extensions introduces several types of objects/functionality:</p>
     <ul>
@@ -359,13 +406,13 @@
       <li>Several other function for operating system or user interaction</li>
     </ul>
 
-    <h4>Buffers</h4>
+    <h4 id="buffers">Buffers</h4>
 
     <p>
       This section describes the buffer related functions added by Femto to fLisp. The description is separated in
       function related to buffer management and text manipulation.  Text manipulation always operates on
       the <dfn>current buffer</dfn>. Buffer management creates, deletes buffers, or selects one of the existing buffers
-      as the current buffer.  current buffercode.
+      as the current buffer.
     </p>
 
     <p>Buffers store text and allow to manipulate it. A buffer has the following properties:</p>
@@ -387,12 +434,12 @@
       <dt><var>filename</var></dt>
       <dd>If set the buffer is associated with the respective file.</dd>
       <dt><var>flags</var></dt>
-      <dd>Different flags determine the behaviour of the buffer.</dd>
+      <dd>Different flags determine the behavior of the buffer.</dd>
     </dl>
 
     <p>In the following, all mentions of these variables refer to the current buffers properties.</p>
     
-    <h5>Text manipulation</h5>
+    <h5 id="text">Text manipulation</h5>
 
     <dl>
       <dt><code>(insert-string <var>string</var>)</code></dt>
@@ -425,7 +472,7 @@
       <dd>Pastes the <var>clipboard</var> before <var>point</var>. <u>C</u></dd>
     </dl>
 
-    <h5>Selection</h5>
+    <h5 id="selection">Selection</h5>
 
     <dl>
       <dt><code>(set-mark)</code></dt>
@@ -442,7 +489,7 @@
       <dd>Returns the <var>clipboard</var> contents.  <u>S: gui-get-selection</u></dd>
     </dl>
 
-    <h5>Cursor Movement</h5>
+    <h5 id="cursor">Cursor Movement</h5>
 
     <dl>
       <dt><code>(set-point <var>number</var>)</code></dt>
@@ -509,7 +556,7 @@
       </dd>
       <dt><code>(backward-page)</code></dt>
       <dd>
-	Moves the point of the current buffer to the beginning of the first visible line of the associoated screen and
+	Moves the point of the current buffer to the beginning of the first visible line of the associated screen and
 	scrolls the screen down to show it as the last line. <u>S: scroll-down</u>
       </dd>
       <dt><code>(next-line)</code></dt>
@@ -526,7 +573,7 @@
       </dd>
     </dl>
 
-    <h5>Buffer management</h5>
+    <h5 id="buffer_management">Buffer management</h5>
 
     <dl>
       <dt><code>(list-buffers)</code></dt>
@@ -549,14 +596,14 @@
       <dd>Saves the buffer named <var>string</var> to disk. <u>C</u></dd>
     </dl>
 
-    <h4>User Interaction</h4>
+    <h4 id="ui">User Interaction</h4>
 
     <p>
       This section lists function related to window and message line manipulation, keyboard input and system
       interaction.
     </p>
 
-    <h5>Window Handling</h5>
+    <h5 id="windows">Window Handling</h5>
 
     <dl>
       <dt><code>(delete-other-windows)</code></dt>
@@ -579,7 +626,7 @@
       <dd>Updates all windows by marking them modified and calling <code>update-display</code>.</dd>
     </dl>
 
-    <h5>Message Line</h5>
+    <h5 id="message_line">Message Line</h5>
     <dl>
       <dt><code>(message <var>string</var>)</code></dt>
       <dd>Displays <var>string</var> in the message line. <u>D</u></dd>
@@ -588,21 +635,21 @@
       <dt><code>(prompt <var>prompt</var> <var>default</var>)</code></dt>
       <dd>
 	Displays <var>prompt</var> in the command line and sets <var>default</var> as initial value for the user
-	respones. The user can edit the response. When hitting return, the final response is returned.
+	response. The user can edit the response. When hitting return, the final response is returned.
       </dd>
       <dt><code>(show-prompt <var>prompt</var> <var>default</var>)</code></dt>
       <dd>
-	Displays <var>prompt</var> and <var>default</var> in the commandline, but does not allow
+	Displays <var>prompt</var> and <var>default</var> in the command line, but does not allow
 	editing. Returns <code>t</code>.
       </dd>
       <dt><code>(prompt-filename <var>prompt</var>)</code></dt>
       <dd>
-	Displays <var>prompt</var> in the commandline and allows to enter or search for a file name. Returns the
+	Displays <var>prompt</var> in the command line and allows to enter or search for a file name. Returns the
 	relative path to the selected file name or the response typed by the user.
       </dd>
     </dl>
 
-    <h5>Keyboard Handling</h5>
+    <h5 id="keyboard">Keyboard Handling</h5>
 
     <dl>
       <dt><code>(set-key <var>key-name</var> <var>lisp-func</var>)</code></dt>
@@ -630,7 +677,7 @@
       </dd>
     </dl>
 
-    <h5>Programming and System Interaction</h5>
+    <h5 id="programming_system">Programming and System Interaction</h5>
 
     <dl>
       <dt><code>(exit)</code></dt>
@@ -657,9 +704,142 @@
       <dd>Returns the complete version string of Femto, including the copyright.</dd>
     </dl>
     
-    <h3>Implementation Details</h3>
 
-    <p><mark>Tbd.: Memory consumption, limits, hacking, ...</mark></p>
+    <h3 id="exceptions">Error handling</h3>
+    <p>
+      Whenever fLisp encounters an error an exception is thrown. Exceptions have a non-zero result code and an error
+      message.  The error message is a string containing the serialization of the object causing the error — if any —
+      and an individual user readable string.
+    </p>
+    <p>
+      fLisp does not implement stack backtracking. exceptions are only caught on the top level of an evaluation.
+    </p>
+    <p>Exceptions can be thrown in Lisp code via the <a href="#interp_ops"><code>signal</code></a> function.</p>
+    <p>
+      <mark>Note: currently the error result code is always 1. It is planned to distinguish different error classes,
+	e.g. parsing errors, execution errors, I/O errors, input errors, …
+      </mark>
+    </p>
+    <h3 id="embedding">Embedding fLisp</h3>
+    <p>
+      fLisp exposes the following public interfaces:
+    </p>
+    <dl>
+      <dt><code><var>Interpreter</var> *lisp_init(int <var>argc</var>, char **<var>argv</var>, char
+	  *<var>library_path</var>)</code></dt>
+      <dd>
+	<p><code>lisp_init()</code> creates and initializes an fLisp interpreter.  The initial environment contains the
+	  following symbols:
+	</p>
+	<dl>
+	  <dt><var>argv0</var></dt><dd>The string stored in <code>*<var>argv</var>[0]</code>, if any</dd>
+	  <dt><var>argv</var></dt><dd>The list of strings stored in <code><var>argv</var></code></dd>
+	  <dt><var>script_dir</var></dt><dd>The string stored in <code><var>library_path</var></code></dd>
+	</dl>
+	<p>A pointer to an <var>Interpreter</var> struct is returned, which is used to operate the interpreter.</p>
+      </dd>
+      <dt><code><var>ResultCode</var> lisp_eval(<var>interp</var>, <var>format</var>, …)</code></dt>
+      <dd>
+	<p>
+	  Evaluates input in the fLisp interpreter <var>interp</var>.  The input is generated the same way as
+	  in <code>printf()</code> from the <var>format</var> string and any following optional arguments.
+	</p>
+	<p>
+	  The <var>ResultCode</var> is <code>0</code> when the input is evaluated successfully and non-zero if any error
+	  occurred during evaluation.  The result code is also stored in <var>interp-&gt;result</var>.
+	</p>
+	<p>
+	  After evaluation <var>interp-&gt;output</var> contains the output of the evaluation
+	  and <var>interp-&gt;message</var> contains the error message if result code is non-zero.
+      </dd>
+    </dl>
+    <p><mark>Note: currently only one interpreter can be created.</mark></p>
+    
+    <h3 id="implementation">Implementation Details</h3>
+
+    <h4 id="gc">Garbage Collection</h4>
+    <p>
+      fLisp implements Cheney&apos;s copying garbage collector, with which memory is divided into two equal halves
+      (semi spaces): from- and to-space. From-space is where new objects are allocated, whereas to-space is used during
+      garbage collection.
+    </p>
+    <p>
+      When garbage collection is performed, objects that are still in use (live) are copied from from-space to
+      to-space. To-space then becomes the new from-space and vice versa, thereby discarding all objects that have not
+      been copied.
+    </p>
+    <p>
+      Our garbage collector takes as input a list of root objects. Objects that can be reached by recursively traversing
+      this list are considered live and will be moved to to-space. When we move an object, we must also update its
+      pointer within the list to point to the objects new location in memory.
+    </p>
+    <p>
+      However, this implies that our interpreter cannot use raw pointers to objects in any function that might trigger
+      garbage collection (or risk causing a SEGV when accessing an object that has been moved). Instead, objects must be
+      added to the list and then only accessed through the pointer inside the list.
+    </p>
+    <p>
+      Thus, whenever we would have used a raw pointer to an object, we use a pointer to the pointer inside the list
+      instead:
+    </p>
+    <pre>
+function:              pointer to pointer inside list (Object **)
+                               |
+                               v
+list of root objects:  pointer to object (Object *)
+                               |
+                               v
+semi space:             object in memory
+    </pre>
+    <p>
+      <code><var>GC_ROOTS</var></code> and <code><var>GC_PARAM</var></code> are used to pass the list from function to
+      function.
+    </p>
+    <p>
+      <code><var>GC_TRACE</var></code> adds an object to the list and declares a variable which points to the objects
+      pointer inside the list.
+    </p>
+    <p>
+      <code><var>GC_TRACE</var>(<var>gcX</var>, <var>X</var>)</code>: add object <var>X</var> to the list and
+      declare <code>Object **<var>gcX</var></code> to point to the pointer to <var>X</var> inside the list.
+    </p>
+    <h4 id="memory">Memory Usage</h4>
+    <p>
+      Some compile time adjustable limits in <code>lisp.h</code>:
+    </p>
+    <dl>
+      <dt>Object memory</dt><dd>4M, <code>FLISP_MEMORY_SIZE</code>.</dd>
+      <dt>Input buffer</dt><dd>2048, <code>INPUT_FMT_BUFSIZ</code>, size of the formatting buffer for <code>lisp_eval()</code>.</dd>
+      <dt>Output buffer</dt><dd>2048, <code>WRITE_FMT_BUFSIZ</code>, size of the output and message formatting buffer.</dd>
+    </dl>
+    <p>
+      fLisp can live with much less object memory, but the <q>OXO</q> game requires a lot and <mark>the garbage
+	collector has a bug</mark> which makes OXO segfault.
+    </p>
+
+    <h4 id="future">Future Directions</h4>
+    <p>
+      fLisp could be made completely independent of Femto, thus making the interpreter embeddable in any
+      application. The <code>debug()</code> function is still borrowed from <code>main.c</code> and it has to be devised
+      how to extend the interpreter dynamically; the editor extensions are currently compiled into the interpreter.
+    </p>
+    <p>
+      Integer arithmetic would be sufficient for all current purposes and increase portability, speed while reducing
+      size.
+    </p>
+    <p>
+      The internally used <q>Stream</q> abstraction for reading Lisp input and writing output is incomplete and
+      complicated. An alternative would be to use only string input and output. File input can be read as a whole into
+      memory and use the string input processing.  This would also have consequences for the Lisp reader and probably
+      simplify implementation of improved error reporting, a lá line/char offset reporting.  The downside is, that this
+      would remove support for <code>stdin</code>/<code>stdout</code> reading/writing.
+    </p>
+    <p>
+      Exception handling should be improved by returning differentiated error codes. One of the benefits would be the
+      possibility to implement externally an interactive repl with <code>stdin</code>/<code>stdout</code> streams, by
+      reading and eval&apos;ing until no more <q>incomplete input</q> result codes are returned.
+    </p>
+    
   </body>
 </html>
 <!--
