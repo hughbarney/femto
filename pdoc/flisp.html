@@ -249,10 +249,10 @@
       </dd>
       <dt><code>(cond[ <var>clause</var>..])</code></dt>
       <dd>
-	Each <var>clause</var> is of the form <code>(<var>pred</var>[ <var>action</var>])</code>. <code>cond</code>
+	Each <var>clause</var> is of the form <code>(<var>pred</var>[ <var>action</var> ..])</code>. <code>cond</code>
 	evaluates each <var>clause</var> in turn. If <var>pred</var> evaluates to <code>nil</code>, the
 	next <var>clause</var> is tested. If <var>pred</var> evaluates not to <code>nil</code> and if there is
-	no <var>action</var> the value of <var>pred</var> is returned, otherwise <code>(progn <var>action</var>)</code>
+	no <var>action</var> the value of <var>pred</var> is returned, otherwise <code>(progn <var>action</var> ..)</code>
 	is returned and no more <var>clause</var>s are evaluated.
       </dd>
       <dt><code>(setq <var>symbol</var> <var>value</var>[ <var>symbol</var> <var>value</var>..])</code></dt>
@@ -423,9 +423,12 @@
 	buffer receives special treatment.
       </dd>
       <dt><var>text</var></dt>
-      <dd>0 or more characters.</dd>
+      <dd>zero or more characters.</dd>
       <dt><var>point</var></dt>
-      <dd>The position in the text where text manipulation takes place.</dd>
+      <dd>
+	The position in the text where text manipulation takes place. The first position in the text is 0. Note:
+	in Emacs the first position is 1.
+      </dd>
       <dt><var>mark</var></dt>
       <dd>
 	An optional second position in the text. If the <var>mark</var> is set, the text between <var>point</var>
@@ -443,7 +446,7 @@
 
     <dl>
       <dt><code>(insert-string <var>string</var>)</code></dt>
-      <dd>Inserts <var>string</var> at <var>point</var>. <u>S: insert</u>.</dd>
+      <dd>Inserts <var>string</var> before <var>point</var>. <u>S: insert</u>.</dd>
       <dt><code>(insert-file-contents-literally <var>string</var> </code>[<code><var>flag</var></code>]<code>)</code></dt>
       <dd>
 	Inserts the file <var>string</var> after <var>point</var>. If <var>flag</var> is not nil the buffer is marked as not
@@ -463,7 +466,7 @@
       <dt><code>(backspace)</code></dt>
       <dd>Deletes the character to the left of <var>point</var>. <u>S: delete-backward-char</u></dd>
       <dt><code>(get-char)</code></dt>
-      <dd>Returns the character to the left of <var>point</var>. <u>S: get-byte</u></dd>
+      <dd>Returns the character at <var>point</var>. <u>S: get-byte</u></dd>
       <dt><code>(copy-region)</code></dt>
       <dd>Copies <var>region</var> to the <var>clipboard</var>. <u>S: copy-region-as-kill</u></dd>
       <dt><code>(kill-region)</code></dt>
