@@ -4,7 +4,7 @@
 ;; (load_script "git.lsp")   ;; to load
 ;; (git-menu)                ;; to call
 ;;
-(require 'flisp)
+(require 'femto)
 
 (setq git-help-string
 "
