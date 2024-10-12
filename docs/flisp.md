@@ -248,11 +248,11 @@ Each *expr* is evaluated, the value of the last is returned. If no
 *expr* is given, `progn` returns `nil`.
 
 `(cond[ clause..])`  
-Each *clause* is of the form `(pred[ action])`. `cond` evaluates each
+Each *clause* is of the form `(pred[ action ..])`. `cond` evaluates each
 *clause* in turn. If *pred* evaluates to `nil`, the next *clause* is
 tested. If *pred* evaluates not to `nil` and if there is no *action* the
-value of *pred* is returned, otherwise `(progn action)` is returned and
-no more *clause*s are evaluated.
+value of *pred* is returned, otherwise `(progn action ..)` is returned
+and no more *clause*s are evaluated.
 
 `(setq symbol value[ symbol value..])`  
 Create or update named objects: If *symbol* is the name of an existing
@@ -417,10 +417,11 @@ Buffers are identified by their name. If a buffer name is enclosed in
 `*`asterisks`*` the buffer receives special treatment.
 
 *text*  
-0 or more characters.
+zero or more characters.
 
 *point*  
-The position in the text where text manipulation takes place.
+The position in the text where text manipulation takes place. The first
+position in the text is 0. Note: in Emacs the first position is 1.
 
 *mark*  
 An optional second position in the text. If the *mark* is set, the text
@@ -439,7 +440,7 @@ buffers properties.
 ##### Text manipulation
 
 `(insert-string string)`  
-Inserts *string* at *point*. <u>S: insert</u>.
+Inserts *string* before *point*. <u>S: insert</u>.
 
 `(insert-file-contents-literally string `\[`flag`\]`)`  
 Inserts the file *string* after *point*. If *flag* is not nil the buffer
@@ -460,7 +461,7 @@ Deletes the character to the left of *point*. <u>S:
 delete-backward-char</u>
 
 `(get-char)`  
-Returns the character to the left of *point*. <u>S: get-byte</u>
+Returns the character at *point*. <u>S: get-byte</u>
 
 `(copy-region)`  
 Copies *region* to the *clipboard*. <u>S: copy-region-as-kill</u>
