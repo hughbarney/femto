@@ -7,23 +7,23 @@
 #include <stdio.h>
 #include "header.h"
 
-
 void load_config(); /* Load configuration/init file */
 void gui(); /* The GUI loop used in interactive mode */
 
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
 
+Interpreter *flisp_interp;
 
 int main(int argc, char **argv)
 {
-    char *envv, *flib;
+    char *envv, *library_path, *init_file;
 
     batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
     debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
 
-    if ((flib=getenv("FEMTOLIB")) == NULL)
-        flib = CPP_XSTR(E_SCRIPTDIR);
+    if ((library_path=getenv("FEMTOLIB")) == NULL)
+        library_path = CPP_XSTR(E_SCRIPTDIR);
 
     /* buffers */
     setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
@@ -36,17 +36,15 @@ int main(int argc, char **argv)
 
     /* Lisp */
     setup_keys();
-    if (init_lisp(argc, argv, flib))
+    flisp_interp = lisp_init(argc, argv, library_path);
+    if (flisp_interp == NULL)
         fatal("fLisp initialization failed");
-
-    /* Init file */
-    char *init_file, cmd[TEMPBUF];
 
     if ((init_file = getenv("FEMTORC")) == NULL)
         init_file = CPP_XSTR(E_INITFILE);
 
-    snprintf(cmd, TEMPBUF, "(load \"%s\")", init_file);
-    (void)call_lisp(cmd);
+    if (lisp_eval(flisp_interp, "(load \"%s\")", init_file))
+        msg(flisp_interp->message);
 
     /* GUI */
     if (!batch_mode) gui();

@@ -44,22 +44,13 @@
 (require 'bufmenu)
 (require 'dired)
 (require 'grep)
+(require 'git)
+(require 'oxo)
 
 (defun show-info ()
   ;; autoload info with c-x h
   (require 'info)
   (show-info))
-
-;; oxo and git fail when loaded on startup
-(defun oxo ()
-  ;; autoload oxo with c-x o
-  (require 'oxo)
-  (oxo))
-
-(defun git-menu ()
-  ;; autoload git with c-x g
-  (require 'git)
-  (git-menu))
 
 ;;
 ;;  Key Bindings, setkey is used to bind keys to user defined functions in lisp
@@ -89,5 +80,5 @@
  config_dir ".config/femto"
  config_file "femto.rc")
 
-(trap (load (confn config_file)))
+(load (confn config_file))
 (getopts argv 0)

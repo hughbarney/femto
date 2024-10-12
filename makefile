@@ -29,7 +29,7 @@ femto: $(OBJ)
 complete.o: complete.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c complete.c
 
-command.o: command.c header.h
+command.o: command.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c command.c
 
 data.o: data.c header.h
@@ -59,7 +59,7 @@ buffer.o: buffer.c header.h
 undo.o: undo.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c undo.c
 
-funcmap.o: funcmap.c header.h
+funcmap.o: funcmap.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c funcmap.c
 
 utils.o: utils.c header.h
@@ -71,14 +71,14 @@ hilite.o: hilite.c header.h
 lisp.o: lisp.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c lisp.c
 
-main.o: main.c header.h
+main.o: main.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	  -D E_SCRIPTDIR=$(SCRIPTDIR) \
 	  -D E_INITFILE=$(INITFILE) \
 	  -c main.c
 
-docs/flisp.md: pdoc/flisp.html
-	pandoc -o $@ -t gfm $<
+docs/flisp.md: pdoc/flisp.html pdoc/h2m.lua
+	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
 
 README.html: README.md
 	pandoc -o $@ -f gfm $<
@@ -90,6 +90,9 @@ doxygen: FORCE
 
 test: femto FORCE
 	(cd test && ./run)
+
+run: femto FORCE
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto
 
 clean: FORCE
 	-$(RM) -f $(OBJ) femto
