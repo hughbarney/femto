@@ -3,6 +3,7 @@
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 
+#include <signal.h>
 #include "header.h"
 
 void beginning_of_buffer()
@@ -43,6 +44,11 @@ int yesno(int flag)
 void quit()
 {
     done = 1;
+}
+
+void suspend()
+{
+    raise(SIGTSTP);
 }
 
 void redraw()

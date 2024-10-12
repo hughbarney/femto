@@ -333,6 +333,7 @@ extern void log_message(char *);
 extern void match_paren_backwards(buffer_t *, char, char);
 extern void match_paren_forwards(buffer_t *, char, char);
 extern void match_parens();
+extern void suspend();
 extern void quit();
 extern void quit_ask();
 extern void readfile(char *);
