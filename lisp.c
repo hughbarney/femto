@@ -1026,6 +1026,7 @@ DEFINE_EDITOR_FUNC(delete)
 DEFINE_EDITOR_FUNC(backspace)
 DEFINE_EDITOR_FUNC(forward_page)
 DEFINE_EDITOR_FUNC(backward_page)
+DEFINE_EDITOR_FUNC(suspend)
 DEFINE_EDITOR_FUNC(quit)
 DEFINE_EDITOR_FUNC(eval_block)
 DEFINE_EDITOR_FUNC(delete_other_windows)
@@ -1697,6 +1698,7 @@ Primitive primitives[] = {
     {"other-window", 0, 0, e_other_window},
     {"get-clipboard", 0, 0, e_get_clipboard},
     {"get-buffer-count", 0, 0, e_get_buffer_count},
+    {"suspend", 0, 0, e_suspend},
     {"exit", 0, 0, e_quit}
 };
 
