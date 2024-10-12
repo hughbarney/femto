@@ -56,6 +56,7 @@
 ;;  Key Bindings, setkey is used to bind keys to user defined functions in lisp
 ;;
 
+(set-key "c-t" "transpose-chars")
 (set-key "c-x @" "shell-command") ;; femto
 (set-key "esc !" "shell-command")
 (set-key "c-x i" "insert-file")
