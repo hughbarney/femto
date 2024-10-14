@@ -33,6 +33,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <curses.h>
+#include <limits.h>
 
 #include "header.h"
 #include "lisp.h"
@@ -257,6 +258,7 @@ void gc(GC_PARAM)
         case TYPE_STRING:
         case TYPE_SYMBOL:
         case TYPE_PRIMITIVE:
+        case TYPE_STREAM:
             break;
         case TYPE_CONS:
             object->car = gcMoveObject(object->car);
@@ -497,6 +499,25 @@ Object *newEnv(Object ** func, Object ** vals, GC_PARAM)
 
     return object;
 }
+/**
+ * @param fd .. FILE * stream descripter to register
+ * @param name .. NULL or name of the file associated with fd
+ * @param buf .. NULL or string to convert into an input file stream.
+ */
+Object *newStreamObject(FILE *fd, char *path, GC_PARAM)
+{
+    Object *object = newObject(TYPE_STREAM, GC_ROOTS);
+    object->fd = fd;
+    object->buf = NULL;
+    if (path == NULL) {
+        object->path = NULL;
+    } else {
+        object->path = newString(path, GC_ROOTS);
+    }
+    return object;
+}
+
+
 
 // STREAM INPUT ///////////////////////////////////////////////////////////////
 
@@ -766,6 +787,7 @@ void writeObject(Object * object, bool readably, Stream *stream)
         CASE(TYPE_NUMBER, "%g", object->number);
         CASE(TYPE_SYMBOL, "%s", object->string);
         CASE(TYPE_PRIMITIVE, "#<Primitive %s>", object->name);
+        CASE(TYPE_STREAM, "#<Stream %p>", (void *) object->fd);
 #undef CASE
     case TYPE_STRING:
         if (readably) {
@@ -1236,6 +1258,8 @@ Object *e_prompt(Object ** args, GC_PARAM)
     return newStringWithLength(response, strlen(response), GC_ROOTS);
 }
 
+/* Strings */
+
 Object *primitiveStringP(Object ** args, GC_PARAM)
 {
     Object *first = (*args)->car;
@@ -1279,6 +1303,8 @@ Object *numberToString(Object ** args, GC_PARAM)
     return newStringWithLength(buf, strlen(buf), GC_ROOTS);
 }
 
+/* OS interface */
+
 Object *os_getenv(Object ** args, GC_PARAM)
 {
     ONE_STRING_ARG();
@@ -1288,6 +1314,81 @@ Object *os_getenv(Object ** args, GC_PARAM)
     return newStringWithLength(e, strlen(e), GC_ROOTS);
 }
 
+/**
+ * (fopen name mode) => StreamObject
+ *
+ * @param name  path to a file to open.
+ * @param mode  see fopen(3p). One of "r", "w", "a", "r+", "w+", "a+",
+ *   add "b" for binary files.
+ *
+ * Additionally a file associated with a string buffer can be created:
+ *
+ * If mode is "<", name is converted into a memory based stream
+ * opened with mode "r". The file name of the stream is set to "<STRING"n
+ *
+ * If mode is ">", a dynamic memory based stream is opened with mode
+ * "w". The file name of the stream is set to ">STRING".
+ *
+ * If name is "<num" or ">num" the standard file descriptor with
+ * number *num* is opened in "r" or "a" mode respectively and mode is
+ * ignored.
+ *
+ */
+Object *primitiveFopen(Object ** args, GC_PARAM)
+{
+    FILE * fd;
+    TWO_STRING_ARGS();
+
+    if (strcmp("<", second->string) == 0) {
+        fd = fmemopen(first->string, strlen(first->string), "r");
+        if (fd == NULL)
+            exceptionWithObject(first, "failed to convert string to input stream, errno: %d", errno);
+        return newStreamObject(fd, "<STRING", GC_ROOTS);
+    }
+    if (strcmp(">", second->string) == 0) {
+        Object *stream = newStreamObject(NULL, ">STREAM", GC_ROOTS);
+        fd = open_memstream(&stream->buf, &stream->len);
+        if (fd == NULL)
+            exception("failed to create memory based output stream, errno: %d", errno);
+        stream->fd = fd;
+        return stream;
+    }
+
+    char c = first->string[0];
+    if (c == '<' || c == '>') {
+        char *end;
+        errno = 0;
+        long d = strtol(first->string+1, &end, 0);
+        if (errno || *end != '\0' || d < 0 || d > _POSIX_OPEN_MAX)
+            exception("invalid I/O stream number: %s", first->string+1);
+        fd = fdopen((int)d, c == '<' ? "r" : "a");
+        if (fd == NULL)
+            exception("failed to open I/O stream %ld for %s", d, c == '<' ? "reading" : "writing");
+        return newStreamObject(fd, first->string, GC_ROOTS);
+    }
+
+    fd = fopen(first->string, second->string);
+    if (fd == NULL)
+        exception("failed to open file '%s' with mode '%s', errno: %d", first->string, second->string, errno);
+    return newStreamObject(fd, first->string, GC_ROOTS);
+}
+Object *primitiveFclose(Object** args, GC_PARAM)
+{
+    Object *first = (*args)->car;
+
+    if (first->type != TYPE_STREAM)
+        exceptionWithObject(first, "not a stream, cannot fclose");
+    if (first->fd == NULL)
+        exception("stream already closed");
+
+    if (first->buf != NULL)
+        free(first->buf);
+    if (fclose(first->fd) == EOF)
+        return newNumber(errno, GC_ROOTS);
+
+    first->fd = NULL;
+    return newNumber(0, GC_ROOTS);
+}
 Object *e_get_version_string(Object ** args, GC_PARAM)
 {
     char *ver = get_version_string();
