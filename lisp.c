@@ -823,7 +823,7 @@ void writeObject(Object * object, bool readably, Stream *stream)
         CASE(TYPE_ENV, "Env", object->vars);
 #undef CASE
     case TYPE_MOVED:
-        writeString("#<Error: gc moved object>", stream);
+        exception("won't write a garbage collected item");
         break;
     }
 }
