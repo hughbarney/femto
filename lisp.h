@@ -6,6 +6,7 @@
  *
  */
 #include <setjmp.h>
+#include <stdio.h>
 
 //#define FLISP_MEMORY_SIZE          131072UL
 //#define FLISP_MEMORY_SIZE          262144UL  /* 256k */
@@ -30,6 +31,7 @@ typedef enum ObjectType {
     TYPE_MACRO,
     TYPE_PRIMITIVE,
     TYPE_ENV,
+    TYPE_STREAM,
     TYPE_MOVED = -1
 } ObjectType;
 
@@ -43,6 +45,7 @@ struct Object {
         struct { Object *params, *body, *env; };        // lambda, macro
         struct { int primitive; char *name; };          // primitive
         struct { Object *parent, *vars, *vals; };       // env
+        struct { Object *path; FILE *fd; char *buf; size_t len; }; // file descriptor/stream
         struct { Object *forward; };                    // forwarding pointer
     };
 };
@@ -54,7 +57,7 @@ extern Object *t;
 typedef enum ResultCode {
     RESULT_OK,
     RESULT_ERROR
-} ResultCode; 
+} ResultCode;
 
 // Note: WIP, relevant procedures must get a handle to the
 //   Interpreter, instead of accessing the static allocated flisp.
