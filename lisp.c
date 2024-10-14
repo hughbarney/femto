@@ -1389,6 +1389,10 @@ Object *primitiveFclose(Object** args, GC_PARAM)
     first->fd = NULL;
     return newNumber(0, GC_ROOTS);
 }
+#ifdef FLISP_FILE_EXTENSION
+#include "file.c"
+#endif
+
 Object *e_get_version_string(Object ** args, GC_PARAM)
 {
     char *ver = get_version_string();
@@ -1734,7 +1738,7 @@ Primitive primitives[] = {
     {"load", 1, 1, e_load},
     {"os.getenv", 1, 1, os_getenv},
     {"get-temp-file", 0, 0, e_get_temp_file},
-
+    FLISP_REGISTER_FILE_EXTENSION
     {"add-mode-global", 1, 1, e_add_mode_global},
     {"message", 1, 1, e_message},
     {"log-message", 1, 1, e_log_message},

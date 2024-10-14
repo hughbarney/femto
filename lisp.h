@@ -105,6 +105,19 @@ extern Interpreter *lisp_interpreters;
 extern Interpreter *lisp_init(int, char**, char*);
 extern ResultCode lisp_eval(Interpreter*, char *, ...);
 
+
+#ifdef FLISP_FILE_EXTENSION
+
+#define FLISP_REGISTER_FILE_EXTENSION \
+    {"fopen", 2, 2, primitiveFopen}, \
+    {"fclose", 1, 1, primitiveFclose}, \
+    {"fgetc", 1, 1, primitiveFgetc},
+#else
+#define FLISP_REGISTER_FILE_EXTENSION
+
+#endif
+
+
 #endif
 /*
  * Local Variables:
