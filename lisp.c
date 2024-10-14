@@ -35,7 +35,11 @@
 #include <curses.h>
 #include <limits.h>
 
+// Note: can this be untangled?
+#ifdef FLISP_FEMTO_EXTENSION
 #include "header.h"
+#endif
+
 #include "lisp.h"
 
 #define F_NONE          0
@@ -67,12 +71,13 @@ static Interpreter flisp;
 void exceptionWithObject(Object * object, char *format, ...)
     __attribute__ ((noreturn, format(printf, 2, 3)));
 
-void writeFmt(Stream *, char *format, ...)
+void writeFmt(Object *, char *format, ...)
     __attribute__ ((format(printf, 2, 3)));
 #endif
 
-void writeObject(Object * object, bool readably, Stream *);
+void writeObject(Object * object, bool readably, Object *);
 
+#if 0
 void writeString(char *str, Stream *stream)
 {
     int len;
@@ -96,7 +101,6 @@ void writeString(char *str, Stream *stream)
         return;
     }
 }
-
 void writeFmt(Stream *stream, char *format, ...)
 {
     static char buf[WRITE_FMT_BUFSIZ];
@@ -139,26 +143,56 @@ void writeChar(char ch, Stream *stream)
         return;
     }
 }
+#endif
+void writeChar(char ch, Object *stream)
+{
+    if(fputc(ch, stream->fd) == EOF)
+        exceptionWithObject(stream, "failed to write character %c, errno: %d", ch, errno);
+}
+void writeString(char *str, Object *stream)
+{
+    int len;
+    len = strlen(str);
+    if(fwrite(str, len, 1, stream->fd) != len)
+        exceptionWithObject(stream, "failed to write %d files, errno: %d", len, errno);
+}
+void writeFmt(Object *stream, char *format, ...)
+{
+    va_list(args);
+    va_start(args, format);
+    if (vfprintf(stream->fd, format, args) < 0)
+        exceptionWithObject(stream, "failed to fprintf, errno: %d", errno);
+}
 
 void exceptionWithObject(Object * object, char *format, ...)
 {
-    writeString("error: ", &flisp.ostream);
+    writeString("error: ", flisp.message);
 
     if (object) {
-        writeObject(object, true, &flisp.ostream);
-        writeChar(' ', &flisp.ostream);
+        writeObject(object, true, flisp.message);
+        writeChar(' ', flisp.message);
     }
 
     va_list args;
     va_start(args, format);
-    // Note: potentially truncates the error message to WRITE_FMT_BUFSIZ
-    vsnprintf(flisp.message, WRITE_FMT_BUFSIZ, format, args);
+    vfprintf(flisp.message->fd, format, args);
     va_end(args);
 
-    writeString(flisp.message, &flisp.ostream);
-    writeChar('\n', &flisp.ostream);
+    writeChar('\n', flisp.message);
 
     longjmp(*flisp.stackframe, RESULT_ERROR);
+}
+
+void debug(Interpreter interp, char *format, ...)
+{
+    if (interp.debug == nil)
+        return;
+    
+    va_list(args);
+    va_start(args, format);
+    vfprintf(interp.debug->fd, format, args);
+    va_end(args);
+    writeChar('\n', flisp.debug);    
 }
 
 // GARBAGE COLLECTION /////////////////////////////////////////////////////////
@@ -240,7 +274,7 @@ Object *gcMoveObject(Object * object)
 
 void gc(GC_PARAM)
 {
-    debug("collecting garbage\n");
+    debug(flisp, "collecting garbage\n");
 
     flisp.memory->toOffset = 0;
 
@@ -777,7 +811,7 @@ Object *readExpr(Stream * stream, GC_PARAM)
 
 // WRITING OBJECTS ////////////////////////////////////////////////////////////
 
-void writeObject(Object * object, bool readably, Stream *stream)
+void writeObject(Object * object, bool readably, Object *stream)
 {
     switch (object->type) {
 #define CASE(type, ...)                         \
@@ -787,7 +821,7 @@ void writeObject(Object * object, bool readably, Stream *stream)
         CASE(TYPE_NUMBER, "%g", object->number);
         CASE(TYPE_SYMBOL, "%s", object->string);
         CASE(TYPE_PRIMITIVE, "#<Primitive %s>", object->name);
-        CASE(TYPE_STREAM, "#<Stream %p>", (void *) object->fd);
+        CASE(TYPE_STREAM, "#<Stream %p, %s>", (void *) object->fd, object->path->string);
 #undef CASE
     case TYPE_STRING:
         if (readably) {
@@ -991,15 +1025,15 @@ Object *primitiveCons(Object ** args, GC_PARAM)
 
 Object *primitivePrint(Object ** args, GC_PARAM)
 {
-    writeChar('\n', &flisp.ostream);
-    writeObject((*args)->car, true, &flisp.ostream);
-    writeChar(' ', &flisp.ostream);
+    writeChar('\n', flisp.output);
+    writeObject((*args)->car, true, flisp.output);
+    writeChar(' ', flisp.output);
     return (*args)->car;
 }
 
 Object *primitivePrinc(Object ** args, GC_PARAM)
 {
-    writeObject((*args)->car, false, &flisp.ostream);
+    writeObject((*args)->car, false, flisp.output);
     return (*args)->car;
 }
 
@@ -1018,6 +1052,391 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
     return *e;
 }
 
+#define DEFINE_PRIMITIVE_ARITHMETIC(name, op, init)                     \
+    Object *name(Object **args, GC_PARAM) {                             \
+        if (*args == nil)                                               \
+            return newNumber(init, GC_ROOTS);                           \
+        else if ((*args)->car->type != TYPE_NUMBER)                     \
+            exceptionWithObject((*args)->car, "is not a number");       \
+        else {                                                          \
+            Object *object, *rest;                                      \
+                                                                        \
+            if ((*args)->cdr == nil) {                                  \
+                object = newNumber(init, GC_ROOTS);                     \
+                rest = *args;                                           \
+            } else {                                                    \
+                GC_TRACE(gcFirst, (*args)->car);                        \
+                object = newObjectFrom(gcFirst, GC_ROOTS);              \
+                rest = (*args)->cdr;                                    \
+            }                                                           \
+                                                                        \
+            for (; rest != nil; rest = rest->cdr) {                     \
+                if (rest->car->type != TYPE_NUMBER)                     \
+                    exceptionWithObject(rest->car, "is not a number");  \
+                                                                        \
+                object->number = object->number op rest->car->number;   \
+            }                                                           \
+                                                                        \
+            return object;                                              \
+        }                                                               \
+    }
+
+Object *primitiveMod(Object **args, GC_PARAM) {
+    if (*args == nil)
+        return newNumber(1, GC_ROOTS);
+    else if ((*args)->car->type != TYPE_NUMBER)
+        exceptionWithObject((*args)->car, "is not a number");
+    else {
+        Object *object, *rest;
+
+        if ((*args)->cdr == nil) {
+            object = newNumber(1, GC_ROOTS);
+            rest = *args;
+        } else {
+            GC_TRACE(gcFirst, (*args)->car);
+            object = newObjectFrom(gcFirst, GC_ROOTS);
+            rest = (*args)->cdr;
+        }
+
+        for (; rest != nil; rest = rest->cdr) {
+            if (rest->car->type != TYPE_NUMBER)
+                exceptionWithObject(rest->car, "is not a number");
+
+            object->number = (int)object->number % (int)rest->car->number;
+        }
+
+        return object;
+    }
+}
+
+
+DEFINE_PRIMITIVE_ARITHMETIC(primitiveAdd, +, 0)
+    DEFINE_PRIMITIVE_ARITHMETIC(primitiveSubtract, -, 0)
+    DEFINE_PRIMITIVE_ARITHMETIC(primitiveMultiply, *, 1)
+    DEFINE_PRIMITIVE_ARITHMETIC(primitiveDivide, /, 1)
+
+#define DEFINE_PRIMITIVE_RELATIONAL(name, op)                           \
+    Object *name(Object **args, GC_PARAM) {                             \
+        if ((*args)->car->type != TYPE_NUMBER)                          \
+            exceptionWithObject((*args)->car, "is not a number");       \
+        else {                                                          \
+            Object *rest = *args;                                       \
+            bool result = true;                                         \
+                                                                        \
+            for (; result && rest->cdr != nil; rest = rest->cdr) {      \
+                if (rest->cdr->car->type != TYPE_NUMBER)                \
+                    exceptionWithObject(rest->cdr->car, "is not a number"); \
+                                                                        \
+                result &= rest->car->number op rest->cdr->car->number;  \
+            }                                                           \
+                                                                        \
+            return result ? t : nil;                                    \
+        }                                                               \
+    }
+
+DEFINE_PRIMITIVE_RELATIONAL(primitiveEqual, ==)
+DEFINE_PRIMITIVE_RELATIONAL(primitiveLess, <)
+DEFINE_PRIMITIVE_RELATIONAL(primitiveLessEqual, <=)
+DEFINE_PRIMITIVE_RELATIONAL(primitiveGreater, >)
+DEFINE_PRIMITIVE_RELATIONAL(primitiveGreaterEqual, >=)
+
+
+#define TWO_STRING_ARGS()                                       \
+    Object *first = (*args)->car;                               \
+    Object *second = (*args)->cdr->car;                         \
+    if (first->type != TYPE_STRING)                             \
+        exceptionWithObject(first, "is not a string: first");   \
+    if (second->type != TYPE_STRING)                            \
+        exceptionWithObject(second, "is not a string: second");
+
+#define ONE_STRING_ARG()                                        \
+    Object *first = (*args)->car;                               \
+    if (first->type != TYPE_STRING)                             \
+        exceptionWithObject(first, "is not a string: first");
+
+
+Object *fl_system(Object ** args, GC_PARAM) {
+
+    ONE_STRING_ARG();
+    return newNumber((double) system(first->string), GC_ROOTS);
+}
+
+Object *stringAppend(Object ** args, GC_PARAM)
+{
+    TWO_STRING_ARGS();
+
+    int len1 = strlen(first->string);
+    int len2 = strlen(second->string);
+    char *new = strdup(first->string);
+    new = realloc(new, len1 + len2 + 1);
+    assert(new != NULL);
+    memcpy(new + len1, second->string, len2);
+    new[len1 + len2] = '\0';
+
+    Object *obj = newStringWithLength(new, len1 + len2, GC_ROOTS);
+    free(new);
+
+    return obj;
+}
+
+Object *stringSubstring(Object ** args, GC_PARAM)
+{
+    Object *first = (*args)->car;
+    Object *second = (*args)->cdr->car;
+    Object *third = (*args)->cdr->cdr->car;
+
+    if (first->type != TYPE_STRING)
+        exceptionWithObject(first, "is not a string (string.substring)");
+    if (second->type != TYPE_NUMBER)
+        exceptionWithObject(second, "is not a number");
+    if (third->type != TYPE_NUMBER)
+        exceptionWithObject(third, "is not a number");
+
+    int start = (int)(second->number);
+    int end = (int)(third->number);
+    int len = strlen(first->string);
+
+    if (start < 0 || start > len -1)
+        exceptionWithObject(second, "is out of bounds");
+    if (end < 0 || end > len -1)
+        exceptionWithObject(third, "is out of bounds");
+    if (start > end)
+        exceptionWithObject(second, "start index greater than end index");
+
+    char *sub = strdup(first->string);
+    int newlen = end - start + 1;
+
+    memcpy(sub, (first->string + start), newlen);
+    *(sub + newlen) = '\0';
+    Object *obj = newStringWithLength(sub, newlen, GC_ROOTS);
+    free(sub);
+
+    return obj;
+}
+
+Object *stringLength(Object ** args, GC_PARAM)
+{
+    Object *first = (*args)->car;
+    if (first->type != TYPE_STRING)
+        exceptionWithObject(first, "is not a string (string.length)");
+
+    return newNumber(strlen(first->string), GC_ROOTS);
+}
+
+/* Strings */
+
+Object *primitiveStringP(Object ** args, GC_PARAM)
+{
+    Object *first = (*args)->car;
+    return (first != nil && first->type == TYPE_STRING) ? t : nil;
+}
+
+Object *primitiveNumberP(Object ** args, GC_PARAM)
+{
+    Object *first = (*args)->car;
+    return (first != nil && first->type == TYPE_NUMBER) ? t : nil;
+}
+
+Object *stringToNumber(Object ** args, GC_PARAM)
+{
+    Object *first = (*args)->car;
+
+    if (first->type != TYPE_STRING)
+        exceptionWithObject(first, "(string-to-number) is not a string: first");
+
+    double num = strtod(first->string, NULL);
+    return newNumber(num, GC_ROOTS);
+}
+
+/*
+ * XXX could be improved to handle integers and decimals better
+ * for example 121323.000000 (%f) is ugly but so is 1.213230e+05 (%g)
+ */
+Object *numberToString(Object ** args, GC_PARAM)
+{
+    char buf[40];
+    Object *first = (*args)->car;
+
+    if (first->type != TYPE_NUMBER)
+        exceptionWithObject(first, "is not a number");
+
+    if (first->number == (long)first->number)
+        sprintf(buf, "%ld", (long)first->number);
+    else
+        sprintf(buf, "%lf", first->number);
+
+    return newStringWithLength(buf, strlen(buf), GC_ROOTS);
+}
+
+
+Object *asciiToString(Object ** args, GC_PARAM)
+{
+    char ch[2];
+    Object *first = (*args)->car;
+
+    if (first->type != TYPE_NUMBER)
+        exceptionWithObject(first, "is not a number");
+    if (first->type < 0 || first->type > 255)
+        exceptionWithObject(first, "is not in range 0-255");
+
+    ch[0] = (unsigned char)first->number;
+    ch[1] = '\0';
+    return newStringWithLength(ch, 1, GC_ROOTS);
+}
+
+Object *asciiToNumber(Object ** args, GC_PARAM)
+{
+    Object *first = (*args)->car;
+
+    if (first->type != TYPE_STRING)
+        exceptionWithObject(first, "is not a number");
+    if (strlen(first->string) < 1)
+        exceptionWithObject(first, "is empty");
+
+    return newNumber((double)*first->string, GC_ROOTS);
+}
+
+
+char *load_file(int infd);
+
+Object *e_load(Object ** args, GC_PARAM)
+{
+    int fd;
+
+    ONE_STRING_ARG();
+
+    if (first->type != TYPE_STRING)
+        exceptionWithObject(first, "(load) is not a string: first");
+
+    debug(flisp, "(load \"%s\")\n", first->string);
+
+    if (!strcmp(first->string, "-"))
+        fd = 0;
+    else if ((fd = open(first->string, O_RDONLY)) == -1) {
+        exceptionWithObject(nil, "open(%s) failed", first->string);
+    }
+
+    char *out = load_file(fd);
+    debug(flisp, "close(%d)\n", fd);
+    close(fd);
+    /* Note: in batch_mode incidentially out is NULL: don't rely on this! */
+    if (out == NULL) return t;
+    char* err = strstr(out, "error: ");
+    if (err)
+        debug(flisp, "(load \"%s\") => %s\n", first->string, err);
+    else
+        debug(flisp, "(load \"%s\") => %d chars\n", first->string, strlen(out));
+    return (NULL == strstr(out, "error:")) ? t : nil;
+}
+
+/* OS interface */
+
+Object *os_getenv(Object ** args, GC_PARAM)
+{
+    ONE_STRING_ARG();
+
+    char *e = getenv(first->string);
+    if (e == NULL) return nil;
+    return newStringWithLength(e, strlen(e), GC_ROOTS);
+}
+
+/** (fopen name mode) => StreamObject
+ *
+ * @param name  path to a file to open.
+ * @param mode  see fopen(3p). One of "r", "w", "a", "r+", "w+", "a+",
+ *   add "b" for binary files.
+ *
+ * Additionally a file associated with a string buffer can be created:
+ *
+ * If mode is "<", name is converted into a memory based stream
+ * opened with mode "r". The file name of the stream is set to "<STRING"n
+ *
+ * If mode is ">", a dynamic memory based stream is opened with mode
+ * "w". The file name of the stream is set to ">STRING".
+ *
+ * If name is "<num" or ">num" the standard file descriptor with
+ * number *num* is opened in "r" or "a" mode respectively and mode is
+ * ignored.
+ *
+ */
+Object *file_fopen(Interpreter *interp, char *path, char* mode) {
+    FILE * fd;
+    Object *gcRoots = interp->theRoot;
+   
+    if (strcmp("<", mode) == 0) {
+        fd = fmemopen(path, strlen(path), "r");
+        if (fd == NULL)
+            exception("failed to convert string to input stream, errno: %d", errno);
+        return newStreamObject(fd, "<STRING", GC_ROOTS);
+    }
+    if (strcmp(">", mode) == 0) {
+        Object *stream = newStreamObject(NULL, ">STREAM", GC_ROOTS);
+        fd = open_memstream(&stream->buf, &stream->len);
+        if (fd == NULL)
+            exception("failed to create memory based output stream, errno: %d", errno);
+        stream->fd = fd;
+        return stream;
+    }
+
+    char c = path[0];
+    if (c == '<' || c == '>') {
+        char *end;
+        errno = 0;
+        long d = strtol(&path[1], &end, 0);
+        if (errno || *end != '\0' || d < 0 || d > _POSIX_OPEN_MAX)
+            exception("invalid I/O stream number: %s", &path[1]);
+        fd = fdopen((int)d, c == '<' ? "r" : "a");
+        if (fd == NULL)
+            exception("failed to open I/O stream %ld for %s", d, c == '<' ? "reading" : "writing");
+        return newStreamObject(fd, path, GC_ROOTS);
+    }
+
+    fd = fopen(path, mode);
+    if (fd == NULL)
+        exception("failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
+    return newStreamObject(fd, path, GC_ROOTS);
+}
+Object *primitiveFopen(Object ** args, GC_PARAM)
+{
+    
+    TWO_STRING_ARGS();
+    
+    return file_fopen(&flisp, first->string, second->string);
+}
+/** (fclose StreamObject) => flag
+ *
+ * @param StreamObject
+ *
+ * Close *StreamObject*, return nil on error, else t.
+ *
+ */
+Object *file_fclose(Interpreter *interp, Object *stream)
+{
+    Object *gcRoots = interp->theRoot;
+
+    if (stream->type != TYPE_STREAM)
+        exceptionWithObject(stream, "not a stream, cannot fclose");
+    if (stream->fd == NULL)
+        exception("stream already closed");
+
+    if (stream->buf != NULL)
+        free(stream->buf);
+    if (fclose(stream->fd) == EOF)
+        return newNumber(errno, GC_ROOTS);
+
+    stream->fd = NULL;
+    return newNumber(0, GC_ROOTS);
+}
+Object *primitiveFclose(Object** args, GC_PARAM)
+{
+    Object *stream = (*args)->car;
+    return file_fclose(&flisp, stream);
+}
+#ifdef FLISP_FILE_EXTENSION
+#include "file.c"
+#endif
+
+#ifdef FLISP_FEMTO_EXTENSION
 /************************* Editor Extensions **************************************/
 
 #define DEFINE_EDITOR_FUNC(name)                \
@@ -1095,20 +1514,6 @@ Object *e_get_key_funcname(Object **args, GC_PARAM) { return newString(get_key_f
 Object *e_get_clipboard(Object **args, GC_PARAM) { return newString(get_clipboard(), GC_ROOTS); }
 Object *e_get_buffer_count(Object **args, GC_PARAM) { return newNumber(count_buffers(), GC_ROOTS); }
 
-#define TWO_STRING_ARGS()                                       \
-    Object *first = (*args)->car;                               \
-    Object *second = (*args)->cdr->car;                         \
-    if (first->type != TYPE_STRING)                             \
-        exceptionWithObject(first, "is not a string: first");   \
-    if (second->type != TYPE_STRING)                            \
-        exceptionWithObject(second, "is not a string: second");
-
-#define ONE_STRING_ARG()                                        \
-    Object *first = (*args)->car;                               \
-    if (first->type != TYPE_STRING)                             \
-        exceptionWithObject(first, "is not a string: first");
-
-
 Object *e_refresh(Object ** args, GC_PARAM)
 {
     refresh();
@@ -1146,12 +1551,6 @@ Object *e_get_temp_file(Object ** args, GC_PARAM)
     return newStringWithLength(fn, strlen(fn), GC_ROOTS);
 }
 
-Object *e_system(Object ** args, GC_PARAM) {
-
-    ONE_STRING_ARG();
-    return newNumber((double) system(first->string), GC_ROOTS);
-}
-
 Object *e_insert_file(Object ** args, GC_PARAM) {
 
     // Note: want to give an optional modify flag, but then it segfaults
@@ -1177,68 +1576,6 @@ Object *e_getfilename(Object **args, GC_PARAM) {
     return newString(response_buf, GC_ROOTS);
 }
 
-Object *stringAppend(Object ** args, GC_PARAM)
-{
-    TWO_STRING_ARGS();
-
-    int len1 = strlen(first->string);
-    int len2 = strlen(second->string);
-    char *new = strdup(first->string);
-    new = realloc(new, len1 + len2 + 1);
-    assert(new != NULL);
-    memcpy(new + len1, second->string, len2);
-    new[len1 + len2] = '\0';
-
-    Object *obj = newStringWithLength(new, len1 + len2, GC_ROOTS);
-    free(new);
-
-    return obj;
-}
-
-Object *stringSubstring(Object ** args, GC_PARAM)
-{
-    Object *first = (*args)->car;
-    Object *second = (*args)->cdr->car;
-    Object *third = (*args)->cdr->cdr->car;
-
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "is not a string (string.substring)");
-    if (second->type != TYPE_NUMBER)
-        exceptionWithObject(second, "is not a number");
-    if (third->type != TYPE_NUMBER)
-        exceptionWithObject(third, "is not a number");
-
-    int start = (int)(second->number);
-    int end = (int)(third->number);
-    int len = strlen(first->string);
-
-    if (start < 0 || start > len -1)
-        exceptionWithObject(second, "is out of bounds");
-    if (end < 0 || end > len -1)
-        exceptionWithObject(third, "is out of bounds");
-    if (start > end)
-        exceptionWithObject(second, "start index greater than end index");
-
-    char *sub = strdup(first->string);
-    int newlen = end - start + 1;
-
-    memcpy(sub, (first->string + start), newlen);
-    *(sub + newlen) = '\0';
-    Object *obj = newStringWithLength(sub, newlen, GC_ROOTS);
-    free(sub);
-
-    return obj;
-}
-
-Object *stringLength(Object ** args, GC_PARAM)
-{
-    Object *first = (*args)->car;
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "is not a string (string.length)");
-
-    return newNumber(strlen(first->string), GC_ROOTS);
-}
-
 Object *e_show_prompt(Object ** args, GC_PARAM)
 {
     TWO_STRING_ARGS();
@@ -1257,141 +1594,6 @@ Object *e_prompt(Object ** args, GC_PARAM)
     (void) ! getinput(first->string, response, 80, F_NONE);
     return newStringWithLength(response, strlen(response), GC_ROOTS);
 }
-
-/* Strings */
-
-Object *primitiveStringP(Object ** args, GC_PARAM)
-{
-    Object *first = (*args)->car;
-    return (first != nil && first->type == TYPE_STRING) ? t : nil;
-}
-
-Object *primitiveNumberP(Object ** args, GC_PARAM)
-{
-    Object *first = (*args)->car;
-    return (first != nil && first->type == TYPE_NUMBER) ? t : nil;
-}
-
-Object *stringToNumber(Object ** args, GC_PARAM)
-{
-    Object *first = (*args)->car;
-
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "(string-to-number) is not a string: first");
-
-    double num = strtod(first->string, NULL);
-    return newNumber(num, GC_ROOTS);
-}
-
-/*
- * XXX could be improved to handle integers and decimals better
- * for example 121323.000000 (%f) is ugly but so is 1.213230e+05 (%g)
- */
-Object *numberToString(Object ** args, GC_PARAM)
-{
-    char buf[40];
-    Object *first = (*args)->car;
-
-    if (first->type != TYPE_NUMBER)
-        exceptionWithObject(first, "is not a number");
-
-    if (first->number == (long)first->number)
-        sprintf(buf, "%ld", (long)first->number);
-    else
-        sprintf(buf, "%lf", first->number);
-
-    return newStringWithLength(buf, strlen(buf), GC_ROOTS);
-}
-
-/* OS interface */
-
-Object *os_getenv(Object ** args, GC_PARAM)
-{
-    ONE_STRING_ARG();
-
-    char *e = getenv(first->string);
-    if (e == NULL) return nil;
-    return newStringWithLength(e, strlen(e), GC_ROOTS);
-}
-
-/**
- * (fopen name mode) => StreamObject
- *
- * @param name  path to a file to open.
- * @param mode  see fopen(3p). One of "r", "w", "a", "r+", "w+", "a+",
- *   add "b" for binary files.
- *
- * Additionally a file associated with a string buffer can be created:
- *
- * If mode is "<", name is converted into a memory based stream
- * opened with mode "r". The file name of the stream is set to "<STRING"n
- *
- * If mode is ">", a dynamic memory based stream is opened with mode
- * "w". The file name of the stream is set to ">STRING".
- *
- * If name is "<num" or ">num" the standard file descriptor with
- * number *num* is opened in "r" or "a" mode respectively and mode is
- * ignored.
- *
- */
-Object *primitiveFopen(Object ** args, GC_PARAM)
-{
-    FILE * fd;
-    TWO_STRING_ARGS();
-
-    if (strcmp("<", second->string) == 0) {
-        fd = fmemopen(first->string, strlen(first->string), "r");
-        if (fd == NULL)
-            exceptionWithObject(first, "failed to convert string to input stream, errno: %d", errno);
-        return newStreamObject(fd, "<STRING", GC_ROOTS);
-    }
-    if (strcmp(">", second->string) == 0) {
-        Object *stream = newStreamObject(NULL, ">STREAM", GC_ROOTS);
-        fd = open_memstream(&stream->buf, &stream->len);
-        if (fd == NULL)
-            exception("failed to create memory based output stream, errno: %d", errno);
-        stream->fd = fd;
-        return stream;
-    }
-
-    char c = first->string[0];
-    if (c == '<' || c == '>') {
-        char *end;
-        errno = 0;
-        long d = strtol(first->string+1, &end, 0);
-        if (errno || *end != '\0' || d < 0 || d > _POSIX_OPEN_MAX)
-            exception("invalid I/O stream number: %s", first->string+1);
-        fd = fdopen((int)d, c == '<' ? "r" : "a");
-        if (fd == NULL)
-            exception("failed to open I/O stream %ld for %s", d, c == '<' ? "reading" : "writing");
-        return newStreamObject(fd, first->string, GC_ROOTS);
-    }
-
-    fd = fopen(first->string, second->string);
-    if (fd == NULL)
-        exception("failed to open file '%s' with mode '%s', errno: %d", first->string, second->string, errno);
-    return newStreamObject(fd, first->string, GC_ROOTS);
-}
-Object *primitiveFclose(Object** args, GC_PARAM)
-{
-    Object *first = (*args)->car;
-
-    if (first->type != TYPE_STREAM)
-        exceptionWithObject(first, "not a stream, cannot fclose");
-    if (first->fd == NULL)
-        exception("stream already closed");
-
-    if (first->buf != NULL)
-        free(first->buf);
-    if (fclose(first->fd) == EOF)
-        return newNumber(errno, GC_ROOTS);
-
-    first->fd = NULL;
-    return newNumber(0, GC_ROOTS);
-}
-#ifdef FLISP_FILE_EXTENSION
-#include "file.c"
-#endif
 
 Object *e_get_version_string(Object ** args, GC_PARAM)
 {
@@ -1484,67 +1686,6 @@ Object *e_get_buffer_name(Object ** args, GC_PARAM)
     strcpy(buf, get_current_bufname());
     return newStringWithLength(buf, strlen(buf), GC_ROOTS);
 }
-
-Object *asciiToString(Object ** args, GC_PARAM)
-{
-    char ch[2];
-    Object *first = (*args)->car;
-
-    if (first->type != TYPE_NUMBER)
-        exceptionWithObject(first, "is not a number");
-    if (first->type < 0 || first->type > 255)
-        exceptionWithObject(first, "is not in range 0-255");
-
-    ch[0] = (unsigned char)first->number;
-    ch[1] = '\0';
-    return newStringWithLength(ch, 1, GC_ROOTS);
-}
-
-Object *asciiToNumber(Object ** args, GC_PARAM)
-{
-    Object *first = (*args)->car;
-
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "is not a number");
-    if (strlen(first->string) < 1)
-        exceptionWithObject(first, "is empty");
-
-    return newNumber((double)*first->string, GC_ROOTS);
-}
-
-
-char *load_file(int infd);
-
-Object *e_load(Object ** args, GC_PARAM)
-{
-    int fd;
-
-    ONE_STRING_ARG();
-
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "(load) is not a string: first");
-
-    debug("(load \"%s\")\n", first->string);
-
-    if (!strcmp(first->string, "-"))
-        fd = 0;
-    else if ((fd = open(first->string, O_RDONLY)) == -1) {
-        exceptionWithObject(nil, "open(%s) failed", first->string);
-    }
-
-    char *out = load_file(fd);
-    debug("close(%d)\n", fd);
-    close(fd);
-    /* Note: in batch_mode incidentially out is NULL: don't rely on this! */
-    if (out == NULL) return t;
-    char* err = strstr(out, "error: ");
-    if (err)
-        debug("(load \"%s\") => %s\n", first->string, err);
-    else
-        debug("(load \"%s\") => %d chars\n", first->string, strlen(out));
-    return (NULL == strstr(out, "error:")) ? t : nil;
-}
-
 Object *e_message(Object ** args, GC_PARAM)
 {
     ONE_STRING_ARG();
@@ -1562,7 +1703,7 @@ Object *e_log_message(Object ** args, GC_PARAM)
 Object *e_log_debug(Object ** args, GC_PARAM)
 {
     ONE_STRING_ARG();
-    debug(first->string);
+    debug(flisp, first->string);
     return t;
 }
 
@@ -1601,94 +1742,7 @@ Object *e_get_point_max(Object ** args, GC_PARAM)
 {
     return newNumber(get_point_max(), GC_ROOTS);
 }
-
-#define DEFINE_PRIMITIVE_ARITHMETIC(name, op, init)                     \
-    Object *name(Object **args, GC_PARAM) {                             \
-        if (*args == nil)                                               \
-            return newNumber(init, GC_ROOTS);                           \
-        else if ((*args)->car->type != TYPE_NUMBER)                     \
-            exceptionWithObject((*args)->car, "is not a number");       \
-        else {                                                          \
-            Object *object, *rest;                                      \
-                                                                        \
-            if ((*args)->cdr == nil) {                                  \
-                object = newNumber(init, GC_ROOTS);                     \
-                rest = *args;                                           \
-            } else {                                                    \
-                GC_TRACE(gcFirst, (*args)->car);                        \
-                object = newObjectFrom(gcFirst, GC_ROOTS);              \
-                rest = (*args)->cdr;                                    \
-            }                                                           \
-                                                                        \
-            for (; rest != nil; rest = rest->cdr) {                     \
-                if (rest->car->type != TYPE_NUMBER)                     \
-                    exceptionWithObject(rest->car, "is not a number");  \
-                                                                        \
-                object->number = object->number op rest->car->number;   \
-            }                                                           \
-                                                                        \
-            return object;                                              \
-        }                                                               \
-    }
-
-Object *primitiveMod(Object **args, GC_PARAM) {
-    if (*args == nil)
-        return newNumber(1, GC_ROOTS);
-    else if ((*args)->car->type != TYPE_NUMBER)
-        exceptionWithObject((*args)->car, "is not a number");
-    else {
-        Object *object, *rest;
-
-        if ((*args)->cdr == nil) {
-            object = newNumber(1, GC_ROOTS);
-            rest = *args;
-        } else {
-            GC_TRACE(gcFirst, (*args)->car);
-            object = newObjectFrom(gcFirst, GC_ROOTS);
-            rest = (*args)->cdr;
-        }
-
-        for (; rest != nil; rest = rest->cdr) {
-            if (rest->car->type != TYPE_NUMBER)
-                exceptionWithObject(rest->car, "is not a number");
-
-            object->number = (int)object->number % (int)rest->car->number;
-        }
-
-        return object;
-    }
-}
-
-
-DEFINE_PRIMITIVE_ARITHMETIC(primitiveAdd, +, 0)
-    DEFINE_PRIMITIVE_ARITHMETIC(primitiveSubtract, -, 0)
-    DEFINE_PRIMITIVE_ARITHMETIC(primitiveMultiply, *, 1)
-    DEFINE_PRIMITIVE_ARITHMETIC(primitiveDivide, /, 1)
-
-#define DEFINE_PRIMITIVE_RELATIONAL(name, op)                           \
-    Object *name(Object **args, GC_PARAM) {                             \
-        if ((*args)->car->type != TYPE_NUMBER)                          \
-            exceptionWithObject((*args)->car, "is not a number");       \
-        else {                                                          \
-            Object *rest = *args;                                       \
-            bool result = true;                                         \
-                                                                        \
-            for (; result && rest->cdr != nil; rest = rest->cdr) {      \
-                if (rest->cdr->car->type != TYPE_NUMBER)                \
-                    exceptionWithObject(rest->cdr->car, "is not a number"); \
-                                                                        \
-                result &= rest->car->number op rest->cdr->car->number;  \
-            }                                                           \
-                                                                        \
-            return result ? t : nil;                                    \
-        }                                                               \
-    }
-
-DEFINE_PRIMITIVE_RELATIONAL(primitiveEqual, ==)
-DEFINE_PRIMITIVE_RELATIONAL(primitiveLess, <)
-DEFINE_PRIMITIVE_RELATIONAL(primitiveLessEqual, <=)
-DEFINE_PRIMITIVE_RELATIONAL(primitiveGreater, >)
-DEFINE_PRIMITIVE_RELATIONAL(primitiveGreaterEqual, >=)
+#endif
 
 typedef struct Primitive {
     char *name;
@@ -1737,8 +1791,10 @@ Primitive primitives[] = {
     {"ascii->number", 1, 1, asciiToNumber},
     {"load", 1, 1, e_load},
     {"os.getenv", 1, 1, os_getenv},
-    {"get-temp-file", 0, 0, e_get_temp_file},
+    {"system", 1, 1, fl_system},
     FLISP_REGISTER_FILE_EXTENSION
+#ifdef FLISP_FEMTO_EXTENSION
+    {"get-temp-file", 0, 0, e_get_temp_file},
     {"add-mode-global", 1, 1, e_add_mode_global},
     {"message", 1, 1, e_message},
     {"log-message", 1, 1, e_log_message},
@@ -1788,7 +1844,6 @@ Primitive primitives[] = {
     {"previous-line", 0, 0, e_up},
     {"set-mark", 0, 0, e_set_mark},
     {"set-clipboard", 1, 1, e_set_clipboard},
-    {"system", 1, 1, e_system},
     {"delete", 0, 0, e_delete},
     {"copy-region", 0, 0, e_copy_region},
     {"kill-region", 0, 0, e_kill_region},
@@ -1805,6 +1860,7 @@ Primitive primitives[] = {
     {"get-buffer-count", 0, 0, e_get_buffer_count},
     {"suspend", 0, 0, e_suspend},
     {"exit", 0, 0, e_quit}
+#endif
 };
 
 // Special forms handled by evalExpr. Must be in the same order as above.
@@ -1996,7 +2052,7 @@ Object *evalTrap(Object ** args, Object ** env,  GC_PARAM)
     up = flisp.stackframe;
     flisp.stackframe = &exceptionEnv;
     if (setjmp(exceptionEnv)) {
-        debug("exception trapped\n");
+        debug(flisp, "exception trapped\n");
         flisp.stackframe = up;
         // Note: we want the signal/exception information
         // here, but that is another story
@@ -2052,7 +2108,7 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
             if (primitive->nMaxArgs < 0 && nArgs % -primitive->nMaxArgs)
                 exceptionWithObject(*gcFunc, "expects a multiple of %d arguments", -primitive->nMaxArgs);
 
-            //debug("evalExpr %s primitive\n", primitive->name);
+            //debug(flisp, "evalExpr %s primitive\n", primitive->name);
             switch ((*gcFunc)->primitive) {
             case PRIMITIVE_QUOTE:
                 return (*gcArgs)->car;
@@ -2152,9 +2208,10 @@ void set_input_stream_buffer(Stream *stream, char *buffer)
     stream->size = 0;
 }
 
+#if 0
 void reset_output_stream()
 {
-    Stream *stream = &flisp.ostream; /* we only want 1 output stream */
+    Stream *stream = &flisp.output; /* we only want 1 output stream */
     if (batch_mode) {
         stream->type = STREAM_TYPE_FILE;
         stream->fd = STDOUT_FILENO;
@@ -2169,11 +2226,11 @@ void reset_output_stream()
     // Note: initialize buffer, in case nothing is written ever
     writeString("", stream);
 }
-
+#endif
 int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 {
     if (setjmp(*flisp.stackframe)) {
-        debug("exception in load_file_body()\n");
+        debug(flisp, "exception in load_file_body()\n");
         return 1;
     }
 
@@ -2183,8 +2240,8 @@ int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
         *gcObject = nil;
         *gcObject = readExpr(input_stream, GC_ROOTS);
         *gcObject = evalExpr(gcObject, flisp.theEnv, GC_ROOTS);
-        writeObject(*gcObject, true, &flisp.ostream);
-        writeChar('\n', &flisp.ostream);
+        writeObject(*gcObject, true, flisp.output);
+        writeChar('\n', flisp.output);
     }
     free(input_stream->buffer);
     return 0;
@@ -2197,22 +2254,22 @@ char *load_file(int infd)
     up = flisp.stackframe;
     flisp.stackframe = &exceptionEnv;
 
-    debug("load_file(%d)\n", infd);
+    debug(flisp, "load_file(%d)\n", infd);
     Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
     set_stream_file(&input_stream, infd);
-    reset_output_stream();
+    //reset_output_stream();
     if (load_file_body(flisp.theEnv, flisp.theRoot, &input_stream)) {
-        debug("load_file(%d) failed: %s\n", infd, flisp.ostream.buffer);
+        //debug(flisp, "load_file(%d) failed: %s\n", infd, flisp.output.buffer);
         flisp.stackframe = up;
         if (input_stream.buffer != NULL)
             free(input_stream.buffer);
         return "error: load_file() failed";
     }
-    debug("load_file(%d) finished, returning ostream.buffer: %p\n", infd, flisp.ostream.buffer);
+    //debug(flisp, "load_file(%d) finished, returning ostream.buffer: %p\n", infd, flisp.ostream.buffer);
     flisp.stackframe = up;
     //if (input_stream.buffer != NULL)
     //    free(input_stream.buffer);
-    return flisp.ostream.buffer;
+    return flisp.output->buf;
 }
 
 ResultCode eval(Interpreter *interp, Stream *input_stream)
@@ -2225,20 +2282,20 @@ ResultCode eval(Interpreter *interp, Stream *input_stream)
     for (;;) {
         switch (setjmp(*interp->stackframe)) {
         case RESULT_ERROR:
-            debug("general exception in eval\n");
+            debug(flisp, "general exception in eval\n");
             return RESULT_ERROR;
             break;
         }
         *gcObject = nil;
 
         if (peekNext(input_stream) == EOF) {
-            writeChar('\n', &flisp.ostream);
+            writeChar('\n', flisp.output);
             return 0;
         }
         *gcObject = readExpr(input_stream, GC_ROOTS);
         *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
-        writeObject(*gcObject, true, &flisp.ostream);
-        writeChar('\n', &flisp.ostream);
+        writeObject(*gcObject, true, flisp.output);
+        writeChar('\n', flisp.output);
     }
     return RESULT_OK;
 }
@@ -2262,21 +2319,16 @@ ResultCode eval(Interpreter *interp, Stream *input_stream)
  */
 Interpreter *lisp_init(int argc, char **argv, char *library_path)
 {
-    if (lisp_interpreters != NULL) {
-        debug("WARNING: unimplemented. Attempt to initialize more then one interpreter\n");
+    if (lisp_interpreters != NULL)
         return NULL;
-    }
-
-    debug("lisp_init(%d, %p, \"%s\")\n", argc, argv, library_path);
 
     flisp.result = RESULT_OK;
-    flisp.output = NULL;
-    flisp.message[0] = '\0';
+    flisp.output = nil;
+    flisp.message = nil;
+    flisp.debug = nil;
 
     flisp.stackframe = NULL;
     flisp.memory = memory;
-
-    set_stream_file(&flisp.ostream, STDOUT_FILENO);
 
     flisp.theRoot = nil;
 
@@ -2313,26 +2365,25 @@ ResultCode lisp_eval(Interpreter *interp, char * format, ...)
     // Note: instead of mitigation allocate dynamically and error only on OOM
     if (size > INPUT_FMT_BUFSIZ) {
         interp->result = RESULT_ERROR;
-        strncpy(interp->message, "error: input string larger then " "WRITE_FMT_BUFSIZ", WRITE_FMT_BUFSIZ);
-        interp->output = interp->message;
+        writeString("error: input string larger then " "WRITE_FMT_BUFSIZ", interp->output);
         return interp->result;
     }
 
-    debug("lisp_eval(%s)\n", input);
+    debug(flisp, "lisp_eval(%s)\n", input);
 
     interp->stackframe = &exceptionEnv;
 
     Stream is = { .type = STREAM_TYPE_STRING };
     set_input_stream_buffer(&is, input);
     interp->istream = &is;
-    reset_output_stream();
-    interp->message[0] = '\0';
+
+//    interp->output = file_fopen(interp, "", ">");
+//    interp->message = file_fopen(interp, "", ">");
 
     if ((result = eval(interp, &is))) {
-        debug("lisp_eval() failed: %s\n", interp->message);
+        debug(flisp, "lisp_eval() failed: %s\n", interp->message);
         // interp->message already set by exception code
     }
-    interp->output = interp->ostream.buffer;
     interp->result = result;
     return result;
 }
