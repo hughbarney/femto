@@ -8,6 +8,10 @@
 #include <setjmp.h>
 #include <stdio.h>
 
+#define FL_NAME     "fLisp"
+#define FL_VERSION  "0.1"
+
+
 //#define FLISP_MEMORY_SIZE          131072UL
 //#define FLISP_MEMORY_SIZE          262144UL  /* 256k */
 //#define FLISP_MEMORY_SIZE          524288UL
@@ -84,16 +88,16 @@ typedef struct Memory {
 
 typedef struct Interpreter Interpreter;
 typedef struct Interpreter {
-    char * output;                   /* output of last evaluation, NULL if writing to STDOUT */
+    Object *output;                  /* output stream */
+    Object *message;                 /* error stream */
+    Object *debug;                   /* debug stream */
     ResultCode result;               /* result of last evaluation */
-    char message[WRITE_FMT_BUFSIZ];  /* last error message */
     /* private */
     Object *theRoot;      /* root object */
     Object **theEnv;      /* environment object */
     Object *symbols;      /* symbols list */
     Object root;          /* reified root node */
     Stream *istream;      /* Lisp input stream */
-    Stream ostream;       /* Lisp output stream */
     Memory *memory;       /* memory available for object allocation,
                              cleaned up by garbage collector */
     jmp_buf *stackframe;  /* exception handling */
@@ -103,8 +107,10 @@ typedef struct Interpreter {
 extern Interpreter *lisp_interpreters;
 
 extern Interpreter *lisp_init(int, char**, char*);
-extern ResultCode lisp_eval(Interpreter*, char *, ...);
+extern ResultCode lisp_eval(Interpreter *, char *, ...);
 
+Object *file_fopen(Interpreter *, char *, char*);
+Object *file_fclose(Interpreter *, Object *);
 
 #ifdef FLISP_FILE_EXTENSION
 

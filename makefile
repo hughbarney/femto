@@ -23,8 +23,15 @@ INITFILE = "$(SCRIPTDIR)/femto.rc"
 
 OBJ     = command.o display.o complete.o data.o gap.o key.o search.o buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o lisp.o main.o
 
+FLISP_OBJ = flisp.o lisp.o
+
+all: femto doc/flisp.md
+
 femto: $(OBJ)
 	$(LD) $(LDFLAGS) -o femto $(OBJ) $(LIBS)
+
+flisp: $(FLISP_OBJ)
+	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ)
 
 complete.o: complete.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c complete.c
@@ -76,6 +83,9 @@ main.o: main.c header.h lisp.h
 	  -D E_SCRIPTDIR=$(SCRIPTDIR) \
 	  -D E_INITFILE=$(INITFILE) \
 	  -c main.c
+
+flisp.o: flisp.c lisp.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 docs/flisp.md: pdoc/flisp.html pdoc/h2m.lua
 	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
