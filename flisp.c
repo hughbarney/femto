@@ -22,43 +22,65 @@ void fatal(char *msg)
 
 int main(int argc, char **argv)
 {
-    char *library_path, *init_file;
+    char *library_path, *init_file, *debug_file;
     Interpreter *interp;
     char input[INPUT_FMT_BUFSIZ];
-    ResultCode result = RESULT_OK;
+    ResultCode result = FLISP_OK;
 
     if ((init_file = getenv("FLISPRC")) == NULL)
-        init_file = CPP_XSTR(E_INITFILE);
+        init_file = FL_LIBDIR "/" FL_INITFILE;
     
     if ((library_path=getenv("FLISPLIB")) == NULL)
-        library_path = CPP_XSTR(E_SCRIPTDIR);
+        library_path = CPP_XSTR(FL_LIBDIR);
 
     interp = lisp_init(argc, argv, library_path);
     if (interp == NULL)
         fatal("fLisp initialization failed");
 
+    debug_file=getenv("FLISP_DEBUG");
+    
     interp->output = file_fopen(interp, ">1", "");
-    interp->message = file_fopen(interp, ">2", "");
-    interp->debug = file_fopen(interp, ">2", "");
+    Object *stderrStream = file_fopen(interp, ">2", "");
 
+    if (debug_file != NULL) { 
+        interp->debug = file_fopen(interp, debug_file, "w");
+    }
+    
+    if (isatty(0)) {
+        printf(FL_NAME " " FL_VERSION "\n");
+        fflush(stdout);
+    }
     if (strlen(init_file)) {
         // Note: we do not have input streams yet
         result = lisp_eval(interp, "(load \"%s\"", init_file);
         if (result)
-            return result;
+            fprintf(stderr, "failed to load inifile %s: %s", init_file, interp->message);
     }
-    
-    while(1) {
+
+    while(true) {
         if (isatty(0))
-            write(0, "\n> ", 3);
+            printf("\n> ");
         fflush(stdout);
         // Note: we do not have input streams yet
         if (fgets(input, INPUT_FMT_BUFSIZ, stdin) == NULL) break;
-        
+
+        if (input[strlen(input)-1] == '\n')
+            input[strlen(input)-1] = '\0';
+            
         result = lisp_eval(interp, input);
+        if (result) {
+            writeString(stderrStream, "error: ");
+            if (interp->object != nil) {
+                writeString(stderrStream, "object '");
+                writeObject(stderrStream, interp->object, true);
+                writeString(stderrStream, "', ");
+            }
+            writeString(stderrStream, interp->message);
+            fflush(stderrStream->fd);
+        }
     }
     puts("");
-    return result;
+    return 0;
 }
 
 /*
