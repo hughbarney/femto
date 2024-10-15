@@ -7,10 +7,13 @@
  */
 #include <setjmp.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #define FL_NAME     "fLisp"
 #define FL_VERSION  "0.1"
 
+#define FL_INITFILE "flisp.rc"
+#define FL_LIBDIR "/usr/local/share/flisp"
 
 //#define FLISP_MEMORY_SIZE          131072UL
 //#define FLISP_MEMORY_SIZE          262144UL  /* 256k */
@@ -59,8 +62,21 @@ extern Object *t;
 
 
 typedef enum ResultCode {
-    RESULT_OK,
-    RESULT_ERROR
+    FLISP_OK,
+    FLISP_ERROR,
+    FLISP_USER,    /* user generated exception */
+    /* Parser/reader */
+    FLISP_READ_INCOMPLETE,
+    FLISP_READ_INVALID,
+    /* Parameter */
+    FLISP_WRONG_TYPE,
+    FLISP_INVALID_VALUE,
+    FLISP_PARAMETER_ERROR,
+    /* System */
+    FLISP_IO_ERROR,
+    FLISP_OOM,
+    /* Internal */
+    FLISP_GC_ERROR,
 } ResultCode;
 
 // Note: WIP, relevant procedures must get a handle to the
@@ -89,9 +105,10 @@ typedef struct Memory {
 typedef struct Interpreter Interpreter;
 typedef struct Interpreter {
     Object *output;                  /* output stream */
-    Object *message;                 /* error stream */
-    Object *debug;                   /* debug stream */
+    Object *object;                  /* result or error object */
+    char message[WRITE_FMT_BUFSIZ];  /* error string */
     ResultCode result;               /* result of last evaluation */
+    Object *debug;                   /* debug stream */
     /* private */
     Object *theRoot;      /* root object */
     Object **theEnv;      /* environment object */
@@ -111,6 +128,11 @@ extern ResultCode lisp_eval(Interpreter *, char *, ...);
 
 Object *file_fopen(Interpreter *, char *, char*);
 Object *file_fclose(Interpreter *, Object *);
+
+void writeChar(Object *, char);
+void writeString(Object *, char *);
+void writeObject(Object *, Object *, bool);
+
 
 #ifdef FLISP_FILE_EXTENSION
 

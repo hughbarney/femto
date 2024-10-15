@@ -27,7 +27,6 @@
 #include <fcntl.h>
 #include <setjmp.h>
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +49,10 @@ typedef long point_t;
 #define MAP_ANONYMOUS        MAP_ANON
 #endif
 
+#define CPP_XSTR(s) CPP_STR(s)
+#define CPP_STR(s) #s
+
+
 Object *nil = &(Object) { TYPE_SYMBOL,.string = "nil" };
 Object *t = &(Object) { TYPE_SYMBOL,.string = "t" };
 
@@ -63,136 +66,104 @@ static Memory *memory = &(Memory) { FLISP_MEMORY_SIZE };
 static Interpreter flisp;
 
 
-// EXCEPTION HANDLING /////////////////////////////////////////////////////////
-
-#define exception(...)       exceptionWithObject(NULL, __VA_ARGS__)
-
 #ifdef __GNUC__
-void exceptionWithObject(Object * object, char *format, ...)
-    __attribute__ ((noreturn, format(printf, 2, 3)));
-
-void writeFmt(Object *, char *format, ...)
+void debug(Interpreter *, char *format, ...)
     __attribute__ ((format(printf, 2, 3)));
 #endif
-
-void writeObject(Object * object, bool readably, Object *);
-
-#if 0
-void writeString(char *str, Stream *stream)
+void debug(Interpreter *interp, char *format, ...)
 {
-    int len;
-    char *new;
-
-    switch (stream->type) {
-    case STREAM_TYPE_FILE:
-        len = strlen(str);
-        len = write(stream->fd, str, len);
+    if (interp->debug == nil)
         return;
 
-    case STREAM_TYPE_STRING:
-    default:
-        len = strlen(str);
-        new = realloc(stream->buffer, stream->length + len + 1);
-        assert(new != NULL);
-        memcpy(new + stream->length, str, len);
-        stream->buffer = new;
-        stream->length += len;
-        new[stream->length] = '\0';
-        return;
-    }
-}
-void writeFmt(Stream *stream, char *format, ...)
-{
-    static char buf[WRITE_FMT_BUFSIZ];
-    int nbytes;
-
-    va_list args;
+    va_list(args);
     va_start(args, format);
-    // Note: potentially truncates output to WRITE_FMT_BUFSIZ
-    nbytes = vsnprintf(buf, WRITE_FMT_BUFSIZ, format, args);
+    if (vfprintf(interp->debug->fd, format, args) < 0) {
+        va_end(args);
+        (void)fprintf(interp->debug->fd, "fatal: failed to print debug message: %d, %s", errno, format);
+    }
+    va_end(args);
+    fputc('\n', interp->debug->fd);
+}
+
+
+// EXCEPTION HANDLING /////////////////////////////////////////////////////////
+
+/** exceptionWithObject - break out of errors, Lisp object related
+ *
+ * @param interp  interpreter in which the error occured.
+ * @param object  object on which an error occured, set to nil if none.
+ * @param result  result code corresponding to error type, FLISP_ERROR for general errors.
+ * @param format ... printf style error string
+ *
+ * *object* and *result* are stored in the interpreter structure, *result* is also used as
+ * "return" code for longjmp.
+ *
+ * The error message is formatted into the message buffer of the interpreter. If it has to
+ * be truncated the last three characters are overwritten with "..."
+ *
+ */
+#ifdef __GNUC__
+void exceptionWithObject(Interpreter *, Object * object, ResultCode, char *format, ...)
+    __attribute__ ((noreturn, format(printf, 4, 5)));
+#endif
+void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result, char *format, ...)
+{
+    interp->object = object;
+    interp->result = result;
+
+    int len = sizeof(interp->message);
+    va_list(args);
+    va_start(args, format);
+    if (vsnprintf(interp->message, len, format, args) < 0)
+        strncpy(interp->message, "failed to format error message", len);
+    if (snprintf(NULL, 0, format, args) > len)
+        strcpy(interp->message+len-4, "...");
     va_end(args);
 
-    switch (stream->type) {
-    case STREAM_TYPE_FILE:
-        nbytes = write(stream->fd, buf, nbytes);
-        return;
-
-    case STREAM_TYPE_STRING:
-    default:
-        writeString(buf, stream);
-        return;
-    }
+    longjmp(*flisp.stackframe, result);
 }
 
-void writeChar(char ch, Stream *stream)
-{
-    char str[2];
-    int i = 1;
+/** exception - break out of errors
+ *
+ * @param interp  interpreter in which the error occurred.
+ * @param result  result code corresponding to error type, FLISP_ERROR for general errors.
+ *
+ * `nil` and *result* are stored in the interpreter structure, *result* is also used as
+ * "return" code for longjmp.
+ *
+ * The error message is formatted into the message buffer of the interpreter. If it has to
+ * be truncated the last three characters are overwritten with "..."
+ */
+#define exception(interp, result, ...)       exceptionWithObject(interp, nil, result, __VA_ARGS__)
 
-    str[0] = ch;
-    str[1] = '\0';
 
-    switch (stream->type) {
-    case STREAM_TYPE_FILE:
-        i = write(stream->fd, str, i);
-        return;
+//void writeObject(Interpreter *, Object * object, bool readably, Object *);
 
-    case STREAM_TYPE_STRING:
-    default:
-        writeString(str, stream);
-        return;
-    }
-}
-#endif
-void writeChar(char ch, Object *stream)
+void writeChar(Object *stream, char ch)
 {
     if(fputc(ch, stream->fd) == EOF)
-        exceptionWithObject(stream, "failed to write character %c, errno: %d", ch, errno);
+        exceptionWithObject(&flisp, stream, FLISP_IO_ERROR, "failed to write character %c, errno: %d", ch, errno);
 }
-void writeString(char *str, Object *stream)
+void writeString(Object *stream, char *str)
 {
     int len;
     len = strlen(str);
-    if(fwrite(str, len, 1, stream->fd) != len)
-        exceptionWithObject(stream, "failed to write %d files, errno: %d", len, errno);
+    if(fprintf(stream->fd, str) != len)
+        exceptionWithObject(&flisp, stream, FLISP_IO_ERROR, "failed to write %d files, errno: %d", len, errno);
 }
+#ifdef __GNUC__
+void writeFmt(Object *, char *format, ...)
+    __attribute__ ((format(printf, 2, 3)));
+#endif
 void writeFmt(Object *stream, char *format, ...)
 {
     va_list(args);
     va_start(args, format);
-    if (vfprintf(stream->fd, format, args) < 0)
-        exceptionWithObject(stream, "failed to fprintf, errno: %d", errno);
-}
-
-void exceptionWithObject(Object * object, char *format, ...)
-{
-    writeString("error: ", flisp.message);
-
-    if (object) {
-        writeObject(object, true, flisp.message);
-        writeChar(' ', flisp.message);
+    if (vfprintf(stream->fd, format, args) < 0) {
+        va_end(args);
+        exceptionWithObject(&flisp, stream, FLISP_IO_ERROR, "failed to fprintf, errno: %d", errno);
     }
-
-    va_list args;
-    va_start(args, format);
-    vfprintf(flisp.message->fd, format, args);
     va_end(args);
-
-    writeChar('\n', flisp.message);
-
-    longjmp(*flisp.stackframe, RESULT_ERROR);
-}
-
-void debug(Interpreter interp, char *format, ...)
-{
-    if (interp.debug == nil)
-        return;
-    
-    va_list(args);
-    va_start(args, format);
-    vfprintf(interp.debug->fd, format, args);
-    va_end(args);
-    writeChar('\n', flisp.debug);    
 }
 
 // GARBAGE COLLECTION /////////////////////////////////////////////////////////
@@ -274,7 +245,7 @@ Object *gcMoveObject(Object * object)
 
 void gc(GC_PARAM)
 {
-    debug(flisp, "collecting garbage\n");
+    debug(&flisp, "collecting garbage\n");
 
     flisp.memory->toOffset = 0;
 
@@ -310,7 +281,7 @@ void gc(GC_PARAM)
             object->vals = gcMoveObject(object->vals);
             break;
         case TYPE_MOVED:
-            exceptionWithObject(object, "object already moved");
+            exceptionWithObject(&flisp, object, FLISP_GC_ERROR, "object already moved");
             break;
         }
     }
@@ -336,7 +307,7 @@ Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
     // allocate from- and to-space
     if (!flisp.memory->fromSpace) {
         if (!(flisp.memory->fromSpace = mmap(NULL, flisp.memory->capacity * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)))
-            exception("mmap() failed, %s", strerror(errno));
+            exception(&flisp, FLISP_OOM, "mmap() failed, %s", strerror(errno));
 
         flisp.memory->toSpace = (char *)flisp.memory->fromSpace + flisp.memory->capacity;
     }
@@ -344,7 +315,7 @@ Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
     if (flisp.memory->fromOffset + size >= flisp.memory->capacity)
         gc(GC_ROOTS);
     if (flisp.memory->fromOffset + size >= flisp.memory->capacity)
-        exception("out of memory, %lu bytes", (unsigned long)size);
+        exception(&flisp, FLISP_OOM, "out of memory, %lu bytes", (unsigned long)size);
 
     // allocate object in from-space
     Object *object = (Object *) ((char *)flisp.memory->fromSpace + flisp.memory->fromOffset);
@@ -469,13 +440,13 @@ Object *newObjectWithClosure(ObjectType type, Object ** params, Object ** body, 
 
     for (list = *params; list->type == TYPE_CONS; list = list->cdr) {
         if (list->car->type != TYPE_SYMBOL)
-            exceptionWithObject(list->car, "is not a symbol");
+            exceptionWithObject(&flisp, list->car, FLISP_WRONG_TYPE, "(lambda|macro params body) - param is not a symbol");
         if (list->car == nil || list->car == t)
-            exceptionWithObject(list->car, "cannot be used as a parameter");
+            exceptionWithObject(&flisp, list->car, FLISP_INVALID_VALUE, "(lambda|macro params body) - param cannot be used as a parameter");
     }
 
     if (list != nil && list->type != TYPE_SYMBOL)
-        exceptionWithObject(list, "is not a symbol");
+        exceptionWithObject(&flisp, list, FLISP_WRONG_TYPE, "(lambda|macro params body) - param is not a symbol");
 
     Object *object = newObject(type, GC_ROOTS);
     object->params = *params;
@@ -517,12 +488,12 @@ Object *newEnv(Object ** func, Object ** vals, GC_PARAM)
             else if (param != nil && param->type == TYPE_SYMBOL)
                 break;
             else if (val != nil && val->type != TYPE_CONS)
-                exceptionWithObject(val, "(env) is not a list: val %d", nArgs);
+                exceptionWithObject(&flisp, val, FLISP_WRONG_TYPE, "(env) is not a list: val %d", nArgs);
             else if (param == nil && val != nil)
-                exceptionWithObject(*func, "expects at most %d arguments", nArgs);
+                exceptionWithObject(&flisp, *func, FLISP_PARAMETER_ERROR, "(env) expects at most %d arguments", nArgs);
             else if (param != nil && val == nil) {
                 for (; param->type == TYPE_CONS; param = param->cdr, ++nArgs);
-                exceptionWithObject(*func, "expects at least %d arguments", nArgs);
+                exceptionWithObject(&flisp, *func, FLISP_PARAMETER_ERROR, "(env) expects at least %d arguments", nArgs);
             }
         }
 
@@ -579,13 +550,13 @@ int streamGetc(Stream * stream)
                 struct stat st;
 
                 if (fstat(stream->fd, &st) == -1)
-                    exception("fstat() failed, %s", strerror(errno));
+                    exception(&flisp, FLISP_IO_ERROR, "fstat() failed, %s", strerror(errno));
 
                 if (S_ISREG(st.st_mode)) {
                     stream->size = st.st_size;
 
                     if (!(stream->buffer = malloc(stream->size)))
-                        exception("out of memory, %ld bytes", (long)stream->size);
+                        exception(&flisp, FLISP_OOM, "out of memory, %ld bytes", (long)stream->size);
 
                     stream->capacity = stream->size;
                 } else
@@ -597,7 +568,7 @@ int streamGetc(Stream * stream)
                 size_t capacity = stream->offset ? (stream->offset / BUFSIZ + 1) * BUFSIZ : BUFSIZ;
 
                 if (!(buffer = realloc(stream->buffer, capacity)))
-                    exception("out of memory, %ld bytes", (long)capacity);
+                    exception(&flisp, FLISP_OOM, "out of memory, %ld bytes", (long)capacity);
 
                 stream->buffer = buffer;
                 stream->capacity = capacity;
@@ -610,7 +581,7 @@ int streamGetc(Stream * stream)
                 if (nbytes > 0)
                     stream->length += nbytes;
                 else if (nbytes < 0 && errno != EINTR)
-                    exception("read() failed, %s", strerror(errno));
+                    exception(&flisp, FLISP_IO_ERROR, "read() failed, %s", strerror(errno));
 
                 if (nbytes == 0 || stream->length == stream->size) {
                     stream->type = STREAM_TYPE_STRING;
@@ -679,7 +650,7 @@ int readWhile(Stream * stream, int (*predicate) (int ch))
 Object *readUnary(Stream * stream, char *symbol, GC_PARAM)
 {
     if (peekNext(stream) == EOF)
-        exception("unexpected end of stream in %s", symbol);
+        exception(&flisp, FLISP_READ_INCOMPLETE, "unexpected end of stream in %s", symbol);
 
     GC_TRACE(gcSymbol, newSymbol(symbol, GC_ROOTS));
     GC_TRACE(gcObject, readExpr(stream, GC_ROOTS));
@@ -697,7 +668,7 @@ Object *readString(Stream * stream, GC_PARAM)
     for (bool isEscaped = false;;) {
         int ch = streamGetc(stream);
         if (ch == EOF)
-            exception("unexpected end of stream in string literal \"%.*s\"", (int)(stream->offset - offset), stream->buffer + offset);
+            exception(&flisp, FLISP_READ_INCOMPLETE, "unexpected end of stream in string literal \"%.*s\"", (int)(stream->offset - offset), stream->buffer + offset);
         if (ch == '"' && !isEscaped)
             return newStringWithLength(stream->buffer + offset, stream->offset - offset - 1, GC_ROOTS);
 
@@ -763,18 +734,18 @@ Object *readList(Stream * stream, GC_PARAM)
     for (;;) {
         int ch = readNext(stream);
         if (ch == EOF)
-            exception("unexpected end of stream in list");
+            exception(&flisp, FLISP_READ_INCOMPLETE, "unexpected end of stream in list");
         else if (ch == ')')
             return reverseList(*gcList);
         else if (ch == '.' && !isSymbolChar(streamPeek(stream))) {
             if (*gcLast == nil)
-                exception("unexpected dot at start of list");
+                exception(&flisp, FLISP_READ_INVALID, "unexpected dot at start of list");
             if ((ch = peekNext(stream)) == ')')
-                exception("expected object at end of dotted list");
+                exception(&flisp, FLISP_READ_INVALID, "expected object at end of dotted list");
             if (!(*gcLast = readExpr(stream, GC_ROOTS)))
-                exception("unexpected end of stream in dotted list");
+                exception(&flisp, FLISP_READ_INCOMPLETE, "unexpected end of stream in dotted list");
             if ((ch = peekNext(stream)) != ')')
-                exception("unexpected object at end of dotted list");
+                exception(&flisp, FLISP_READ_INVALID, "unexpected object at end of dotted list");
             readNext(stream);
             Object *list = reverseList(*gcList);
             (*gcList)->cdr = *gcLast;
@@ -805,13 +776,13 @@ Object *readExpr(Stream * stream, GC_PARAM)
                  && (ch != '.' || isSymbolChar(streamPeek(stream))))
             return readNumberOrSymbol(streamSeek(stream, -1), GC_ROOTS);
         else
-            exception("unexpected character, `%c'", ch);
+            exception(&flisp, FLISP_READ_INVALID, "unexpected character, `%c'", ch);
     }
 }
 
 // WRITING OBJECTS ////////////////////////////////////////////////////////////
 
-void writeObject(Object * object, bool readably, Object *stream)
+void writeObject(Object * stream, Object *object, bool readably)
 {
     switch (object->type) {
 #define CASE(type, ...)                         \
@@ -825,61 +796,61 @@ void writeObject(Object * object, bool readably, Object *stream)
 #undef CASE
     case TYPE_STRING:
         if (readably) {
-            writeChar('"', stream);
+            writeChar(stream, '"');
             for (char *string = object->string; *string; ++string) {
                 switch (*string) {
                 case '"':
-                    writeString("\\\"", stream);
+                    writeString(stream, "\\\"");
                     break;
                 case '\t':
-                    writeString("\\t", stream);
+                    writeString(stream, "\\t");
                     break;
                 case '\r':
-                    writeString("\\r", stream);
+                    writeString(stream, "\\r");
                     break;
                 case '\n':
-                    writeString("\\n", stream);
+                    writeString(stream, "\\n");
                     break;
                 case '\\':
-                    writeString("\\\\", stream);
+                    writeString(stream, "\\\\");
                     break;
                 default:
-                    writeChar(*string, stream);
+                    writeChar(stream, *string);
                     break;
                 }
             }
-            writeChar('"', stream);
+            writeChar(stream, '"');
         } else
             writeFmt(stream, "%s", object->string);
         break;
     case TYPE_CONS:
-        writeChar('(', stream);
-        writeObject(object->car, readably, stream);
+        writeChar(stream, '(');
+        writeObject(stream, object->car, readably);
         while (object->cdr != nil) {
             object = object->cdr;
             if (object->type == TYPE_CONS) {
-                writeChar(' ', stream);
-                writeObject(object->car, readably, stream);
+                writeChar(stream, ' ');
+                writeObject(stream, object->car, readably);
             } else {
-                writeString(" . ", stream);
-                writeObject(object, readably, stream);
+                writeString(stream, " . ");
+                writeObject(stream, object, readably);
                 break;
             }
         }
-        writeChar(')', stream);
+        writeChar(stream, ')');
         break;
 #define CASE(type, name, object)                    \
         case type:                                  \
             writeFmt(stream, "#<%s ", name);        \
-            writeObject(object, readably, stream);  \
-            writeChar('>', stream);                 \
+            writeObject(stream, object, readably);  \
+            writeChar(stream, '>');                 \
             break
         CASE(TYPE_LAMBDA, "Lambda", object->params);
         CASE(TYPE_MACRO, "Macro", object->params);
         CASE(TYPE_ENV, "Env", object->vars);
 #undef CASE
     case TYPE_MOVED:
-        exception("won't write a garbage collected item");
+        exception(&flisp, FLISP_GC_ERROR, "won't write a garbage collected item");
         break;
     }
 }
@@ -919,7 +890,7 @@ Object *envLookup(Object * var, Object * env)
             return vals;
     }
 
-    exceptionWithObject(var, "has no value");
+    exceptionWithObject(&flisp, var, FLISP_INVALID_VALUE, "has no value");
 }
 
 Object *envAdd(Object ** var, Object ** val, Object ** env, GC_PARAM)
@@ -975,7 +946,7 @@ Object *primitiveSymbolName(Object ** args, GC_PARAM)
 {
     Object *first = (*args)->car;
     if (first->type !=  TYPE_SYMBOL)
-        exceptionWithObject(first, "not a symbol");
+        exceptionWithObject(&flisp, first, FLISP_WRONG_TYPE, "(symbolp arg) - arg is not a symbol");
     return newString(first->string, GC_ROOTS);
 }
 
@@ -1000,7 +971,7 @@ Object *primitiveCar(Object ** args, GC_PARAM)
     else if (first->type == TYPE_CONS)
         return first->car;
     else
-        exceptionWithObject(first, "(car) is not a list: first");
+        exceptionWithObject(&flisp, first, FLISP_WRONG_TYPE, "(car arg) - arg must be a list");
 }
 
 Object *primitiveCdr(Object ** args, GC_PARAM)
@@ -1012,7 +983,7 @@ Object *primitiveCdr(Object ** args, GC_PARAM)
     else if (first->type == TYPE_CONS)
         return first->cdr;
     else
-        exceptionWithObject(first, "(cdr) is not a list: first");
+        exceptionWithObject(&flisp, first, FLISP_WRONG_TYPE, "(cdr arg) - arg must be a list");
 }
 
 Object *primitiveCons(Object ** args, GC_PARAM)
@@ -1023,19 +994,23 @@ Object *primitiveCons(Object ** args, GC_PARAM)
     return newCons(gcFirst, gcSecond, GC_ROOTS);
 }
 
-Object *primitivePrint(Object ** args, GC_PARAM)
+Object *fl_primitivePrinc(Interpreter *interp, Object ** args)
 {
-    writeChar('\n', flisp.output);
-    writeObject((*args)->car, true, flisp.output);
-    writeChar(' ', flisp.output);
+    assert(interp != NULL && args != NULL);
+    writeObject(interp->output, (*args)->car, false);
     return (*args)->car;
 }
+Object *primitivePrinc(Object **args, GC_PARAM) { return fl_primitivePrinc(&flisp, args); }
 
-Object *primitivePrinc(Object ** args, GC_PARAM)
+Object *fl_primitivePrint(Interpreter *interp, Object ** args)
 {
-    writeObject((*args)->car, false, flisp.output);
+    assert(interp != NULL && args != NULL);
+    writeChar(interp->output, '\n');
+    writeObject(interp->output, (*args)->car, true);
+    writeChar(interp->output, ' ');
     return (*args)->car;
 }
+Object *primitivePrint(Object ** args, GC_PARAM) { return fl_primitivePrint(&flisp, args); }
 
 Object *primitiveSignal(Object ** args, GC_PARAM)
 {
@@ -1043,12 +1018,12 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
     Object *second = (*args)->cdr->car;
 
     if (first->type != TYPE_SYMBOL)
-        exceptionWithObject(first , "(signal) is not a symbol: first");
+        exceptionWithObject(&flisp, first , FLISP_WRONG_TYPE, "(signal type data) - type is not a symbol");
     if (second != nil && second->type != TYPE_CONS)
-        exceptionWithObject(second, "(signal) is not a list: second");
+        exceptionWithObject(&flisp, second, FLISP_WRONG_TYPE, "(signal type data) - data is not a list");
 
     GC_TRACE(e, newCons(&first, &second, GC_ROOTS));
-    exceptionWithObject(*e, first->string);
+    exceptionWithObject(&flisp, *e, FLISP_USER, first->string);
     return *e;
 }
 
@@ -1057,7 +1032,7 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
         if (*args == nil)                                               \
             return newNumber(init, GC_ROOTS);                           \
         else if ((*args)->car->type != TYPE_NUMBER)                     \
-            exceptionWithObject((*args)->car, "is not a number");       \
+            exceptionWithObject(&flisp, (*args)->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " arg ..) - arg is not a number"); \
         else {                                                          \
             Object *object, *rest;                                      \
                                                                         \
@@ -1072,7 +1047,7 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
                                                                         \
             for (; rest != nil; rest = rest->cdr) {                     \
                 if (rest->car->type != TYPE_NUMBER)                     \
-                    exceptionWithObject(rest->car, "is not a number");  \
+                    exceptionWithObject(&flisp, rest->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " number arg ..) - arg is not a number"); \
                                                                         \
                 object->number = object->number op rest->car->number;   \
             }                                                           \
@@ -1085,7 +1060,7 @@ Object *primitiveMod(Object **args, GC_PARAM) {
     if (*args == nil)
         return newNumber(1, GC_ROOTS);
     else if ((*args)->car->type != TYPE_NUMBER)
-        exceptionWithObject((*args)->car, "is not a number");
+        exceptionWithObject(&flisp, (*args)->car, FLISP_WRONG_TYPE, "(%% dividend ..) - dividend is not a number");
     else {
         Object *object, *rest;
 
@@ -1100,7 +1075,7 @@ Object *primitiveMod(Object **args, GC_PARAM) {
 
         for (; rest != nil; rest = rest->cdr) {
             if (rest->car->type != TYPE_NUMBER)
-                exceptionWithObject(rest->car, "is not a number");
+                exceptionWithObject(&flisp, rest->car, FLISP_WRONG_TYPE, "(%% dividend divisor ..) - divisor is not a number");
 
             object->number = (int)object->number % (int)rest->car->number;
         }
@@ -1118,14 +1093,14 @@ DEFINE_PRIMITIVE_ARITHMETIC(primitiveAdd, +, 0)
 #define DEFINE_PRIMITIVE_RELATIONAL(name, op)                           \
     Object *name(Object **args, GC_PARAM) {                             \
         if ((*args)->car->type != TYPE_NUMBER)                          \
-            exceptionWithObject((*args)->car, "is not a number");       \
+            exceptionWithObject(&flisp, (*args)->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " arg ..) - arg is not a number"); \
         else {                                                          \
             Object *rest = *args;                                       \
             bool result = true;                                         \
                                                                         \
             for (; result && rest->cdr != nil; rest = rest->cdr) {      \
                 if (rest->cdr->car->type != TYPE_NUMBER)                \
-                    exceptionWithObject(rest->cdr->car, "is not a number"); \
+                    exceptionWithObject(&flisp, rest->cdr->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " number arg ..) - arg is not a number"); \
                                                                         \
                 result &= rest->car->number op rest->cdr->car->number;  \
             }                                                           \
@@ -1141,29 +1116,34 @@ DEFINE_PRIMITIVE_RELATIONAL(primitiveGreater, >)
 DEFINE_PRIMITIVE_RELATIONAL(primitiveGreaterEqual, >=)
 
 
-#define TWO_STRING_ARGS()                                       \
+#define TWO_STRING_ARGS(func)                                   \
     Object *first = (*args)->car;                               \
     Object *second = (*args)->cdr->car;                         \
     if (first->type != TYPE_STRING)                             \
-        exceptionWithObject(first, "is not a string: first");   \
+        exceptionWithObject(&flisp, first, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) "  first second) - first is not a string"); \
     if (second->type != TYPE_STRING)                            \
-        exceptionWithObject(second, "is not a string: second");
+        exceptionWithObject(&flisp, second, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " first second) - second is not a string");
 
-#define ONE_STRING_ARG()                                        \
-    Object *first = (*args)->car;                               \
-    if (first->type != TYPE_STRING)                             \
-        exceptionWithObject(first, "is not a string: first");
+#define ONE_STRING_ARG(func)                                  \
+    Object *arg = (*args)->car;                               \
+    if (arg->type != TYPE_STRING)                             \
+        exceptionWithObject(&flisp, arg, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " arg) - arg is not a string");
+
+#define ONE_NUMBER_ARG(func)                                  \
+    Object *arg = (*args)->car;                               \
+    if (arg->type != TYPE_NUMBER)                             \
+        exceptionWithObject(&flisp, arg, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " arg) - arg is not a number");
 
 
 Object *fl_system(Object ** args, GC_PARAM) {
 
-    ONE_STRING_ARG();
-    return newNumber((double) system(first->string), GC_ROOTS);
+    ONE_STRING_ARG(system);
+    return newNumber((double) system(arg->string), GC_ROOTS);
 }
 
 Object *stringAppend(Object ** args, GC_PARAM)
 {
-    TWO_STRING_ARGS();
+    TWO_STRING_ARGS(string.append);
 
     int len1 = strlen(first->string);
     int len2 = strlen(second->string);
@@ -1181,32 +1161,32 @@ Object *stringAppend(Object ** args, GC_PARAM)
 
 Object *stringSubstring(Object ** args, GC_PARAM)
 {
-    Object *first = (*args)->car;
-    Object *second = (*args)->cdr->car;
-    Object *third = (*args)->cdr->cdr->car;
+    Object *str = (*args)->car;
+    Object *start = (*args)->cdr->car;
+    Object *end = (*args)->cdr->cdr->car;
 
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "is not a string (string.substring)");
-    if (second->type != TYPE_NUMBER)
-        exceptionWithObject(second, "is not a number");
-    if (third->type != TYPE_NUMBER)
-        exceptionWithObject(third, "is not a number");
+    if (str->type != TYPE_STRING)
+        exceptionWithObject(&flisp, str, FLISP_WRONG_TYPE, "(string.substring str start end) str is not a string (string.substring)");
+    if (start->type != TYPE_NUMBER)
+        exceptionWithObject(&flisp, start, FLISP_WRONG_TYPE, "is not a number");
+    if (end->type != TYPE_NUMBER)
+        exceptionWithObject(&flisp, end, FLISP_WRONG_TYPE, "is not a number");
 
-    int start = (int)(second->number);
-    int end = (int)(third->number);
-    int len = strlen(first->string);
+    int s = (int)(start->number);
+    int e = (int)(end->number);
+    int len = strlen(str->string);
 
-    if (start < 0 || start > len -1)
-        exceptionWithObject(second, "is out of bounds");
-    if (end < 0 || end > len -1)
-        exceptionWithObject(third, "is out of bounds");
-    if (start > end)
-        exceptionWithObject(second, "start index greater than end index");
+    if (s < 0 || s > len -1)
+        exceptionWithObject(&flisp, start, FLISP_INVALID_VALUE, "is out of bounds");
+    if (e < 0 || e > len -1)
+        exceptionWithObject(&flisp, end, FLISP_INVALID_VALUE, "is out of bounds");
+    if (s > e)
+        exceptionWithObject(&flisp, start, FLISP_INVALID_VALUE, "start index greater than end index");
 
-    char *sub = strdup(first->string);
-    int newlen = end - start + 1;
+    char *sub = strdup(str->string);
+    int newlen = e - s + 1;
 
-    memcpy(sub, (first->string + start), newlen);
+    memcpy(sub, (str->string + s), newlen);
     *(sub + newlen) = '\0';
     Object *obj = newStringWithLength(sub, newlen, GC_ROOTS);
     free(sub);
@@ -1216,11 +1196,9 @@ Object *stringSubstring(Object ** args, GC_PARAM)
 
 Object *stringLength(Object ** args, GC_PARAM)
 {
-    Object *first = (*args)->car;
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "is not a string (string.length)");
+    ONE_STRING_ARG(string.length);
 
-    return newNumber(strlen(first->string), GC_ROOTS);
+    return newNumber(strlen(arg->string), GC_ROOTS);
 }
 
 /* Strings */
@@ -1241,8 +1219,7 @@ Object *stringToNumber(Object ** args, GC_PARAM)
 {
     Object *first = (*args)->car;
 
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "(string-to-number) is not a string: first");
+    ONE_STRING_ARG(strint-to-number);
 
     double num = strtod(first->string, NULL);
     return newNumber(num, GC_ROOTS);
@@ -1255,15 +1232,13 @@ Object *stringToNumber(Object ** args, GC_PARAM)
 Object *numberToString(Object ** args, GC_PARAM)
 {
     char buf[40];
-    Object *first = (*args)->car;
 
-    if (first->type != TYPE_NUMBER)
-        exceptionWithObject(first, "is not a number");
+    ONE_NUMBER_ARG(number-to-string);
 
-    if (first->number == (long)first->number)
-        sprintf(buf, "%ld", (long)first->number);
+    if (arg->number == (long)arg->number)
+        sprintf(buf, "%ld", (long)arg->number);
     else
-        sprintf(buf, "%lf", first->number);
+        sprintf(buf, "%lf", arg->number);
 
     return newStringWithLength(buf, strlen(buf), GC_ROOTS);
 }
@@ -1272,28 +1247,23 @@ Object *numberToString(Object ** args, GC_PARAM)
 Object *asciiToString(Object ** args, GC_PARAM)
 {
     char ch[2];
-    Object *first = (*args)->car;
+    ONE_NUMBER_ARG(ascii)
+    if (arg->type < 0 || arg->type > 255)
+        exceptionWithObject(&flisp, arg, FLISP_INVALID_VALUE, "(ascii arg) - arg is not in range 0-255");
 
-    if (first->type != TYPE_NUMBER)
-        exceptionWithObject(first, "is not a number");
-    if (first->type < 0 || first->type > 255)
-        exceptionWithObject(first, "is not in range 0-255");
-
-    ch[0] = (unsigned char)first->number;
+    ch[0] = (unsigned char)arg->number;
     ch[1] = '\0';
     return newStringWithLength(ch, 1, GC_ROOTS);
 }
 
 Object *asciiToNumber(Object ** args, GC_PARAM)
 {
-    Object *first = (*args)->car;
+    ONE_STRING_ARG(ascii->number);
 
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "is not a number");
-    if (strlen(first->string) < 1)
-        exceptionWithObject(first, "is empty");
+    if (strlen(arg->string) < 1)
+        exceptionWithObject(&flisp, arg, FLISP_INVALID_VALUE, "(ascii->number string) - string is empty");
 
-    return newNumber((double)*first->string, GC_ROOTS);
+    return newNumber((double)*arg->string, GC_ROOTS);
 }
 
 
@@ -1303,29 +1273,26 @@ Object *e_load(Object ** args, GC_PARAM)
 {
     int fd;
 
-    ONE_STRING_ARG();
+    ONE_STRING_ARG(load);
 
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "(load) is not a string: first");
+    debug(&flisp, "(load \"%s\")\n", arg->string);
 
-    debug(flisp, "(load \"%s\")\n", first->string);
-
-    if (!strcmp(first->string, "-"))
+    if (!strcmp(arg->string, "-"))
         fd = 0;
-    else if ((fd = open(first->string, O_RDONLY)) == -1) {
-        exceptionWithObject(nil, "open(%s) failed", first->string);
+    else if ((fd = open(arg->string, O_RDONLY)) == -1) {
+        exceptionWithObject(&flisp, nil, FLISP_IO_ERROR, "(load arg) - open(%s) failed", arg->string);
     }
 
     char *out = load_file(fd);
-    debug(flisp, "close(%d)\n", fd);
+    debug(&flisp, "close(%d)\n", fd);
     close(fd);
     /* Note: in batch_mode incidentially out is NULL: don't rely on this! */
     if (out == NULL) return t;
     char* err = strstr(out, "error: ");
     if (err)
-        debug(flisp, "(load \"%s\") => %s\n", first->string, err);
+        debug(&flisp, "(load \"%s\") => %s\n", arg->string, err);
     else
-        debug(flisp, "(load \"%s\") => %d chars\n", first->string, strlen(out));
+        debug(&flisp, "(load \"%s\") => %ld chars\n", arg->string, strlen(out));
     return (NULL == strstr(out, "error:")) ? t : nil;
 }
 
@@ -1333,9 +1300,9 @@ Object *e_load(Object ** args, GC_PARAM)
 
 Object *os_getenv(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
+    ONE_STRING_ARG(os.getenv);
 
-    char *e = getenv(first->string);
+    char *e = getenv(arg->string);
     if (e == NULL) return nil;
     return newStringWithLength(e, strlen(e), GC_ROOTS);
 }
@@ -1362,18 +1329,18 @@ Object *os_getenv(Object ** args, GC_PARAM)
 Object *file_fopen(Interpreter *interp, char *path, char* mode) {
     FILE * fd;
     Object *gcRoots = interp->theRoot;
-   
+
     if (strcmp("<", mode) == 0) {
         fd = fmemopen(path, strlen(path), "r");
         if (fd == NULL)
-            exception("failed to convert string to input stream, errno: %d", errno);
+            exception(interp, FLISP_IO_ERROR, "failed to convert string to input stream, errno: %d", errno);
         return newStreamObject(fd, "<STRING", GC_ROOTS);
     }
     if (strcmp(">", mode) == 0) {
         Object *stream = newStreamObject(NULL, ">STREAM", GC_ROOTS);
         fd = open_memstream(&stream->buf, &stream->len);
         if (fd == NULL)
-            exception("failed to create memory based output stream, errno: %d", errno);
+            exception(interp, FLISP_IO_ERROR, "failed to create memory based output stream, errno: %d", errno);
         stream->fd = fd;
         return stream;
     }
@@ -1384,23 +1351,23 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
         errno = 0;
         long d = strtol(&path[1], &end, 0);
         if (errno || *end != '\0' || d < 0 || d > _POSIX_OPEN_MAX)
-            exception("invalid I/O stream number: %s", &path[1]);
+            exception(interp, FLISP_INVALID_VALUE, "invalid I/O stream number: %s", &path[1]);
         fd = fdopen((int)d, c == '<' ? "r" : "a");
         if (fd == NULL)
-            exception("failed to open I/O stream %ld for %s", d, c == '<' ? "reading" : "writing");
+            exception(interp, FLISP_IO_ERROR, "failed to open I/O stream %ld for %s", d, c == '<' ? "reading" : "writing");
         return newStreamObject(fd, path, GC_ROOTS);
     }
 
     fd = fopen(path, mode);
     if (fd == NULL)
-        exception("failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
+        exception(interp, FLISP_IO_ERROR, "failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
     return newStreamObject(fd, path, GC_ROOTS);
 }
 Object *primitiveFopen(Object ** args, GC_PARAM)
 {
-    
-    TWO_STRING_ARGS();
-    
+
+    TWO_STRING_ARGS(fopen);
+
     return file_fopen(&flisp, first->string, second->string);
 }
 /** (fclose StreamObject) => flag
@@ -1415,9 +1382,9 @@ Object *file_fclose(Interpreter *interp, Object *stream)
     Object *gcRoots = interp->theRoot;
 
     if (stream->type != TYPE_STREAM)
-        exceptionWithObject(stream, "not a stream, cannot fclose");
+        exceptionWithObject(interp, stream, FLISP_WRONG_TYPE, "(fclose arg) - arg is not a stream");
     if (stream->fd == NULL)
-        exception("stream already closed");
+        exception(interp, FLISP_INVALID_VALUE, "(fclose arg) - stream arg already closed");
 
     if (stream->buf != NULL)
         free(stream->buf);
@@ -1522,25 +1489,22 @@ Object *e_refresh(Object ** args, GC_PARAM)
 
 Object *e_set_key(Object ** args, GC_PARAM)
 {
-    TWO_STRING_ARGS();
+    TWO_STRING_ARGS(set-key);
     return (1 == set_key(first->string, second->string) ? t : nil);
 }
 
 Object *e_add_mode_global(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    return (1 == add_mode_global(first->string) ? t : nil);
+    ONE_STRING_ARG(add-mode-global);
+    return (1 == add_mode_global(arg->string) ? t : nil);
 }
 
 Object *e_set_clipboard(Object ** args, GC_PARAM)
 {
-    Object *first = (*args)->car;
-
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "is not a string (set-clipboard)");
+    ONE_STRING_ARG(set-clipboard);
 
     /* gets freed by next call to set_clipboard */
-    char *sub = strdup(first->string);
+    char *sub = strdup(arg->string);
     set_scrap((unsigned char *)sub);
     return t;
 }
@@ -1554,11 +1518,9 @@ Object *e_get_temp_file(Object ** args, GC_PARAM)
 Object *e_insert_file(Object ** args, GC_PARAM) {
 
     // Note: want to give an optional modify flag, but then it segfaults
-    Object *first = (*args)->car;
     int mflag;
 
-    if (first->type != TYPE_STRING)
-        exceptionWithObject(first, "is not a string (insert-file)");
+    ONE_STRING_ARG(insert-file);
 
     mflag = (first->cdr != nil && first->cdr->car != nil);
     mflag = FALSE;
@@ -1568,9 +1530,9 @@ Object *e_insert_file(Object ** args, GC_PARAM) {
 
 Object *e_getfilename(Object **args, GC_PARAM) {
 
-    ONE_STRING_ARG();
+    ONE_STRING_ARG(prompt-filename);
 
-    if (FALSE == getfilename(first->string, (char*) response_buf, NAME_MAX))
+    if (FALSE == getfilename(arg->string, (char*) response_buf, NAME_MAX))
         return nil;
 
     return newString(response_buf, GC_ROOTS);
@@ -1578,14 +1540,14 @@ Object *e_getfilename(Object **args, GC_PARAM) {
 
 Object *e_show_prompt(Object ** args, GC_PARAM)
 {
-    TWO_STRING_ARGS();
+    TWO_STRING_ARGS(show-prompt);
     display_prompt_and_response(first->string, second->string);
     return t;
 }
 
 Object *e_prompt(Object ** args, GC_PARAM)
 {
-    TWO_STRING_ARGS();
+    TWO_STRING_ARGS(prompt);
 
     char response[81];
     strncpy(response, second->string, 80);
@@ -1603,43 +1565,42 @@ Object *e_get_version_string(Object ** args, GC_PARAM)
 
 Object *e_goto_line(Object ** args, GC_PARAM)
 {
-    Object *first = (*args)->car;
+    Object *arg = (*args)->car;
 
-    if (first->type != TYPE_NUMBER)
-        exceptionWithObject(first, "is not a number");
+    ONE_NUMBER_ARG(goto-line);
 
-    int result = goto_line(first->number);
+    int result = goto_line(arg->number);
     return (result == 1 ? t : nil);
 }
 
 Object *e_select_buffer(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
+    ONE_STRING_ARG(select-buffer);
     // Note: select buffer always returns TRUE
     //  so it seems to be superfluous to test for the return value
-    int result = select_buffer(first->string);
+    int result = select_buffer(arg->string);
     return (result ? t : nil);
 }
 
 Object *e_rename_buffer(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    rename_current_buffer(first->string);
+    ONE_STRING_ARG(rename-buffer);
+    rename_current_buffer(arg->string);
     char *bname = get_current_bufname();
     return newStringWithLength(bname, strlen(bname), GC_ROOTS);
 }
 
 Object *e_save_buffer(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    int result = save_buffer_byname(first->string);
+    ONE_STRING_ARG(save-buffer);
+    int result = save_buffer_byname(arg->string);
     return (result ? t : nil);
 }
 
 Object *e_kill_buffer(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    int result = delete_buffer_byname(first->string);
+    ONE_STRING_ARG(kill-buffer);
+    int result = delete_buffer_byname(arg->string);
     return (result ? t : nil);
 }
 Object *e_zero_buffer(Object ** args, GC_PARAM)
@@ -1651,23 +1612,23 @@ Object *e_zero_buffer(Object ** args, GC_PARAM)
 
 Object *e_find_file(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    readfile(first->string);
+    ONE_STRING_ARG(find-file);
+    readfile(arg->string);
     return t;
 }
 
 Object *e_search_forward(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    point_t founded = search_forward(first->string);
+    ONE_STRING_ARG(search-forward);
+    point_t founded = search_forward(arg->string);
     move_to_search_result(founded);
     return (founded == -1 ? nil : t);
 }
 
 Object *e_search_backward(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    point_t founded = search_backwards(first->string);
+    ONE_STRING_ARG(search-backward);
+    point_t founded = search_backwards(arg->string);
     move_to_search_result(founded);
     return (founded == -1 ? nil : t);
 }
@@ -1688,29 +1649,29 @@ Object *e_get_buffer_name(Object ** args, GC_PARAM)
 }
 Object *e_message(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    msg(first->string);
+    ONE_STRING_ARG(message);
+    msg(arg->string);
     return t;
 }
 
 Object *e_log_message(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    log_message(first->string);
+    ONE_STRING_ARG(log-message);
+    log_message(arg->string);
     return t;
 }
 
 Object *e_log_debug(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    debug(flisp, first->string);
+    ONE_STRING_ARG(log-debug);
+    debug(flisp, arg->string);
     return t;
 }
 
 Object *e_insert_string(Object ** args, GC_PARAM)
 {
-    ONE_STRING_ARG();
-    insert_string(first->string);
+    ONE_STRING_ARG(insert-string);
+    insert_string(arg->string);
     return t;
 }
 
@@ -1721,10 +1682,8 @@ extern point_t get_point_max(void);
 
 Object *e_set_point(Object ** args, GC_PARAM)
 {
-    Object *first = (*args)->car;
-    if (first->type != TYPE_NUMBER)
-        exceptionWithObject(first, "is not a number");
-    set_point(first->number);
+    ONE_NUMBER_ARG(set-point)
+    set_point(arg->number);
     return t;
 }
 
@@ -1757,7 +1716,6 @@ Primitive primitives[] = {
     {"cond", 0, -1 /* special form */ },
     {"lambda", 1, -1 /* special form */ },
     {"macro", 1, -1 /* special form */ },
-    {"trap", 1, 1, /* special form */ },
     {"macroexpand-1", 1, 2 /* special form */ },
     {"null", 1, 1, primitiveNullP},
     {"consp", 1, 1, primitiveConsP},
@@ -1767,8 +1725,8 @@ Primitive primitives[] = {
     {"car", 1, 1, primitiveCar},
     {"cdr", 1, 1, primitiveCdr},
     {"cons", 2, 2, primitiveCons},
-    {"print", 1, 1, primitivePrint},
     {"princ", 1, 1, primitivePrinc},
+    {"print", 1, 1, primitivePrint},
     {"signal", 2, 2, primitiveSignal},
     {"+", 0, -1, primitiveAdd},
     {"-", 0, -1, primitiveSubtract},
@@ -1871,7 +1829,6 @@ enum {
     PRIMITIVE_COND,
     PRIMITIVE_LAMBDA,
     PRIMITIVE_MACRO,
-    PRIMITIVE_TRAP,
     PRIMITIVE_MACROEXPAND
 };
 
@@ -1893,9 +1850,9 @@ Object *evalSetq(Object ** args, Object ** env, GC_PARAM)
         GC_TRACE(gcVal, (*args)->cdr->car);
 
         if ((*gcVar)->type != TYPE_SYMBOL)
-            exceptionWithObject(*gcVar, "is not a symbol");
+            exceptionWithObject(&flisp, *gcVar, FLISP_WRONG_TYPE, "(setq name value) - name is not a symbol");
         if (*gcVar == nil || *gcVar == t)
-            exceptionWithObject(*gcVar, "is a constant and cannot be set");
+            exceptionWithObject(&flisp, *gcVar, FLISP_WRONG_TYPE, "(setq name value) name is a constant and cannot be set");
 
         *gcVal = evalExpr(gcVal, env, GC_ROOTS);
         envSet(gcVar, gcVal, env, GC_ROOTS);
@@ -1915,7 +1872,7 @@ Object *evalProgn(Object ** args, Object ** env, GC_PARAM)
         return nil;
 
     if ((*args)->type != TYPE_CONS)
-        exceptionWithObject(*args, "(progn) is not a list: args");
+        exceptionWithObject(&flisp, *args, FLISP_WRONG_TYPE, "(progn args) args is not a list");
 
     if ((*args)->cdr == nil)
         return (*args)->car;
@@ -1937,14 +1894,14 @@ Object *evalCond(Object ** args, Object ** env, GC_PARAM)
         goto cond_cdr;
 
     if (clause->type != TYPE_CONS)
-        exceptionWithObject(clause, "(cond) is not a list: clause");
+        exceptionWithObject(&flisp, clause, FLISP_WRONG_TYPE, "(cond clause ..) - is not a list: clause");
 
     Object *action = clause->cdr;
     // (p v) => (p . (v . nil))
     // (p . nil) = (p)
     // (p . v) x
     if (action != nil && action->type != TYPE_CONS)
-        exceptionWithObject(clause, "(cond) is not a list: clause action");
+        exceptionWithObject(&flisp, clause, FLISP_WRONG_TYPE, "(cond (pred action) ..) action is not a list");
 
     Object *pred = clause->car;
     if (pred == nil)
@@ -2045,25 +2002,6 @@ Object *evalList(Object ** args, Object ** env, GC_PARAM)
     }
 }
 
-Object *evalTrap(Object ** args, Object ** env,  GC_PARAM)
-{
-    jmp_buf *up, exceptionEnv;
-
-    up = flisp.stackframe;
-    flisp.stackframe = &exceptionEnv;
-    if (setjmp(exceptionEnv)) {
-        debug(flisp, "exception trapped\n");
-        flisp.stackframe = up;
-        // Note: we want the signal/exception information
-        // here, but that is another story
-        GC_TRACE(gcObject, *args);
-        return newCons(&t, gcObject, GC_ROOTS);
-    }
-
-    GC_TRACE(gcObject, evalExpr(&(*args)->car, env, GC_ROOTS));
-    return newCons(&nil, gcObject, GC_ROOTS);
-}
-
 Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 {
     GC_TRACE(gcObject, *object);
@@ -2099,16 +2037,15 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
 
             for (Object * args = *gcArgs; args != nil; args = args->cdr, nArgs++)
                 if (args->type != TYPE_CONS)
-                    exceptionWithObject(args, "(primitive) is not a list: arg %d", nArgs);
+                    exceptionWithObject(&flisp, args, FLISP_WRONG_TYPE, "(%s args) - args is not a list: arg %d", primitive->name, nArgs);
 
             if (nArgs < primitive->nMinArgs)
-                exceptionWithObject(*gcFunc, "expects at least %d arguments", primitive->nMinArgs);
+                exceptionWithObject(&flisp, *gcFunc, FLISP_PARAMETER_ERROR, "expects at least %d arguments", primitive->nMinArgs);
             if (nArgs > primitive->nMaxArgs && primitive->nMaxArgs >= 0)
-                exceptionWithObject(*gcFunc, "expects at most %d arguments", primitive->nMaxArgs);
+                exceptionWithObject(&flisp, *gcFunc, FLISP_PARAMETER_ERROR, "expects at most %d arguments", primitive->nMaxArgs);
             if (primitive->nMaxArgs < 0 && nArgs % -primitive->nMaxArgs)
-                exceptionWithObject(*gcFunc, "expects a multiple of %d arguments", -primitive->nMaxArgs);
+                exceptionWithObject(&flisp, *gcFunc, FLISP_PARAMETER_ERROR, "expects a multiple of %d arguments", -primitive->nMaxArgs);
 
-            //debug(flisp, "evalExpr %s primitive\n", primitive->name);
             switch ((*gcFunc)->primitive) {
             case PRIMITIVE_QUOTE:
                 return (*gcArgs)->car;
@@ -2125,8 +2062,6 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
                 return evalLambda(gcArgs, gcEnv, GC_ROOTS);
             case PRIMITIVE_MACRO:
                 return evalMacro(gcArgs, gcEnv, GC_ROOTS);
-            case PRIMITIVE_TRAP:
-                return evalTrap(gcArgs, gcEnv, GC_ROOTS);
             case PRIMITIVE_MACROEXPAND:
                 return evalMacroExpand(gcArgs, gcEnv, GC_ROOTS);
             default:
@@ -2134,7 +2069,7 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
                 return primitive->eval(gcArgs, GC_ROOTS);
             }
         } else {
-            exceptionWithObject(*gcFunc, "is not a function");
+            exceptionWithObject(&flisp, *gcFunc, FLISP_WRONG_TYPE, "is not a function");
         }
     }
 }
@@ -2208,29 +2143,10 @@ void set_input_stream_buffer(Stream *stream, char *buffer)
     stream->size = 0;
 }
 
-#if 0
-void reset_output_stream()
-{
-    Stream *stream = &flisp.output; /* we only want 1 output stream */
-    if (batch_mode) {
-        stream->type = STREAM_TYPE_FILE;
-        stream->fd = STDOUT_FILENO;
-    } else {
-        stream->type = STREAM_TYPE_STRING;
-        stream->length = 0;
-    }
-    if (stream->buffer != NULL) {
-        free(stream->buffer);
-        stream->buffer = NULL;
-    }
-    // Note: initialize buffer, in case nothing is written ever
-    writeString("", stream);
-}
-#endif
 int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 {
     if (setjmp(*flisp.stackframe)) {
-        debug(flisp, "exception in load_file_body()\n");
+        debug(&flisp, "exception in load_file_body()\n");
         return 1;
     }
 
@@ -2240,8 +2156,8 @@ int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
         *gcObject = nil;
         *gcObject = readExpr(input_stream, GC_ROOTS);
         *gcObject = evalExpr(gcObject, flisp.theEnv, GC_ROOTS);
-        writeObject(*gcObject, true, flisp.output);
-        writeChar('\n', flisp.output);
+        writeObject(flisp.output, *gcObject, true);
+        writeChar(flisp.output, '\n');
     }
     free(input_stream->buffer);
     return 0;
@@ -2254,7 +2170,7 @@ char *load_file(int infd)
     up = flisp.stackframe;
     flisp.stackframe = &exceptionEnv;
 
-    debug(flisp, "load_file(%d)\n", infd);
+    debug(&flisp, "load_file(%d)\n", infd);
     Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
     set_stream_file(&input_stream, infd);
     //reset_output_stream();
@@ -2281,23 +2197,30 @@ ResultCode eval(Interpreter *interp, Stream *input_stream)
 
     for (;;) {
         switch (setjmp(*interp->stackframe)) {
-        case RESULT_ERROR:
-            debug(flisp, "general exception in eval\n");
-            return RESULT_ERROR;
-            break;
+        case FLISP_OK: break;
+        case FLISP_ERROR: return FLISP_ERROR;
+        case FLISP_USER: return FLISP_USER;
+        case FLISP_READ_INCOMPLETE: return FLISP_READ_INCOMPLETE;
+        case FLISP_READ_INVALID: return FLISP_READ_INVALID;
+        case FLISP_WRONG_TYPE: return FLISP_WRONG_TYPE;
+        case FLISP_INVALID_VALUE: return  FLISP_INVALID_VALUE;
+        case FLISP_PARAMETER_ERROR: return  FLISP_PARAMETER_ERROR;
+        case FLISP_IO_ERROR: return FLISP_IO_ERROR;
+        case FLISP_OOM: return FLISP_OOM;
+        case FLISP_GC_ERROR: return FLISP_GC_ERROR;
         }
         *gcObject = nil;
 
         if (peekNext(input_stream) == EOF) {
-            writeChar('\n', flisp.output);
-            return 0;
+            writeChar(interp->output, '\n');
+            interp->object = *gcObject;
+            return FLISP_OK;
         }
         *gcObject = readExpr(input_stream, GC_ROOTS);
         *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
-        writeObject(*gcObject, true, flisp.output);
-        writeChar('\n', flisp.output);
+        writeObject(interp->output, *gcObject, true);
+        writeChar(interp->output, '\n');
     }
-    return RESULT_OK;
 }
 
 
@@ -2322,9 +2245,10 @@ Interpreter *lisp_init(int argc, char **argv, char *library_path)
     if (lisp_interpreters != NULL)
         return NULL;
 
-    flisp.result = RESULT_OK;
     flisp.output = nil;
-    flisp.message = nil;
+    flisp.object = nil;
+    flisp.message[0] = '\0';
+    flisp.result = FLISP_OK;
     flisp.debug = nil;
 
     flisp.stackframe = NULL;
@@ -2349,13 +2273,33 @@ Interpreter *lisp_init(int argc, char **argv, char *library_path)
     return &flisp;
 }
 
+/** lisp_eval() - interprete a string in Lisp
+ *
+ * @param interp  Interpreter to use
+ * @param format ...  printf style specification of string to evaluate
+ *
+ * Before calling `lisp_eval()` initialize:
+ * - interp->output: to an output stream, see file_fopen().
+ * - interp->message: to an empty string
+ * - interp->result:  to FLISP_OK
+ * - interp->debug:   optional: to an output stream for debug
+ *                     messages. see file_fopen()
+ *
+ * Returns: ResultCode from the evaluation: FLISP_OK if successful.
+ *
+ * interp->result is also set to the result code.
+ *
+ * If an error occurs during evaluation *interp->message* is set to an
+ * error message.
+ *
+ */
 ResultCode lisp_eval(Interpreter *interp, char * format, ...)
 {
     char input[INPUT_FMT_BUFSIZ];
     va_list args;
     int size;
     jmp_buf exceptionEnv;
-    ResultCode result = RESULT_OK;
+    ResultCode result;
 
     va_start (args, format);
 
@@ -2364,12 +2308,14 @@ ResultCode lisp_eval(Interpreter *interp, char * format, ...)
 
     // Note: instead of mitigation allocate dynamically and error only on OOM
     if (size > INPUT_FMT_BUFSIZ) {
-        interp->result = RESULT_ERROR;
-        writeString("error: input string larger then " "WRITE_FMT_BUFSIZ", interp->output);
+        interp->result = FLISP_IO_ERROR;
+        strncpy(interp->message, "input string larger then " "WRITE_FMT_BUFSIZ", sizeof(interp->message));
         return interp->result;
     }
+    debug(interp, "lisp_eval(\"%s\")", input);
 
-    debug(flisp, "lisp_eval(%s)\n", input);
+    interp->message[0] = '\0';
+    interp->result = FLISP_OK;
 
     interp->stackframe = &exceptionEnv;
 
@@ -2377,14 +2323,10 @@ ResultCode lisp_eval(Interpreter *interp, char * format, ...)
     set_input_stream_buffer(&is, input);
     interp->istream = &is;
 
-//    interp->output = file_fopen(interp, "", ">");
-//    interp->message = file_fopen(interp, "", ">");
-
-    if ((result = eval(interp, &is))) {
-        debug(flisp, "lisp_eval() failed: %s\n", interp->message);
-        // interp->message already set by exception code
-    }
-    interp->result = result;
+    result = eval(interp, &is);
+    debug(interp, "lisp_eval() => %d", result);
+    if (result)
+        debug(interp, "lisp_eval() => error: %s", interp->message);
     return result;
 }
 
