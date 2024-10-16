@@ -1,18 +1,44 @@
 #ifndef FILE_C
 #define FILE_C
 
+Object *primitiveFopen(Object ** args, GC_PARAM)
+{
+    TWO_STRING_ARGS(fopen);
+    return file_fopen(&flisp, first->string, second->string);
+}
+Object *primitiveFclose(Object** args, GC_PARAM)
+{
+    ONE_STREAM_ARG(fclose);
+    if (fd->fd == NULL)
+        exception(&flisp, FLISP_INVALID_VALUE, "(fflush fd) - stream fd already closed");
+    return newNumber(file_fclose(&flisp, fd), GC_ROOTS);
+}
+Object *primitiveFflush(Object** args, GC_PARAM)
+{
+    ONE_STREAM_ARG(fflush);
+    if (fd->fd == NULL)
+        exception(&flisp, FLISP_INVALID_VALUE, "(fflush fd) - stream fd already closed");
+    return newNumber(file_fflush(&flisp, fd), GC_ROOTS);
+}
+
 Object *primitiveFgetc(Object** args, GC_PARAM)
 {
-    Object *first = (*args)->car;
     char s[] = "\0\0";
-
-    if (first->type != TYPE_STREAM)
-	exceptionWithObject(first, "not a stream");
-
-    int c = getc(first->fd);
+    ONE_STREAM_ARG(getc);
+    
+    int c = getc(fd->fd);
     if (c == EOF)
 	return nil;
     s[0] = (char)c;
     return newString(s, GC_ROOTS);
 }
 #endif
+
+
+/*
+ * Local Variables:
+ * c-file-style: "k&r"
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */
