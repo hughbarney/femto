@@ -67,10 +67,10 @@ static Interpreter flisp;
 
 
 #ifdef __GNUC__
-void debug(Interpreter *, char *format, ...)
+void fl_debug(Interpreter *, char *format, ...)
     __attribute__ ((format(printf, 2, 3)));
 #endif
-void debug(Interpreter *interp, char *format, ...)
+void fl_debug(Interpreter *interp, char *format, ...)
 {
     if (interp->debug == nil)
         return;
@@ -245,7 +245,7 @@ Object *gcMoveObject(Object * object)
 
 void gc(GC_PARAM)
 {
-    debug(&flisp, "collecting garbage\n");
+    fl_debug(&flisp, "collecting garbage");
 
     flisp.memory->toOffset = 0;
 
@@ -1130,10 +1130,14 @@ DEFINE_PRIMITIVE_RELATIONAL(primitiveGreaterEqual, >=)
         exceptionWithObject(&flisp, arg, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " arg) - arg is not a string");
 
 #define ONE_NUMBER_ARG(func)                                  \
-    Object *arg = (*args)->car;                               \
-    if (arg->type != TYPE_NUMBER)                             \
-        exceptionWithObject(&flisp, arg, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " arg) - arg is not a number");
+    Object *num = (*args)->car;                               \
+    if (num->type != TYPE_NUMBER)                             \
+        exceptionWithObject(&flisp, num, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " num) - num is not a number");
 
+#define ONE_STREAM_ARG(func)                                  \
+    Object *fd = (*args)->car;                            \
+    if (stream->type != TYPE_STREAM)                          \
+        exceptionWithObject(&flisp, fd, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " fd) - fd is not a stream");
 
 Object *fl_system(Object ** args, GC_PARAM) {
 
@@ -1235,10 +1239,10 @@ Object *numberToString(Object ** args, GC_PARAM)
 
     ONE_NUMBER_ARG(number-to-string);
 
-    if (arg->number == (long)arg->number)
-        sprintf(buf, "%ld", (long)arg->number);
+    if (num->number == (long)num->number)
+        sprintf(buf, "%ld", (long)num->number);
     else
-        sprintf(buf, "%lf", arg->number);
+        sprintf(buf, "%lf", num->number);
 
     return newStringWithLength(buf, strlen(buf), GC_ROOTS);
 }
@@ -1248,10 +1252,10 @@ Object *asciiToString(Object ** args, GC_PARAM)
 {
     char ch[2];
     ONE_NUMBER_ARG(ascii)
-    if (arg->type < 0 || arg->type > 255)
-        exceptionWithObject(&flisp, arg, FLISP_INVALID_VALUE, "(ascii arg) - arg is not in range 0-255");
+    if (num->type < 0 || num->type > 255)
+        exceptionWithObject(&flisp, num, FLISP_INVALID_VALUE, "(ascii num) - num is not in range 0-255");
 
-    ch[0] = (unsigned char)arg->number;
+    ch[0] = (unsigned char)num->number;
     ch[1] = '\0';
     return newStringWithLength(ch, 1, GC_ROOTS);
 }
@@ -1275,7 +1279,7 @@ Object *e_load(Object ** args, GC_PARAM)
 
     ONE_STRING_ARG(load);
 
-    debug(&flisp, "(load \"%s\")\n", arg->string);
+    fl_debug(&flisp, "(load \"%s\")", arg->string);
 
     if (!strcmp(arg->string, "-"))
         fd = 0;
@@ -1284,15 +1288,15 @@ Object *e_load(Object ** args, GC_PARAM)
     }
 
     char *out = load_file(fd);
-    debug(&flisp, "close(%d)\n", fd);
+    fl_debug(&flisp, "close(%d)", fd);
     close(fd);
     /* Note: in batch_mode incidentially out is NULL: don't rely on this! */
     if (out == NULL) return t;
     char* err = strstr(out, "error: ");
     if (err)
-        debug(&flisp, "(load \"%s\") => %s\n", arg->string, err);
+        fl_debug(&flisp, "(load \"%s\") => %s", arg->string, err);
     else
-        debug(&flisp, "(load \"%s\") => %ld chars\n", arg->string, strlen(out));
+        fl_debug(&flisp, "(load \"%s\") => %ld chars", arg->string, strlen(out));
     return (NULL == strstr(out, "error:")) ? t : nil;
 }
 
@@ -1306,6 +1310,8 @@ Object *os_getenv(Object ** args, GC_PARAM)
     if (e == NULL) return nil;
     return newStringWithLength(e, strlen(e), GC_ROOTS);
 }
+
+/* The minimal stream C-API for interpreter operation */
 
 /** (fopen name mode) => StreamObject
  *
@@ -1363,41 +1369,29 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
         exception(interp, FLISP_IO_ERROR, "failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
     return newStreamObject(fd, path, GC_ROOTS);
 }
-Object *primitiveFopen(Object ** args, GC_PARAM)
-{
-
-    TWO_STRING_ARGS(fopen);
-
-    return file_fopen(&flisp, first->string, second->string);
-}
-/** (fclose StreamObject) => flag
+/** (Fclose StreamObject) => flag
  *
  * @param StreamObject
  *
  * Close *StreamObject*, return nil on error, else t.
  *
  */
-Object *file_fclose(Interpreter *interp, Object *stream)
+int file_fclose(Interpreter *interp, Object *stream)
 {
-    Object *gcRoots = interp->theRoot;
-
-    if (stream->type != TYPE_STREAM)
-        exceptionWithObject(interp, stream, FLISP_WRONG_TYPE, "(fclose arg) - arg is not a stream");
+    int result;
     if (stream->fd == NULL)
         exception(interp, FLISP_INVALID_VALUE, "(fclose arg) - stream arg already closed");
 
-    if (stream->buf != NULL)
-        free(stream->buf);
-    if (fclose(stream->fd) == EOF)
-        return newNumber(errno, GC_ROOTS);
-
+    // Note: we thought we needed to do this: but we get segfaulted. why?
+    //if (stream->buf != NULL)
+    //    free(stream->buf);
+    result = (fclose(stream->fd) == EOF) ? errno : 0;
     stream->fd = NULL;
-    return newNumber(0, GC_ROOTS);
+    return result;
 }
-Object *primitiveFclose(Object** args, GC_PARAM)
+int file_fflush(Interpreter *interp, Object *stream)
 {
-    Object *stream = (*args)->car;
-    return file_fclose(&flisp, stream);
+    return (fflush(stream->fd) == EOF) ? errno : 0;
 }
 #ifdef FLISP_FILE_EXTENSION
 #include "file.c"
@@ -1522,10 +1516,10 @@ Object *e_insert_file(Object ** args, GC_PARAM) {
 
     ONE_STRING_ARG(insert-file);
 
-    mflag = (first->cdr != nil && first->cdr->car != nil);
+    mflag = (arg->cdr != nil && arg->cdr->car != nil);
     mflag = FALSE;
 
-    return ((insert_file(first->string, mflag) == TRUE) ? t : nil);
+    return ((insert_file(arg->string, mflag) == TRUE) ? t : nil);
 }
 
 Object *e_getfilename(Object **args, GC_PARAM) {
@@ -1664,7 +1658,7 @@ Object *e_log_message(Object ** args, GC_PARAM)
 Object *e_log_debug(Object ** args, GC_PARAM)
 {
     ONE_STRING_ARG(log-debug);
-    debug(flisp, arg->string);
+    fl_debug(&flisp, arg->string);
     return t;
 }
 
@@ -1683,7 +1677,7 @@ extern point_t get_point_max(void);
 Object *e_set_point(Object ** args, GC_PARAM)
 {
     ONE_NUMBER_ARG(set-point)
-    set_point(arg->number);
+    set_point(num->number);
     return t;
 }
 
@@ -2146,7 +2140,7 @@ void set_input_stream_buffer(Stream *stream, char *buffer)
 int load_file_body(Object ** env, GC_PARAM, Stream *input_stream)
 {
     if (setjmp(*flisp.stackframe)) {
-        debug(&flisp, "exception in load_file_body()\n");
+        fl_debug(&flisp, "exception in load_file_body()");
         return 1;
     }
 
@@ -2170,18 +2164,31 @@ char *load_file(int infd)
     up = flisp.stackframe;
     flisp.stackframe = &exceptionEnv;
 
-    debug(&flisp, "load_file(%d)\n", infd);
+    fl_debug(&flisp, "load_file(%d)", infd);
     Stream input_stream = { .type = STREAM_TYPE_FILE, .fd = -1 };
     set_stream_file(&input_stream, infd);
-    //reset_output_stream();
+
+    flisp.message[0] = '\0';
+    flisp.result = FLISP_OK;
+    Object *output = flisp.output;
+    flisp.output = file_fopen(&flisp, "", ">");
+        
     if (load_file_body(flisp.theEnv, flisp.theRoot, &input_stream)) {
-        //debug(flisp, "load_file(%d) failed: %s\n", infd, flisp.output.buffer);
+        fl_debug(&flisp, "load_file(%d) failed: %s", infd, flisp.message);
+        fflush(flisp.output->fd);
+        fl_debug(&flisp, flisp.output->buf);
+        file_fclose(&flisp, flisp.output);
+        flisp.output = output;
         flisp.stackframe = up;
         if (input_stream.buffer != NULL)
             free(input_stream.buffer);
         return "error: load_file() failed";
     }
-    //debug(flisp, "load_file(%d) finished, returning ostream.buffer: %p\n", infd, flisp.ostream.buffer);
+    fl_debug(&flisp, "load_file(%d) finished", infd);
+    fflush(flisp.output->fd);
+    fl_debug(&flisp, flisp.output->buf);
+    file_fclose(&flisp, flisp.output);
+    flisp.output = output;
     flisp.stackframe = up;
     //if (input_stream.buffer != NULL)
     //    free(input_stream.buffer);
@@ -2192,13 +2199,15 @@ ResultCode eval(Interpreter *interp, Stream *input_stream)
 {
     // gcRoots is needed by GC_TRACE
     Object *gcRoots = interp->theRoot;
-
+    int result;
+    
     GC_TRACE(gcObject, nil);
 
     for (;;) {
+        
         switch (setjmp(*interp->stackframe)) {
         case FLISP_OK: break;
-        case FLISP_ERROR: return FLISP_ERROR;
+
         case FLISP_USER: return FLISP_USER;
         case FLISP_READ_INCOMPLETE: return FLISP_READ_INCOMPLETE;
         case FLISP_READ_INVALID: return FLISP_READ_INVALID;
@@ -2208,7 +2217,9 @@ ResultCode eval(Interpreter *interp, Stream *input_stream)
         case FLISP_IO_ERROR: return FLISP_IO_ERROR;
         case FLISP_OOM: return FLISP_OOM;
         case FLISP_GC_ERROR: return FLISP_GC_ERROR;
+        default: return FLISP_ERROR; /* includes FLISP_ERROR itself */
         }
+            
         *gcObject = nil;
 
         if (peekNext(input_stream) == EOF) {
@@ -2220,6 +2231,9 @@ ResultCode eval(Interpreter *interp, Stream *input_stream)
         *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
         writeObject(interp->output, *gcObject, true);
         writeChar(interp->output, '\n');
+        if ((result = file_fflush(interp, interp->output))) {
+            exceptionWithObject(interp, interp->output, FLISP_IO_ERROR, "failed to fflush output stream, errno: %d", result);
+        }
     }
 }
 
@@ -2273,10 +2287,10 @@ Interpreter *lisp_init(int argc, char **argv, char *library_path)
     return &flisp;
 }
 
-/** lisp_eval() - interprete a string in Lisp
+/** lisp_eval() - interpret a string in Lisp
  *
  * @param interp  Interpreter to use
- * @param format ...  printf style specification of string to evaluate
+ * @param input   string to evaluate
  *
  * Before calling `lisp_eval()` initialize:
  * - interp->output: to an output stream, see file_fopen().
@@ -2310,9 +2324,14 @@ ResultCode lisp_eval(Interpreter *interp, char * input)
     interp->istream = &is;
 
     result = eval(interp, &is);
-    debug(interp, "lisp_eval() => %d", result);
+    fl_debug(interp, "lisp_eval() => %d", result);
+    if (file_fflush(interp, interp->output)) {
+        interp->result = FLISP_IO_ERROR;
+        strncpy(interp->message, "failed to fflush output stream", sizeof(interp->message));
+    }
     if (result)
-        debug(interp, "lisp_eval() => error: %s", interp->message);
+        fl_debug(interp, "lisp_eval() => error: %s", interp->message);
+    (void)file_fflush(interp, interp->debug);
     return result;
 }
 
