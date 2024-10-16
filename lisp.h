@@ -139,7 +139,7 @@ void writeObject(Object *, Object *, bool);
 #define FLISP_REGISTER_FILE_EXTENSION \
     {"fopen", 2, 2, primitiveFopen}, \
     {"fclose", 1, 1, primitiveFclose}, \
-    {"fflush", 1, 1, primitiveFflush), \
+    {"fflush", 1, 1, primitiveFflush}, \
     {"fgetc", 1, 1, primitiveFgetc},
 #else
 #define FLISP_REGISTER_FILE_EXTENSION

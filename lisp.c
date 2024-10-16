@@ -1136,7 +1136,7 @@ DEFINE_PRIMITIVE_RELATIONAL(primitiveGreaterEqual, >=)
 
 #define ONE_STREAM_ARG(func)                                  \
     Object *fd = (*args)->car;                            \
-    if (stream->type != TYPE_STREAM)                          \
+    if (fd->type != TYPE_STREAM)                          \
         exceptionWithObject(&flisp, fd, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " fd) - fd is not a stream");
 
 Object *fl_system(Object ** args, GC_PARAM) {
