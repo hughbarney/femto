@@ -2293,26 +2293,12 @@ Interpreter *lisp_init(int argc, char **argv, char *library_path)
  * error message.
  *
  */
-ResultCode lisp_eval(Interpreter *interp, char * format, ...)
+ResultCode lisp_eval(Interpreter *interp, char * input)
 {
-    char input[INPUT_FMT_BUFSIZ];
-    va_list args;
-    int size;
     jmp_buf exceptionEnv;
     ResultCode result;
 
-    va_start (args, format);
-
-    size = vsnprintf (input, sizeof(input), format, args);
-    va_end(args);
-
-    // Note: instead of mitigation allocate dynamically and error only on OOM
-    if (size > INPUT_FMT_BUFSIZ) {
-        interp->result = FLISP_IO_ERROR;
-        strncpy(interp->message, "input string larger then " "WRITE_FMT_BUFSIZ", sizeof(interp->message));
-        return interp->result;
-    }
-    debug(interp, "lisp_eval(\"%s\")", input);
+    fl_debug(interp, "lisp_eval(\"%s\")", input);
 
     interp->message[0] = '\0';
     interp->result = FLISP_OK;

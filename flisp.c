@@ -52,7 +52,8 @@ int main(int argc, char **argv)
     }
     if (strlen(init_file)) {
         // Note: we do not have input streams yet
-        result = lisp_eval(interp, "(load \"%s\"", init_file);
+        snprintf(input, sizeof(input), "(load \"%s\"", init_file);
+        result = lisp_eval(interp, input);
         if (result)
             fprintf(stderr, "failed to load inifile %s: %s", init_file, interp->message);
     }

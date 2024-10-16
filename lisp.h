@@ -124,10 +124,11 @@ typedef struct Interpreter {
 extern Interpreter *lisp_interpreters;
 
 extern Interpreter *lisp_init(int, char**, char*);
-extern ResultCode lisp_eval(Interpreter *, char *, ...);
+extern ResultCode lisp_eval(Interpreter *, char *);
 
 Object *file_fopen(Interpreter *, char *, char*);
-Object *file_fclose(Interpreter *, Object *);
+int file_fclose(Interpreter *, Object *);
+int file_fflush(Interpreter *, Object *);
 
 void writeChar(Object *, char);
 void writeString(Object *, char *);
@@ -135,14 +136,13 @@ void writeObject(Object *, Object *, bool);
 
 
 #ifdef FLISP_FILE_EXTENSION
-
 #define FLISP_REGISTER_FILE_EXTENSION \
     {"fopen", 2, 2, primitiveFopen}, \
     {"fclose", 1, 1, primitiveFclose}, \
+    {"fflush", 1, 1, primitiveFflush), \
     {"fgetc", 1, 1, primitiveFgetc},
 #else
 #define FLISP_REGISTER_FILE_EXTENSION
-
 #endif
 
 
