@@ -757,22 +757,28 @@ point_t get_point_max()
 void repl()
 {
     buffer_t *bp;
+    char *output;
 
     if (!getinput("> ", response_buf, TEMPBUF, F_CLEAR))
         return;
 
-    if (lisp_eval(flisp_interp, response_buf) != RESULT_OK) {
-        msg("error: %s", flisp_interp->message);
+    if ((output = eval_string(false, response_buf)) == NULL)
         return;
-    }
 
-    if (strlen(flisp_interp->output) < 60) {
-        msg(flisp_interp->output);
+    // Note: Emacs puts errors and output always into the *Messages*
+    //       buffer, plus errors are shown in the message line.
+    //       Decision about whether to insert the result into the
+    //       buffer or show it in the message line is done based on
+    //       key pressed/function invoked
+    
+    if (strlen(output) < 60) {
+        msg(output);
     } else {
         bp = find_buffer("*lisp_output*", TRUE);
-        append_string(bp, flisp_interp->output);
+        append_string(bp, output);
         (void)popup_window(bp->b_bname);
     }
+    close_eval();
 }
 
 /*
@@ -780,6 +786,8 @@ void repl()
  */
 void eval_block()
 {
+    char *output;
+    
     if (curbp->b_mark == NOMARK || curbp->b_mark >= curbp->b_point) {
         msg("no block defined");
         return;
@@ -790,13 +798,12 @@ void eval_block()
     assert(strlen((char *)scrap) > 0);
 
     insert_string("\n");
-    if (lisp_eval(flisp_interp, (char *)scrap) != RESULT_OK) {
-        msg("error: %s", flisp_interp->message);
-        insert_string("error: ");
-        insert_string(flisp_interp->message);
-        insert_string("\n");
-    }
-    insert_string(flisp_interp->output);
+    
+    if ((output = eval_string(false, (char *)scrap)) == NULL)
+        return;
+    // Note: femto used to insert error messages in the current buffer. Now we don't anymore.
+    insert_string(output);
+    close_eval();
 }
 
 /* this is called for every user key setup by a call to set_key */
@@ -811,10 +818,9 @@ void user_func()
     }
 
     sprintf(funcname, "(%s)", key_return->k_funcname);
-    if (lisp_eval(flisp_interp, funcname) == RESULT_OK)
+    if (eval_string(false, funcname) == NULL)
         return;
-
-    msg("error: %s", flisp_interp->message);
+    close_eval();
 }
 
 /*
