@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 
     if ((init_file = getenv("FLISPRC")) == NULL)
         init_file = FL_LIBDIR "/" FL_INITFILE;
-    
+
     if ((library_path=getenv("FLISPLIB")) == NULL)
         library_path = CPP_XSTR(FL_LIBDIR);
 
@@ -38,14 +38,14 @@ int main(int argc, char **argv)
         fatal("fLisp initialization failed");
 
     debug_file=getenv("FLISP_DEBUG");
-    
+
     interp->output = file_fopen(interp, ">1", "");
     Object *stderrStream = file_fopen(interp, ">2", "");
 
-    if (debug_file != NULL) { 
+    if (debug_file != NULL) {
         interp->debug = file_fopen(interp, debug_file, "w");
     }
-    
+
     if (isatty(0)) {
         printf(FL_NAME " " FL_VERSION "\n");
         fflush(stdout);
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
         if (input[strlen(input)-1] == '\n')
             input[strlen(input)-1] = '\0';
-            
+
         result = lisp_eval(interp, input);
         if (result) {
             writeString(stderrStream, "error: ");
