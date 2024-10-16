@@ -366,8 +366,9 @@ void execute_command()
         funct = name_to_function(command_name);
 
         if (funct == NULL || funct == user_func) {
-            if (lisp_eval(flisp_interp, "(%s)", command_name) != RESULT_OK)
-                msg("error: %s", flisp_interp->message);
+            
+            if (eval_string(true, "(%s)", command_name) != NULL)
+                close_eval();
         } else {
             (funct)();
         }

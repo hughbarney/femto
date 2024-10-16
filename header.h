@@ -488,7 +488,8 @@ extern window_t *popup_window(char *);
 extern window_t *split_current_window();
 
 /* fLisp interpreter used for femto */
-extern Interpreter *flisp_interp;
+extern char *eval_string(int, char *, ...);
+extern void close_eval();
 
 
 /*
