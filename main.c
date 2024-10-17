@@ -41,13 +41,14 @@ int main(int argc, char **argv)
         fatal("fLisp initialization failed");
 
     if (debug_mode)
-        // Note: file_fopen can raise IO exception, 
-        flisp_interp->debug = file_fopen(flisp_interp, "debug.out", "a");
+        if (nil == (flisp_interp->debug = file_fopen(flisp_interp, "debug.out", "a")))
+            fatal("could not open debug stream");
     
     if ((init_file = getenv("FEMTORC")) == NULL)
         init_file = CPP_XSTR(E_INITFILE);
 
     if (strlen(init_file)) {
+        // Note: not lisp_eval()'ing it, because we want to have consistent error handling.
         eval_string(true, "(load \"%s\")", init_file);
         close_eval();
     }
@@ -82,7 +83,7 @@ char *eval_string(int do_format, char *format, ...)
     }
 
     flisp_interp->output = file_fopen(flisp_interp, "", ">");
-    if ((result = lisp_eval(flisp_interp, input)))
+    if ((result = lisp_eval_string(flisp_interp, input)))
         msg("error: %s", flisp_interp->message);
     if (debug_mode) {
         if (result)
