@@ -21,6 +21,18 @@ Object *primitiveFflush(Object** args, GC_PARAM)
     return newNumber(file_fflush(&flisp, fd), GC_ROOTS);
 }
 
+off_t file_ftell(Interpreter *interp, Object *stream)
+{
+    return ftello(stream->fd);
+}
+Object *primitiveFtell(Object** args, GC_PARAM)
+{
+    ONE_STREAM_ARG(ftell);
+    if (fd->fd == NULL)
+        exception(&flisp, FLISP_INVALID_VALUE, "(ftell fd) - stream fd already closed");
+    return newNumber(file_ftell(&flisp, fd), GC_ROOTS);
+}
+
 Object *primitiveFgetc(Object** args, GC_PARAM)
 {
     char s[] = "\0\0";

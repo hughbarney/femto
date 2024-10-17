@@ -140,6 +140,7 @@ void writeObject(Object *, Object *, bool);
     {"fopen", 2, 2, primitiveFopen}, \
     {"fclose", 1, 1, primitiveFclose}, \
     {"fflush", 1, 1, primitiveFflush}, \
+    {"ftell", 1, 1, primitiveFtell}, \
     {"fgetc", 1, 1, primitiveFgetc},
 #else
 #define FLISP_REGISTER_FILE_EXTENSION
