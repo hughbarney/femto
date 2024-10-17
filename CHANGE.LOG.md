@@ -1,4 +1,24 @@
-## Femto 2.19 11 November 2024
+## Femto 2.20 18 October 2024
+
+fLisp input/output is now based on libc file I/O instead of the
+original Stream emulation.  The interpreter is extended with a stream
+object type. The load_file() function has been eliminated, the (load)
+function switches streams instead.
+
+The Lisp reader now does overflow/underflow checking of numbers.
+
+The build system allows to enable interpreter extensions at build
+time, the editor functions are available via the
+FLISP_EDITOR_EXTENSION and there is a demo FLISP_FILE_EXTENSION, which
+exposes the stream functionality to Lisp.
+
+A simplistic standalone Lisp interpreter can be built via the `flisp`
+target and a README.flisp.md file is provided.
+
+Code has been extensibly documented in the source.
+
+
+## Femto 2.19 11 October 2024
 
 Change in the public C interface of the fLisp interpreter, which
 allows for improved error handling.  The rework also resolved some
