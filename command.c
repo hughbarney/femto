@@ -609,6 +609,7 @@ void match_parens()
     if (buffer_is_empty(bp))
         return;
 
+    // Note: valgrind: Invalid read of size 1
     char p = *ptr(bp, bp->b_point);
 
     switch(p) {
