@@ -46,24 +46,3 @@ Error 2 related to ptr()
 ==73622==    by 0x10E35D: growgap (gap.c:30)
 ==73622==    by 0x110135: find_buffer (buffer.c:102)
 ==73622==    by 0x10B548: main (main.c:28)
-
-Error 3 found
--------------
-
-==73622== 2,607 bytes in 1 blocks are definitely lost in loss record 179 of 188
-==73622==    at 0x48407B4: malloc (vg_replace_malloc.c:381)
-==73622==    by 0x1145D6: streamGetc (lisp.c:573)
-==73622==    by 0x11468E: readNext (lisp.c:638)
-==73622==    by 0x1178AC: peekNext (lisp.c:649)
-==73622==    by 0x1178AC: load_file_body (lisp.c:2141)
-==73622==    by 0x1179FD: load_file (lisp.c:2156)
-==73622==    by 0x117A9F: e_load (lisp.c:1493)
-==73622==    by 0x116C85: evalExpr (lisp.c:1971)
-==73622==    by 0x117C1F: call_lisp_body (lisp.c:2177)
-==73622==    by 0x117EA1: call_lisp (lisp.c:2221)
-==73622==    by 0x10B5F8: main (main.c:48)
-
-Missing free() for input stream buffer: lisp.c:2148
-
-streamGetc() with STREAM_TYPE_FILE is allocating memory where the whole file is
-read in.

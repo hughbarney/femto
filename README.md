@@ -1,11 +1,14 @@
 # Femto
-Femto is an extended version of Atto Emacs with a Tiny Lisp extension languauge
+
+Femto is an extended version of Atto Emacs with a tiny Lisp extension
+language.
 
 ![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-hilite.png)
 
 ![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-startup.jpg)
 
-> A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing left to take away.
+> A designer knows he has achieved perfection not when there is
+> nothing left to add, but when there is nothing left to take away.
 > -- <cite>Antoine de Saint-Exupery</cite>
 
 ## Goals of Femto Emacs
@@ -60,7 +63,8 @@ buffers in mutliple windows, cut, copy and paste; forward and reverse
 searching, a replace function and basic syntax hilighting. The proviso
 being that all this will fit in less than 2000 lines of C.
 
-Femto is an extended version of Atto Emacs with its own extension languauge
+Femto is an extended version of Atto Emacs with its own extension
+language.
 
 
 ## History
@@ -92,28 +96,30 @@ For a full version history please refer to the file [CHANGE.LOG.md](./CHANGE.LOG
 
 ## Comparisons with Other Emacs Implementations
 
-Femto has almost the same level of functionality as MicroEmacs 3.10 for a codebase 1/10 of the size.
+Femto has almost the same level of functionality as MicroEmacs 3.10
+for a codebase about 15% of the size.
 
     Editor         Binary   BinSize     KLOC  Files
 
-    atto           atto       33002     1.9k     10
-    pEmacs         pe         59465     5.7K     16
-    Esatz-Emacs    ee         59050     5.7K     14
-    femto          femto     108408     6.7k     18/31 **
-    GNOME          GNOME      55922     9.8k     13
-    Zile           zile      257360    11.7k     48
-    Mg             mg        585313    16.5K     50
-    uEmacs/Pk      em        147546    17.5K     34
-    Pico           pico      438534    24.0k     29
-    Nano           nano      192008    24.8K     17
-    jove           jove      248824    34.7k     94
-    Qemacs         qe        379968    36.9k     59
-    ue3.10         uemacs    171664    52.4K     16 ++
-    GNUEmacs       emacs   14632920   358.0k    186
+    atto           atto       33002     1.9k      10
+    pEmacs         pe         59465     5.7K      16
+    Esatz-Emacs    ee         59050     5.7K      14
+    femto          femto     120872     8.9k/6.3k 20/30 **
+    GNOME          GNOME      55922     9.8k      13
+    Zile           zile      257360    11.7k      48
+    Mg             mg        585313    16.5K      50
+    uEmacs/Pk      em        147546    17.5K      34
+    Pico           pico      438534    24.0k      29
+    Nano           nano      192008    24.8K      17
+    jove           jove      248824    34.7k      94
+    Qemacs         qe        379968    36.9k      59
+    ue3.10         uemacs    171664    52.4K      16 ++
+    GNUEmacs       emacs   14632920   358.0k     186
 
 Since femto 2.12 C code has been moved out to Lisp. The first number
-in the files count are the C-files plus the minimal required femto.rc
-Lisp file. The second number includes all provided Lisp files.
+in the KLOC column is the line count, the second the sloccount. The
+first number in the files count are the C-files, the second number
+includes the required Lisp files.
 
 
 ## Femto Key Bindings
@@ -203,8 +209,6 @@ Generally, the procedure for copying or moving text is:
     ESC will escape from the search prompt and return to the point of the match
     C-G abort the search and return to point before the search started
 
-
-
 ## Lisp Interaction
 
 There are two ways to interract with Tiny-Lisp within Femto.
@@ -272,12 +276,15 @@ compile time by changing SCRIPTDIR.  At startup `femto` overrides the
 default with the value of the environment variable FEMTOLIB if set.
 
 
+<!-- Batch mode is currently not available and might be deprecated in -->
+<!-- future versions -->
+<!--
 ## Batch Mode
 
 If the environment variable FEMTO_BATCH exists and is not set to `0`
 batch mode is enabled.  In batch mode the GUI is not started up and
 all Lisp output is sent to `stdout`.
-
+-->
 
 ## Debugging
 
