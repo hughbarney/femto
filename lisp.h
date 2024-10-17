@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #define FL_NAME     "fLisp"
-#define FL_VERSION  "0.1"
+#define FL_VERSION  "0.2"
 
 #define FL_INITFILE "flisp.rc"
 #define FL_LIBDIR "/usr/local/share/flisp"
