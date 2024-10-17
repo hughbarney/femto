@@ -27,6 +27,9 @@ FLISP_OBJ = flisp.o lisp.o
 
 BINARIES = femto flisp
 
+LISPFILES = femto.rc lisp/defmacro.lsp lisp/bufmenu.lsp lisp/dired.lsp lisp/grep.lsp lisp/git.lsp lisp/oxo.lsp \
+	lisp/flisp.lsp lisp/femto.lsp lisp/info.lsp
+
 all: femto docs/flisp.md
 
 femto: $(OBJ)
@@ -91,6 +94,21 @@ main.o: main.c header.h lisp.h
 
 flisp.o: flisp.c lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+
+measure: strip FORCE
+	@echo Total
+	@echo binsize: $$(set -- $$(ls -l femto); echo $$5)
+	@echo linecount: $$(cat *.c *.h *.rc lisp/*.lsp | wc -l)
+	@echo sloccount: $$(set -- $$(which sloccount >/dev/null && { sloccount *.c *.h *.rc lisp/*.lsp | grep ansic=; }); echo $$3)
+	@echo files: $$(ls *.c *.h *.rc lisp/*.lsp | wc -l)
+	@echo C-files: $$(ls *.c *.h | wc -l)
+	@echo Minimum
+	@echo linecount: $$(cat *.c *.h $(LISPFILES) | wc -l) 
+	@echo sloccount: $$(set -- $$(which sloccount >/dev/null && { sloccount *.c *.h *.rc $(LISPFILES) | grep ansic=; }); echo $$3)
+	@echo files: $$(ls *.c *.h $(LISPFILES) | wc -l) 
+
+strip: femto FORCE
+	strip femto
 
 docs/flisp.md: pdoc/flisp.html pdoc/h2m.lua
 	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
