@@ -68,6 +68,7 @@ typedef enum ResultCode {
     /* Parser/reader */
     FLISP_READ_INCOMPLETE,
     FLISP_READ_INVALID,
+    FLISP_READ_RANGE, /* number range over/underflow */
     /* Parameter */
     FLISP_WRONG_TYPE,
     FLISP_INVALID_VALUE,
@@ -84,19 +85,6 @@ typedef enum ResultCode {
 //   init_lisp() must allocate the memory by itself and return an
 //   Interpreter to be used by call_lisp().
 
-typedef enum StreamType {
-    STREAM_TYPE_STRING,
-    STREAM_TYPE_FILE
-} StreamType;
-
-typedef struct Stream {
-    StreamType type;
-    char *buffer;
-    int fd;
-    size_t length, capacity;
-    off_t offset, size;
-} Stream;
-
 typedef struct Memory {
     size_t capacity, fromOffset, toOffset;
     void *fromSpace, *toSpace;
@@ -104,6 +92,7 @@ typedef struct Memory {
 
 typedef struct Interpreter Interpreter;
 typedef struct Interpreter {
+    Object *input;                   /* input stream */
     Object *output;                  /* output stream */
     Object *object;                  /* result or error object */
     char message[WRITE_FMT_BUFSIZ];  /* error string */
@@ -114,10 +103,10 @@ typedef struct Interpreter {
     Object **theEnv;      /* environment object */
     Object *symbols;      /* symbols list */
     Object root;          /* reified root node */
-    Stream *istream;      /* Lisp input stream */
     Memory *memory;       /* memory available for object allocation,
                              cleaned up by garbage collector */
     jmp_buf *stackframe;  /* exception handling */
+    struct { char *buf; size_t len; size_t capacity; };  /* read buffer */
     Interpreter *next;    /* linked list of interpreters */
 } Interpreter;
 
