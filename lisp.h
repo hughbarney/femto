@@ -113,7 +113,8 @@ typedef struct Interpreter {
 extern Interpreter *lisp_interpreters;
 
 extern Interpreter *lisp_init(int, char**, char*);
-extern ResultCode lisp_eval(Interpreter *, char *);
+extern ResultCode lisp_eval(Interpreter *);
+extern ResultCode lisp_eval_string(Interpreter *, char *);
 
 Object *file_fopen(Interpreter *, char *, char*);
 int file_fclose(Interpreter *, Object *);

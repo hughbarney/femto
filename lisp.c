@@ -1,14 +1,14 @@
 /*
- * tiny-lisp interpreter based on
- * https://github.com/matp/tiny-lisp
+ * fLisp - a tiny yet practical Lisp interpreter.
  *
- * with modifications and extensions to enable it to be embedded and called
- * by an application and to load Lisp files.
+ * Based on Tiny-Lisp: https://github.com/matp/tiny-lisp
  *
  *   public:
  *   lisp_init() .. initialize the interpreter
- *   lisp_eval() .. evaluate a string
- *
+ *   lisp_eval() .. evaluate interpreter input stream
+ *   lisp_eval_string() .. evaluate a string
+ *   file_fopen()  .. create lisp stream object from file
+ *   file_fclose() .. close file associated with lisp stream object
  */
 
 #include <sys/mman.h>
@@ -94,7 +94,7 @@ void fl_debug(Interpreter *interp, char *format, ...)
 
 void resetBuf(Interpreter *);
 
-/** exceptionWithObject - break out of errors, Lisp object related
+/** exceptionWithObject - break out of errors
  *
  * @param interp  interpreter in which the error occured.
  * @param object  object on which an error occured, set to nil if none.
@@ -107,6 +107,10 @@ void resetBuf(Interpreter *);
  * The error message is formatted into the message buffer of the interpreter. If it has to
  * be truncated the last three characters are overwritten with "..."
  *
+ * Note: if an exception handler is registered in the interpreter,
+ *    control is returned to it.  Otherwise the function
+ *    "falls trough". This is used in file_fopen() and file_fclose(),
+ *    so they can be used w/o an exception handler.
  */
 #ifdef __GNUC__
 void exceptionWithObject(Interpreter *, Object * object, ResultCode, char *format, ...)
@@ -127,7 +131,8 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
         strcpy(interp->message+len-4, "...");
     va_end(args);
 
-    longjmp(*flisp.stackframe, result);
+    if (interp->stackframe)
+        longjmp(*interp->stackframe, result);
 }
 
 /** exception - break out of errors
@@ -1437,7 +1442,7 @@ Object *asciiToNumber(Object ** args, GC_PARAM)
     return newNumber((double)*arg->string, GC_ROOTS);
 }
 
-ResultCode eval(Interpreter *);
+ResultCode lisp_eval(Interpreter *);
 /** primitiveLoad - evaluate a file in interpeter
  *
  * @param arg  path to file or "-" to read from stdin
@@ -1477,7 +1482,7 @@ Object *primitiveLoad(Object **args, GC_PARAM)
     interp->input = new;
 
     // eval file
-    result = eval(interp);
+    result = lisp_eval(interp);
     if (result)
         exceptionWithObject(interp, new, result, "failed to load file %s: %s", arg->string, interp->message);
 
@@ -1531,18 +1536,22 @@ Object *os_getenv(Object ** args, GC_PARAM)
 Object *file_fopen(Interpreter *interp, char *path, char* mode) {
     FILE * fd;
     Object *gcRoots = interp->theRoot;
-
+    
     if (strcmp("<", mode) == 0) {
         fd = fmemopen(path, strlen(path), "r");
-        if (fd == NULL)
+        if (fd == NULL) {
             exception(interp, FLISP_IO_ERROR, "failed to convert string to input stream, errno: %d", errno);
+            goto no_handler;
+        }
         return newStreamObject(fd, "<STRING", GC_ROOTS);
     }
     if (strcmp(">", mode) == 0) {
         Object *stream = newStreamObject(NULL, ">STREAM", GC_ROOTS);
         fd = open_memstream(&stream->buf, &stream->len);
-        if (fd == NULL)
+        if (fd == NULL) {
             exception(interp, FLISP_IO_ERROR, "failed to create memory based output stream, errno: %d", errno);
+            goto no_handler;
+        }
         stream->fd = fd;
         return stream;
     }
@@ -1552,18 +1561,28 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
         char *end;
         errno = 0;
         long d = strtol(&path[1], &end, 0);
-        if (errno || *end != '\0' || d < 0 || d > _POSIX_OPEN_MAX)
+        if (errno || *end != '\0' || d < 0 || d > _POSIX_OPEN_MAX) {
             exception(interp, FLISP_INVALID_VALUE, "invalid I/O stream number: %s", &path[1]);
+            goto no_handler;
+        }
         fd = fdopen((int)d, c == '<' ? "r" : "a");
-        if (fd == NULL)
+        if (fd == NULL) {
             exception(interp, FLISP_IO_ERROR, "failed to open I/O stream %ld for %s", d, c == '<' ? "reading" : "writing");
+            goto no_handler;
+        }
         return newStreamObject(fd, path, GC_ROOTS);
     }
-
+    
     fd = fopen(path, mode);
-    if (fd == NULL)
+    if (fd == NULL) {
         exception(interp, FLISP_IO_ERROR, "failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
+        goto no_handler;
+    }
     return newStreamObject(fd, path, GC_ROOTS);
+
+    // Note: when called without an exception environment the exception() falls through and execution continues here.
+no_handler:
+    return nil;
 }
 /** (Fclose StreamObject) => flag
  *
@@ -1575,9 +1594,23 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
 int file_fclose(Interpreter *interp, Object *stream)
 {
     int result;
-    if (stream->fd == NULL)
-        exception(interp, FLISP_INVALID_VALUE, "(fclose arg) - stream arg already closed");
+    jmp_buf exceptionEnv;
 
+    if (interp->stackframe == NULL) {
+        interp->stackframe = &exceptionEnv;
+        return file_fclose(interp, stream);
+    }
+    else if (interp->stackframe == &exceptionEnv) {
+        if (setjmp(exceptionEnv)) {
+            interp->stackframe = NULL;
+            return EOF;
+        }
+    }
+    
+    if (stream->fd == NULL) {
+        exception(interp, FLISP_INVALID_VALUE, "(fclose arg) - stream arg already closed");
+        goto no_handler;
+    }
     // Note: we thought we needed to do this: but we get segfaulted. why?
     //if (stream->buf != NULL)
     //    free(stream->buf);
@@ -1585,6 +1618,9 @@ int file_fclose(Interpreter *interp, Object *stream)
     if (!result)
         stream->fd = NULL;
     return result;
+
+no_handler:
+    return interp->result;
 }
 int file_fflush(Interpreter *interp, Object *stream)
 {
@@ -2313,57 +2349,6 @@ Object *newRootEnv(GC_PARAM, int arg, char **argv, char* flib)
     return *gcEnv;
 }
 
-/** eval(interp) - protected evaluation of interpreters input stream
- *
- * @param interp  fLisp interpreter
- *
- * returns: result code of first exception or RESULT_OK if none
- *   happened
- *
- */
-ResultCode eval(Interpreter *interp)
-{
-    // gcRoots is needed by GC_TRACE
-    Object *gcRoots = interp->theRoot;
-    int result;
-
-    GC_TRACE(gcObject, nil);
-
-    for (;;) {
-
-        switch (setjmp(*interp->stackframe)) {
-        case FLISP_OK: break;
-
-        case FLISP_USER: return FLISP_USER;
-        case FLISP_READ_INCOMPLETE: return FLISP_READ_INCOMPLETE;
-        case FLISP_READ_INVALID: return FLISP_READ_INVALID;
-        case FLISP_WRONG_TYPE: return FLISP_WRONG_TYPE;
-        case FLISP_INVALID_VALUE: return  FLISP_INVALID_VALUE;
-        case FLISP_PARAMETER_ERROR: return  FLISP_PARAMETER_ERROR;
-        case FLISP_IO_ERROR: return FLISP_IO_ERROR;
-        case FLISP_OOM: return FLISP_OOM;
-        case FLISP_GC_ERROR: return FLISP_GC_ERROR;
-        default: return FLISP_ERROR; /* includes FLISP_ERROR itself */
-        }
-
-        *gcObject = nil;
-
-        if (peekNext(interp) == EOF) {
-            writeChar(interp->output, '\n');
-            interp->object = *gcObject;
-            return FLISP_OK;
-        }
-        *gcObject = readExpr(interp);
-        *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
-        writeObject(interp->output, *gcObject, true);
-        writeChar(interp->output, '\n');
-        if ((result = file_fflush(interp, interp->output))) {
-            exceptionWithObject(interp, interp->output, FLISP_IO_ERROR, "failed to fflush output stream, errno: %d", result);
-        }
-    }
-}
-
-
 /*
  * Public interface for embedding fLisp into an application.
  */
@@ -2413,13 +2398,64 @@ Interpreter *lisp_init(int argc, char **argv, char *library_path)
 
     return &flisp;
 }
+/** lisp_eval(interp) - protected evaluation of interpreters input stream
+ *
+ * @param interp  fLisp interpreter
+ *
+ * returns: result code of first exception or RESULT_OK if none
+ *   happened
+ *
+ */
+ResultCode lisp_eval(Interpreter *interp)
+{
+    // gcRoots is needed by GC_TRACE
+    Object *gcRoots = interp->theRoot;
+    int result;
 
-/** lisp_eval() - interpret a string in Lisp
+    GC_TRACE(gcObject, nil);
+
+    for (;;) {
+
+        switch (setjmp(*interp->stackframe)) {
+        case FLISP_OK: break;
+
+        case FLISP_USER: return FLISP_USER;
+        case FLISP_READ_INCOMPLETE: return FLISP_READ_INCOMPLETE;
+        case FLISP_READ_INVALID: return FLISP_READ_INVALID;
+        case FLISP_WRONG_TYPE: return FLISP_WRONG_TYPE;
+        case FLISP_INVALID_VALUE: return  FLISP_INVALID_VALUE;
+        case FLISP_PARAMETER_ERROR: return  FLISP_PARAMETER_ERROR;
+        case FLISP_IO_ERROR: return FLISP_IO_ERROR;
+        case FLISP_OOM: return FLISP_OOM;
+        case FLISP_GC_ERROR: return FLISP_GC_ERROR;
+        default: return FLISP_ERROR; /* includes FLISP_ERROR itself */
+        }
+
+        *gcObject = nil;
+
+        if (peekNext(interp) == EOF) {
+            writeChar(interp->output, '\n');
+            interp->object = *gcObject;
+            return FLISP_OK;
+        }
+        *gcObject = readExpr(interp);
+        *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
+        writeObject(interp->output, *gcObject, true);
+        writeChar(interp->output, '\n');
+        if ((result = file_fflush(interp, interp->output))) {
+            exceptionWithObject(interp, interp->output, FLISP_IO_ERROR, "failed to fflush output stream, errno: %d", result);
+        }
+    }
+}
+
+
+
+/** lisp_eval_string() - interpret a string in Lisp
  *
  * @param interp  Interpreter to use
  * @param input   string to evaluate
  *
- * Before calling `lisp_eval()` initialize:
+ * Before calling `lisp_eval_string()` initialize:
  * - interp->output: to an output stream, see file_fopen().
  * - interp->message: to an empty string
  * - interp->result:  to FLISP_OK
@@ -2434,30 +2470,33 @@ Interpreter *lisp_init(int argc, char **argv, char *library_path)
  * error message.
  *
  */
-ResultCode lisp_eval(Interpreter *interp, char * input)
+ResultCode lisp_eval_string(Interpreter *interp, char * input)
 {
     jmp_buf exceptionEnv;
     ResultCode result;
 
-    fl_debug(interp, "lisp_eval(\"%s\")", input);
+    fl_debug(interp, "lisp_eval_string(\"%s\")", input);
 
     interp->message[0] = '\0';
     interp->result = FLISP_OK;
 
+    if (nil == (interp->input = file_fopen(interp, input, "<")))
+        return interp->result;
+    
     interp->stackframe = &exceptionEnv;
 
-    // Note: can throw exception
-    interp->input = file_fopen(interp, input, "<");
-
-    result = eval(interp);
-    fl_debug(interp, "lisp_eval() => %d", result);
+    result = lisp_eval(interp);
+    fl_debug(interp, "lisp_eval_string() => %d", result);
     if (file_fflush(interp, interp->output)) {
         interp->result = FLISP_IO_ERROR;
         strncpy(interp->message, "failed to fflush output stream", sizeof(interp->message));
     }
     if (result)
-        fl_debug(interp, "lisp_eval() => error: %s", interp->message);
-    (void)file_fflush(interp, interp->debug);
+        fl_debug(interp, "lisp_eval_string() => error: %s", interp->message);
+    if (file_fflush(interp, interp->debug)) {
+        interp->result = FLISP_IO_ERROR;
+        strncpy(interp->message, "failed to fflush debug stream", sizeof(interp->message));
+    }
     return result;
 }
 
