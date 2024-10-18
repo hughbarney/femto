@@ -15,7 +15,7 @@ exposes the stream functionality to Lisp.
 A simplistic standalone Lisp interpreter can be built via the `flisp`
 target and a README.flisp.md file is provided.
 
-Code has been extensibly documented in the source.
+Code has been extensively documented in the source.
 
 
 ## Femto 2.19 11 October 2024
