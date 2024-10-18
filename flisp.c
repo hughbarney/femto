@@ -40,7 +40,6 @@ void fatal(char *msg)
 // - file output for error messages
 int repl(Interpreter *interp)
 {
-    ResultCode result;
     size_t i;
 
     writeString(interp->output, FL_NAME " " FL_VERSION "\n");
@@ -57,8 +56,8 @@ int repl(Interpreter *interp)
             writeString(stderrStream, "error: more then " CPP_STR(INPUT_BUFSIZ) "read, skipping...\n");
             continue;
         }
-        result = lisp_eval_string(interp, input);
-        if (result) {
+
+        if (lisp_eval_string(interp, input)) {
             writeString(stderrStream, "error: ");
             if (interp->object != nil) {
                 writeString(stderrStream, "object '");
@@ -107,16 +106,15 @@ int main(int argc, char **argv)
     if (strlen(init_file)) {
         if (nil == (interp->input = file_fopen(interp, init_file, "r")))
             fprintf(stderr, "failed to open inifile %s:%d: %s\n", init_file, interp->result, interp->message);
-
-        interp->stackframe = &exceptionEnv;
-        result = lisp_eval(interp);
-        // Note: if we could implement the repl in fLisp itself we'd bail out here.
-        if (result)
-            fprintf(stderr, "failed to load inifile %s:%d: %s\n", init_file, interp->result, interp->message);
-        else
+        else {
+            interp->stackframe = &exceptionEnv;
+            // Note: if we could implement the repl in fLisp itself we'd bail out here.
+            if (lisp_eval(interp))
+                fprintf(stderr, "failed to load inifile %s:%d: %s\n", init_file, interp->result, interp->message);
+            interp->stackframe = NULL;
             if (file_fclose(interp, interp->input))
                 fprintf(stderr, "failed to close inifile %s:%d %s\n", init_file, interp->result, interp->message);
-        interp->stackframe = NULL;
+        }
     }
     if (nil == (interp->input = file_fopen(interp, "<0", "r")))
         fatal("failed to open input stream");
