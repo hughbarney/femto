@@ -7,23 +7,23 @@
 #include <stdio.h>
 #include "header.h"
 
-
 void load_config(); /* Load configuration/init file */
 void gui(); /* The GUI loop used in interactive mode */
 
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
 
+Interpreter *flisp_interp;
 
 int main(int argc, char **argv)
 {
-    char *envv, *flib;
+    char *envv, *library_path, *init_file;
 
     batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
     debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
 
-    if ((flib=getenv("FEMTOLIB")) == NULL)
-        flib = CPP_XSTR(E_SCRIPTDIR);
+    if ((library_path=getenv("FEMTOLIB")) == NULL)
+        library_path = CPP_XSTR(E_SCRIPTDIR);
 
     /* buffers */
     setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
@@ -36,18 +36,23 @@ int main(int argc, char **argv)
 
     /* Lisp */
     setup_keys();
-    if (init_lisp(argc, argv, flib))
+    flisp_interp = lisp_init(argc, argv, library_path);
+    if (flisp_interp == NULL)
         fatal("fLisp initialization failed");
 
-    /* Init file */
-    char *init_file, cmd[TEMPBUF];
-
+    if (debug_mode)
+        if (nil == (flisp_interp->debug = file_fopen(flisp_interp, "debug.out", "a")))
+            fatal("could not open debug stream");
+    
     if ((init_file = getenv("FEMTORC")) == NULL)
         init_file = CPP_XSTR(E_INITFILE);
 
-    snprintf(cmd, TEMPBUF, "(load \"%s\")", init_file);
-    (void)call_lisp(cmd);
-
+    if (strlen(init_file)) {
+        // Note: not lisp_eval()'ing it, because we want to have consistent error handling.
+        eval_string(true, "(load \"%s\")", init_file);
+        close_eval();
+    }
+    
     /* GUI */
     if (!batch_mode) gui();
 
@@ -55,6 +60,46 @@ int main(int argc, char **argv)
     // Note: exit frees all memory, do we need this here?
     if (scrap != NULL) free(scrap);
     return 0;
+}
+
+char *eval_string(int do_format, char *format, ...)
+{
+    ResultCode result;
+    char buf[INPUT_FMT_BUFSIZ], *input;
+    int size;
+    va_list args;
+
+    if (do_format) {
+        va_start(args, format);
+        size = vsnprintf (buf, sizeof(buf), format, args);
+        va_end(args);
+        if (size > INPUT_FMT_BUFSIZ) {
+            msg("input string larger then %d", INPUT_FMT_BUFSIZ);
+            return NULL;
+        }
+        input = buf;
+    } else {
+        input = format;
+    }
+
+    flisp_interp->output = file_fopen(flisp_interp, "", ">");
+    if ((result = lisp_eval_string(flisp_interp, input)))
+        msg("error: %s", flisp_interp->message);
+    if (debug_mode) {
+        if (result)
+            debug("error: %s\n", flisp_interp->message);
+        debug(flisp_interp->output->buf);
+    }
+    if (result) {
+        close_eval();
+        return NULL;
+    }
+    return flisp_interp->output->buf;
+}
+void close_eval()
+{
+    if (file_fclose(flisp_interp, flisp_interp->output))
+        debug("error: closing output stream");
 }
 
 void gui()
