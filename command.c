@@ -3,6 +3,7 @@
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 
+#include <signal.h>
 #include "header.h"
 
 void beginning_of_buffer()
@@ -45,6 +46,11 @@ void quit()
     done = 1;
 }
 
+void suspend()
+{
+    raise(SIGTSTP);
+}
+
 void redraw()
 {
     clear();
@@ -70,7 +76,7 @@ void right()
 
 
 /*
- * work out number of bytes based on first byte 
+ * work out number of bytes based on first byte
  *
  * 1 byte utf8 starts 0xxxxxxx  00 - 7F : 000 - 127
  * 2 byte utf8 starts 110xxxxx  C0 - DF : 192 - 223
@@ -134,7 +140,7 @@ void forward_page()
     while (0 < curbp->b_row--)
         down();
     /* this stops a reframe in display(), and epage is recalculated during display() */
-    curbp->b_epage = pos(curbp, curbp->b_ebuf); 
+    curbp->b_epage = pos(curbp, curbp->b_ebuf);
 }
 
 void backward_page()
@@ -175,7 +181,7 @@ void insert()
     } else {
         the_char[0] = *input == '\r' ? '\n' : *input;
         the_char[1] = '\0'; /* null terminate */
-        *curbp->b_gap++ = the_char[0]; 
+        *curbp->b_gap++ = the_char[0];
         curbp->b_point = pos(curbp, curbp->b_egap);
         /* the point is set so that and undo will backspace over the char */
         add_undo(curbp, UNDO_T_INSERT, curbp->b_point, the_char, NULL);
@@ -603,6 +609,7 @@ void match_parens()
     if (buffer_is_empty(bp))
         return;
 
+    // Note: valgrind: Invalid read of size 1
     char p = *ptr(bp, bp->b_point);
 
     switch(p) {
@@ -743,27 +750,36 @@ point_t get_point_max()
  * being sent to the current buffer which means the file
  * contents could get corrupted if you are running commands
  * on the buffers etc.
- * 
+ *
  * If the output is too big for the message line then send it to
  * a temp buffer called *lisp_output* and popup the window
  *
  */
 void repl()
 {
-    char *output;
     buffer_t *bp;
+    char *output;
 
-    if (getinput("> ", response_buf, TEMPBUF, F_CLEAR)) {
-        output = call_lisp(response_buf);
+    if (!getinput("> ", response_buf, TEMPBUF, F_CLEAR))
+        return;
 
-        if (strlen(output) < 60) {
-            msg(output);
-        } else {
-            bp = find_buffer("*lisp_output*", TRUE);
-            append_string(bp, output);
-            (void)popup_window(bp->b_bname);
-        }
+    if ((output = eval_string(false, response_buf)) == NULL)
+        return;
+
+    // Note: Emacs puts errors and output always into the *Messages*
+    //       buffer, plus errors are shown in the message line.
+    //       Decision about whether to insert the result into the
+    //       buffer or show it in the message line is done based on
+    //       key pressed/function invoked
+    
+    if (strlen(output) < 60) {
+        msg(output);
+    } else {
+        bp = find_buffer("*lisp_output*", TRUE);
+        append_string(bp, output);
+        (void)popup_window(bp->b_bname);
     }
+    close_eval_output();
 }
 
 /*
@@ -772,7 +788,7 @@ void repl()
 void eval_block()
 {
     char *output;
-
+    
     if (curbp->b_mark == NOMARK || curbp->b_mark >= curbp->b_point) {
         msg("no block defined");
         return;
@@ -782,33 +798,27 @@ void eval_block()
     assert(scrap != NULL);
     assert(strlen((char *)scrap) > 0);
 
-    output = call_lisp((char *)scrap);
     insert_string("\n");
+
+    if ((output = eval_string(false, (char *)scrap)) == NULL)
+        return;
+    // Note: femto used to insert error messages in the current buffer. Now we don't anymore.
     insert_string(output);
+    // Note: we'd segfault here if m-c-]. 
+    //close_eval_output();
 }
 
 /* this is called for every user key setup by a call to set_key */
 void user_func()
 {
-    char *output;
-    char funcname[80];
-
     assert(key_return != NULL);
     if (0 == strcmp(key_return->k_funcname, E_NOT_BOUND)) {
         msg(E_NOT_BOUND);
         return;
     }
 
-    sprintf(funcname, "(%s)", key_return->k_funcname);
-    output = call_lisp(funcname);
-
-    /* show errors on message line */
-    if (NULL != strstr(output, "error:")) {
-        char buf[81];
-        strncpy(buf, output, 80);
-        buf[80] ='\0';
-        msg(buf);
-    }    
+    if (eval_string(true, "(%s)", key_return->k_funcname) != NULL)
+        close_eval_output();
 }
 
 /*

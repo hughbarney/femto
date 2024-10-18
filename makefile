@@ -21,15 +21,27 @@ DATADIR = $(PREFIX)/share
 SCRIPTDIR = "$(DATADIR)/femto"
 INITFILE = "$(SCRIPTDIR)/femto.rc"
 
-OBJ     = command.o display.o complete.o data.o gap.o key.o search.o buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o lisp.o main.o
+OBJ     = command.o display.o complete.o data.o gap.o key.o search.o buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o femto_lisp.o main.o
+
+FLISP_OBJ = flisp.o lisp.o
+
+BINARIES = femto flisp
+
+LISPFILES = femto.rc lisp/defmacro.lsp lisp/bufmenu.lsp lisp/dired.lsp lisp/grep.lsp lisp/git.lsp lisp/oxo.lsp \
+	lisp/flisp.lsp lisp/femto.lsp lisp/info.lsp
+
+all: femto docs/flisp.md
 
 femto: $(OBJ)
 	$(LD) $(LDFLAGS) -o femto $(OBJ) $(LIBS)
 
+flisp: $(FLISP_OBJ)
+	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ)
+
 complete.o: complete.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c complete.c
 
-command.o: command.c header.h
+command.o: command.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c command.c
 
 data.o: data.c header.h
@@ -59,7 +71,10 @@ buffer.o: buffer.c header.h
 undo.o: undo.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c undo.c
 
-funcmap.o: funcmap.c header.h
+femto_lisp.o: lisp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -c lisp.c -o $@
+
+funcmap.o: funcmap.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c funcmap.c
 
 utils.o: utils.c header.h
@@ -69,16 +84,34 @@ hilite.o: hilite.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c hilite.c
 
 lisp.o: lisp.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c lisp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FILE_EXTENSION -c lisp.c
 
-main.o: main.c header.h
+main.o: main.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	  -D E_SCRIPTDIR=$(SCRIPTDIR) \
 	  -D E_INITFILE=$(INITFILE) \
 	  -c main.c
 
-docs/flisp.md: pdoc/flisp.html
-	pandoc -o $@ -t gfm $<
+flisp.o: flisp.c lisp.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+
+measure: strip FORCE
+	@echo Total
+	@echo binsize: $$(set -- $$(ls -l femto); echo $$5)
+	@echo linecount: $$(cat *.c *.h *.rc lisp/*.lsp | wc -l)
+	@echo sloccount: $$(set -- $$(which sloccount >/dev/null && { sloccount *.c *.h *.rc lisp/*.lsp | grep ansic=; }); echo $$3)
+	@echo files: $$(ls *.c *.h *.rc lisp/*.lsp | wc -l)
+	@echo C-files: $$(ls *.c *.h | wc -l)
+	@echo Minimum
+	@echo linecount: $$(cat *.c *.h $(LISPFILES) | wc -l) 
+	@echo sloccount: $$(set -- $$(which sloccount >/dev/null && { sloccount *.c *.h *.rc $(LISPFILES) | grep ansic=; }); echo $$3)
+	@echo files: $$(ls *.c *.h $(LISPFILES) | wc -l) 
+
+strip: femto FORCE
+	strip femto
+
+docs/flisp.md: pdoc/flisp.html pdoc/h2m.lua
+	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
 
 README.html: README.md
 	pandoc -o $@ -f gfm $<
@@ -91,10 +124,17 @@ doxygen: FORCE
 test: femto FORCE
 	(cd test && ./run)
 
+run: femto FORCE
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto
+
+val: femto FORCE
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1 valgrind ./femto 2> val.log
+
 clean: FORCE
-	-$(RM) -f $(OBJ) femto
+	-$(RM) -f $(OBJ) $(FLISP_OBJ) $(BINARIES)
 	-$(RM) -rf doxygen
 	-$(RM) -f docs/flisp.md README.html
+	-$(RM) -f val.log debug.out
 
 install: femto femto.rc FORCE
 	-$(MKDIR) -p $$DESTDIR$(BINDIR)

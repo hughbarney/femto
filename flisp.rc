@@ -1,16 +1,5 @@
 ;; -*-Lisp-*-
 ;;
-;; FEMTO an extended Atto Emacs with a tiny lisp extension language
-;; hughbarney AT googlemail.com
-;;
-;; The editor provides only basic buffer movement and edit functions
-;; everything else is done by extending the user interface using the
-;; lisp extension language. Functions can be bound to keys using set-key.
-;; For example: (set-key "c-k" "(kill-to-eol)")
-;;
-
-;; Core fLisp extensions - this is a copy of the core.lsp library
-
 (setq list (lambda args args))
 
 (setq defmacro
@@ -70,14 +59,20 @@
 
 (provide 'core)
 
-;; Batch mode processing and Femto editor startup
-
 (setq
  ~ (os.getenv "HOME")
- env-batch-mode (os.getenv "FEMTO_BATCH"))
+ config_file (concat ~ "/" ".config/flisp/flisp.rc"))
 
-(cond
-  ((eq "0" env-batch-mode) (require 'startup))
-  (env-batch-mode)
-  (t (require 'startup)))
+(defun getopts (opts pos)
+  (setq o (car opts))
+  (cond
+    ((null o))
+    (t
+     (load o)
+     (getopts (cdr opts) 0))))
 
+(require 'flisp)
+(require 'stdlib)
+
+;; if not found we get not past this but rather err out: (load config_file)
+(getopts argv 0)
