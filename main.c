@@ -14,6 +14,7 @@ void gui(); /* The GUI loop used in interactive mode */
 #define CPP_STR(s) #s
 
 Interpreter *flisp_interp;
+FILE *debug_fp = NULL;
 
 int main(int argc, char **argv)
 {
@@ -25,6 +26,22 @@ int main(int argc, char **argv)
     if ((library_path=getenv("FEMTOLIB")) == NULL)
         library_path = CPP_XSTR(E_SCRIPTDIR);
 
+
+    /* Lisp interpreter */
+    flisp_interp = lisp_init(argc, argv, library_path);
+    if (flisp_interp == NULL)
+        fatal("fLisp initialization failed");
+
+    if ((init_file = getenv("FEMTORC")) == NULL)
+        init_file = CPP_XSTR(E_INITFILE);
+
+    if (debug_mode) {
+        if (nil == (flisp_interp->debug = file_fopen(flisp_interp, "debug.out", "w")))
+            fatal("could not open debug stream");
+        debug_fp = flisp_interp->debug->fd;
+    }
+    debug("start\n");
+
     /* buffers */
     setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
     curbp = find_buffer(str_scratch, TRUE);
@@ -34,23 +51,14 @@ int main(int argc, char **argv)
     wheadp = curwp = new_window();
     associate_b2w(curbp, curwp);
 
-    /* Lisp */
+    /* Lisp startup */
     setup_keys();
-    flisp_interp = lisp_init(argc, argv, library_path);
-    if (flisp_interp == NULL)
-        fatal("fLisp initialization failed");
-
-    if (debug_mode)
-        if (nil == (flisp_interp->debug = file_fopen(flisp_interp, "debug.out", "a")))
-            fatal("could not open debug stream");
     
-    if ((init_file = getenv("FEMTORC")) == NULL)
-        init_file = CPP_XSTR(E_INITFILE);
-
     if (strlen(init_file)) {
-        // Note: not lisp_eval()'ing it, because we want to have consistent error handling.
-        eval_string(true, "(load \"%s\")", init_file);
-        close_eval();
+        // Note: not lisp_eval()'ing it, because we want to have
+        //     consistent error handling.
+        if (eval_string(true, "(load \"%s\")", init_file) != NULL)
+            close_eval_output();
     }
     
     /* GUI */
@@ -64,7 +72,6 @@ int main(int argc, char **argv)
 
 char *eval_string(int do_format, char *format, ...)
 {
-    ResultCode result;
     char buf[INPUT_FMT_BUFSIZ], *input;
     int size;
     va_list args;
@@ -82,22 +89,26 @@ char *eval_string(int do_format, char *format, ...)
         input = format;
     }
 
-    flisp_interp->output = file_fopen(flisp_interp, "", ">");
-    if ((result = lisp_eval_string(flisp_interp, input)))
+    if (nil == (flisp_interp->output = file_fopen(flisp_interp, "", ">")))
+        fatal("could not open string output stream");
+
+    if ((lisp_eval_string(flisp_interp, input)))
         msg("error: %s", flisp_interp->message);
     if (debug_mode) {
-        if (result)
+        if (flisp_interp->result)
             debug("error: %s\n", flisp_interp->message);
-        debug(flisp_interp->output->buf);
     }
-    if (result) {
-        close_eval();
+    debug(flisp_interp->output->buf);
+    if (flisp_interp->result) {
+        // Note: close output buf...? if we get segfaults.
+        //close_eval_output();
         return NULL;
     }
     return flisp_interp->output->buf;
 }
-void close_eval()
+void close_eval_output()
 {
+    assert(flisp_interp->output->fd != NULL);
     if (file_fclose(flisp_interp, flisp_interp->output))
         debug("error: closing output stream");
 }
@@ -185,14 +196,15 @@ void debug(char *format, ...)
     char buffer[256];
     va_list args;
 
-    if (!debug_mode) return;
+    if (debug_fp == NULL) return;
+//    if (!debug_mode) return;
 
     va_start (args, format);
 
-    static FILE *debug_fp = NULL;
+//    static FILE *debug_fp = NULL;
 
-    if (debug_fp == NULL)
-        debug_fp = fopen("debug.out","w");
+//    if (debug_fp == NULL)
+//        debug_fp = fopen("debug.out","w");
 
     vsnprintf (buffer, sizeof(buffer), format, args);
     va_end(args);
