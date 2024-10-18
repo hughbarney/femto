@@ -1,3 +1,34 @@
+## Femto 2.20 18 October 2024
+
+fLisp input/output is now based on libc file I/O instead of the
+original Stream emulation.  The interpreter is extended with a stream
+object type. The load_file() function has been eliminated, the (load)
+function switches streams instead.
+
+The Lisp reader now does overflow/underflow checking of numbers.
+
+The build system allows to enable interpreter extensions at build
+time, the editor functions are available via the
+FLISP_EDITOR_EXTENSION and there is a demo FLISP_FILE_EXTENSION, which
+exposes the stream functionality to Lisp.
+
+A simplistic standalone Lisp interpreter can be built via the `flisp`
+target and a README.flisp.md file is provided.
+
+Code has been extensibly documented in the source.
+
+
+## Femto 2.19 11 October 2024
+
+Change in the public C interface of the fLisp interpreter, which
+allows for improved error handling.  The rework also resolved some
+segmentation fault issues and uncovered a (not yet fixed) bug in the
+garbage collector.  To mitigate, the default object memory size is
+increased to 4 MByte.
+
+The documentation is corrected and vastly extended.
+
+
 ## Femto 2.18 27 March 2024
 
 This version features a major refactoring of the Lisp related code,
@@ -23,8 +54,13 @@ Tiny-Lisp as in femto code.
 ## Femto 2.17 08 December 2023
 * When the environment variable FEMTO_BATCH exists, femto runs in batch mode
 * When the environment variable FEMTO_DEBUG exists, femto writes some internal logging to debug.log
-* When the environment variable FEMTORC is set, femto interprets its value as the path to the init file and tries to load it instead of the default init_file.
-* A new primitive (signal 'error-symbol error-details) has been added. It throws an exception. The interface is built analogous to Elisp. It was just used for testing, but might be useful in the future anyway.
+* When the environment variable FEMTORC is set, femto interprets its
+  value as the path to the init file and tries to load it instead of
+  the default init_file.
+* A new primitive (signal 'error-symbol error-details) has been
+  added. It throws an exception. The interface is built analogous to
+  Elisp. It was just used for testing, but might be useful in the
+  future anyway.
 
 ## Femto 2.16 08 December 2023
 * code reformatted into K&R using 4 spaces for indents

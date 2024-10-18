@@ -146,6 +146,7 @@ void setup_keys()
     set_key_internal("c-v",     "forward-page"          , "\x16", forward_page);
     set_key_internal("c-w",     "kill-region"           , "\x17", kill_region);
     set_key_internal("c-y",     "yank"                  , "\x19", yank);
+    set_key_internal("c-z",     "suspend"               , "\x1A", suspend);
 
     set_key_internal("esc-!",   "shell-command"         , "\x1B\x21", user_func);
     set_key_internal("esc-a",   "apropos"               , "\x1B\x61", apropos);

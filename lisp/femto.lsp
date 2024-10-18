@@ -1,8 +1,12 @@
+;; -*-Lisp-*-
 ;;
 ;; Basic Femto extensions
 ;;
 
 (require 'flisp)
+
+(defun load-script(fn)
+  (load (concat script_dir "/" fn)))
 
 (defun repeat (n func)  
   (cond ((> n 0) (func) (repeat (- n 1) func))))
@@ -167,5 +171,22 @@
      (cond
        ((eq -1 start_p) (message "could not find start of s-expression"))
        ((eq -1 end_p) (message "could not find end of s-expression"))) )))
+
+(defun transpose-chars ()
+  (cond 
+    ((= (get-point) 0) (message "Beginning of buffer"))
+    (t 
+      (cond
+        ((eq (get-char) "\n")
+	  (setq p (get-point))
+          (backward-char)
+          (transpose-chars)
+          (set-point p))
+        (t
+          (backward-char)
+          (setq c (get-char))
+          (delete)
+          (forward-char)
+          (insert-string c))))))
 
 (provide 'femto)

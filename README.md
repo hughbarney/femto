@@ -1,28 +1,52 @@
 # Femto
-Femto is an extended version of Atto Emacs with a Tiny Lisp extension languauge
+
+Femto is an extended version of Atto Emacs with a tiny Lisp extension
+language.
 
 ![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-hilite.png)
 
 ![Femto screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-startup.jpg)
 
-> A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing left to take away.
+> A designer knows he has achieved perfection not when there is
+> nothing left to add, but when there is nothing left to take away.
 > -- <cite>Antoine de Saint-Exupery</cite>
 
 ## Goals of Femto Emacs
 
-* To be an extendable version of the Atto Emacs editor using a Tiny Lisp extension language
-* Provide a number of useful extension packages written in Tiny Lisp (these include an interface to **git** (similar to GNU Emacs Magit), a small version of **dired**, a buffer management menu (**buffer menu**), **defmacro** allows for a macro to be recorded and invoked using c-x e, and an interface to **grep**.
-* Be easy to understand without extensive study (to encourage further experimentation).
+* To be an extendable version of the Atto Emacs editor using a Tiny
+  Lisp extension language
+* Provide a number of useful extension packages written in Tiny Lisp
+  (these include an interface to **git** (similar to GNU Emacs Magit),
+  a small version of **dired**, a buffer management menu (**buffer
+  menu**), **defmacro** allows for a macro to be recorded and invoked
+  using c-x e, and an interface to **grep**.
+* Be easy to understand without extensive study (to encourage further
+  experimentation).
 
 
 ## What does Femto bring to the party of Text Editors
 
-As far as I know Femto is the only Emacs style editor to provide a macro recorder that generates usable Lisp code that can then be used to build a larger, more complex utility.   Whilst GNU Emacs has a macro recorder facility it only allows you to dump out the keystrokes used during macro recording.  Femto does this by writing the lisp code to a text buffer called **macro**.  Though I have tried dozens of text editors over the years (mostly on PCs, but a few on mini and mainframe computers) I am not aware of any other editor that works this way.  This feature was born out of the principle of keeping a small editor code written in C and where possible using Lisp to implement new features.  The standard Emacs macro keystrokes [C-x (, C-c ), C-x e] are all written in Lisp in the file examples/defmacro.lsp. This meant that no special C code was needed in Femto to know when it was in macro mode or not.
+As far as I know Femto is the only Emacs style editor to provide a
+macro recorder that generates usable Lisp code that can then be used
+to build a larger, more complex utility.  Whilst GNU Emacs has a macro
+recorder facility it only allows you to dump out the keystrokes used
+during macro recording.  Femto does this by writing the lisp code to a
+text buffer called **macro**.  Though I have tried dozens of text
+editors over the years (mostly on PCs, but a few on mini and mainframe
+computers) I am not aware of any other editor that works this way.
+This feature was born out of the principle of keeping a small editor
+code written in C and where possible using Lisp to implement new
+features.  The standard Emacs macro keystrokes [C-x (, C-c ), C-x e]
+are all written in Lisp in the file examples/defmacro.lsp. This meant
+that no special C code was needed in Femto to know when it was in
+macro mode or not.
 
 
 ## Why the name Femto?
 
-The small Emacs naming scheme appears to use sub-unit prefixes in decending order with each further reduction of functionality. The Nano and Pico Emacs editors have been around for a while.
+The small Emacs naming scheme appears to use sub-unit prefixes in
+decending order with each further reduction of functionality. The Nano
+and Pico Emacs editors have been around for a while.
 
 * Nano means 10 to the power of minus 9
 * Pico means 10 to the power of minus 12 
@@ -31,19 +55,40 @@ The small Emacs naming scheme appears to use sub-unit prefixes in decending orde
 * Zepto means 10 to the power of minus 21
 * Zep is smaller version of Zepto Emacs 
 
-In Defining Atto as the lowest functional Emacs I have had to consider the essential feature set that makes Emacs, 'Emacs'. I have defined this point as a basic Emacs command set and key bindings; the ability to edit multiple files (buffers), and switch between them; edit the buffers in mutliple windows, cut, copy and paste; forward and reverse searching, a replace function and basic syntax hilighting. The proviso being that all this will fit in less than 2000 lines of C.
+In Defining Atto as the lowest functional Emacs I have had to consider
+the essential feature set that makes Emacs, 'Emacs'. I have defined
+this point as a basic Emacs command set and key bindings; the ability
+to edit multiple files (buffers), and switch between them; edit the
+buffers in mutliple windows, cut, copy and paste; forward and reverse
+searching, a replace function and basic syntax hilighting. The proviso
+being that all this will fit in less than 2000 lines of C.
 
-Femto is an extended version of Atto Emacs with its own extension languauge
+Femto is an extended version of Atto Emacs with its own extension
+language.
 
 
 ## History
 
-* In late 2015 Hugh Barney wrote the Atto editor 'A minimum functioning Emacs is less than 2000 lines of C'.  Atto was based on Anthony Howe's editor (commonly known as Anthony's Editor or AE, [2]). 
+* In late 2015 Hugh Barney wrote the Atto editor 'A minimum
+  functioning Emacs is less than 2000 lines of C'.  Atto was based on
+  Anthony Howe's editor (commonly known as Anthony's Editor or AE,
+  [2]).
 * **Femto** is based on the Atto codebase [0]
-* **Femto** was originally an intermediate project to form a codebase for the FemtoEmacs Editor [8], [9] which was a collaboration between Hugh Barney, Ed Costa and Lucas Guerra.  FemtoEmacs uses Jeff Bezanson's Femtolisp LISP [10] implementation as the basis for its extension language.  However the Femtolisp codebase is in excess of 12K line of code and fairly difficult to understand how to use it inside an embedded application.
-* In late 2016 Hugh Barney decided to look for a smaller lisp implementation for Femto and settled on Tiny-Lisp[7] by Mattias Pirstitz.
-* **Zepl** was an initial project that established the suitability of Tiny-Lisp for use within an Emacs type editor. The results surpassed expectations.
-* In late 2017 Hugh Barney decided to return to the **Femto** editor and extend it using Tiny-Lisp.
+* **Femto** was originally an intermediate project to form a codebase
+  for the FemtoEmacs Editor [8], [9] which was a collaboration between
+  Hugh Barney, Ed Costa and Lucas Guerra.  FemtoEmacs uses Jeff
+  Bezanson's Femtolisp LISP [10] implementation as the basis for its
+  extension language.  However the Femtolisp codebase is in excess of
+  12K line of code and fairly difficult to understand how to use it
+  inside an embedded application.
+* In late 2016 Hugh Barney decided to look for a smaller lisp
+  implementation for Femto and settled on Tiny-Lisp[7] by Mattias
+  Pirstitz.
+* **Zepl** was an initial project that established the suitability of
+  Tiny-Lisp for use within an Emacs type editor. The results surpassed
+  expectations.
+* In late 2017 Hugh Barney decided to return to the **Femto** editor
+  and extend it using Tiny-Lisp.
 * In 2023/24 Georg Lehner refactored the Lisp infrastructure.
 
 For a full version history please refer to the file [CHANGE.LOG.md](./CHANGE.LOG.md)
@@ -51,28 +96,30 @@ For a full version history please refer to the file [CHANGE.LOG.md](./CHANGE.LOG
 
 ## Comparisons with Other Emacs Implementations
 
-Femto has almost the same level of functionality as MicroEmacs 3.10 for a codebase 1/10 of the size.
+Femto has almost the same level of functionality as MicroEmacs 3.10
+for a codebase about 15% of the size.
 
     Editor         Binary   BinSize     KLOC  Files
 
-    atto           atto       33002     1.9k     10
-    pEmacs         pe         59465     5.7K     16
-    Esatz-Emacs    ee         59050     5.7K     14
-    femto          femto     108408     6.7k     18/31 **
-    GNOME          GNOME      55922     9.8k     13
-    Zile           zile      257360    11.7k     48
-    Mg             mg        585313    16.5K     50
-    uEmacs/Pk      em        147546    17.5K     34
-    Pico           pico      438534    24.0k     29
-    Nano           nano      192008    24.8K     17
-    jove           jove      248824    34.7k     94
-    Qemacs         qe        379968    36.9k     59
-    ue3.10         uemacs    171664    52.4K     16 ++
-    GNUEmacs       emacs   14632920   358.0k    186
+    atto           atto       33002     1.9k      10
+    pEmacs         pe         59465     5.7K      16
+    Esatz-Emacs    ee         59050     5.7K      14
+    femto          femto     120872     8.9k/6.3k 20/30 **
+    GNOME          GNOME      55922     9.8k      13
+    Zile           zile      257360    11.7k      48
+    Mg             mg        585313    16.5K      50
+    uEmacs/Pk      em        147546    17.5K      34
+    Pico           pico      438534    24.0k      29
+    Nano           nano      192008    24.8K      17
+    jove           jove      248824    34.7k      94
+    Qemacs         qe        379968    36.9k      59
+    ue3.10         uemacs    171664    52.4K      16 ++
+    GNUEmacs       emacs   14632920   358.0k     186
 
 Since femto 2.12 C code has been moved out to Lisp. The first number
-in the files count are the C-files plus the minimal required femto.rc
-Lisp file. The second number includes all provided Lisp files.
+in the KLOC column is the line count, the second the sloccount. The
+first number in the files count are the C-files, the second number
+includes the required Lisp files.
 
 
 ## Femto Key Bindings
@@ -92,11 +139,13 @@ Lisp file. The second number includes all provided Lisp files.
     C-P   previous line
     C-R   search-backwards
     C-S	  search-forwards
+	C-T   transpose-chars
     C-U   Undo
     C-V   Page Down
     C-W   Kill Region (Cut)
     C-X   CTRL-X command prefix
     C-Y   Yank (Paste)
+	C-Z   suspend
 
     M-<   Start of file
     M->   End of file
@@ -159,8 +208,6 @@ Generally, the procedure for copying or moving text is:
     C-R at the search prompt will search backwards, will wrap at start of the buffer
     ESC will escape from the search prompt and return to the point of the match
     C-G abort the search and return to point before the search started
-
-
 
 ## Lisp Interaction
 
@@ -229,12 +276,15 @@ compile time by changing SCRIPTDIR.  At startup `femto` overrides the
 default with the value of the environment variable FEMTOLIB if set.
 
 
+<!-- Batch mode is currently not available and might be deprecated in -->
+<!-- future versions -->
+<!--
 ## Batch Mode
 
 If the environment variable FEMTO_BATCH exists and is not set to `0`
 batch mode is enabled.  In batch mode the GUI is not started up and
 all Lisp output is sent to `stdout`.
-
+-->
 
 ## Debugging
 
@@ -246,16 +296,53 @@ invocations of the `log-debug` Lisp primitive.
 
 ## Basic Femto Extension
 
-`femto.rc` and `femto.lsp` extend the Lisp editor and provide basic editor functionality.
+`femto.rc` implements a simple library loader and handles batch
+mode. It provides the 'core' functionality.
+
+Standard Lisp function:
+
+* `defmacro`, `defun`, `string`, `concat`, `memq`, 
+
+Lisp library functions:
+
+* `require` auto-loads a 'feature' from the library if not already
+  loaded.
+* `provides` is used to specify a 'feature' in a library file, it
+  must be the same as the filename without the '.lsp' extension.
+
+`flisp.lsp` complements commonly known standard lisp functions:
+
+* `not`, `listp`, `and`, `map1`, `or`, `reduce`, `max`, `min`, `nthcdr`
+
+`femto.lsp` extend the Lisp editor and provide basic editor functionality.
 
 * `load-script` *`file`* - load file from script directory.
-* `edit-config` - open user specific configuration file in Femto.
 * `delete-next-word`, `delete-previous-word`, `kill-to-eol` - For Emacs like key bindings
 * `describe-key`, `find_end_p`, `find_start_p`, `find_and_eval_sexp`, `show-startup-message`
-* `concat` *`args`*, `string.trim.front` *`s`*, `string.trim.back` *`s`*, `string.trim` *`s`*, `shrink` *`s`* - string operations
-* `max` *`a b`*, `min` *`a b`*, `repeat` *`n func`* - Lisp functions
+* `string.trim.front` *`s`*, `string.trim.back` *`s`*, `string.trim` *`s`*, `shrink` *`s`* - string operations
+* `repeat` *`n func`* - Lisp functions
 * `is_ctl_g` *`k`*, `is_escape` *`k`*, `is_backspace` *`k`*, `is_ctl_s` *`k`*, `is_control_char` *`k`* - helper functions
-* `shell-command` - backwards compatibility wrapper for `system`.
+* `shell-command` - backwards compatibility wrapper for `system`,
+  reads command line interactively.
+* `shell-exec` *`command`* - convenience wrapper for `system`, used by `shell-command`.
+* `insert-file` - prompts for a file name with incremental search and
+  inserts it after the point.
+* `describe-key`
+* `find_start_p`, `find_end_p`, `find_and_eval_sexp` - Lisp evaluation
+  in buffers.
+* `transpose-chars` - swap current end previous character.
+
+`startup.lsp` loads extensions, creates key bindings for them, shows
+the startup message, loads the user specified configuration file and
+processes the command line arguments.  `~/.config/femto/femto.rc`.  It
+defines the following functions:
+
+* `getopts` *`opts`* *`pos`* - process commandline options starting
+  from position pos.
+* `show-startup-message` - shows the startup banner in the \*scratch* buffer.
+* `edit-config` - open user specific configuration file in Femto.
+* `show-info` - load the `info.lsp` file.
+
 
 ## Femto Extensions
 
@@ -346,7 +433,11 @@ The following enhancements are envisaged.
 
 ## Known Issues
 
-Goto-line will fail to go to the very last line.  This is a special case that could easily be fixed.
+Goto-line will fail to go to the very last line.  This is a special
+case that could easily be fixed.
+
+Adding a line at the bottom of a window will hide the line until the
+cursor moves up and down again or the screen is refreshed.
 
 
 ## Coding Style
