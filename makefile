@@ -127,10 +127,14 @@ test: femto FORCE
 run: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto
 
+val: femto FORCE
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1 valgrind ./femto 2> val.log
+
 clean: FORCE
 	-$(RM) -f $(OBJ) $(FLISP_OBJ) $(BINARIES)
 	-$(RM) -rf doxygen
 	-$(RM) -f docs/flisp.md README.html
+	-$(RM) -f val.log debug.out
 
 install: femto femto.rc FORCE
 	-$(MKDIR) -p $$DESTDIR$(BINDIR)

@@ -489,7 +489,7 @@ extern window_t *split_current_window();
 
 /* fLisp interpreter used for femto */
 extern char *eval_string(int, char *, ...);
-extern void close_eval();
+extern void close_eval_output();
 
 
 /*
