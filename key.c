@@ -180,17 +180,21 @@ void setup_keys()
     set_key_internal("esc-;",     "exec-lisp-command"   , "\x1B\x3B", repl); // femto
     set_key_internal("esc-.",     "user-func"           , "\x1B\x2E", user_func);
 
+    // rmkx mode
     set_key_internal("up ",       "previous-line",        "\x1B\x5B\x41", up);
     set_key_internal("down",      "next-line",            "\x1B\x5B\x42", down);
     set_key_internal("left",      "backward-char",        "\x1B\x5B\x44", left);
     set_key_internal("right",     "forward-char",         "\x1B\x5B\x43", right);
-    // rmkx mode
     set_key_internal("home",      "beginning-of-line",    "\x1B\x5B\x48", lnbegin);
     set_key_internal("end",       "end-of-line",          "\x1B\x5B\x46", lnend);
     // smkx mode
-    set_key_internal("home",      "beginning-of-line",    "\x1B\x4F\x48", lnbegin);
-    set_key_internal("end",       "end-of-line",          "\x1B\x4F\x46", lnend);
-
+    set_key_internal("kup ",       "previous-line",        "\x1B\x4F\x41", up);
+    set_key_internal("kdown",      "next-line",            "\x1B\x4F\x42", down);
+    set_key_internal("kleft",      "backward-char",        "\x1B\x4F\x44", left);
+    set_key_internal("kright",     "forward-char",         "\x1B\x4F\x43", right);
+    set_key_internal("khome",      "beginning-of-line",    "\x1B\x4F\x48", lnbegin);
+    set_key_internal("kend",       "end-of-line",          "\x1B\x4F\x46", lnend);
+    // end keypad modes
     set_key_internal("del",       "delete",               "\x1B\x5B\x33\x7E", delete);
     set_key_internal("ins",       "toggle-overwrite-mode" , "\x1B\x5B\x32\x7E", toggle_overwrite_mode);
     set_key_internal("pgup",      "page-up",              "\x1B\x5B\x35\x7E", backward_page);
