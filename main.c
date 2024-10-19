@@ -13,7 +13,7 @@ void gui(); /* The GUI loop used in interactive mode */
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
 
-Interpreter *flisp_interp;
+static Interpreter *interp;
 FILE *debug_fp = NULL;
 
 int main(int argc, char **argv)
@@ -26,19 +26,18 @@ int main(int argc, char **argv)
     if ((library_path=getenv("FEMTOLIB")) == NULL)
         library_path = CPP_XSTR(E_SCRIPTDIR);
 
-
     /* Lisp interpreter */
-    flisp_interp = lisp_init(argc, argv, library_path);
-    if (flisp_interp == NULL)
+    interp = lisp_init(argc, argv, library_path);
+    if (interp == NULL)
         fatal("fLisp initialization failed");
 
     if ((init_file = getenv("FEMTORC")) == NULL)
         init_file = CPP_XSTR(E_INITFILE);
 
     if (debug_mode) {
-        if (nil == (flisp_interp->debug = file_fopen(flisp_interp, "debug.out", "w")))
+        if (nil == (interp->debug = file_fopen(interp, "debug.out", "w")))
             fatal("could not open debug stream");
-        debug_fp = flisp_interp->debug->fd;
+        debug_fp = interp->debug->fd;
     }
     debug("start\n");
 
@@ -66,6 +65,7 @@ int main(int argc, char **argv)
 
     debug("main(): shutdown\n");
     // Note: exit frees all memory, do we need this here?
+    lisp_destroy(interp);
     if (scrap != NULL) free(scrap);
     return 0;
 }
@@ -89,27 +89,27 @@ char *eval_string(int do_format, char *format, ...)
         input = format;
     }
 
-    if (nil == (flisp_interp->output = file_fopen(flisp_interp, "", ">")))
+    if (nil == (interp->output = file_fopen(interp, "", ">")))
         fatal("could not open string output stream");
 
-    if ((lisp_eval_string(flisp_interp, input)))
-        msg("error: %s", flisp_interp->message);
+    if ((lisp_eval_string(interp, input)))
+        msg("error: %s", interp->message);
     if (debug_mode) {
-        if (flisp_interp->result)
-            debug("error: %s\n", flisp_interp->message);
+        if (interp->result)
+            debug("error: %s\n", interp->message);
     }
-    debug(flisp_interp->output->buf);
-    if (flisp_interp->result) {
+    debug(interp->output->buf);
+    if (interp->result) {
         // Note: close output buf...? if we get segfaults.
         //close_eval_output();
         return NULL;
     }
-    return flisp_interp->output->buf;
+    return interp->output->buf;
 }
 void close_eval_output()
 {
-    assert(flisp_interp->output->fd != NULL);
-    if (file_fclose(flisp_interp, flisp_interp->output))
+    assert(interp->output->fd != NULL);
+    if (file_fclose(interp, interp->output))
         debug("error: closing output stream");
 }
 
