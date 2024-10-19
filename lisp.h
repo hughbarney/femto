@@ -118,6 +118,7 @@ extern ResultCode lisp_eval(Interpreter *);
 extern ResultCode lisp_eval_string(Interpreter *, char *);
 
 Object *file_fopen(Interpreter *, char *, char*);
+void lisp_destroy(Interpreter *);
 int file_fclose(Interpreter *, Object *);
 int file_fflush(Interpreter *, Object *);
 
