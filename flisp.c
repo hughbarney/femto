@@ -12,7 +12,6 @@
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
 
-Interpreter *interp;
 Object *stderrStream;
 ResultCode result;
 
@@ -81,6 +80,7 @@ int repl(Interpreter *interp)
 int main(int argc, char **argv)
 {
     char *library_path, *init_file, *debug_file;
+    Interpreter *interp;
     jmp_buf exceptionEnv;
 
     if ((init_file = getenv("FLISPRC")) == NULL)
@@ -137,6 +137,7 @@ int main(int argc, char **argv)
         FLUSH_STDERR;
         return result;
     }
+    lisp_destroy(interp);
     return 0;
 }
 

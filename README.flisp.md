@@ -92,8 +92,7 @@ fLisp should be buildable with only the standard C libraries.
 
 ## Future
 
-- Allocate Lisp garbage collected memory dynamically and without  
-  limits.
+- Expand Lisp garbage collected memory as needed.
 - Adapt build system to be able to un/install `flisp` binary. Includes  
   preparing a Lisp library and a startup file.
 - Adapt test suite to current interpreter and extend coverage.
