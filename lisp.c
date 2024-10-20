@@ -319,7 +319,7 @@ Object *gcMoveObject(Object * object)
 
 void gc(GC_PARAM)
 {
-    fl_debug(interp, "collecting garbage");
+    //fl_debug(interp, "collecting garbage");
 
     interp->memory->toOffset = 0;
 
@@ -337,7 +337,9 @@ void gc(GC_PARAM)
         case TYPE_STRING:
         case TYPE_SYMBOL:
         case TYPE_PRIMITIVE:
+            break;
         case TYPE_STREAM:
+            object->path = gcMoveObject(object->path);
             break;
         case TYPE_CONS:
             object->car = gcMoveObject(object->car);
@@ -1197,6 +1199,12 @@ Object *fl_primitivePrint(Interpreter *interp, Object ** args)
 }
 Object *primitivePrint(Object ** args, GC_PARAM) { return fl_primitivePrint(interp, args); }
 
+Object *primitiveGc(Object ** args, GC_PARAM)
+{
+    gc(GC_ROOTS);
+    return t;
+}
+
 Object *primitiveSignal(Object ** args, GC_PARAM)
 {
     Object *first = (*args)->car;
@@ -1967,6 +1975,8 @@ Primitive primitives[] = {
     {"cons", 2, 2, primitiveCons},
     {"princ", 1, 1, primitivePrinc},
     {"print", 1, 1, primitivePrint},
+    {"gc", 0, 0, primitiveGc},
+    
     {"signal", 2, 2, primitiveSignal},
     {"+", 0, -1, primitiveAdd},
     {"-", 0, -1, primitiveSubtract},
@@ -2544,8 +2554,8 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
     interp->stackframe = prevEnv;
 
     //fl_debug(interp, "lisp_eval_string() => %d", interp->result);
-    if (result)
-        fl_debug(interp, "lisp_eval_string() => error: %s", interp->message);
+//    if (result)
+//        fl_debug(interp, "lisp_eval_string() => error: %s", interp->message);
     if (file_fflush(interp, interp->debug)) {
         interp->result = FLISP_IO_ERROR;
         strncpy(interp->message, "failed to fflush debug stream", sizeof(interp->message));
@@ -2562,7 +2572,9 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
 // "path" "*"  lisp_stream(fd, "path")
 Object *lisp_stream(Interpreter * interp, FILE * fd, char *name)
 {
-    return newStreamObject(fd, name, interp->theRoot);
+    Object *gcRoots = interp->theRoot; // gcRoots is needed by GC_TRACE and GC_ROOTS
+    GC_TRACE(gcStream, newStreamObject(fd, name, interp->theRoot));
+    return *gcStream;
 }
 
 /*
