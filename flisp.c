@@ -13,9 +13,9 @@
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
 
-Object *stderrStream;
 ResultCode result;
 
+#define FLISP_MEMORY_SIZE 131072UL /* 128k */
 // Note: wouldn't need, if we could implement the repl in fLisp
 #define INPUT_BUFSIZE 4095
 char input[INPUT_BUFSIZE+1]; // Note: termios paste limit or so
@@ -23,16 +23,28 @@ char input[INPUT_BUFSIZE+1]; // Note: termios paste limit or so
 #define FLUSH_STDOUT \
     if (file_fflush(interp, interp->output)) \
         fatal("failed to flush output stream")
-#define FLUSH_STDERR \
-    if (file_fflush(interp, stderrStream)) \
-        fatal("failed to flush error stream")
-
 
 void fatal(char *msg)
 {
     fprintf(stderr, "\n%s %s:\n%s\n", FL_NAME, FL_VERSION, msg);
     exit(1);
 }
+
+void printError(Interpreter *interp)
+{
+    Object *stream;
+
+    if (interp->object != nil) {
+        stream = interp->output;
+        interp->output = nil;
+        writeObject(interp, interp->object, true);
+        fprintf(stderr, "error: '%s', %s\n", interp->output->buf, interp->message);
+        interp->output = stream;
+    } else
+        fprintf(stderr,"error: %s\n", interp->message);
+    fflush(stderr);
+}
+
 
 // Note: we'd like to implement the repl() in fLisp itself, for this we'd need:
 // - isatty()
@@ -43,39 +55,29 @@ int repl(Interpreter *interp)
     size_t i;
     ResultCode result;
 
-    writeString(interp->output, FL_NAME " " FL_VERSION "\n");
-    writeString(interp->output, "exit with Ctrl+D\n");
+    writeString(interp, FL_NAME " " FL_VERSION "\n");
+    writeString(interp, "exit with Ctrl+D\n");
     while (true) {
-        writeString(interp->output, "> ");
+        writeString(interp, "> ");
         FLUSH_STDOUT;
-        FLUSH_STDERR;
 
         if (!fgets(input, sizeof(input), stdin)) break;
         i=strlen(input);
         if (input[i-1] == '\n')
             input[i-1] = '\0';
         else {
-            writeString(stderrStream, "error: more then " CPP_STR(INPUT_BUFSIZ) "read, skipping...\n");
+            fprintf(stderr, "error: more then " CPP_STR(INPUT_BUFSIZ) "read, skipping...\n");
+            fflush(stderr);
             continue;
         }
 
-        if (lisp_eval_string(interp, input)) {
-            writeString(stderrStream, "error: ");
-            if (interp->object != nil) {
-                writeString(stderrStream, "object '");
-                writeObject(stderrStream, interp->object, true);
-                writeString(stderrStream, "', ");
-            }
-
-            writeString(stderrStream, interp->message);
-            writeChar(stderrStream, '\n');
-        }
+        if (lisp_eval_string(interp, input))
+            printError(interp);
     }
     if (ferror(interp->input->fd))
         fatal("failed to read input stream");
 
     FLUSH_STDOUT;
-    FLUSH_STDERR;
     result = interp->result;
     // Note: close output, error?
     lisp_destroy(interp);
@@ -95,7 +97,7 @@ int main(int argc, char **argv)
     if ((library_path=getenv("FLISPLIB")) == NULL)
         library_path = CPP_XSTR(FL_LIBDIR);
 
-    interp = lisp_init(argc, argv, library_path);
+    interp = lisp_new(FLISP_MEMORY_SIZE, argc, argv, library_path);
     if (interp == NULL)
         fatal("fLisp interpreter initialization failed");
 
@@ -103,8 +105,6 @@ int main(int argc, char **argv)
 
     if (nil == (interp->output = lisp_stream(interp, stdout, "<STDOUT>")))
         fatal("could not open output stream");
-    if (nil == (stderrStream = lisp_stream(interp, stderr, "<STDERR>")))
-        fatal("could not open error stream");
 
     if (debug_file != NULL) {
         if (!(fd = fopen(debug_file, "w")))
@@ -144,18 +144,9 @@ int main(int argc, char **argv)
     result = lisp_eval(interp);
     FLUSH_STDOUT;
     if (result) {
-        writeString(stderrStream, "error: ");
-        if (interp->object != nil) {
-            writeString(stderrStream, "object '");
-            writeObject(stderrStream, interp->object, true);
-            writeString(stderrStream, "', ");
-        }
-        writeString(stderrStream, interp->message);
-        FLUSH_STDERR;
+        printError(interp);
+        return interp->result;
     }
-    result = interp->result;
-    // Note: close output, error?
-    lisp_destroy(interp);
     return result;
 }
 

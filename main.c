@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     setup_keys();
 
     /* Lisp interpreter */
-    interp = lisp_init(argc, argv, library_path);
+    interp = lisp_new(FLISP_MEMORY_SIZE, argc, argv, library_path);
     if (interp == NULL)
         fatal("fLisp initialization failed");
 

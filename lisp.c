@@ -2394,6 +2394,7 @@ Memory *newMemory(size_t size)
 
 /** Initialize and return an fLisp interpreter.
  *
+ * @param size  memory size for the Lisp objects
  * @param argc  argument count
  * @param argv  null terminated array to arguments
  * @param flib  path to Lisp library
@@ -2404,7 +2405,7 @@ Memory *newMemory(size_t size)
  * Note: at the moment we only initialize and the statically allocated
  * interpreter `flisp` and return a pointer to it.
  */
-Interpreter *lisp_init(int argc, char **argv, char *library_path)
+Interpreter *lisp_new(size_t size, int argc, char **argv, char *library_path)
 {
     if (lisp_interpreters != NULL)
         return NULL;
@@ -2415,7 +2416,7 @@ Interpreter *lisp_init(int argc, char **argv, char *library_path)
     interp = malloc(sizeof(Interpreter));
     if (interp == NULL) return NULL;
 
-    Memory *memory = newMemory(FLISP_MEMORY_SIZE);
+    Memory *memory = newMemory(size);
     if (memory == NULL) {
         interp->result = FLISP_OOM;
         strncpy(interp->message,
