@@ -106,15 +106,10 @@ void resetBuf(Interpreter *);
  *
  * The error message is formatted into the message buffer of the interpreter. If it has to
  * be truncated the last three characters are overwritten with "..."
- *
- * Note: if an exception handler is registered in the interpreter,
- *    control is returned to it.  Otherwise the function
- *    "falls trough". This is used in file_fopen() and file_fclose(),
- *    so they can be used w/o an exception handler.
  */
 #ifdef __GNUC__
 void exceptionWithObject(Interpreter *, Object * object, ResultCode, char *format, ...)
-    __attribute__ ((format(printf, 4, 5)));
+    __attribute__ ((noreturn, format(printf, 4, 5)));
 #endif
 void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result, char *format, ...)
 {
@@ -131,11 +126,8 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
     if (snprintf(NULL, 0, format, args) > len)
         strcpy(interp->message+len-4, "...");
 
-    if (interp->stackframe != NULL) {
-        longjmp(*interp->stackframe, FLISP_ERROR);
-        __builtin_unreachable();
-    }
-    // See note about "fall through" in comment above
+    assert(interp->stackframe != NULL);
+    longjmp(*interp->stackframe, FLISP_ERROR);
 }
 
 /** exception - break out of errors
@@ -1550,7 +1542,25 @@ Object *file_outputMemStream(Interpreter *interp)
     GC_TRACE(gcStream, stream);
     return *gcStream;
 }
+/** file_inputMemStream - convert string to Lisp stream object
+ *
+ * @param interp  fLisp interpreter
+ * @param string  string to read
+ *
+ * returns: Lisp stream object or nil on failure
+ *
+ */
+Object *file_inputMemStream(Interpreter *interp, char *string)
+{
+    FILE *fd;
 
+    Object *gcRoots = interp->theRoot;
+
+    fd = fmemopen(string, strlen(string), "r");
+    if (fd == NULL) return nil;
+    GC_TRACE(gcStream, newStreamObject(fd, "<STRING", GC_ROOTS));
+    return *gcStream;
+}
 /** file_fopen() - returns a stream object for the interpreter
  *
  * @param interp  fLisp interpreter
@@ -1579,52 +1589,35 @@ Object *file_outputMemStream(Interpreter *interp)
  */
 Object *file_fopen(Interpreter *interp, char *path, char* mode) {
     FILE * fd;
+    Object *stream;
 
     Object *gcRoots = interp->theRoot;
 
-    GC_TRACE(gcStream, nil);
-
     if (strcmp("<", mode) == 0) {
-        fd = fmemopen(path, strlen(path), "r");
-        if (fd == NULL) {
-            exception(interp, FLISP_IO_ERROR, "failed to convert string to input stream, errno: %d", errno);
-            goto no_handler;
-        }
-        *gcStream = newStreamObject(fd, "<STRING", GC_ROOTS);
-        return *gcStream;
+        if (nil == (stream = file_inputMemStream(interp, path)))
+            exception(interp, FLISP_IO_ERROR, "failed to open string as memory input stream: %d", errno);
+        return stream;
     }
-    if (strcmp(">", mode) == 0)
-        return file_outputMemStream(interp);
-
+    if (strcmp(">", mode) == 0) {
+        if (nil == (stream = file_outputMemStream(interp)))
+            exception(interp, FLISP_IO_ERROR, "failed to open memory output stream: %d", errno);
+        return stream;
+    }
     char c = path[0];
     if (c == '<' || c == '>') {
         char *end;
         errno = 0;
         long d = strtol(&path[1], &end, 0);
-        if (errno || *end != '\0' || d < 0 || d > _POSIX_OPEN_MAX) {
+        if (errno || *end != '\0' || d < 0 || d > _POSIX_OPEN_MAX)
             exception(interp, FLISP_INVALID_VALUE, "invalid I/O stream number: %s", &path[1]);
-            goto no_handler;
-        }
-        fd = fdopen((int)d, c == '<' ? "r" : "a");
-        if (fd == NULL) {
+        if (NULL == (fd = fdopen((int)d, c == '<' ? "r" : "a")))
             exception(interp, FLISP_IO_ERROR, "failed to open I/O stream %ld for %s", d, c == '<' ? "reading" : "writing");
-            goto no_handler;
-        }
-        *gcStream = newStreamObject(fd, path, GC_ROOTS);
-        return *gcStream;
+    } else {
+        if (NULL == (fd = fopen(path, mode)))
+            exception(interp, FLISP_IO_ERROR, "failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
     }
-
-    fd = fopen(path, mode);
-    if (fd == NULL) {
-        exception(interp, FLISP_IO_ERROR, "failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
-        goto no_handler;
-    }
-    *gcStream = newStreamObject(fd, path, GC_ROOTS);
+    GC_TRACE(gcStream, newStreamObject(fd, path, GC_ROOTS));
     return *gcStream;
-
-    // Note: when called without an exception environment the exception() falls through and execution continues here.
-no_handler:
-    return nil;
 }
 /** (Fclose StreamObject) => flag
  *
@@ -1635,11 +1628,6 @@ no_handler:
  */
 int file_fclose(Interpreter *interp, Object *stream)
 {
-    if (stream->fd == NULL) {
-        exception(interp, FLISP_INVALID_VALUE, "(fclose arg) - stream arg already closed");
-        // if we fall through exception
-        return interp->result;
-    }
     // Note: we thought we needed to do this: but we get segfaulted. why?
     //if (stream->buf != NULL)
     //    free(stream->buf);
@@ -2545,10 +2533,11 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
     interp->message[0] = '\0';
     interp->result = FLISP_OK;
 
-    if (nil == (interp->input = file_fopen(interp, input, "<")))
-        // If falling through exception:
+    if (nil == (interp->input = file_inputMemStream(interp, input))) {
+        interp->result = FLISP_IO_ERROR;
+        strncpy(interp->message, "failed to convert input to stream", sizeof(interp->message));
         return interp->result;
-
+    }
     prevEnv = interp->stackframe;
     interp->stackframe = &exceptionEnv;
     result = lisp_eval(interp);
