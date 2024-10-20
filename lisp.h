@@ -15,11 +15,6 @@
 #define FL_INITFILE "flisp.rc"
 #define FL_LIBDIR "/usr/local/share/flisp"
 
-//#define FLISP_MEMORY_SIZE          131072UL
-//#define FLISP_MEMORY_SIZE          262144UL  /* 256k */
-//#define FLISP_MEMORY_SIZE          524288UL
-#define FLISP_MEMORY_SIZE         4194304UL  /* 4M */
-
 /* buffersize for Lisp eval input */
 #define INPUT_FMT_BUFSIZ 2048
 /* buffersize for Lisp result output */
@@ -113,19 +108,16 @@ typedef struct Interpreter {
 
 extern Interpreter *lisp_interpreters;
 
-extern Interpreter *lisp_init(int, char**, char*);
+extern Interpreter *lisp_new(size_t, int, char**, char*);
+extern void lisp_destroy(Interpreter *);
 extern ResultCode lisp_eval(Interpreter *);
 extern ResultCode lisp_eval_string(Interpreter *, char *);
 
-Object *lisp_stream(Interpreter *, FILE *, char *);
+extern Object *lisp_stream(Interpreter *, FILE *, char *);
+extern int file_fclose(Interpreter *, Object *);
+extern int file_fflush(Interpreter *, Object *);
 
-void lisp_destroy(Interpreter *);
-int file_fclose(Interpreter *, Object *);
-int file_fflush(Interpreter *, Object *);
-
-void writeChar(Interpreter *, char);
-void writeString(Interpreter *, char *);
-void writeObject(Interpreter *, Object *, bool);
+extern void writeObject(Interpreter *, Object *, bool);
 
 
 #ifdef FLISP_FILE_EXTENSION
