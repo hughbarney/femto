@@ -488,6 +488,11 @@ extern window_t *popup_window(char *);
 extern window_t *split_current_window();
 
 /* fLisp interpreter used for femto */
+//#define FLISP_MEMORY_SIZE          131072UL  /* 128k */
+//#define FLISP_MEMORY_SIZE          262144UL  /* 256k */
+//#define FLISP_MEMORY_SIZE          524288UL  /* 512k */
+  #define FLISP_MEMORY_SIZE         4194304UL  /* 4M   */
+
 extern char *eval_string(int, char *, ...);
 extern void close_eval_output();
 
