@@ -20,10 +20,6 @@ ResultCode result;
 #define INPUT_BUFSIZE 4095
 char input[INPUT_BUFSIZE+1]; // Note: termios paste limit or so
 
-#define FLUSH_STDOUT \
-    if (file_fflush(interp, interp->output)) \
-        fatal("failed to flush output stream")
-
 void fatal(char *msg)
 {
     fprintf(stderr, "\n%s %s:\n%s\n", FL_NAME, FL_VERSION, msg);
@@ -55,11 +51,11 @@ int repl(Interpreter *interp)
     size_t i;
     ResultCode result;
 
-    writeString(interp, FL_NAME " " FL_VERSION "\n");
-    writeString(interp, "exit with Ctrl+D\n");
+    puts(FL_NAME " " FL_VERSION);
+    puts("exit with Ctrl+D");
     while (true) {
-        writeString(interp, "> ");
-        FLUSH_STDOUT;
+        printf("> ");
+        fflush(stdout);
 
         if (!fgets(input, sizeof(input), stdin)) break;
         i=strlen(input);
@@ -77,7 +73,7 @@ int repl(Interpreter *interp)
     if (ferror(interp->input->fd))
         fatal("failed to read input stream");
 
-    FLUSH_STDOUT;
+    fflush(stdout);
     result = interp->result;
     // Note: close output, error?
     lisp_destroy(interp);
@@ -142,7 +138,7 @@ int main(int argc, char **argv)
     // Just eval the input stream
     interp->stackframe = &exceptionEnv;
     result = lisp_eval(interp);
-    FLUSH_STDOUT;
+    fflush(stdout);
     if (result) {
         printError(interp);
         return interp->result;
