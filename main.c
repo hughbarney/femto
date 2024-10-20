@@ -91,6 +91,7 @@ char *eval_string(int do_format, char *format, ...)
         input = format;
     }
 
+    interp->output = nil;
     if ((lisp_eval_string(interp, input)))
         msg("error: %s", interp->message);
     if (debug_mode) {
