@@ -1343,10 +1343,10 @@ Object *stringAppend(Object ** args, GC_PARAM)
     memcpy(new + len1, second->string, len2);
     new[len1 + len2] = '\0';
 
-    Object *obj = newStringWithLength(new, len1 + len2, GC_ROOTS);
+    GC_TRACE(gcString, newStringWithLength(new, len1 + len2, GC_ROOTS));
     free(new);
 
-    return obj;
+    return *gcString;
 }
 
 Object *stringSubstring(Object ** args, GC_PARAM)
@@ -1378,10 +1378,10 @@ Object *stringSubstring(Object ** args, GC_PARAM)
 
     memcpy(sub, (str->string + s), newlen);
     *(sub + newlen) = '\0';
-    Object *obj = newStringWithLength(sub, newlen, GC_ROOTS);
+    GC_TRACE(gcString, newStringWithLength(sub, newlen, GC_ROOTS));
     free(sub);
 
-    return obj;
+    return *gcString;
 }
 
 Object *stringLength(Object ** args, GC_PARAM)
