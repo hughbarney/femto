@@ -14,6 +14,7 @@ void gui(); /* The GUI loop used in interactive mode */
 #define CPP_STR(s) #s
 
 static Interpreter *interp;
+char debug_file[] = "debug.out";
 FILE *debug_fp = NULL;
 
 int main(int argc, char **argv)
@@ -26,19 +27,13 @@ int main(int argc, char **argv)
     if ((library_path=getenv("FEMTOLIB")) == NULL)
         library_path = CPP_XSTR(E_SCRIPTDIR);
 
-    /* Lisp interpreter */
-    interp = lisp_init(argc, argv, library_path);
-    if (interp == NULL)
-        fatal("fLisp initialization failed");
-
     if ((init_file = getenv("FEMTORC")) == NULL)
         init_file = CPP_XSTR(E_INITFILE);
 
-    if (debug_mode) {
-        if (nil == (interp->debug = file_fopen(interp, "debug.out", "w")))
-            fatal("could not open debug stream");
-        debug_fp = interp->debug->fd;
-    }
+    if (debug_mode)
+        if (!(debug_fp = fopen(debug_file, "w")))
+            fatal("could not open debug file");
+
     debug("start\n");
 
     /* buffers */
@@ -50,16 +45,23 @@ int main(int argc, char **argv)
     wheadp = curwp = new_window();
     associate_b2w(curbp, curwp);
 
-    /* Lisp startup */
     setup_keys();
-    
+
+    /* Lisp interpreter */
+    interp = lisp_init(argc, argv, library_path);
+    if (interp == NULL)
+        fatal("fLisp initialization failed");
+
+    if (debug_mode)
+        if (nil == (interp->debug = lisp_stream(interp, debug_fp, debug_file)))
+            fatal("could not open debug stream");
     if (strlen(init_file)) {
         // Note: not lisp_eval()'ing it, because we want to have
         //     consistent error handling.
         if (eval_string(true, "(load \"%s\")", init_file) != NULL)
             close_eval_output();
     }
-    
+
     /* GUI */
     if (!batch_mode) gui();
 
@@ -88,9 +90,6 @@ char *eval_string(int do_format, char *format, ...)
     } else {
         input = format;
     }
-
-    if (nil == (interp->output = file_fopen(interp, "", ">")))
-        fatal("could not open string output stream");
 
     if ((lisp_eval_string(interp, input)))
         msg("error: %s", interp->message);

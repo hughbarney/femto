@@ -154,53 +154,63 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
 
 // FILE_IO /////////////////////////////////////////////////////////////////////////////////
 
+Object *file_outputMemStream(Interpreter *);
+
 /** writeChar - write character to Lisp stream
  *
- * @param stream  Lisp stream object
+ * @param interp  fLisp interpreter
  * @param ch      character to write
  *
  * throws: FLISP_IO_ERROR
  */
-void writeChar(Object *stream, char ch)
+void writeChar(Interpreter *interp, char ch)
 {
-    if(fputc(ch, stream->fd) == EOF)
-        exceptionWithObject(interp, stream, FLISP_IO_ERROR, "failed to write character %c, errno: %d", ch, errno);
+    if (interp->output == nil)
+        interp->output = file_outputMemStream(interp);
+
+    if(fputc(ch, interp->output->fd) == EOF)
+        exceptionWithObject(interp, interp->output, FLISP_IO_ERROR, "failed to write character %c, errno: %d", ch, errno);
 }
 /** writeString - write string to Lisp stream
  *
- * @param stream  Lisp stream object
+ * @param interp  fLisp interpreter
  * @param str     string to write
  *
  * throws: FLISP_IO_ERROR
  *
  */
-void writeString(Object *stream, char *str)
+void writeString(Interpreter *interp, char *str)
 {
     int len;
+
+    if (interp->output == nil)
+        interp->output = file_outputMemStream(interp);
+
     len = strlen(str);
-    if(fprintf(stream->fd, str) != len)
-        exceptionWithObject(interp, stream, FLISP_IO_ERROR, "failed to write %d files, errno: %d", len, errno);
+    if(fprintf(interp->output->fd, str) != len)
+        exceptionWithObject(interp, interp->output, FLISP_IO_ERROR, "failed to write %d files, errno: %d", len, errno);
 }
 /** writeFmt - write printf formatted string to Lisp stream
  *
- * @param stream  Lisp stream object
+ * @param interp  fLisp interpreter
  * @param format ... printf like format string
  *
  * throws: FLISP_IO_ERROR
  */
 #ifdef __GNUC__
-void writeFmt(Object *, char *format, ...)
+void writeFmt(Interpreter *, char *format, ...)
     __attribute__ ((format(printf, 2, 3)));
 #endif
-void writeFmt(Object *stream, char *format, ...)
+void writeFmt(Interpreter *interp, char *format, ...)
 {
-    assert(stream->fd != NULL);
+    if (interp->output == nil)
+        interp->output = file_outputMemStream(interp);
+
     va_list(args);
     va_start(args, format);
-    if (vfprintf(stream->fd, format, args) < 0) {
-        exit(3);
+    if (vfprintf(interp->output->fd, format, args) < 0) {
         va_end(args);
-        exceptionWithObject(interp, stream, FLISP_IO_ERROR, "failed to fprintf, errno: %d", errno);
+        exceptionWithObject(interp, interp->output, FLISP_IO_ERROR, "failed to fprintf, errno: %d", errno);
     }
     va_end(args);
 }
@@ -378,17 +388,19 @@ Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
 
     // allocate from- and to-space
     if (!interp->memory->fromSpace) {
-        if (!(interp->memory->fromSpace = mmap(NULL, interp->memory->capacity * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0)))
+        if (!(interp->memory->fromSpace = mmap(NULL, interp->memory->capacity * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0))) {
+            if (!interp->stackframe) return nil;
             exception(interp, FLISP_OOM, "mmap() failed, %s", strerror(errno));
-
+        }
         interp->memory->toSpace = (char *)interp->memory->fromSpace + interp->memory->capacity;
     }
     // run garbage collection if capacity exceeded
     if (interp->memory->fromOffset + size >= interp->memory->capacity)
         gc(GC_ROOTS);
-    if (interp->memory->fromOffset + size >= interp->memory->capacity)
+    if (interp->memory->fromOffset + size >= interp->memory->capacity) {
+        if (!interp->stackframe) return nil;
         exception(interp, FLISP_OOM, "out of memory, %lu bytes", (unsigned long)size);
-
+    }
     // allocate object in from-space
     Object *object = (Object *) ((char *)interp->memory->fromSpace + interp->memory->fromOffset);
     object->type = type;
@@ -960,12 +972,12 @@ Object *readExpr(Interpreter *interp)
 
 // WRITING OBJECTS ////////////////////////////////////////////////////////////
 
-void writeObject(Object * stream, Object *object, bool readably)
+void writeObject(Interpreter *interp, Object *object, bool readably)
 {
     switch (object->type) {
 #define CASE(type, ...)                         \
         case type:                              \
-            writeFmt(stream, __VA_ARGS__);      \
+            writeFmt(interp, __VA_ARGS__);      \
             break
         CASE(TYPE_NUMBER, "%g", object->number);
         CASE(TYPE_SYMBOL, "%s", object->string);
@@ -974,54 +986,54 @@ void writeObject(Object * stream, Object *object, bool readably)
 #undef CASE
     case TYPE_STRING:
         if (readably) {
-            writeChar(stream, '"');
+            writeChar(interp, '"');
             for (char *string = object->string; *string; ++string) {
                 switch (*string) {
                 case '"':
-                    writeString(stream, "\\\"");
+                    writeString(interp, "\\\"");
                     break;
                 case '\t':
-                    writeString(stream, "\\t");
+                    writeString(interp, "\\t");
                     break;
                 case '\r':
-                    writeString(stream, "\\r");
+                    writeString(interp, "\\r");
                     break;
                 case '\n':
-                    writeString(stream, "\\n");
+                    writeString(interp, "\\n");
                     break;
                 case '\\':
-                    writeString(stream, "\\\\");
+                    writeString(interp, "\\\\");
                     break;
                 default:
-                    writeChar(stream, *string);
+                    writeChar(interp, *string);
                     break;
                 }
             }
-            writeChar(stream, '"');
+            writeChar(interp, '"');
         } else
-            writeFmt(stream, "%s", object->string);
+            writeFmt(interp, "%s", object->string);
         break;
     case TYPE_CONS:
-        writeChar(stream, '(');
-        writeObject(stream, object->car, readably);
+        writeChar(interp, '(');
+        writeObject(interp, object->car, readably);
         while (object->cdr != nil) {
             object = object->cdr;
             if (object->type == TYPE_CONS) {
-                writeChar(stream, ' ');
-                writeObject(stream, object->car, readably);
+                writeChar(interp, ' ');
+                writeObject(interp, object->car, readably);
             } else {
-                writeString(stream, " . ");
-                writeObject(stream, object, readably);
+                writeString(interp, " . ");
+                writeObject(interp, object, readably);
                 break;
             }
         }
-        writeChar(stream, ')');
+        writeChar(interp, ')');
         break;
 #define CASE(type, name, object)                    \
         case type:                                  \
-            writeFmt(stream, "#<%s ", name);        \
-            writeObject(stream, object, readably);  \
-            writeChar(stream, '>');                 \
+            writeFmt(interp, "#<%s ", name);        \
+            writeObject(interp, object, readably);  \
+            writeChar(interp, '>');                 \
             break
         CASE(TYPE_LAMBDA, "Lambda", object->params);
         CASE(TYPE_MACRO, "Macro", object->params);
@@ -1178,7 +1190,7 @@ Object *primitiveCons(Object ** args, GC_PARAM)
 Object *fl_primitivePrinc(Interpreter *interp, Object ** args)
 {
     assert(interp != NULL && args != NULL);
-    writeObject(interp->output, (*args)->car, false);
+    writeObject(interp, (*args)->car, false);
     return (*args)->car;
 }
 Object *primitivePrinc(Object **args, GC_PARAM) { return fl_primitivePrinc(interp, args); }
@@ -1186,9 +1198,9 @@ Object *primitivePrinc(Object **args, GC_PARAM) { return fl_primitivePrinc(inter
 Object *fl_primitivePrint(Interpreter *interp, Object ** args)
 {
     assert(interp != NULL && args != NULL);
-    writeChar(interp->output, '\n');
-    writeObject(interp->output, (*args)->car, true);
-    writeChar(interp->output, ' ');
+    writeChar(interp, '\n');
+    writeObject(interp, (*args)->car, true);
+    writeChar(interp, ' ');
     return (*args)->car;
 }
 Object *primitivePrint(Object ** args, GC_PARAM) { return fl_primitivePrint(interp, args); }
@@ -1248,7 +1260,7 @@ Object *primitiveMod(Object **args, GC_PARAM) {
         return one;
     if ((*args)->car->type == TYPE_NUMBER) {
         Object *object, *rest;
-        
+
         if ((*args)->cdr == nil) {
             object = one;
             rest = *args;
@@ -1257,11 +1269,11 @@ Object *primitiveMod(Object **args, GC_PARAM) {
             object = newObjectFrom(gcFirst, GC_ROOTS);
             rest = (*args)->cdr;
         }
-        
+
         for (; rest != nil; rest = rest->cdr) {
             if (rest->car->type != TYPE_NUMBER)
                 exceptionWithObject(interp, rest->car, FLISP_WRONG_TYPE, "(%% dividend divisor ..) - divisor is not a number");
-            
+
             object->number = (int)object->number % (int)rest->car->number;
         }
 
@@ -1452,6 +1464,7 @@ Object *asciiToNumber(Object ** args, GC_PARAM)
     return newNumber((double)*arg->string, GC_ROOTS);
 }
 
+Object *file_fopen(Interpreter *, char *, char *);
 ResultCode lisp_eval(Interpreter *);
 /** primitiveLoad - evaluate a file in interpeter
  *
@@ -1514,6 +1527,30 @@ Object *os_getenv(Object ** args, GC_PARAM)
 
 /* The minimal stream C-API for interpreter operation */
 
+/** file_outputMemStream - create a memory based output stream
+ *
+ * @param interp  fLisp Interpreter
+ *
+ * returns: lisp stream object
+ *
+ * throws: FLISP_IO_ERROR
+ *
+ */
+Object *file_outputMemStream(Interpreter *interp)
+{
+    FILE *fd;
+    Object * stream;
+
+    Object *gcRoots = interp->theRoot;
+
+    stream =  newStreamObject(NULL, ">STREAM", GC_ROOTS);
+    fd = open_memstream(&stream->buf, &stream->len);
+    if (fd == NULL) return nil;
+    stream->fd = fd;
+    GC_TRACE(gcStream, stream);
+    return *gcStream;
+}
+
 /** file_fopen() - returns a stream object for the interpreter
  *
  * @param interp  fLisp interpreter
@@ -1542,7 +1579,10 @@ Object *os_getenv(Object ** args, GC_PARAM)
  */
 Object *file_fopen(Interpreter *interp, char *path, char* mode) {
     FILE * fd;
+
     Object *gcRoots = interp->theRoot;
+
+    GC_TRACE(gcStream, nil);
 
     if (strcmp("<", mode) == 0) {
         fd = fmemopen(path, strlen(path), "r");
@@ -1550,18 +1590,11 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
             exception(interp, FLISP_IO_ERROR, "failed to convert string to input stream, errno: %d", errno);
             goto no_handler;
         }
-        return newStreamObject(fd, "<STRING", GC_ROOTS);
+        *gcStream = newStreamObject(fd, "<STRING", GC_ROOTS);
+        return *gcStream;
     }
-    if (strcmp(">", mode) == 0) {
-        Object *stream = newStreamObject(NULL, ">STREAM", GC_ROOTS);
-        fd = open_memstream(&stream->buf, &stream->len);
-        if (fd == NULL) {
-            exception(interp, FLISP_IO_ERROR, "failed to create memory based output stream, errno: %d", errno);
-            goto no_handler;
-        }
-        stream->fd = fd;
-        return stream;
-    }
+    if (strcmp(">", mode) == 0)
+        return file_outputMemStream(interp);
 
     char c = path[0];
     if (c == '<' || c == '>') {
@@ -1577,7 +1610,8 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
             exception(interp, FLISP_IO_ERROR, "failed to open I/O stream %ld for %s", d, c == '<' ? "reading" : "writing");
             goto no_handler;
         }
-        return newStreamObject(fd, path, GC_ROOTS);
+        *gcStream = newStreamObject(fd, path, GC_ROOTS);
+        return *gcStream;
     }
 
     fd = fopen(path, mode);
@@ -1585,7 +1619,8 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
         exception(interp, FLISP_IO_ERROR, "failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
         goto no_handler;
     }
-    return newStreamObject(fd, path, GC_ROOTS);
+    *gcStream = newStreamObject(fd, path, GC_ROOTS);
+    return *gcStream;
 
     // Note: when called without an exception environment the exception() falls through and execution continues here.
 no_handler:
@@ -2388,7 +2423,7 @@ Interpreter *lisp_init(int argc, char **argv, char *library_path)
         return NULL;
     }
     interp->memory = memory;
-    
+
     interp->input = nil;
     interp->output = nil;
     interp->object = nil;
@@ -2464,7 +2499,7 @@ ResultCode lisp_eval(Interpreter *interp)
         *gcObject = nil;
 
         if (peekNext(interp) == EOF) {
-            writeChar(interp->output, '\n');
+            writeChar(interp, '\n');
             interp->object = *gcObject;
             lisp_flush_output(interp);
             //return FLISP_OK;
@@ -2472,8 +2507,8 @@ ResultCode lisp_eval(Interpreter *interp)
         }
         *gcObject = readExpr(interp);
         *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
-        writeObject(interp->output, *gcObject, true);
-        writeChar(interp->output, '\n');
+        writeObject(interp, *gcObject, true);
+        writeChar(interp, '\n');
         lisp_flush_output(interp);
         }
     longjmp(*interp->stackframe, FLISP_RETURN);
@@ -2485,15 +2520,15 @@ ResultCode lisp_eval(Interpreter *interp)
  * @param input   string to evaluate
  *
  * Before calling `lisp_eval_string()` initialize:
- * - interp->output: to an output stream, see file_fopen().
+ * - interp->output: to an output stream, otherwise you get output to memory.
  * - interp->message: to an empty string
  * - interp->result:  to FLISP_OK
  * - interp->debug:   optional: to an output stream for debug
  *                     messages. see file_fopen()
  *
- * Returns: ResultCode from the evaluation: FLISP_OK if successful.
+ * Returns: FLISP_OK if successful, FLISP_ERROR otherwise.
  *
- * interp->result is also set to the result code.
+ * interp->result is set to the result code of the evaluation.
  *
  * If an error occurs during evaluation *interp->message* is set to an
  * error message.
@@ -2504,7 +2539,7 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
     jmp_buf exceptionEnv, *prevEnv;
     ResultCode result;
 
-    fl_debug(interp, "lisp_eval_string(\"%s\")", input);
+    //fl_debug(interp, "lisp_eval_string(\"%s\")", input);
 
     interp->message[0] = '\0';
     interp->result = FLISP_OK;
@@ -2518,7 +2553,7 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
     result = lisp_eval(interp);
     interp->stackframe = prevEnv;
 
-    fl_debug(interp, "lisp_eval_string() => %d", interp->result);
+    //fl_debug(interp, "lisp_eval_string() => %d", interp->result);
     if (result)
         fl_debug(interp, "lisp_eval_string() => error: %s", interp->message);
     if (file_fflush(interp, interp->debug)) {
@@ -2526,6 +2561,18 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
         strncpy(interp->message, "failed to fflush debug stream", sizeof(interp->message));
     }
     return result;
+}
+
+// Test: Open listp stream with fd and name
+// if used with "empty" memory, chance is we don't get an exception
+// "" "<"      lisp_read_string()
+// "" ">"      file_fopen(, ">STRING")
+// "<n" ""     lisp_stream(fdopen(n), "<n")
+// ">n" ""     lisp_stream(fdopen(n), ">n")
+// "path" "*"  lisp_stream(fd, "path")
+Object *lisp_stream(Interpreter * interp, FILE * fd, char *name)
+{
+    return newStreamObject(fd, name, interp->theRoot);
 }
 
 /*

@@ -117,14 +117,15 @@ extern Interpreter *lisp_init(int, char**, char*);
 extern ResultCode lisp_eval(Interpreter *);
 extern ResultCode lisp_eval_string(Interpreter *, char *);
 
-Object *file_fopen(Interpreter *, char *, char*);
+Object *lisp_stream(Interpreter *, FILE *, char *);
+
 void lisp_destroy(Interpreter *);
 int file_fclose(Interpreter *, Object *);
 int file_fflush(Interpreter *, Object *);
 
-void writeChar(Object *, char);
-void writeString(Object *, char *);
-void writeObject(Object *, Object *, bool);
+void writeChar(Interpreter *, char);
+void writeString(Interpreter *, char *);
+void writeObject(Interpreter *, Object *, bool);
 
 
 #ifdef FLISP_FILE_EXTENSION

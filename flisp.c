@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include "lisp.h"
 
 #define CPP_XSTR(s) CPP_STR(s)
@@ -40,8 +41,10 @@ void fatal(char *msg)
 int repl(Interpreter *interp)
 {
     size_t i;
+    ResultCode result;
 
     writeString(interp->output, FL_NAME " " FL_VERSION "\n");
+    writeString(interp->output, "exit with Ctrl+D\n");
     while (true) {
         writeString(interp->output, "> ");
         FLUSH_STDOUT;
@@ -73,13 +76,16 @@ int repl(Interpreter *interp)
 
     FLUSH_STDOUT;
     FLUSH_STDERR;
-
-    return interp->result;
+    result = interp->result;
+    // Note: close output, error?
+    lisp_destroy(interp);
+    return result;
 }
 
 int main(int argc, char **argv)
 {
     char *library_path, *init_file, *debug_file;
+    FILE *fd;
     Interpreter *interp;
     jmp_buf exceptionEnv;
 
@@ -95,34 +101,45 @@ int main(int argc, char **argv)
 
     debug_file=getenv("FLISP_DEBUG");
 
-    if (nil == (interp->output = file_fopen(interp, ">1", "a")))
+    if (nil == (interp->output = lisp_stream(interp, stdout, "<STDOUT>")))
         fatal("could not open output stream");
-    if (nil == (stderrStream = file_fopen(interp, ">2", "a")))
+    if (nil == (stderrStream = lisp_stream(interp, stderr, "<STDERR>")))
         fatal("could not open error stream");
-    if (debug_file != NULL)
-        if (nil == (interp->debug = file_fopen(interp, debug_file, "w")))
-            fprintf(stderr, "failed to open debug file %s:%d: %s\n", debug_file, interp->result, interp->message);
+
+    if (debug_file != NULL) {
+        if (!(fd = fopen(debug_file, "w")))
+            fprintf(stderr, "failed to open debug file %s for writing: %d\n", debug_file, errno);
+        else
+            if (nil == (interp->debug = lisp_stream(interp, fd, debug_file)))
+                fprintf(stderr, "could not open debug stream, will continue without\n");
+    }
 
     if (strlen(init_file)) {
-        if (nil == (interp->input = file_fopen(interp, init_file, "r")))
-            fprintf(stderr, "failed to open inifile %s:%d: %s\n", init_file, interp->result, interp->message);
+        if (!(fd = fopen(init_file, "r")))
+            fprintf(stderr, "failed to open inifile %s: %d\n", init_file, errno);
         else {
-            interp->stackframe = &exceptionEnv;
-            // Note: if we could implement the repl in fLisp itself we'd bail out here.
-            if (lisp_eval(interp))
-                fprintf(stderr, "failed to load inifile %s:%d: %s\n", init_file, interp->result, interp->message);
-            interp->stackframe = NULL;
-            if (file_fclose(interp, interp->input))
-                fprintf(stderr, "failed to close inifile %s:%d %s\n", init_file, interp->result, interp->message);
+            if (nil == (interp->input = lisp_stream(interp, fd, init_file)))
+                fatal("could not open input file stream for inifile");
+            else {
+                // load inifile
+                interp->stackframe = &exceptionEnv;
+                if (lisp_eval(interp))
+                    fprintf(stderr, "failed to load inifile %s:%d: %s\n", init_file, interp->result, interp->message);
+                interp->stackframe = NULL;
+                if (file_fclose(interp, interp->input))
+                    fprintf(stderr, "failed to close inifile %s:%d %s\n", init_file, interp->result, interp->message);
+            }
         }
+        // Start repl
+        // Note: if we could implement the repl in fLisp itself we'd bail out here.
+        if (nil == (interp->input = lisp_stream(interp, stdin, "<STDIN>")))
+            fatal("failed to open input stream");
+
+        //Note: could be omitted if we could implement the repl in fLisp itself.
+        if (isatty(fileno(interp->input->fd)))
+            return repl(interp);
     }
-    if (nil == (interp->input = file_fopen(interp, "<0", "r")))
-        fatal("failed to open input stream");
-
-    //Note: could be omitted if we could implement the repl in fLisp itself.
-    if (isatty(fileno(interp->input->fd)))
-        return repl(interp);
-
+    // Just eval the input stream
     interp->stackframe = &exceptionEnv;
     result = lisp_eval(interp);
     FLUSH_STDOUT;
@@ -135,10 +152,11 @@ int main(int argc, char **argv)
         }
         writeString(stderrStream, interp->message);
         FLUSH_STDERR;
-        return result;
     }
+    result = interp->result;
+    // Note: close output, error?
     lisp_destroy(interp);
-    return 0;
+    return result;
 }
 
 /*
