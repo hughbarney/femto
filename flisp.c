@@ -34,6 +34,7 @@ void printError(Interpreter *interp)
         stream = interp->output;
         interp->output = nil;
         writeObject(interp, interp->object, true);
+        file_fflush(interp, interp->output);
         fprintf(stderr, "error: '%s', %s\n", interp->output->buf, interp->message);
         interp->output = stream;
     } else
@@ -99,7 +100,7 @@ int main(int argc, char **argv)
 
     debug_file=getenv("FLISP_DEBUG");
 
-    if (nil == (interp->output = lisp_stream(interp, stdout, "<STDOUT>")))
+    if (nil == (interp->output = lisp_stream(interp, stdout, ">STDOUT")))
         fatal("could not open output stream");
 
     if (debug_file != NULL) {
@@ -128,7 +129,7 @@ int main(int argc, char **argv)
         }
         // Start repl
         // Note: if we could implement the repl in fLisp itself we'd bail out here.
-        if (nil == (interp->input = lisp_stream(interp, stdin, "<STDIN>")))
+        if (nil == (interp->input = lisp_stream(interp, stdin, "<STDIN")))
             fatal("failed to open input stream");
 
         //Note: could be omitted if we could implement the repl in fLisp itself.

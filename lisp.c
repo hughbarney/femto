@@ -4,10 +4,11 @@
  * Based on Tiny-Lisp: https://github.com/matp/tiny-lisp
  *
  *   public:
- *   lisp_init() .. initialize the interpreter
+ *   lisp_new() .. create a new interpreter
+ *   lisp_destroy() .. destroy an interpreter
  *   lisp_eval() .. evaluate interpreter input stream
  *   lisp_eval_string() .. evaluate a string
- *   file_fopen()  .. create lisp stream object from file
+ *   lisp_stream() .. create lisp stream object from file
  *   file_fclose() .. close file associated with lisp stream object
  */
 
@@ -78,6 +79,8 @@ void fl_debug(Interpreter *interp, char *format, ...)
 {
     if (interp->debug == nil)
         return;
+
+    assert(interp->debug != NULL);
 
     va_list(args);
     va_start(args, format);
@@ -1075,7 +1078,6 @@ Object *envLookup(Object * var, Object * env)
     }
 
     exceptionWithObject(interp, var, FLISP_INVALID_VALUE, "has no value");
-    __builtin_unreachable();
 }
 
 Object *envAdd(Object ** var, Object ** val, Object ** env, GC_PARAM)
@@ -1144,6 +1146,7 @@ Object *primitiveEq(Object ** args, GC_PARAM)
     else if (first->type == TYPE_STRING && second->type == TYPE_STRING)
         return !strcmp(first->string, second->string) ? t : nil;
     else
+        // Note: TYPE_STREAM: compare fd's ?
         return (first == second) ? t : nil;
 }
 
@@ -1157,7 +1160,6 @@ Object *primitiveCar(Object ** args, GC_PARAM)
         return first->car;
 
     exceptionWithObject(interp, first, FLISP_WRONG_TYPE, "(car arg) - arg must be a list");
-    __builtin_unreachable();
 }
 
 Object *primitiveCdr(Object ** args, GC_PARAM)
@@ -1170,7 +1172,6 @@ Object *primitiveCdr(Object ** args, GC_PARAM)
         return first->cdr;
 
     exceptionWithObject(interp, first, FLISP_WRONG_TYPE, "(cdr arg) - arg must be a list");
-    __builtin_unreachable();
 }
 
 Object *primitiveCons(Object ** args, GC_PARAM)
@@ -1208,12 +1209,10 @@ Object *primitiveGc(Object ** args, GC_PARAM)
 Object *primitiveSignal(Object ** args, GC_PARAM)
 {
     Object *first = (*args)->car;
-    Object *second = (*args)->cdr->car;
+    Object *second = (*args)->cdr;
 
     if (first->type != TYPE_SYMBOL)
         exceptionWithObject(interp, first , FLISP_WRONG_TYPE, "(signal type data) - type is not a symbol");
-    if (second != nil && second->type != TYPE_CONS)
-        exceptionWithObject(interp, second, FLISP_WRONG_TYPE, "(signal type data) - data is not a list");
 
     GC_TRACE(e, newCons(&first, &second, GC_ROOTS));
     exceptionWithObject(interp, *e, FLISP_USER, first->string);
@@ -1246,7 +1245,6 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
             return object;                                              \
         }                                                               \
         exceptionWithObject(interp, (*args)->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " arg ..) - arg is not a number"); \
-        __builtin_unreachable();                                        \
     }
 
 
@@ -1280,7 +1278,6 @@ Object *primitiveMod(Object **args, GC_PARAM) {
         return object;
     }
     exceptionWithObject(interp, (*args)->car, FLISP_WRONG_TYPE, "(%% dividend ..) - dividend is not a number");
-    __builtin_unreachable();
 }
 
 
@@ -1300,7 +1297,6 @@ Object *primitiveMod(Object **args, GC_PARAM) {
         return result ? t : nil;                                        \
     }                                                                   \
     exceptionWithObject(interp, (*args)->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " arg ..) - arg is not a number"); \
-    __builtin_unreachable();                                            \
 }
 
 DEFINE_PRIMITIVE_RELATIONAL(primitiveEqual, ==)
@@ -1351,10 +1347,10 @@ Object *stringAppend(Object ** args, GC_PARAM)
     memcpy(new + len1, second->string, len2);
     new[len1 + len2] = '\0';
 
-    GC_TRACE(gcString, newStringWithLength(new, len1 + len2, GC_ROOTS));
+    Object * str = newStringWithLength(new, len1 + len2, GC_ROOTS);
     free(new);
 
-    return *gcString;
+    return str;
 }
 
 Object *stringSubstring(Object ** args, GC_PARAM)
@@ -1386,10 +1382,10 @@ Object *stringSubstring(Object ** args, GC_PARAM)
 
     memcpy(sub, (str->string + s), newlen);
     *(sub + newlen) = '\0';
-    GC_TRACE(gcString, newStringWithLength(sub, newlen, GC_ROOTS));
+    Object * new = newStringWithLength(sub, newlen, GC_ROOTS);
     free(sub);
 
-    return *gcString;
+    return new;
 }
 
 Object *stringLength(Object ** args, GC_PARAM)
@@ -1399,7 +1395,7 @@ Object *stringLength(Object ** args, GC_PARAM)
     return newNumber(strlen(arg->string), GC_ROOTS);
 }
 
-/* Strings */
+/* String/Number conversion */
 
 Object *primitiveStringP(Object ** args, GC_PARAM)
 {
@@ -1464,6 +1460,7 @@ Object *asciiToNumber(Object ** args, GC_PARAM)
     return newNumber((double)*arg->string, GC_ROOTS);
 }
 
+
 Object *file_fopen(Interpreter *, char *, char *);
 ResultCode lisp_eval(Interpreter *);
 /** primitiveLoad - evaluate a file in interpeter
@@ -1491,6 +1488,8 @@ Object *primitiveLoad(Object **args, GC_PARAM)
     int err;
 
     fl_debug(interp, "(load \"%s\")", arg->string);
+
+    // Note: will segfault if gc during evaluation: stream object is not GC_TRACE'd
 
     if (!strcmp(arg->string, "-")) // Note: do we really want to read
                                    // stdin programatically like this?
@@ -1976,8 +1975,8 @@ Primitive primitives[] = {
     {"princ", 1, 1, primitivePrinc},
     {"print", 1, 1, primitivePrint},
     {"gc", 0, 0, primitiveGc},
-    
-    {"signal", 2, 2, primitiveSignal},
+
+    {"signal", 1, -1, primitiveSignal},
     {"+", 0, -1, primitiveAdd},
     {"-", 0, -1, primitiveSubtract},
     {"*", 0, -1, primitiveMultiply},
@@ -2186,7 +2185,6 @@ Object *evalLambda(Object ** args, Object ** env, GC_PARAM)
 
 Object *evalMacro(Object ** args, Object ** env, GC_PARAM)
 {
-    // Note: needed? (see primitives[])
     assert((*args) == nil || (*args)->type == TYPE_CONS);
 
     GC_TRACE(gcParams, (*args)->car);
@@ -2400,8 +2398,9 @@ Memory *newMemory(size_t size)
  * @returns On success: a pointer to an fLisp interpreter structure
  * @returns On failures: NULL
  *
- * Note: at the moment we only initialize and the statically allocated
- * interpreter `flisp` and return a pointer to it.
+ * Note: at the moment we only provide a single interpreter store a
+ * pointer to int in the static variable *interp* and return that variable.
+ *
  */
 Interpreter *lisp_new(size_t size, int argc, char **argv, char *library_path)
 {
@@ -2479,11 +2478,21 @@ void lisp_flush_output(Interpreter *interp)
  * returns: result code of first exception or RESULT_OK if none
  *   happened
  *
+ * Before calling the following elements of the interpreter has to be initialized:
+ * - stackframe .. a jmp_buf structure.
+ * - input .. a readable open Lisp stream object
+ * - output .. a writable open Lisp stream object, or nil to get
+ *      output written to interp->buf with len interp->len.
+ * - debug .. a writable open Lisp stream, or nil to disable debug
+ *      output.
  */
 ResultCode lisp_eval(Interpreter *interp)
 {
     // gcRoots is needed by GC_TRACE
     Object *gcRoots = interp->theRoot;
+
+    interp->result = FLISP_OK;
+    interp->message[0] = '\0';
 
     GC_TRACE(gcObject, nil);
 
@@ -2507,6 +2516,7 @@ ResultCode lisp_eval(Interpreter *interp)
         *gcObject = readExpr(interp);
         *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
         writeObject(interp, *gcObject, true);
+        // Note: this is extra and annoying, it should be removed.
         writeChar(interp, '\n');
         lisp_flush_output(interp);
         }
@@ -2519,15 +2529,14 @@ ResultCode lisp_eval(Interpreter *interp)
  * @param input   string to evaluate
  *
  * Before calling `lisp_eval_string()` initialize:
- * - interp->output: to an output stream, otherwise you get output to memory.
- * - interp->message: to an empty string
- * - interp->result:  to FLISP_OK
- * - interp->debug:   optional: to an output stream for debug
- *                     messages. see file_fopen()
+ * - interp->output .. a writable open Lisp stream object, or nil to get
+ *      output written to interp->buf with len interp->len.
+ * - interp->debug .. a writable open Lisp stream, or nil to disable debug
+ *      output.
  *
  * Returns: FLISP_OK if successful, FLISP_ERROR otherwise.
  *
- * interp->result is set to the result code of the evaluation.
+ * *interp->result* is set to the result code of the evaluation.
  *
  * If an error occurs during evaluation *interp->message* is set to an
  * error message.
@@ -2539,9 +2548,6 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
     ResultCode result;
 
     //fl_debug(interp, "lisp_eval_string(\"%s\")", input);
-
-    interp->message[0] = '\0';
-    interp->result = FLISP_OK;
 
     if (nil == (interp->input = file_inputMemStream(interp, input))) {
         interp->result = FLISP_IO_ERROR;
@@ -2556,10 +2562,10 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
     //fl_debug(interp, "lisp_eval_string() => %d", interp->result);
 //    if (result)
 //        fl_debug(interp, "lisp_eval_string() => error: %s", interp->message);
-    if (file_fflush(interp, interp->debug)) {
-        interp->result = FLISP_IO_ERROR;
-        strncpy(interp->message, "failed to fflush debug stream", sizeof(interp->message));
-    }
+    /* if (file_fflush(interp, interp->debug)) { */
+    /*     interp->result = FLISP_IO_ERROR; */
+    /*     strncpy(interp->message, "failed to fflush debug stream", sizeof(interp->message)); */
+    /* } */
     return result;
 }
 
@@ -2570,11 +2576,30 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
 // "<n" ""     lisp_stream(fdopen(n), "<n")
 // ">n" ""     lisp_stream(fdopen(n), ">n")
 // "path" "*"  lisp_stream(fd, "path")
+
+/** lisp_stream - converat a file descriptor into a Lisp stream object.
+ *
+ * @param interp  fLisp interpreter
+ * @param fd      open file descriptor
+ * @param name    name of the stream
+ *
+ * returns: Lisp stream object
+ *
+ * The file descriptor must be of type `FILE *`, obtained e.g. by
+ * `fopen()`, `fdopen()`, `fmemopen()` or `open_memstream()`.
+ *
+ * The name should be either the path of the regular file, or:
+ * - "<STRING" .. for fmemopen().
+ * - ">STRING" .. for open_memstream().
+ * - "<STDIN", ">STDOUT", ">STDERR" .. for `stdin`, `stdout` and
+ *                `stderr` respectively.
+ * - "<n", ">n" .. for fdopen(), where n is the decimal number of the
+ *                underlying file descriptor.
+ */
+
 Object *lisp_stream(Interpreter * interp, FILE * fd, char *name)
 {
-    Object *gcRoots = interp->theRoot; // gcRoots is needed by GC_TRACE and GC_ROOTS
-    GC_TRACE(gcStream, newStreamObject(fd, name, interp->theRoot));
-    return *gcStream;
+    return newStreamObject(fd, name, interp->theRoot);
 }
 
 /*
