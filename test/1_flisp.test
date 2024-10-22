@@ -1,48 +1,58 @@
+#!./run
 # test executable and fLisp functionality
 # leg20231128: Femto
-tap 33
+
+export FLISPRC=
+
+tap 35
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
 
-(FEMTORC= femto >/dev/null)
-ok femto-2 w/o femto.rc femto succeds silently
+(FEMTORC= FEMTO_BATCH=1 ../femto >/dev/null)
+ok femto-2 w/o femto.rc femto in batch mode succeds
 
-(: | femto >/dev/null)
-ok femto-3 empty input succeeds silently
+(: | FEMTORC=- FEMTO_BATCH=1 ../femto >/dev/null)
+ok femto-3 empty input succeeds
+
+[ -x ../femto ]
+ok flisp-1 flisp exists and is executable;
+
+(: | FLISPRC= ../flisp)
+ok flisp-2 empty input succeeds
 
 # repl
-IN='(' OUT='error: unexpected end of stream in list'
+IN='(' ERR='unexpected end of stream in list'
 flisp_err; ok reader-1 incomplete sexp error msg
 
 IN="'(nil 'symbol)" OUT='(nil (quote symbol))'
 flisp_expr; ok reader-2 read "'" ok, writer succeeds
 
 # Special forms
-IN='(quote)' OUT='error: #<Primitive quote> expects at least 1 arguments'
+IN='(quote)' ERR='expects at least 1 arguments' OBJ='#<Primitive quote>'
 flisp_err; ok quote-1 w/o arg error message
 
 IN="(setq var 'val)" OUT=val
 flisp_expr; ok setq-1 assignment returns value
 
-IN="(setq var 'val) var" OUT=val
-flisp_expr; ok setq-2 var evaluates to val
+IN="(setq var 'val) var" OUT="val"
+flisp_expr 1; ok setq-2 var evaluates to val
 
 IN='(setq)' OUT=nil
 flisp_expr; ok setq-3 no args evaluate to nil
 
-IN='(setq var1)' OUT='error: #<Primitive setq> expects a multiple of 2 arguments'
+IN='(setq var1)' OBJ='#<Primitive setq>' ERR='expects a multiple of 2 arguments'
 flisp_err; ok setq-4 one arg fails
 
 EXPR="(setq var1 'val1  var2 'val2)"
 IN="$EXPR" OUT=val2
-flisp_expr; ok setq-5 four args returns last value
+flisp_expr 1; ok setq-5 four args returns last value
 
 IN="$EXPR var1" OUT=val1
-flisp_expr; ok setq-6 four args first var evaluates to first value
+flisp_expr 1; ok setq-6 four args first var evaluates to first value
 
 IN="$EXPR var2" OUT=val2
-flisp_expr; ok setq-7 four args second var evaluates to second value
+flisp_expr 1; ok setq-7 four args second var evaluates to second value
 
 IN='(progn)' OUT=nil
 flisp_expr; ok progn-1 no args evaluate to nil
@@ -94,16 +104,16 @@ flisp_expr; ok cond-12 cond with last expresion single string list gives its val
 IN="(cond nil ((consp (quote (a b)))))" OUT=t
 flisp_expr; ok cond-13 cond with last expresion funcall gives result
 
-IN='(cond . "a")' OUT='error: "a" (primitive) is not a list: arg 0'
+IN='(cond . "a")' ERR='(cond args) - args is not a list: arg 0' OBJ='"a"'
 flisp_err; ok cond-14 fail if not called with a cons
 
-IN='(cond "a" ())' OUT='error: "a" (cond) is not a list: clause'
+IN='(cond "a" ())' OBJ='"a"' ERR='(cond clause ..) - is not a list: clause'
 flisp_err; ok cond-15 fail if clause is not a cons
 
-IN='(cond (nil . "a"))' OUT='error: unexpected dot at start of list'
+IN='(cond (nil . "a"))' ERR='unexpected dot at start of list' OBJ=
 flisp_err; ok cond-16 fail if clause is cons with car nil - captured by reader
 
-IN='(cond (t . t))' OUT='error: (t . t) (cond) is not a list: clause action'
+IN='(cond (t . t))' ERR='(cond (pred action) ..) action is not a list' OBJ='(t . t)'
 flisp_err; ok cond-17 fail if t and clause action is not a list
 
 # lambda

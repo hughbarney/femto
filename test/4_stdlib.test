@@ -1,42 +1,39 @@
+#!./run
 # test the Lisp standard library
 # leg20231129
 tap 10
 
-_stdlib() {
-    IN=$(cat <<EOF
-(load "../femto.rc")
-(require 'stdlib)
-$IN
-EOF
-      )
-}
-stdlib() { _stdlib; flisp_expr $1; }
-stdlib_err() { _stdlib; flisp_err $1; } 
+export FLISPRC=../lisp/core.lsp
+stdlib() { IN="(require 'stdlib) $IN" flisp_expr "$@"; }
+stdlib_err() { IN="(require 'stdlib) $IN" flisp_err "$@"; }
+
 # atom
 IN='(atom 0)' OUT=t
-stdlib; ok atom-1 number is atom
+stdlib 1; ok atom-1 number is atom
 
 IN='(atom "a")' OUT=t
-stdlib; ok atom-2 string is atom
+stdlib 1; ok atom-2 string is atom
 
 IN="(atom 'symbol)" OUT=t
-stdlib; ok atom-3 symbol is atom
+stdlib 1; ok atom-3 symbol is atom
 
 IN='(atom nil)' OUT=t
-stdlib; ok atom-4 nil is atom
+stdlib 1; ok atom-4 nil is atom
 
 IN="(atom '(0 'b))" OUT=nil
-stdlib; ok atom-5 list is not atom
+stdlib 1; ok atom-5 list is not atom
 
 # zerop
 IN='(zerop 0)' OUT=t
-stdlib; ok zerop-1 0 is zero
+stdlib 1; ok zerop-1 0 is zero
 
 IN='(zerop 1)' OUT=nil
-stdlib; ok zerop-2 1 is not zero
+stdlib 1; ok zerop-2 1 is not zero
 
-IN='(zerop "a")' OUT='error: "a" is not a number'
-stdlib_err; ok zerop-3 with string fails
+IN='(zerop "a")'
+ERR='(== arg ..) - arg is not a number'
+OBJ='"a"'
+stdlib_err 1; ok zerop-3 with string fails
 
 # equal
 true; ok equal \# TODO
