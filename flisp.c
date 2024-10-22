@@ -86,13 +86,14 @@ int main(int argc, char **argv)
     char *library_path, *init_file, *debug_file;
     FILE *fd;
     Interpreter *interp;
+    Object *iniStream;
     jmp_buf exceptionEnv;
 
     if ((init_file = getenv("FLISPRC")) == NULL)
         init_file = FL_LIBDIR "/" FL_INITFILE;
 
     if ((library_path=getenv("FLISPLIB")) == NULL)
-        library_path = CPP_XSTR(FL_LIBDIR);
+        library_path = FL_LIBDIR;
 
     interp = lisp_new(FLISP_MEMORY_SIZE, argc, argv, library_path);
     if (interp == NULL)
@@ -115,30 +116,31 @@ int main(int argc, char **argv)
         if (!(fd = fopen(init_file, "r")))
             fprintf(stderr, "failed to open inifile %s: %d\n", init_file, errno);
         else {
-            if (nil == (interp->input = lisp_stream(interp, fd, init_file)))
+            if (nil == (iniStream = lisp_stream(interp, fd, init_file)))
                 fatal("could not open input file stream for inifile");
             else {
                 // load inifile
                 interp->stackframe = &exceptionEnv;
-                if (lisp_eval(interp))
+                if (lisp_eval(interp, iniStream))
                     fprintf(stderr, "failed to load inifile %s:%d: %s\n", init_file, interp->result, interp->message);
+                // Note: if we could implement the repl in fLisp itself we'd bail out here.
                 interp->stackframe = NULL;
-                if (file_fclose(interp, interp->input))
+                if (file_fclose(interp, iniStream))
                     fprintf(stderr, "failed to close inifile %s:%d %s\n", init_file, interp->result, interp->message);
             }
         }
-        // Start repl
-        // Note: if we could implement the repl in fLisp itself we'd bail out here.
-        if (nil == (interp->input = lisp_stream(interp, stdin, "<STDIN")))
-            fatal("failed to open input stream");
-
-        //Note: could be omitted if we could implement the repl in fLisp itself.
-        if (isatty(fileno(interp->input->fd)))
-            return repl(interp);
     }
+    // Start repl
+    if (nil == (interp->input = lisp_stream(interp, stdin, "<STDIN")))
+        fatal("failed to open input stream");
+
+    //Note: could be omitted if we could implement the repl in fLisp itself.
+    if (isatty(fileno(interp->input->fd)))
+        return repl(interp);
+
     // Just eval the input stream
     interp->stackframe = &exceptionEnv;
-    result = lisp_eval(interp);
+    result = lisp_eval(interp, interp->input);
     fflush(stdout);
     if (result) {
         printError(interp);
