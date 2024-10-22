@@ -108,9 +108,35 @@ typedef struct Interpreter {
 
 extern Interpreter *lisp_interpreters;
 
+// PROGRAMMING INTERFACE ////////////////////////////////////////////////
+
+#define TWO_STRING_ARGS(func)                                   \
+    Object *first = (*args)->car;                               \
+    Object *second = (*args)->cdr->car;                         \
+    if (first->type != TYPE_STRING)                             \
+        exceptionWithObject(interp, first, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) "  first second) - first is not a string"); \
+    if (second->type != TYPE_STRING)                            \
+        exceptionWithObject(interp, second, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " first second) - second is not a string");
+
+#define ONE_STRING_ARG(func)                                  \
+    Object *arg = (*args)->car;                               \
+    if (arg->type != TYPE_STRING)                             \
+        exceptionWithObject(interp, arg, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " arg) - arg is not a string");
+
+#define ONE_NUMBER_ARG(func)                                  \
+    Object *num = (*args)->car;                               \
+    if (num->type != TYPE_NUMBER)                             \
+        exceptionWithObject(interp, num, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " num) - num is not a number");
+
+#define ONE_STREAM_ARG(func)                                  \
+    Object *fd = (*args)->car;                            \
+    if (fd->type != TYPE_STREAM)                          \
+        exceptionWithObject(interp, fd, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " fd) - fd is not a stream");
+
+// PUBLIC INTERFACE ///////////////////////////////////////////////////////
 extern Interpreter *lisp_new(size_t, int, char**, char*);
 extern void lisp_destroy(Interpreter *);
-extern ResultCode lisp_eval(Interpreter *);
+extern ResultCode lisp_eval(Interpreter *, Object *);
 extern ResultCode lisp_eval_string(Interpreter *, char *);
 
 extern Object *lisp_stream(Interpreter *, FILE *, char *);
