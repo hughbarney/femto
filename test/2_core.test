@@ -1,40 +1,58 @@
+#!./run
 # test the fLisp core library
 # leg20231129: Femto
-tap 10
 
-flisp_core() {
-    IN=$(cat <<EOF
-(load "../femto.rc")
-$IN
-EOF
-      )
-    flisp_expr "$@"
-}
+export FLISPRC=../lisp/core.lsp
+
+tap 16
 
 # list
 IN='(list)' OUT=nil
-flisp_core; ok list-1 empty list
+flisp_expr 1; ok list-1 empty list
 
 IN="(list 'element)" OUT='(element)'
-flisp_core; ok list-2 single element
+flisp_expr 1; ok list-2 single element
 
 IN="(list 'first 'second)" OUT='(first second)'
-flisp_core; ok list-3 two elements
+flisp_expr 1; ok list-3 two elements
 
 # defmacro
-true; ok defmacro \# TODO 
+IN="(defmacro m (a b) (list 'list a b)) (m 1 2)" OUT='(1 2)'
+flisp_expr 1; ok defmacro-1  simple macroexpansion
 
 # defun
-true; ok defun \# TODO
+IN="(defun f (a b) (list a b)) (f 1 2)" OUT='(1 2)'
+flisp_expr 1; ok defun-1  simple function invocation
 
 # string
-true; ok string \# TODO
+IN="(string nil)" OUT='""'
+flisp_expr 1; ok string-1 nil is empty string
+
+IN="(string +03)" OUT='"3"'
+flisp_expr 1; ok string-2 number converts to number string
+
+IN='(string "a")' OUT='"a"'
+flisp_expr 1; ok string-3 string returns itself
+
+IN="(string 'a)" OUT='"a"'
+flisp_expr 1; ok string-4 symbols converts to its name
+
+IN="(string (cons 'a  2))" OUT='"a2"'
+flisp_expr 1; ok string-5 cons converts to concatenated strings of elements
+
+IN="(string car)" OBJ='(wrong-type-argument ("cannot convert to string" #<Primitive car>))'  ERR="wrong-type-argument"
+flisp_err 1; ok string-6 lambda err\'s
 
 # concat
-true; ok concat \# TODO
+IN="(concat 1 'a \"?\")" OUT='"1a?"'
+flisp_expr 1; ok concat-1 simple string concatenation
 
 # memq
-true; ok memq \# TODO
+IN="(memq 'a (list 0 'a 3))" OUT="(a 3)"
+flisp_expr 1; ok memq-1 find object in list
+
+IN='(memq '\''a '\''(1 '\''two 3))' OUT=nil
+flisp_expr 1; ok memq-2 do not find object in list
 
 # provide
 true; ok provide \# TODO
