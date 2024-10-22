@@ -1,0 +1,24 @@
+;; -*-Lisp-*-
+;;
+;; flisp startup file
+
+$(cat lisp/core.lsp)
+
+;; flisp initialzation 
+(setq
+ ~ (os.getenv "HOME")
+ config_file (concat ~ "/" ".config/flisp/flisp.rc"))
+
+(defun getopts (opts pos)
+  (setq o (car opts))
+  (cond
+    ((null o))
+    (t
+     (load o)
+     (getopts (cdr opts) 0))))
+
+(require 'flisp)
+(require 'stdlib)
+
+;; if not found we get not past this but rather err out: (load config_file)
+(getopts argv 0)

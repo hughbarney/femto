@@ -24,18 +24,18 @@ INITFILE = "$(SCRIPTDIR)/femto.rc"
 OBJ     = command.o display.o complete.o data.o gap.o key.o search.o buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o femto_lisp.o main.o
 
 FLISP_OBJ = flisp.o lisp.o
-
 BINARIES = femto flisp
+RC_FILES = femto.rc flisp.rc
 
 LISPFILES = femto.rc lisp/defmacro.lsp lisp/bufmenu.lsp lisp/dired.lsp lisp/grep.lsp lisp/git.lsp lisp/oxo.lsp \
 	lisp/flisp.lsp lisp/femto.lsp lisp/info.lsp
 
 all: femto docs/flisp.md
 
-femto: $(OBJ)
+femto: $(OBJ) femto.rc
 	$(LD) $(LDFLAGS) -o femto $(OBJ) $(LIBS)
 
-flisp: $(FLISP_OBJ)
+flisp: $(FLISP_OBJ) flisp.rc
 	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ)
 
 complete.o: complete.c header.h
@@ -95,6 +95,14 @@ main.o: main.c header.h lisp.h
 flisp.o: flisp.c lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
+.SUFFIXES: .rc .sht
+.sht.rc:
+	./sht $*.sht >$@
+
+femto.rc: femto.sht lisp/core.lsp
+
+flisp.rc: flisp.sht lisp/core.lsp
+
 measure: strip FORCE
 	@echo Total
 	@echo binsize: $$(set -- $$(ls -l femto); echo $$5)
@@ -131,7 +139,7 @@ val: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1 valgrind ./femto 2> val.log
 
 clean: FORCE
-	-$(RM) -f $(OBJ) $(FLISP_OBJ) $(BINARIES)
+	-$(RM) -f $(OBJ) $(FLISP_OBJ) $(BINARIES) $(RC_FILES)
 	-$(RM) -rf doxygen
 	-$(RM) -f docs/flisp.md README.html
 	-$(RM) -f val.log debug.out

@@ -1,0 +1,19 @@
+#!/bin/sh
+# sh(oo)t the shell template processor.
+# https://at.magma-soft.at/darcs/sht/
+# Georg Lehner <jorge@magma-soft.at>, 2023, Public Domain
+
+sht () {
+    [ $# = 0 ] && { echo usage: sht \[script ..\] template >&2; return 2; }
+    while [ $# -gt 1 ]; do  . $1; shift; done
+
+    sh <<EOF
+cat <<${SHT_DELIMITER:=SHT_EOF}
+$(cat $1)
+${SHT_DELIMITER}
+EOF
+}
+
+[ $(basename "$(command -v $0)") = sht ] || return 0
+
+sht "$@"
