@@ -15,7 +15,7 @@ ok femto-2 w/o femto.rc femto in batch mode succeds
 (: | FEMTORC=- FEMTO_BATCH=1 ../femto >/dev/null)
 ok femto-3 empty input succeeds
 
-[ -x ../femto ]
+[ -x ../flisp ]
 ok flisp-1 flisp exists and is executable;
 
 (: | FLISPRC= ../flisp)

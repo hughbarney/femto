@@ -47,6 +47,7 @@ ok () {
 
 [ $# = 0 ] && set -- *.test
 
+export FLISP_DEBUG=f.log
 
 # pipe expr $IN to fLisp, extract $1 last values of output, default 1. Filters trailing 't.
 # Compare output with $OUT
