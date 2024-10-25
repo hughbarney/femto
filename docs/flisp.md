@@ -1,54 +1,5 @@
 # fLisp Manual
 
-Table of Contents
-
-[Introduction](#introduction)
-
-[Lisp](#lisp)
-
-[Notation Convention](#notation)
-
-[fLisp Interpreter](#interpreter)
-
-[Syntax](#syntax)
-
-[Objects and Data Types](#objects_and_data_types)
-
-[Environments, Functions, Evaluation](#evaluation)
-
-[Primitives](#primitives)
-
-1.  [Interpreter Operations](#interp_ops)
-2.  [Object Operations](#object_ops)
-3.  [String Operations](#string_ops)
-4.  [Arithmetic Operations](#arithmetic_ops)
-
-Editor Extension
-
-[Buffers](#buffers)
-
-1.  [Text manipulation](#text)
-2.  [Selection](#selection)
-3.  [Cursor Movement](#cursor)
-4.  [Buffer management](#buffer_management)
-
-[User Interaction](#ui)
-
-1.  [Window Handling"](#windows)
-2.  [Message Line](#message_line)
-3.  [Keyboard Handling](#keyboard)
-4.  [Programming and System Interaction](#programming_system)
-
-[Error Handling](#exceptions)
-
-[Embedding fLisp](#embedding)
-
-[Implementation Details](#implementation)
-
-1.  [Garbage Collection](#gc)
-2.  [Memory Usage](#memory)
-3.  [Future Directions](#future)
-
 ### Introduction
 
 > A designer knows he has achieved perfection not when there is nothing
@@ -73,6 +24,72 @@ use other resources eg.
     Lisp](https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html)
     or
 -   [The Scheme Programming Language](https://www.scheme.org/).
+
+This manual refers to version 0.3 or later of fLisp.
+
+Table of Contents
+
+[Introduction](#introduction)
+
+[Lisp](#lisp)
+
+[Notation Convention](#notation)
+
+[fLisp Interpreter](#interpreter)
+
+[Syntax](#syntax)
+
+[Objects and Data Types](#objects_and_data_types)
+
+[Environments, Functions, Evaluation](#evaluation)
+
+[Primitives](#primitives)
+
+1.  [Interpreter Operations](#interp_ops)
+2.  [Input / Output and Others](#in_out)
+3.  [Object Operations](#object_ops)
+4.  [Arithmetic Operations](#arithmetic_ops)
+5.  [String Operations](#string_ops)
+
+[Error Handling](#exceptions)
+
+[Lisp Libraries](#libraries)
+
+1.  [Library Loading](#startup)
+2.  [Core Library](#core_lib)
+3.  [fLlisp Library](#flisp_lib)
+4.  [Standard Library](#std_lib)
+5.  [Femto Library](#femto_lib)
+
+[Editor Extension](#editor)
+
+[Buffers](#buffers)
+
+1.  [Text manipulation](#text)
+2.  [Selection](#selection)
+3.  [Cursor Movement](#cursor)
+4.  [Buffer management](#buffer_management)
+
+[User Interaction](#ui)
+
+1.  [Window Handling"](#windows)
+2.  [Message Line](#message_line)
+3.  [Keyboard Handling](#keyboard)
+4.  [Programming and System Interaction](#programming_system)
+
+[Embedding fLisp](#embedding)
+
+1.  [Embedding Overview](#embedding)
+2.  [fLisp C Interface](#c_api)
+3.  [Building Extensions](#extensions)
+
+[Implementation Details](#implementation)
+
+1.  [Garbage Collection](#gc)
+2.  [Memory Usage](#memory)
+3.  [Future Directions](#future)
+
+[^](#toc)
 
 ### Lisp
 
@@ -127,9 +144,8 @@ When *fLisp* is invoked it follows a three step process:
 3.  Print: the result of the evaluation is returned to the invoker.
 
 Core functions of the language operate on built-in objects only. *fLisp*
-is extended with additional functions in order to interact with editor
-related objects. With respect to the interpreter, extension functions
-behave the same as core functions.
+can be extended with additional functions. With respect to the
+interpreter, extension functions behave the same as core functions.
 
 #### Syntax
 
@@ -147,18 +163,24 @@ Data Types](#objects_and_data_types)).
 `)`  
 Finishes a function invocation, *list* or *cons* object
 
-`"`  
-Encloses strings.
-
 `'`  
-With a single quote prefix before a sexp, the sexp is expanded to
-`(quote sexp)` before it is evaluated.
+`:`  
+With a single quote or a colon prefix before a sexp, the sexp is
+expanded to `(quote sexp)` before it is evaluated.
 
 `.`  
 The expression` (a . b)` evaluates to a *cons* object, holding the
 objects *a* and *b*.
 
-Numbers are represented in decimal notation.
+`"`  
+Encloses strings.
+
+`\`  
+Escape character. When reading a string, the next character is read as
+character, even if it is special to the reader.
+
+Numbers are read and written in decimal notation. Exponent notation is
+not supported.
 
 A list of objects has the form:
 
@@ -179,7 +201,7 @@ value in logical operations.
 
 #### Objects and Data Types
 
-*fLisp* objects have exactly one of the following data types:
+*fLisp* objects have one of the following data types:
 
 <span class="dfn">number</span>  
 [double precision floating point
@@ -200,6 +222,9 @@ anonymous function with parameter evaluation
 
 <span class="dfn">macro</span>  
 anonymous function without parameter evaluation
+
+<span class="dfn">stream</span>  
+An input/output stream
 
 Objects are immutable, functions either create new objects or return
 existing ones.
@@ -275,7 +300,7 @@ as a list in the parameter *opt*.
 
 `(macro params body)`  
 `(macro ([param ..]) body)`  
-`(macro (param[ param<..] . opt) body)`  
+`(macro (param[ param..] . opt) body)`  
 These forms return a macro function. Parameter handling is the same as
 with lambda.
 
@@ -286,6 +311,47 @@ Returns *expr* without evaluating it.
 Throws an exception, stopping any further evaluation. Exceptions can be
 typed via the symbol *type* and must contain a list of exception related
 objects. `(signal 'error 'nil)` is probably the simplest signal.
+
+##### Input / Output and Others
+
+`(read`\[ `stream `\[`eof-error-p`\[ `eof-value`\]\]\]`)`
+
+Reads the next complete Lisp expression from the default input stream,
+or from *stream* if given. The read in object is returned. If end of
+file is reached, an exception is raised, unless *eof-error-p* is set to
+`nil`. In that case `eof-value` is returned. All optional arguments
+default to `nil`.
+
+`(write object`\[ `keys`\]\]`)`
+
+`keys`:
+
+`:stream` `stream`
+
+`:readably` `flag`
+
+Formats *object* into a string and writes it to the default output
+stream. With key `:stream` output is written to the given stream. With
+key `:readable` not `nil` output is formatted in a way which which gives
+the same object when read again. `write` returns the *object*.
+
+`(load path)`
+
+Reads all objects from file *path*, returns the last one.
+
+`(system string)`
+
+Executes the
+[system(1)](https://man7.org/linux/man-pages/man3/system.3.html)
+function with *string* as parameter.
+
+`(os.getenv string) `
+
+Returns the value of the environment variable named *string*.
+
+`(gc) `
+
+Run the garbage collector.
 
 ##### Object Operations
 
@@ -320,44 +386,6 @@ Returns the second object of *cons*.
 `(eq a b)`  
 Returns `t` if *a* and *b* evaluate to the same object, `nil` otherwise.
 
-`(print object)`  
-Formats *object* into a string which can be read by the reader and
-returns it. As a side effect, the string is printed to the output stream
-with a leading and a closing newline. `print` escapes quotes in strings
-with a backslash.
-
-`(princ object)`  
-Formats *object* into a string and returns it, As a side effect, the
-string is printed to the output stream.
-
-##### String Operations
-
-`(string.length string)`  
-Returns the length of *string* as a *number*.
-
-`(string.substring string start end)`  
-Returns the sub string from *string* which starts with the character at
-index *start* and ends with index *end*. String indexes are zero based.
-
-`(string.append string1 string2)`  
-Returns a new string consisting of the concatenation of *string1* with
-*string2*.
-
-`(string-to-number string)`  
-Converts *string* into a corresponding *number* object. String is
-interpreted as decimal based integer.
-
-`(number-to-string number)`  
-Converts *number* into a *string* object.
-
-`(ascii number)`  
-Converts *number* into a *string* with one character, which corresponds
-to the ASCII representation of *number*.
-
-`(ascii->number string)`  
-Converts the first character of *string* into a *number* which
-corresponds to its ASCII value.
-
 ##### Arithmetic Operations
 
 `(+[ arg..])`  
@@ -388,6 +416,168 @@ arithmetic exception.
 These predicate functions apply the respective comparison operator
 between all *arg*s and return the respective result as `t` or `nil`. If
 only one *arg* is given they all return `t`.
+
+##### String Operations
+
+`(string.length string)`  
+Returns the length of *string* as a *number*.
+
+`(string.substring string start end)`  
+Returns the sub string from *string* which starts with the character at
+index *start* and ends with index *end*. String indexes are zero based.
+
+`(string.append string1 string2)`  
+Returns a new string consisting of the concatenation of *string1* with
+*string2*.
+
+`(string-to-number string)`  
+Converts *string* into a corresponding *number* object. String is
+interpreted as decimal based integer.
+
+`(number-to-string number)`  
+Converts *number* into a *string* object.
+
+`(ascii number)`  
+Converts *number* into a *string* with one character, which corresponds
+to the ASCII representation of *number*.
+
+`(ascii->number string)`  
+Converts the first character of *string* into a *number* which
+corresponds to its ASCII value.
+
+[^](#toc)
+
+### Error handling
+
+Whenever fLisp encounters an error an exception is thrown. Exceptions
+have a non-zero result code and a human readable error message. fLisp
+does not implement stack backtracking. exceptions are only caught on the
+top level of an evaluation.
+
+In the `flisp` interpreter the error message is formated as
+`error: message` if the error object is `nil` otherwise as
+`error: 'object', message`, where *object* is the serialization of the
+object causing the error and *message* is the error message.
+
+When called from C-code, the `object` field of the interpreter is set to
+the object causing the error instead of the evaluation result.
+
+Exceptions can be thrown from within in Lisp code via the
+[`signal`](#interp_ops) function.
+
+[^](#toc)
+
+### Lisp Libraries
+
+#### Library Loading
+
+On startup, both `femto` and `flisp` try to load a single Lisp file. The
+default location and name of this <span class="dfn">startup file</span>
+are hardcoded in the binary and can be overwritten with environment
+variables:
+
+Library path  
+femto: `/usr/local/share/femto`, `FEMTOLIB`
+
+flisp: `/usr/local/share/flisp`, `FLISPLIB`
+
+Startup file  
+femto: `femto.rc`, `FEMTORC`
+
+flisp: `flisp.rc`, `FLISPRC`
+
+The library path is exposed to the Lisp interpreter as the variable
+`script_dir`.
+
+The provided startup files implement a minimal library loader, which
+allows to load Lisp files from the library path conveniently and without
+repetition. The command to load the file `example.lsp` from the library
+is `(require 'example)`.
+
+Femto provides a set of libraries, some of them are required by the
+editor
+
+#### Core Library
+
+This library is built into the startup file.
+
+`(list` \[`element` ..\]`)`  
+Returns the list of all provided elements.
+
+`(defmacro name params body)`  
+`(defun name params body)`  
+Defines and returns a macro or function, respectively.
+
+`(string arg)`  
+Returns the string conversion of argument.
+
+`(concat `\[`arg` ..\]`)`  
+Returns concatenation of all arguments converted to strings.
+
+`(memq arg list)`  
+If *arg* is contained in *list*, returns the sub list of *list* starting
+with the first occurrence of *arg*, otherwise returns `nil`.
+
+`(provide feature)`  
+Used as the final expression of a library to register symbol *feature*
+as loaded into the interpreter.
+
+`(require feature)`  
+If the *feature* is not alreaded loaded, the file `feature.lsp` is
+loaded from the library path and registers the *feature* if loading was
+successful. The register is the variable `features`.
+
+#### fLisp Library
+
+This library implements commonly excpected Lisp idioms, which are used
+in the editor libraries.
+
+not
+
+listp
+
+and
+
+map1
+
+or
+
+reduce
+
+max
+
+min
+
+nthcdr
+
+nth
+
+#### Standard Library
+
+This library implements some Common Lisp functions, which are not used
+in the editor libraries. They are provided for reference.
+
+atom
+
+zerop
+
+if
+
+equal
+
+append
+
+print
+
+princ
+
+#### Femto Library
+
+This library implements helper function required by the Femto editor. It
+is written only in Lisp idioms provided by fLisp itself plus the [fLisp
+Library](#flisp_lib).
+
+[^](#toc)
 
 ### Editor Extension
 
@@ -700,14 +890,6 @@ Evaluates the *region* in the current buffer, inserts the result at
 *point*. If *point* is before *mark* `eval-block` does nothing but
 returning `t`.
 
-`(system string)`  
-Executes the
-[system(1)](https://man7.org/linux/man-pages/man3/system.3.html)
-function with *string* as parameter.
-
-`(os.getenv string) `  
-Returns the value of the environment variable named *string*.
-
 `(log-message string)`  
 Logs *string* to the `*messages*` buffer.
 
@@ -717,29 +899,116 @@ Logs string to the file `debug.out`.
 `(get-version-string)`  
 Returns the complete version string of Femto, including the copyright.
 
-### Error handling
-
-Whenever fLisp encounters an error an exception is thrown. Exceptions
-have a non-zero result code and an error message. The error message is a
-string containing the serialization of the object causing the error — if
-any — and an individual user readable string.
-
-fLisp does not implement stack backtracking. exceptions are only caught
-on the top level of an evaluation.
-
-Exceptions can be thrown in Lisp code via the [`signal`](#interp_ops)
-function.
-
-<span class="mark">Note: currently the error result code is always 1. It
-is planned to distinguish different error classes, e.g. parsing errors,
-execution errors, I/O errors, input errors, … </span>
+[^](#toc)
 
 ### Embedding fLisp
 
-fLisp exposes the following public interfaces:
+#### Embedding Overview
 
-`Interpreter *lisp_init(int argc, char **argv, char       *library_path)`  
-`lisp_init()` creates and initializes an fLisp interpreter. The initial
+fLisp can be embedded into a C application. Two examples of embedding
+are the \`femto\` editor and the simplistic \`flisp\` command line Lisp
+interpreter.
+
+Currently embedding can only be done by extending the build system.
+Application specific binary Lisp extensions are stored in separated C
+files and the interface code is conditionally included into the `lisp.c`
+file. Two extensions are provided: the Femto extension which provides
+the editor functionality and the file extension which provides access to
+the low level stream I/O functions and adds some more.
+
+fLisp exposes the following public interface functions:
+
+`lisp_new()`  
+Create a new interpreter.
+
+`lisp_destroy()`  
+Destroy an interpreter, releasing resources.
+
+`lisp_eval()`  
+Evaluate input stream until exhausted or error.
+
+`lisp_eval_string()`  
+Evaluate given string until exhausted or error.
+
+`lisp_stream()`  
+Create a Lisp stream object from file.
+
+`file_fclose()`  
+Close a Lisp stream object.
+
+`file_fflush()`  
+Flush contents of Lisp output stream.
+
+`writeObject()`  
+Format and write object to Lisp stream.
+
+Different flows of operation can be implemented. The Femto editor
+initializes the interpreter without input/output streams and sends
+strings of Lisp commands to the interpreter, either when a key is
+pressed or upon explicit request via the editor interface.
+
+The `flisp` command line interpreter sets the standard output as the
+default output stream of the fLisp interpreter and feeds it with strings
+of lines read from the terminal. If the standard input is not a terminal
+it is set as the default input stream and fLisp reads it through until
+end of file.
+
+After processing the given input, the interpreter puts a pointer to the
+object which is the result of the last evaluation into the `object`
+field of the interpreter structure. The `result` field is set to
+`FLISP_OK`, which has the integer value `0`. The `message` field is set
+to the empty string.
+
+fLisp sends all output to the default output stream. If `NULL` is given
+on initialization, a memory based stream is opened and used. The
+resulting string is available in the output streams `buf` field of the
+interpreter structure, the length of the string is available in the
+`len` field.
+
+If an exception is thrown inside the Lisp interpreter, the default input
+stream is reset, an error message is formatted and copied to the
+`message` buffer of the interpreter, A pointer to the object causing the
+error is set to the `object` field. The `result` field is set to an
+error specific code:
+
+`FLISP_ERROR`  
+Generic error code.
+
+`FLISP_USER`  
+User generated exception.
+
+`FLISP_READ_INCOMPLETE`  
+End of file before valid Lisp expression was read in.
+
+`FLISP_READ_INVALID`  
+Lisp expression is invalid.
+
+`FLISP_READ_RANGE`  
+Integer or float under or overrflow.
+
+`FLISP_WRONG_TYPE`  
+A Lisp function received an argument of wrong type.
+
+`FLISP_INVALID_VALUE`  
+A Lisp function received an argument with invalid value.
+
+`FLISP_PARAMETER_ERROR`  
+A macro or function invocation received an incorrect number of
+arguments.
+
+`FLISP_IO_ERROR`  
+An operation on a stream failed.
+
+`FLISP_OOM`  
+fLisp ran out of memory.
+
+`FLISP_GC`  
+The garbage collector encountered an error.
+
+#### fLisp C Interface
+
+`Interpreter *lisp_new(int size, char **argv, char       *library_path, FILE *input, FILE *output, FILE* debug)`  
+`lisp_new()` creates and initializes an fLisp interpreter. The initial
 environment contains the following symbols:
 
 *argv0*  
@@ -754,21 +1023,109 @@ The string stored in `library_path`
 A pointer to an *Interpreter* struct is returned, which is used to
 operate the interpreter.
 
-`ResultCode lisp_eval(interp, format, …)`  
-Evaluates input in the fLisp interpreter *interp*. The input is
-generated the same way as in `printf()` from the *format* string and any
-following optional arguments.
+The other arguments to `lisp_new()` are:
 
-The *ResultCode* is `0` when the input is evaluated successfully and
-non-zero if any error occurred during evaluation. The result code is
-also stored in *interp-\>result*.
+*size*  
+Memory size to allocate for the Lisp objects. This is divided into to
+pages for garbage collection. only one page is used by the interpreter
+at any moment.
 
-After evaluation *interp-\>output* contains the output of the evaluation
-and *interp-\>message* contains the error message if result code is
-non-zero.
+*input*  
+Default input stream. If *input* is set to `NULL`, the input stream has
+to be specified for each invocation of `lisp_eval()`.
+
+*output*  
+Default output stream. If *output* is set to `NULL` a memory stream is
+created at the first invocation of the interpreter and set as the
+default output stream.
+
+*debug*  
+Debug output stream. If set to `NULL` no debug information is generated.
+
+`(void) lisp_destroy(Interpreter *interp)`  
+Frees all resources used by the interpreter.
+
+`ResultCode lisp_eval(Interpreter *interp, Object *stream)`  
+Evaluates the given input stream in the fLisp interpreter *interp* until
+end of file. If *stream* is `nil` the default input stream is evaluated.
+
+`ResultCode lisp_eval_string(Interpreter *interp, char *string)`  
+Evaluates all Lisp expressions in *string*.
+
+`Object *stream lisp_stream(Interpreter *interp, FILE *path,     char *string)`  
+Returns a Lisp stream object with open file descriptor *fd*. *path*
+should be set to the path of the associated regular file or for file
+descriptors obtained by other means:
+
+`<STRING`  
+`fmemopen()`
+
+`>STRING`  
+`open_memostream()`
+
+`&ltSTDIN`, `>STDOUT` and `>STDERR`  
+For `stdin`, `stdout` and `stderr`.
+
+`<n`, `>n`  
+For `fdopen(n, "r")`, and `fdopen(n, "w")`, respectively.
+
+`int file_close(Interpreter *interp, Object *stream)`  
+Close *stream* and return `errno` from the `fclose()` call of the
+associated file descriptor
+
+`int file_fflush(Interpreter *interp, Object *stream)`  
+Call `fflush()` on the file descriptor associated to *stream* and return
+`errno`. file descriptor
+
+`void writeObject(Interpreter *interp, Object *object,       Object *stream, bool readably)`  
+Format *object* into a string and write it to *stream*. If *readably* is
+true, the string can be read in by the interpreter and results in the
+same object.
 
 <span class="mark">Note: currently only one interpreter can be
 created.</span>
+
+#### Building Extensions
+
+An extensions has to create C functions with the signature:
+`Object *primitive(Object **args, GCPARAM)`, where *primitive* is a
+distinct name in C space. This function has to be added to the global
+variable `primitives` in the following format:
+`{"name", argMin, argMax, primitive}`. Here *name* is a distinct name in
+Lisp space.
+
+*argMin* is the minimum number of arguments, *argMax* is the maximum
+number of arguments allowed for the function. If *argMax* is a negative
+number, arguments must be given in tuples of *argMax* and the number of
+tuples is not restricted.
+
+`CG_PARAM` is a CPP macro which carries on the interpreter root node for
+the garbage collector. Its companion are `GC_ROOTS` which is used in the
+place of `GC_PARAM` when calling a primitive and `GC_TRACE(name, value`
+which creates an object variable *name*, sets it to *value* and adds it
+to the root node.
+
+Some CPP macros are provided to simplify argument validation in
+primitives, all of them receive the *name* of the primitive as a
+parameter:
+
+`TWO_STRING_ARGS(name)`  
+Assures that the first two arguments are of type string. They are
+assigned to the `Object *` variables *first* and *second*.
+
+`ONE_STRING_ARG(name)`  
+Assures that the first argument is of type string. It is assigned to the
+`Object *` variable *arg*.
+
+`ONE_NUMBER_ARG(name)`  
+Assures that the first argument is of type number. It is assigned to the
+`Object *` variable *num*.
+
+`ONE_STREAM_ARG(name)`  
+Assures that the first argument is of type stream. It is assigned to the
+`Object *` variable *stream*.
+
+[^](#toc)
 
 ### Implementation Details
 
@@ -799,13 +1156,13 @@ pointer inside the list.
 Thus, whenever we would have used a raw pointer to an object, we use a
 pointer to the pointer inside the list instead:
 
-    function:              pointer to pointer inside list (Object **)
-                                   |
-                                   v
-    list of root objects:  pointer to object (Object *)
-                                   |
-                                   v
-    semi space:             object in memory
+          function:              pointer to pointer inside list (Object **)
+          |
+          v
+          list of root objects:  pointer to object (Object *)
+          |
+          v
+          semi space:             object in memory
         
 
 `GC_ROOTS` and `GC_PARAM` are used to pass the list from function to
@@ -833,29 +1190,14 @@ Output buffer
 buffer.
 
 fLisp can live with much less object memory, but the “OXO” game requires
-a lot and <span class="mark">the garbage collector has a bug</span>
+a lot and <span class="mark">the garbage collector surfaces a bug</span>
 which makes OXO segfault.
 
 #### Future Directions
 
-fLisp could be made completely independent of Femto, thus making the
-interpreter embeddable in any application. The `debug()` function is
-still borrowed from `main.c` and it has to be devised how to extend the
-interpreter dynamically; the editor extensions are currently compiled
-into the interpreter.
-
 Integer arithmetic would be sufficient for all current purposes and
 increase portability, speed while reducing size.
 
-The internally used “Stream” abstraction for reading Lisp input and
-writing output is incomplete and complicated. An alternative would be to
-use only string input and output. File input can be read as a whole into
-memory and use the string input processing. This would also have
-consequences for the Lisp reader and probably simplify implementation of
-improved error reporting, a lá line/char offset reporting. The downside
-is, that this would remove support for `stdin`/`stdout` reading/writing.
-
-Exception handling should be improved by returning differentiated error
-codes. One of the benefits would be the possibility to implement
-externally an interactive repl with `stdin`/`stdout` streams, by reading
-and eval'ing until no more “incomplete input” result codes are returned.
+Exception handling returns differentiated error codes. One could to
+implement interactive repl with `stdin`/`stdout` streams, by reading and
+eval'ing until no more “incomplete input” result codes are returned.
