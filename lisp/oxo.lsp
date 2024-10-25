@@ -38,6 +38,7 @@
  (cond (oxo-debugging (log-debug s))))
 
 (defun init()
+ (gc)
  (oxo-debug "(init)\n")
  (select-buffer "*oxo*")
  (beginning-of-buffer)
@@ -193,7 +194,7 @@
   (or (eq m "y") (eq m "Y")) )
 
 (defun play()
-  (oxo-debug "play\n")
+   (oxo-debug "play\n")
   (draw)
   (oxo-debug "about to update display\n")
   (update-display)
