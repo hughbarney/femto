@@ -48,13 +48,10 @@ int main(int argc, char **argv)
     setup_keys();
 
     /* Lisp interpreter */
-    interp = lisp_new(FLISP_MEMORY_SIZE, argc, argv, library_path);
+    interp = lisp_new(FLISP_MEMORY_SIZE, argv, library_path, NULL, NULL, debug_fp);
     if (interp == NULL)
         fatal("fLisp initialization failed");
 
-    if (debug_mode)
-        if (nil == (interp->debug = lisp_stream(interp, debug_fp, debug_file)))
-            fatal("could not open debug stream");
     if (strlen(init_file)) {
         // Note: not lisp_eval()'ing it, because we want to have
         //     consistent error handling.
@@ -67,7 +64,9 @@ int main(int argc, char **argv)
 
     debug("main(): shutdown\n");
     // Note: exit frees all memory, do we need this here?
-    lisp_destroy(interp);
+    // Note: we can't do
+    //lisp_destroy(interp);
+    //here, because we get segfaults in wide character routines.
     if (scrap != NULL) free(scrap);
     return 0;
 }
@@ -93,15 +92,16 @@ char *eval_string(int do_format, char *format, ...)
 
     interp->output = nil;
     if ((lisp_eval_string(interp, input)))
+        // Note: does not print the err'd object, if any
         msg("error: %s", interp->message);
     if (debug_mode) {
         if (interp->result)
             debug("error: %s\n", interp->message);
+        else
+            debug("=> %s\n", interp->output->buf);
     }
-    debug(interp->output->buf);
     if (interp->result) {
-        // Note: close output buf...? if we get segfaults.
-        //close_eval_output();
+        //  close_eval_output();
         return NULL;
     }
     return interp->output->buf;

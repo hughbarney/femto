@@ -818,7 +818,7 @@ void user_func()
     }
 
     if (eval_string(true, "(%s)", key_return->k_funcname) != NULL)
-        close_eval_output();
+        ;//        close_eval_output();
 }
 
 /*
