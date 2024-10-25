@@ -22,7 +22,7 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.20"
+#define E_VERSION       "2.21"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND     "<not bound>"
 #ifndef E_SCRIPTDIR
@@ -491,7 +491,10 @@ extern window_t *split_current_window();
 //#define FLISP_MEMORY_SIZE          131072UL  /* 128k */
 //#define FLISP_MEMORY_SIZE          262144UL  /* 256k */
 //#define FLISP_MEMORY_SIZE          524288UL  /* 512k */
-  #define FLISP_MEMORY_SIZE         4194304UL  /* 4M   */
+//#define FLISP_MEMORY_SIZE         4194304UL  /*   4M */
+//#define FLISP_MEMORY_SIZE         8388608UL  /*   8M */
+//#define FLISP_MEMORY_SIZE        16777216UL  /*  16M */
+  #define FLISP_MEMORY_SIZE        33554432UL  /*  32M */
 
 extern char *eval_string(int, char *, ...);
 extern void close_eval_output();
