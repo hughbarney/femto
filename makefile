@@ -8,6 +8,7 @@ CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE
 # Note: lisp still needs assertions
 #CPPFLAGS += -DNDEBUG
 CFLAGS += -O2 -std=c11 -Wall -pedantic -g
+#CFLAGS += -O0 -std=c11 -Wall -pedantic -g
 LD      = cc
 LDFLAGS =
 LIBS    = -lncursesw
@@ -137,6 +138,13 @@ run: femto FORCE
 
 val: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1 valgrind ./femto 2> val.log
+
+fl: flisp FORCE
+	FLISPRC=flisp.rc FLISPLIB=lisp FLISP_DEBUG=f.log  ./flisp
+dfl: flisp FORCE
+	FLISPRC=flisp.rc FLISPLIB=lisp FLISP_DEBUG=f.log gdb ./flisp
+vfl: flisp FORCE
+	FLISPRC=flisp.rc FLISPLIB=lisp FLISP_DEBUG=f.log valgrind ./flisp
 
 clean: FORCE
 	-$(RM) -f $(OBJ) $(FLISP_OBJ) $(BINARIES) $(RC_FILES)
