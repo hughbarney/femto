@@ -10,6 +10,8 @@
  *   lisp_eval_string() .. evaluate a string
  *   lisp_stream() .. create lisp stream object from file
  *   file_fclose() .. close file associated with lisp stream object
+ *   file_fflush() .. flush a stream associated with a lisp stream object
+ *   writeObject() .. write a lisp object to an output stream
  */
 
 #include <sys/mman.h>
@@ -18,7 +20,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <setjmp.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,10 +34,6 @@
 #endif
 
 #include "lisp.h"
-
-#define F_NONE          0
-#define F_CLEAR         1
-typedef long point_t;
 
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
 #define MAP_ANONYMOUS        MAP_ANON
@@ -53,6 +50,8 @@ Object *t = &(Object) { TYPE_SYMBOL,.string = "t" };
 /* intern */
 Object *e = &(Object) { TYPE_STRING,.string = "\0" };
 Object *one = &(Object) { TYPE_NUMBER,.number = 1 };
+
+Object *_out = &(Object) { TYPE_STREAM };
 
 /* List of interpreters */
 Interpreter *lisp_interpreters = NULL;
@@ -121,6 +120,8 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
     interp->result = result;
     resetBuf(interp);
 
+    (void)setRootSymbol(interp, ":input", interp->input);
+
     int len = sizeof(interp->message);
     va_list(args);
     va_start(args, format);
@@ -130,8 +131,8 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
     if (snprintf(NULL, 0, format, args) > len)
         strcpy(interp->message+len-4, "...");
 
-    assert(interp->stackframe != NULL);
-    longjmp(*interp->stackframe, FLISP_ERROR);
+    assert(interp->catch != NULL);
+    longjmp(*interp->catch, FLISP_ERROR);
 }
 
 /** exception - break out of errors
@@ -300,7 +301,7 @@ Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
     // allocate from- and to-space
     if (!interp->memory->fromSpace) {
         if (!(interp->memory->fromSpace = mmap(NULL, interp->memory->capacity * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0))) {
-            if (!interp->stackframe) return nil;
+            if (!interp->catch) return nil;
             exception(interp, FLISP_OOM, "mmap() failed, %s", strerror(errno));
         }
         interp->memory->toSpace = (char *)interp->memory->fromSpace + interp->memory->capacity;
@@ -309,7 +310,7 @@ Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
     if (interp->memory->fromOffset + size >= interp->memory->capacity)
         gc(GC_ROOTS);
     if (interp->memory->fromOffset + size >= interp->memory->capacity) {
-        if (!interp->stackframe) return nil;
+        if (!interp->catch) return nil;
         exception(interp, FLISP_OOM, "out of memory, %lu bytes", (unsigned long)size);
     }
     // allocate object in from-space
@@ -320,6 +321,7 @@ Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
 
     return object;
 }
+
 
 // CONSTRUCTING OBJECTS ///////////////////////////////////////////////////////
 
@@ -502,7 +504,9 @@ Object *newEnv(Object ** func, Object ** vals, GC_PARAM)
 
     return object;
 }
-/**
+
+/** newStreamObject - create stream object from file descriptor and path
+ *
  * @param fd .. FILE * stream descripter to register
  * @param name .. NULL or name of the file associated with fd
  * @param buf .. NULL or string to convert into an input file stream.
@@ -624,40 +628,45 @@ size_t addCharToBuf(Interpreter *interp, int c)
     interp->buf[interp->len++] = c;
     return interp->len;
 }
+
 /** newInteger - add an integer from the read buffer to the
  *     interpreter
  *
  * @param interp  fLisp interpreter
+ * @param stream  open readable input stream
  *
  * returns: number object
  *
  * throws: FLISP_READ_RANGE
  */
-Object *newInteger(Interpreter *interp)
+Object *newInteger(Interpreter *interp, Object *stream)
 {
     Object *gcRoots = interp->theRoot; // gcRoots is needed by GC_TRACE and GC_ROOTS
 
     long l;
+
     Object *number;
 
     addCharToBuf(interp, '\0');
     errno = 0;
     l = strtol(interp->buf, NULL, 10);
     if (errno == ERANGE)
-        exceptionWithObject(interp, interp->input, FLISP_READ_RANGE, "integer out of range,: %ld", l);
+        exceptionWithObject(interp, stream, FLISP_READ_RANGE, "integer out of range,: %ld", l);
     number = newNumber(l, GC_ROOTS);
     resetBuf(interp);
     return number;
 }
+
 /** newDouble - add a float from the read buffer to the interpreter
  *
  * @param interp  fLisp interpreter
+ * @param stream  open readable input stream
  *
  * returns: number object
  *
  * throws: FLISP_READ_RANGE
  */
-Object *newDouble(Interpreter *interp)
+Object *newDouble(Interpreter *interp, Object *stream)
 {
     Object *gcRoots = interp->theRoot; // gcRoots is needed by GC_TRACE and GC_ROOTS
 
@@ -668,14 +677,14 @@ Object *newDouble(Interpreter *interp)
     errno = 0;
     d = strtod(interp->buf, NULL);
     if (errno == ERANGE)
-        exceptionWithObject(interp, interp->input, FLISP_READ_RANGE, "integer out of range,: %f", d);
+        exceptionWithObject(interp, stream, FLISP_READ_RANGE, "integer out of range,: %f", d);
     // Note: purposely not dealing with NaN
     number = newNumber(d, GC_ROOTS);
     resetBuf(interp);
     return number;
 }
 
-/* End helpers */
+// Reader /////////
 
 /** streamPeek - get the next character from input stream, but stay at the current offset
  *
@@ -688,7 +697,7 @@ Object *newDouble(Interpreter *interp)
  */
 int streamPeek(Interpreter *interp, Object *stream)
 {
-    assert(stream->type = TYPE_STREAM && stream->fd != NULL);
+    assert(stream->type == TYPE_STREAM && stream->fd != NULL);
 
     int c = streamGetc(interp, stream);
     if (c != EOF)
@@ -707,10 +716,12 @@ int streamPeek(Interpreter *interp, Object *stream)
  */
 int readNext(Interpreter *interp, Object *stream)
 {
-    assert(stream->type = TYPE_STREAM && stream->fd != NULL);
+    assert(stream->type == TYPE_STREAM && stream->fd != NULL);
 
     for (;;) {
         int ch = streamGetc(interp, stream);
+        if (ch == EOF)
+            return ch;
         if (ch == ';')
             while ((ch = streamGetc(interp, stream)) != EOF && ch != '\n');
         if (isspace(ch))
@@ -729,7 +740,7 @@ int readNext(Interpreter *interp, Object *stream)
  */
 int peekNext(Interpreter *interp, Object *stream)
 {
-    assert(stream->type = TYPE_STREAM && stream->fd != NULL);
+    assert(stream->type == TYPE_STREAM && stream->fd != NULL);
 
     int c = readNext(interp, stream);
     if (c != EOF)
@@ -746,12 +757,14 @@ int peekNext(Interpreter *interp, Object *stream)
  *
  * throws: FLISP_IO_ERROR
  */
-int readWhile(Interpreter *interp, Object * stream, int (*predicate) (int ch))
+int readWhile(Interpreter *interp, Object *stream, int (*predicate) (int ch))
 {
-    assert(stream->type = TYPE_STREAM && stream->fd != NULL);
+    assert(stream->type == TYPE_STREAM && stream->fd != NULL);
 
     for (;;) {
         int ch = streamPeek(interp, stream);
+        if (ch == EOF)
+            return ch;
         if (!predicate(ch))
             return ch;
         (void)addCharToBuf(interp, streamGetc(interp, stream));
@@ -772,7 +785,7 @@ Object *readString(Interpreter *interp, Object *stream)
     int ch;
     Object *string;
 
-    assert(stream->type = TYPE_STREAM && stream->fd != NULL);
+    assert(stream->type == TYPE_STREAM && stream->fd != NULL);
 
     resetBuf(interp);
 
@@ -804,7 +817,7 @@ Object *readNumberOrSymbol(Interpreter *interp, Object *stream) {
 
     Object *gcRoots = interp->theRoot; // gcRoots is needed by GC_TRACE and GC_ROOTS
 
-    assert(stream->type = TYPE_STREAM && stream->fd != NULL);
+    assert(stream->type == TYPE_STREAM && stream->fd != NULL);
 
     int ch = streamPeek(interp, stream);
 
@@ -820,13 +833,13 @@ Object *readNumberOrSymbol(Interpreter *interp, Object *stream) {
         if (isdigit(ch))
             ch = readWhile(interp, stream, isdigit);
         if (!isSymbolChar(ch))
-            return newInteger(interp);
+            return newInteger(interp, stream);
         if (ch == '.') {
             ch = streamGetc(interp, stream);
             if (isdigit(streamPeek(interp, stream))) {
                 ch = readWhile(interp, stream, isdigit);
                 if (!isSymbolChar(ch))
-                    return newDouble(interp);
+                    return newDouble(interp, stream);
             }
         }
     }
@@ -837,7 +850,8 @@ Object *readNumberOrSymbol(Interpreter *interp, Object *stream) {
     return obj;
 }
 
-Object *readExpr(Interpreter *, Object *stream);
+Object *readExpr(Interpreter *, Object *);
+
 /** readList - return list from input stream
  *
  * @param interp  fLisp interpreter
@@ -851,7 +865,7 @@ Object *readList(Interpreter *interp, Object *stream)
 {
     Object *gcRoots = interp->theRoot; // gcRoots is needed by GC_TRACE and GC_ROOTS
 
-    assert(stream->type = TYPE_STREAM && stream->fd != NULL);
+    assert(stream->type == TYPE_STREAM && stream->fd != NULL);
 
     GC_TRACE(gcList, nil);
     GC_TRACE(gcLast, nil);
@@ -899,7 +913,8 @@ Object *readUnary(Interpreter *interp, Object *stream, char *symbol)
 {
     Object *gcRoots = interp->theRoot; // gcRoots is needed by GC_TRACE and GC_ROOTS
 
-    assert(stream->type = TYPE_STREAM && stream->fd != NULL);
+    assert(stream->type == TYPE_STREAM && stream->fd != NULL);
+
 
     if (peekNext(interp, stream) == EOF)
         exceptionWithObject(interp, stream, FLISP_READ_INCOMPLETE, "unexpected end of stream in readUnary(%s)", symbol);
