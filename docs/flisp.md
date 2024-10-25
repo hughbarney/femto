@@ -1195,8 +1195,19 @@ which makes OXO segfault.
 
 #### Future Directions
 
+Lisp object memory should be allocated on interpreter initialization.
+The two memory pages should be separated and the second one should be
+allocated only during garbage collection. When memory runs out, the
+garbage collection should be restarted with an increased capacity of the
+new page. This might help find the culprit of the corruptions during
+garbage collection.
+
+It should be able to trap exceptions within Lisp code. This, together
+with an `(eval)` primitive would allow to write the repl directly in
+Lisp.
+
 Integer arithmetic would be sufficient for all current purposes and
-increase portability, speed while reducing size.
+increase portability and speed while reducing size.
 
 Exception handling returns differentiated error codes. One could to
 implement interactive repl with `stdin`/`stdout` streams, by reading and
