@@ -2168,7 +2168,7 @@ Memory *newMemory(size_t size)
     Memory *memory = malloc(sizeof(Memory));
     if (!memory) return NULL;
 
-    memory->capacity = size;
+    memory->capacity = size/2;
     memory->fromOffset = 0;
     memory->toOffset = 0;
     memory->fromSpace = NULL;
@@ -2183,10 +2183,12 @@ Memory *newMemory(size_t size)
 
 /** Initialize and return an fLisp interpreter.
  *
- * @param size  memory size for the Lisp objects
- * @param argc  argument count
- * @param argv  null terminated array to arguments
- * @param flib  path to Lisp library
+ * @param size          memory size for the Lisp objects.
+ * @param argv          null terminated array to arguments to be imported.
+ * @param library_path  path to Lisp library, aka 'script_dir'.
+ * @param input         open readable file descriptor for default input or NULL
+ * @param output        open writable file descriptor for default output or NULL.
+ * @param debug         open writable file descriptor for debug output or NULL.
  *
  * @returns On success: a pointer to an fLisp interpreter structure
  * @returns On failures: NULL
@@ -2195,16 +2197,27 @@ Memory *newMemory(size_t size)
  * pointer to int in the static variable *interp* and return that variable.
  *
  */
-Interpreter *lisp_new(size_t size, int argc, char **argv, char *library_path)
+Interpreter *lisp_new(
+    size_t size, char **argv, char *library_path,
+    FILE *input, FILE *output, FILE* debug)
 {
     if (lisp_interpreters != NULL)
         return NULL;
+
+    if (size*2 < FLISP_MIN_MEMORY) {
+        interp->result = FLISP_INVALID_VALUE;
+        strncpy(interp->message,
+                "fLisp needs at least" CPP_STR(FLISP_MIN_MEMORY)  "bytes to start up", sizeof(interp->message));
+        return NULL;
+    }
 
     // Note: this is the static interp. Change to local variable after
     //   refactoring the whole fLisp core to pass the interpreter
     //   instead of GC_PARAM
     interp = malloc(sizeof(Interpreter));
     if (interp == NULL) return NULL;
+
+    interp->debug = debug;
 
     Memory *memory = newMemory(size);
     if (memory == NULL) {
@@ -2215,15 +2228,11 @@ Interpreter *lisp_new(size_t size, int argc, char **argv, char *library_path)
     }
     interp->memory = memory;
 
-    interp->input = nil;
-
-    interp->output = nil;
     interp->object = nil;
     interp->message[0] = '\0';
     interp->result = FLISP_OK;
-    interp->debug = nil;
 
-    interp->stackframe = NULL;
+    interp->catch = NULL;
 
     interp->buf = NULL;
     resetBuf(interp);
@@ -2240,6 +2249,8 @@ Interpreter *lisp_new(size_t size, int argc, char **argv, char *library_path)
     interp->theEnv = &interp->root.car;
     interp->theRoot = &interp->root;
 
+    interp->catch = &interp->exceptionEnv;
+    
     interp->next = interp;
     lisp_interpreters = interp;
 
@@ -2263,9 +2274,25 @@ Interpreter *lisp_new(size_t size, int argc, char **argv, char *library_path)
     *gcVal = newString(library_path, GC_ROOTS);
     envSet(gcVar, gcVal, interp->theEnv, GC_ROOTS);
 
-    /* Add streams to the environment */
+    /* input stream */
+    GC_TRACE(gcInput, nil);
+    if (input)
+        *gcInput = newStreamObject(input, "*standard-input*", interp->theRoot);
+    interp->input = *gcInput;
+    *gcVar = newSymbol("*standard-input*", GC_ROOTS);
+    envSet(gcVar, gcInput, interp->theEnv, GC_ROOTS);
     *gcVar = newSymbol(":input", GC_ROOTS);
-    envSet(gcVar, &nil, interp->theEnv, GC_ROOTS);
+    envSet(gcVar, gcInput, interp->theEnv, GC_ROOTS);
+
+    /* output stream */
+    GC_TRACE(gcOutput, nil);
+    if (output)
+        *gcOutput = newStreamObject(output, "*standard-output*", interp->theRoot);
+    interp->output = *gcOutput;
+    *gcVar = newSymbol("*standard-output*", GC_ROOTS);
+    envSet(gcVar, gcOutput, interp->theEnv, GC_ROOTS);
+    *gcVar = newSymbol(":output", GC_ROOTS);
+    envSet(gcVar, gcOutput, interp->theEnv, GC_ROOTS);
 
     return interp;
 }
