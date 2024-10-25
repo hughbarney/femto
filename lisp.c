@@ -911,14 +911,14 @@ Object *readUnary(Interpreter *interp, Object *stream, char *symbol)
  * @param interp  fLisp interpreter
  * @param stream   open readable stream object
  *
- * returns: sexp object
+ * returns: sexp object or NULL if EOF
  *
  * throws: FLISP_IO_ERROR, FLISP_READ_INCOMPLETE, FLISP_READ_RANGE,
  *     FLISP_OOM
  */
 Object *readExpr(Interpreter *interp, Object *stream)
 {
-    assert(stream->type = TYPE_STREAM && stream->fd != NULL);
+    assert(stream->type == TYPE_STREAM && stream->fd != NULL);
 
     for (;;) {
 
@@ -926,7 +926,7 @@ Object *readExpr(Interpreter *interp, Object *stream)
 
         if (ch == EOF)
             return NULL;
-        else if (ch == '\'')
+        else if (ch == '\'' || ch == ':')
             return readUnary(interp, stream, "quote");
         else if (ch == '"')
             return readString(interp, stream);
