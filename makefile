@@ -91,6 +91,9 @@ doxygen: FORCE
 test: femto FORCE
 	(cd test && ./run)
 
+run: femto FORCE
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto
+
 clean: FORCE
 	-$(RM) -f $(OBJ) femto
 	-$(RM) -rf doxygen
