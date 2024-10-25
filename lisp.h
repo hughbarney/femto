@@ -10,10 +10,13 @@
 #include <stdbool.h>
 
 #define FL_NAME     "fLisp"
-#define FL_VERSION  "0.2"
+#define FL_VERSION  "0.3"
 
 #define FL_INITFILE "flisp.rc"
 #define FL_LIBDIR "/usr/local/share/flisp"
+
+/* minimal Lisp object space size */
+#define FLISP_MIN_MEMORY  26624UL  /* currently ~26k */
 
 /* buffersize for Lisp eval input */
 #define INPUT_FMT_BUFSIZ 2048
@@ -59,7 +62,8 @@ extern Object *t;
 typedef enum ResultCode {
     FLISP_OK,
     FLISP_ERROR,
-    FLISP_RETURN,         /* successfull return */
+    FLISP_RETURN,         /* successful return */
+    FLISP_EOF,            /* eof upon read */
     FLISP_USER,           /* user generated exception */
     /* Parser/reader */
     FLISP_READ_INCOMPLETE,
@@ -78,8 +82,6 @@ typedef enum ResultCode {
 
 // Note: WIP, relevant procedures must get a handle to the
 //   Interpreter, instead of accessing the static allocated flisp.
-//   init_lisp() must allocate the memory by itself and return an
-//   Interpreter to be used by call_lisp().
 
 typedef struct Memory {
     size_t capacity, fromOffset, toOffset;
@@ -88,20 +90,22 @@ typedef struct Memory {
 
 typedef struct Interpreter Interpreter;
 typedef struct Interpreter {
-    Object *input;                   /* input stream */
-    Object *output;                  /* output stream */
     Object *object;                  /* result or error object */
     char message[WRITE_FMT_BUFSIZ];  /* error string */
     ResultCode result;               /* result of last evaluation */
-    Object *debug;                   /* debug stream */
     /* private */
+    Object *input;                  /* default input stream object */
+    Object *output;                 /* default output stream object */
+    FILE *debug;                    /* debug stream */
+    
     Object *theRoot;      /* root object */
     Object **theEnv;      /* environment object */
     Object *symbols;      /* symbols list */
     Object root;          /* reified root node */
     Memory *memory;       /* memory available for object allocation,
                              cleaned up by garbage collector */
-    jmp_buf *stackframe;  /* exception handling */
+    jmp_buf exceptionEnv; /* exception handling */
+    jmp_buf *catch;
     struct { char *buf; size_t len; size_t capacity; };  /* read buffer */
     Interpreter *next;    /* linked list of interpreters */
 } Interpreter;
@@ -129,12 +133,12 @@ extern Interpreter *lisp_interpreters;
         exceptionWithObject(interp, num, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " num) - num is not a number");
 
 #define ONE_STREAM_ARG(func)                                  \
-    Object *fd = (*args)->car;                            \
-    if (fd->type != TYPE_STREAM)                          \
-        exceptionWithObject(interp, fd, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " fd) - fd is not a stream");
+    Object *stream = (*args)->car;                            \
+    if (stream->type != TYPE_STREAM)                          \
+        exceptionWithObject(interp, stream, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " fd) - fd is not a stream");
 
 // PUBLIC INTERFACE ///////////////////////////////////////////////////////
-extern Interpreter *lisp_new(size_t, int, char**, char*);
+extern Interpreter *lisp_new(size_t, char**, char*, FILE*, FILE*, FILE*);
 extern void lisp_destroy(Interpreter *);
 extern ResultCode lisp_eval(Interpreter *, Object *);
 extern ResultCode lisp_eval_string(Interpreter *, char *);
@@ -143,7 +147,7 @@ extern Object *lisp_stream(Interpreter *, FILE *, char *);
 extern int file_fclose(Interpreter *, Object *);
 extern int file_fflush(Interpreter *, Object *);
 
-extern void writeObject(Interpreter *, Object *, bool);
+extern void writeObject(Interpreter *, Object *, Object *, bool);
 
 
 #ifdef FLISP_FILE_EXTENSION
