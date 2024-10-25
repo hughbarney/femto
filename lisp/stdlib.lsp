@@ -23,5 +23,15 @@
   (cond ((null xs) y)
 	(t (cons (car xs) (append (cdr xs) y)))))
 
+(defun print (x . args)
+  (cond
+    ((null args) (write x :readably t))
+    (t (write x :readably t :stream (car args)))))
+
+(defun princ (x . args)
+  (cond
+    ((null args) (write x :readably nil))
+    (t (write x :readably nil :stream (car args)))))
+
 
 (provide 'stdlib)
