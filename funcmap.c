@@ -174,7 +174,7 @@ void apropos()
     command_t *fn;
     keymap_t *ky;
     char bindlist[40];
-    char apropos[STRBUF_M];
+    char apropos[STRBUF_L];
 
     if (0 == getinput(str_apropos, response_buf, STRBUF_M, F_CLEAR))
         return;
