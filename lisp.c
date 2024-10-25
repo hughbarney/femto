@@ -73,32 +73,30 @@ void fl_debug(Interpreter *, char *format, ...)
  * @param interp  Interpreter for which to send a debug message
  * @param format ...  printf() style debug string
  *
- * The format string is sent to the interpreters debug stream - if there is one.
- *
- * Be sure to file_fflush() the debug stream to get all text logged.
+ * The format string is sent to the interpreters debug file descriptor - if there is one.
  *
  */
 void fl_debug(Interpreter *interp, char *format, ...)
 {
-    if (interp->debug == nil)
+    if (interp->debug == NULL)
         return;
-
-    assert(interp->debug != NULL);
 
     va_list(args);
     va_start(args, format);
-    if (vfprintf(interp->debug->fd, format, args) < 0) {
+    if (vfprintf(interp->debug, format, args) < 0) {
         va_end(args);
-        (void)fprintf(interp->debug->fd, "fatal: failed to print debug message: %d, %s", errno, format);
+        (void)fprintf(interp->debug, "fatal: failed to print debug message: %d, %s", errno, format);
     }
     va_end(args);
-    fputc('\n', interp->debug->fd);
+    (void)fputc('\n', interp->debug);
+    (void)fflush(interp->debug);
 }
 
 
 // EXCEPTION HANDLING /////////////////////////////////////////////////////////
 
 void resetBuf(Interpreter *);
+void setRootSymbol(Interpreter *, char *, Object *);
 
 /** exceptionWithObject - break out of errors
  *
@@ -209,14 +207,14 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
 Object *gcMoveObject(Object * object)
 {
     // skip object if it is not within from-space (i.e. on the stack)
-    if (object < (Object *) interp->memory->fromSpace || object >= (Object *) ((char *)interp->memory->fromSpace + interp->memory->fromOffset))
+    if (object < (Object *) interp->memory->fromSpace || object >= (Object *) ((char *)interp->memory->fromSpace + interp->memory->fromOffset)) {
         return object;
-
+    }
     // if the object has already been moved, return its new location
     if (object->type == TYPE_MOVED)
         return object->forward;
 
-    // copy object to to-space
+        // copy object to to-space
     Object *forward = (Object *) ((char *)interp->memory->toSpace + interp->memory->toOffset);
     memcpy(forward, object, object->size);
     interp->memory->toOffset += object->size;
@@ -230,7 +228,7 @@ Object *gcMoveObject(Object * object)
 
 void gc(GC_PARAM)
 {
-    //fl_debug(interp, "collecting garbage");
+    fl_debug(interp, "collecting garbage: %lu/%lu", interp->memory->fromOffset, interp->memory->capacity);
 
     interp->memory->toOffset = 0;
 
@@ -277,8 +275,16 @@ void gc(GC_PARAM)
     void *swap = interp->memory->fromSpace;
     interp->memory->fromSpace = interp->memory->toSpace;
     interp->memory->toSpace = swap;
+
+    fl_debug(interp, "collected: %lu: %lu/%lu",
+             interp->memory->fromOffset - interp->memory->toOffset,
+             interp->memory->toOffset, interp->memory->capacity
+        );
+
     interp->memory->fromOffset = interp->memory->toOffset;
+
 }
+
 
 // MEMORY MANAGEMENT //////////////////////////////////////////////////////////
 
@@ -2271,33 +2277,23 @@ void lisp_destroy(Interpreter *interp)
     i->next = interp->next;
     i = NULL;
 
+    
+    if (interp->memory->fromSpace)
+        (void)munmap(interp->memory->fromSpace, interp->memory->capacity * 2);
+    // Note: we do not know which one it is, so we free both.
+    if (interp->memory->toSpace)
+        (void)munmap(interp->memory->toSpace, interp->memory->capacity * 2);
     free(interp->memory);
     free(interp);
 }
 
-
-void lisp_flush_output(Interpreter *interp)
-{
-    int result;
-    if ((result = file_fflush(interp, interp->output))) {
-        exceptionWithObject(interp, interp->output, FLISP_IO_ERROR, "failed to fflush output stream, errno: %d", result);
-    }
-}
 /** lisp_eval - protected evaluation of input stream
  *
  * @param interp  fLisp interpreter
  * @param stream  open readable stream object
  *
  * returns: result code of first exception or RESULT_OK if none
- *   happened
- *
- * Before calling the following elements of the interpreter has to be initialized:
- * - stackframe .. a jmp_buf structure.
- * - input .. a readable open Lisp stream object
- * - output .. a writable open Lisp stream object, or nil to get
- *      output written to interp->buf with len interp->len.
- * - debug .. a writable open Lisp stream, or nil to disable debug
- *      output.
+ *     happened.
  */
 ResultCode lisp_eval(Interpreter *interp, Object *stream)
 {
@@ -2308,36 +2304,33 @@ ResultCode lisp_eval(Interpreter *interp, Object *stream)
     interp->message[0] = '\0';
 
     if (stream == nil)
-        if (interp->input == nil) {
-            interp->result = FLISP_ERROR;
-            strncpy(interp->message, "no input given", strlen(interp->message));
-            return interp->result;
-        }
+        fl_debug(interp, "lisp_eval()");
+    else
+        fl_debug(interp, "lisp_eval(%s)", stream->path->string);
+
+    Object *args = nil;
+    args = newCons(&nil, &nil, GC_ROOTS);
+    args = newCons(&stream, &args, GC_ROOTS);
 
     GC_TRACE(gcObject, nil);
-
+    
     for (;;) {
 
-        switch (setjmp(*interp->stackframe)) {
+        switch (setjmp(*interp->catch)) {
         case FLISP_OK: break;
         case FLISP_RETURN: return FLISP_OK;
         default: return FLISP_ERROR;
         }
-
-        *gcObject = nil;
-
-        if (peekNext(interp, stream) == EOF) {
-            interp->object = *gcObject;
-            lisp_flush_output(interp);
+        *gcObject = primitiveRead(&args, GC_ROOTS);
+        if (*gcObject == nil)
             break;
-        }
-        *gcObject = readExpr(interp, stream);
         *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
-        writeObject(interp, *gcObject, true);
-        writeChar(interp, '\n');
-        lisp_flush_output(interp);
+        interp->object = *gcObject;
+        writeObject(interp, nil, *gcObject, true);
+        writeChar(interp, nil, '\n');
+        fl_flush_stream(interp, interp->output);
     }
-    longjmp(*interp->stackframe, FLISP_RETURN);
+    longjmp(*interp->catch, FLISP_RETURN);
 }
 
 /** lisp_eval_string() - interpret a string in Lisp
@@ -2346,56 +2339,42 @@ ResultCode lisp_eval(Interpreter *interp, Object *stream)
  * @param input   string to evaluate
  *
  * Before calling `lisp_eval_string()` initialize:
- * - interp->output .. a writable open Lisp stream object, or nil to get
- *      output written to interp->buf with len interp->len.
- * - interp->debug .. a writable open Lisp stream, or nil to disable debug
- *      output.
  *
  * Returns: FLISP_OK if successful, FLISP_ERROR otherwise.
  *
- * *interp->result* is set to the result code of the evaluation.
+ * - interp->result is set to the result code of the evaluation.
+ * - interp->object is set to the resulting object
  *
- * If an error occurs during evaluation *interp->message* is set to an
- * error message.
+ * The output from the evaluation is written to the default output of
+ * the interpreter.
+ *
+ * If an error occurs during evaluation:
+ *
+ * - interp->object is set to the object causing the exception, or nil.
+ * - interp->message is set to an error message.
  *
  */
 ResultCode lisp_eval_string(Interpreter *interp, char * input)
 {
-    jmp_buf exceptionEnv, *prevEnv;
     Object *stream;
     ResultCode result;
 
-    //fl_debug(interp, "lisp_eval_string(\"%s\")", input);
+    fl_debug(interp, "lisp_eval_string(\"%s\")", input);
 
     if (nil == (stream = file_inputMemStream(interp, input))) {
         interp->result = FLISP_IO_ERROR;
         strncpy(interp->message, "failed to convert input to stream", sizeof(interp->message));
         return interp->result;
     }
-    prevEnv = interp->stackframe;
-    interp->stackframe = &exceptionEnv;
     result = lisp_eval(interp, stream);
-    interp->stackframe = prevEnv;
-
-    //fl_debug(interp, "lisp_eval_string() => %d", interp->result);
-//    if (result)
-//        fl_debug(interp, "lisp_eval_string() => error: %s", interp->message);
-    /* if (file_fflush(interp, interp->debug)) { */
-    /*     interp->result = FLISP_IO_ERROR; */
-    /*     strncpy(interp->message, "failed to fflush debug stream", sizeof(interp->message)); */
-    /* } */
+    file_fclose(interp, stream);
+    fl_debug(interp, "lisp_eval_string() => %d", interp->result);
+    if (result)
+        fl_debug(interp, "lisp_eval_string() => error: %s", interp->message);
     return result;
 }
 
-// Test: Open listp stream with fd and name
-// if used with "empty" memory, chance is we don't get an exception
-// "" "<"      lisp_read_string()
-// "" ">"      file_fopen(, ">STRING")
-// "<n" ""     lisp_stream(fdopen(n), "<n")
-// ">n" ""     lisp_stream(fdopen(n), ">n")
-// "path" "*"  lisp_stream(fd, "path")
-
-/** lisp_stream - converat a file descriptor into a Lisp stream object.
+/** lisp_stream - convert a file descriptor into a Lisp stream object.
  *
  * @param interp  fLisp interpreter
  * @param fd      open file descriptor
