@@ -5,44 +5,91 @@ BUGS encountered during fLisp refactoring and batch mode
 
 - The status line has a ' ' space before the buffer name, but none after.
 
-- dired:
-  - when entering the second subdirectory loop stops
-  - sometimes scrolling up down loop stops
+- oxo segfaults, garbage collection is deemed to be responsible, possibly
+  the string functions.
 
 Valgrind
 ========
 
 ncurses errors are normal!
 
-Error 1 related to ptr()
-------------------------
+==217832== Memcheck, a memory error detector
+==217832== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==217832== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info
+==217832== Command: ./femto
+==217832== 
+==217832== Invalid read of size 1
+==217832==    at 0x11657D: get_at (hilite.c:15)
+==217832==    by 0x11666B: parse_text (hilite.c:47)
+==217832==    by 0x10F376: display (display.c:159)
+==217832==    by 0x10F888: update_display (display.c:264)
+==217832==    by 0x11FB19: gui (main.c:138)
+==217832==    by 0x11F739: main (main.c:63)
+==217832==  Address 0x4ab2d60 is 0 bytes after a block of size 512 alloc'd
+==217832==    at 0x48407B4: malloc (vg_replace_malloc.c:381)
+==217832==    by 0x1100A2: growgap (gap.c:30)
+==217832==    by 0x112CFE: find_buffer (buffer.c:103)
+==217832==    by 0x11F627: main (main.c:41)
+==217832== 
+==217832== Invalid read of size 1
+==217832==    at 0x10E542: match_parens (command.c:613)
+==217832==    by 0x11FBAD: gui (main.c:157)
+==217832==    by 0x11F739: main (main.c:63)
+==217832==  Address 0x4ab2d60 is 0 bytes after a block of size 512 alloc'd
+==217832==    at 0x48407B4: malloc (vg_replace_malloc.c:381)
+==217832==    by 0x1100A2: growgap (gap.c:30)
+==217832==    by 0x112CFE: find_buffer (buffer.c:103)
+==217832==    by 0x11F627: main (main.c:41)
+==217832== 
+==217832== Conditional jump or move depends on uninitialised value(s)
+==217832==    at 0x10EF2B: lncolumn (display.c:85)
+==217832==    by 0x10C9A0: up (command.c:106)
+==217832==    by 0x11D5B0: e_up (femto.primitives.c:23)
+==217832==    by 0x11A858: evalExpr (lisp.c:1359)
+==217832==    by 0x1197BB: evalProgn (lisp.c:1172)
+==217832==    by 0x1197D5: evalProgn (lisp.c:1173)
+==217832==    by 0x1197D5: evalProgn (lisp.c:1173)
+==217832==    by 0x1197D5: evalProgn (lisp.c:1173)
+==217832==    by 0x1197D5: evalProgn (lisp.c:1173)
+==217832==    by 0x1197D5: evalProgn (lisp.c:1173)
+==217832==    by 0x1197D5: evalProgn (lisp.c:1173)
+==217832==    by 0x1197D5: evalProgn (lisp.c:1173)
+==217832== 
+==217832== 
+==217832== HEAP SUMMARY:
+==217832==     in use at exit: 446,863 bytes in 511 blocks
+==217832==   total heap usage: 3,691 allocs, 3,180 frees, 24,012,209 bytes allocated
+==217832== 
+==217832== LEAK SUMMARY:
+==217832==    definitely lost: 0 bytes in 0 blocks
+==217832==    indirectly lost: 0 bytes in 0 blocks
+==217832==      possibly lost: 760 bytes in 11 blocks
+==217832==    still reachable: 446,103 bytes in 500 blocks
+==217832==         suppressed: 0 bytes in 0 blocks
+==217832== Rerun with --leak-check=full to see details of leaked memory
+==217832== 
+==217832== Use --track-origins=yes to see where uninitialised values come from
+==217832== For lists of detected and suppressed errors, rerun with: -s
+==217832== ERROR SUMMARY: 183 errors from 3 contexts (suppressed: 0 from 0)
 
-==73622== Invalid read of size 1
-==73622==    at 0x1128CE: get_at (hilite.c:11)
-==73622==    by 0x1128CE: parse_text.part.0 (hilite.c:43)
-==73622==    by 0x112B85: parse_text (hilite.c:39)
-==73622==    by 0x112B85: set_parse_state (hilite.c:34)
-==73622==    by 0x10D988: display (display.c:136)
-==73622==    by 0x10DF19: update_display (display.c:264)
-==73622==    by 0x11827A: gui (main.c:80)
-==73622==    by 0x10B648: main (main.c:51)
-==73622==  Address 0x4aabb00 is 0 bytes after a block of size 512 alloc'd
-==73622==    at 0x48407B4: malloc (vg_replace_malloc.c:381)
-==73622==    by 0x10E35D: growgap (gap.c:30)
-==73622==    by 0x110135: find_buffer (buffer.c:102)
-==73622==    by 0x10B548: main (main.c:28)
+When using any non ASCII character in a buffer:
 
-gap.c:81 in ptr(): () ? 0 : expr <- expr -1
-
-Error 2 related to ptr()
-------------------------
-
-==73622== Invalid read of size 1
-==73622==    at 0x10D00C: match_parens (command.c:606)
-==73622==    by 0x118269: gui (main.c:99)
-==73622==    by 0x10B648: main (main.c:51)
-==73622==  Address 0x4aabb00 is 0 bytes after a block of size 512 alloc'd
-==73622==    at 0x48407B4: malloc (vg_replace_malloc.c:381)
-==73622==    by 0x10E35D: growgap (gap.c:30)
-==73622==    by 0x110135: find_buffer (buffer.c:102)
-==73622==    by 0x10B548: main (main.c:28)
+==244326== Conditional jump or move depends on uninitialised value(s)
+==244326==    at 0x48F76B4: utf8_internal_loop (loop.c:335)
+==244326==    by 0x48F76B4: __gconv_transform_utf8_internal (skeleton.c:619)
+==244326==    by 0x497B813: mbrtowc (mbrtowc.c:85)
+==244326==    by 0x490989B: mbtowc (mbtowc.c:63)
+==244326==    by 0x10EE09: display (display.c:154)
+==244326==    by 0x10F1C9: update_display (display.c:264)
+==244326==    by 0x11B70A: gui (main.c:141)
+==244326==    by 0x10C6BE: main (main.c:63)
+==244326== 
+==244326== Conditional jump or move depends on uninitialised value(s)
+==244326==    at 0x4984A43: wcwidth_table_lookup (wchar-lookup.h:88)
+==244326==    by 0x4984A43: internal_wcwidth (wcwidth.h:35)
+==244326==    by 0x4984A43: wcwidth (wcwidth.c:24)
+==244326==    by 0x10EE1A: display (display.c:155)
+==244326==    by 0x10F1C9: update_display (display.c:264)
+==244326==    by 0x11B70A: gui (main.c:141)
+==244326==    by 0x10C6BE: main (main.c:63)
+=

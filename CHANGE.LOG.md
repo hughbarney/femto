@@ -1,3 +1,35 @@
+## Femto 2.21 25 October 2024
+
+This release introduces a separation between the fLisp interpreter and
+the Femto editor.  A simple Lisp command line interpreter can be built
+as `flisp`.
+
+The editor extensions are extracted out of lisp.c and included on
+demand.  lisp.c code has been completely reordered and follows
+roughly the order: memory, reader, evaluation, writer, primitives,
+interpreter.
+
+Lisp initialization allocates memory dynamically, it receives now the
+input and output stream as parameters and exposes them in Lisp as
+`*standard-input*` and `*standard-output`.  Current input output is
+exposed as `:input` and `:output`.
+
+Lisp primitives `read`, `write` and `gc` have been added, `print` and
+`printc` are moved out into the `stdlib` Lisp library.  `:` has been
+added to the syntax, to allow for keyword arguments.
+
+Both inline documentation and the fLisp manual have been extended.
+The latter includes information on the Lisp libraries and embedding of
+fLisp in C code.
+
+The Lisp tests have been reactivated and use the `flisp` interpreter
+instead of the `femto` binary.  The Lisp debug facility has been
+stabilized and is used in more places.
+
+Some potential buffer overflow and missing initialization has been
+fixed.
+
+
 ## Femto 2.20 18 October 2024
 
 fLisp input/output is now based on libc file I/O instead of the
