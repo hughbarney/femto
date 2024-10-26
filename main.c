@@ -7,23 +7,40 @@
 #include <stdio.h>
 #include "header.h"
 
-
 void load_config(); /* Load configuration/init file */
 void gui(); /* The GUI loop used in interactive mode */
 
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
 
+Interpreter *flisp_interp;
+FILE *debug_fp = NULL;
 
 int main(int argc, char **argv)
 {
-    char *envv, *flib;
+    char *envv, *library_path, *init_file;
 
     batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
     debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
 
-    if ((flib=getenv("FEMTOLIB")) == NULL)
-        flib = CPP_XSTR(E_SCRIPTDIR);
+    if ((library_path=getenv("FEMTOLIB")) == NULL)
+        library_path = CPP_XSTR(E_SCRIPTDIR);
+
+
+    /* Lisp interpreter */
+    flisp_interp = lisp_init(argc, argv, library_path);
+    if (flisp_interp == NULL)
+        fatal("fLisp initialization failed");
+
+    if ((init_file = getenv("FEMTORC")) == NULL)
+        init_file = CPP_XSTR(E_INITFILE);
+
+    if (debug_mode) {
+        if (nil == (flisp_interp->debug = file_fopen(flisp_interp, "debug.out", "w")))
+            fatal("could not open debug stream");
+        debug_fp = flisp_interp->debug->fd;
+    }
+    debug("start\n");
 
     /* buffers */
     setlocale(LC_ALL, "") ; /* required for 3,4 byte UTF8 chars */
@@ -34,20 +51,16 @@ int main(int argc, char **argv)
     wheadp = curwp = new_window();
     associate_b2w(curbp, curwp);
 
-    /* Lisp */
+    /* Lisp startup */
     setup_keys();
-    if (init_lisp(argc, argv, flib))
-        fatal("fLisp initialization failed");
-
-    /* Init file */
-    char *init_file, cmd[TEMPBUF];
-
-    if ((init_file = getenv("FEMTORC")) == NULL)
-        init_file = CPP_XSTR(E_INITFILE);
-
-    snprintf(cmd, TEMPBUF, "(load \"%s\")", init_file);
-    (void)call_lisp(cmd);
-
+    
+    if (strlen(init_file)) {
+        // Note: not lisp_eval()'ing it, because we want to have
+        //     consistent error handling.
+        if (eval_string(true, "(load \"%s\")", init_file) != NULL)
+            close_eval_output();
+    }
+    
     /* GUI */
     if (!batch_mode) gui();
 
@@ -55,6 +68,49 @@ int main(int argc, char **argv)
     // Note: exit frees all memory, do we need this here?
     if (scrap != NULL) free(scrap);
     return 0;
+}
+
+char *eval_string(int do_format, char *format, ...)
+{
+    char buf[INPUT_FMT_BUFSIZ], *input;
+    int size;
+    va_list args;
+
+    if (do_format) {
+        va_start(args, format);
+        size = vsnprintf (buf, sizeof(buf), format, args);
+        va_end(args);
+        if (size > INPUT_FMT_BUFSIZ) {
+            msg("input string larger then %d", INPUT_FMT_BUFSIZ);
+            return NULL;
+        }
+        input = buf;
+    } else {
+        input = format;
+    }
+
+    if (nil == (flisp_interp->output = file_fopen(flisp_interp, "", ">")))
+        fatal("could not open string output stream");
+
+    if ((lisp_eval_string(flisp_interp, input)))
+        msg("error: %s", flisp_interp->message);
+    if (debug_mode) {
+        if (flisp_interp->result)
+            debug("error: %s\n", flisp_interp->message);
+    }
+    debug(flisp_interp->output->buf);
+    if (flisp_interp->result) {
+        // Note: close output buf...? if we get segfaults.
+        //close_eval_output();
+        return NULL;
+    }
+    return flisp_interp->output->buf;
+}
+void close_eval_output()
+{
+    assert(flisp_interp->output->fd != NULL);
+    if (file_fclose(flisp_interp, flisp_interp->output))
+        debug("error: closing output stream");
 }
 
 void gui()
@@ -140,14 +196,15 @@ void debug(char *format, ...)
     char buffer[256];
     va_list args;
 
-    if (!debug_mode) return;
+    if (debug_fp == NULL) return;
+//    if (!debug_mode) return;
 
     va_start (args, format);
 
-    static FILE *debug_fp = NULL;
+//    static FILE *debug_fp = NULL;
 
-    if (debug_fp == NULL)
-        debug_fp = fopen("debug.out","w");
+//    if (debug_fp == NULL)
+//        debug_fp = fopen("debug.out","w");
 
     vsnprintf (buffer, sizeof(buffer), format, args);
     va_end(args);
