@@ -6,14 +6,14 @@
  * by an application and to load Lisp files.
  *
  *   public:
- *   init_lisp() .. initialize the interpreter
- *   call_lisp() .. evaluate a string
- *   (load fn)   .. evalate contents of file fn, uses load_file()
+ *   lisp_init() .. initialize the interpreter
+ *   lisp_eval() .. evaluate a string
+ *   (load "fn")   .. evalate contents of file fn, uses load_file()
  *
  * Input and Output is a Stream abstraction layer.
  * There is 1 and only 1 output stream which is only cleared
  * after calling reset_output_stream().
- * Each call to call_lisp() or load_file() results in the creation of
+ * Each call to lisp_eval() or file_load() results in the creation of
  * a new input stream instance so that these calls do not fight over
  * the input stream.
  *
@@ -35,6 +35,7 @@
 #include <curses.h>
 
 #include "header.h"
+#include "lisp.h"
 
 #define F_NONE          0
 #define F_CLEAR         1
@@ -44,77 +45,16 @@ typedef long point_t;
 #define MAP_ANONYMOUS        MAP_ANON
 #endif
 
-//#define MEMORY_SIZE          131072UL
-#define MEMORY_SIZE          262144UL  /* 256k */
-
-typedef struct Object Object;
-
-typedef enum Type {
-    TYPE_NUMBER,
-    TYPE_STRING,
-    TYPE_SYMBOL,
-    TYPE_CONS,
-    TYPE_LAMBDA,
-    TYPE_MACRO,
-    TYPE_PRIMITIVE,
-    TYPE_ENV
-} Type;
-
-struct Object {
-    Type type;
-    size_t size;
-    union {
-        struct { double number; };                      // number
-        struct { char string[sizeof (Object *[3])]; };  // string, symbol
-        struct { Object *car, *cdr; };                  // cons
-        struct { Object *params, *body, *env; };        // lambda, macro
-        struct { int primitive; char *name; };          // primitive
-        struct { Object *parent, *vars, *vals; };       // env
-        struct { Object *forward; };                    // forwarding pointer
-    };
-};
-
-static Object *nil = &(Object) { TYPE_SYMBOL,.string = "nil" };
-static Object *t = &(Object) { TYPE_SYMBOL,.string = "t" };
-
-typedef enum StreamType {
-    STREAM_TYPE_STRING,
-    STREAM_TYPE_FILE
-} StreamType;
-
-typedef struct Stream {
-    StreamType type;
-    char *buffer;
-    int fd;
-    size_t length, capacity;
-    off_t offset, size;
-} Stream;
-
-typedef struct Memory {
-    size_t capacity, fromOffset, toOffset;
-    void *fromSpace, *toSpace;
-} Memory;
+Object *nil = &(Object) { TYPE_SYMBOL,.string = "nil" };
+Object *t = &(Object) { TYPE_SYMBOL,.string = "t" };
 
 
-// The interpreter struct holds all pieces together which are needed
-// to execute Lisp code.
-//
-// Note: WIP, relevant procedures must get a handle to the
-//   Interpreter, instead of accessing the static allocated flisp.
-//   init_lisp() must allocate the memory by itself and return an
-//   Interpreter to be used by call_lisp().
+Interpreter *lisp_interpreters = NULL;
 
-typedef struct Interpreter {
-    jmp_buf *stackframe;
-    Object *theRoot;
-    Object **theEnv;
-    Object *symbols;
-    Object root; /* reified root node */
-    Stream ostream;
-    Memory *memory;
-} Interpreter;
 
-static Memory *memory = &(Memory) { MEMORY_SIZE };
+/* flisp interpreter */
+// Note: future plan is to allocate these dynamically with lisp_init()
+static Memory *memory = &(Memory) { FLISP_MEMORY_SIZE };
 static Interpreter flisp;
 
 
@@ -131,7 +71,6 @@ void writeFmt(Stream *, char *format, ...)
 #endif
 
 void writeObject(Object * object, bool readably, Stream *);
-#define WRITE_FMT_BUFSIZ 2048
 
 void writeString(char *str, Stream *stream)
 {
@@ -145,7 +84,7 @@ void writeString(char *str, Stream *stream)
         return;
 
     case STREAM_TYPE_STRING:
-    default:        
+    default:
         len = strlen(str);
         new = realloc(stream->buffer, stream->length + len + 1);
         assert(new != NULL);
@@ -164,6 +103,7 @@ void writeFmt(Stream *stream, char *format, ...)
 
     va_list args;
     va_start(args, format);
+    // Note: potentially truncates output to WRITE_FMT_BUFSIZ
     nbytes = vsnprintf(buf, WRITE_FMT_BUFSIZ, format, args);
     va_end(args);
 
@@ -193,7 +133,7 @@ void writeChar(char ch, Stream *stream)
         return;
 
     case STREAM_TYPE_STRING:
-    default:        
+    default:
         writeString(str, stream);
         return;
     }
@@ -201,8 +141,6 @@ void writeChar(char ch, Stream *stream)
 
 void exceptionWithObject(Object * object, char *format, ...)
 {
-    static char buf[WRITE_FMT_BUFSIZ];
-
     writeString("error: ", &flisp.ostream);
 
     if (object) {
@@ -212,13 +150,14 @@ void exceptionWithObject(Object * object, char *format, ...)
 
     va_list args;
     va_start(args, format);
-    vsnprintf(buf, WRITE_FMT_BUFSIZ, format, args);
+    // Note: potentially truncates the error message to WRITE_FMT_BUFSIZ
+    vsnprintf(flisp.message, WRITE_FMT_BUFSIZ, format, args);
     va_end(args);
 
-    writeString(buf, &flisp.ostream);
+    writeString(flisp.message, &flisp.ostream);
     writeChar('\n', &flisp.ostream);
 
-    longjmp(*flisp.stackframe, 1);
+    longjmp(*flisp.stackframe, RESULT_ERROR);
 }
 
 // GARBAGE COLLECTION /////////////////////////////////////////////////////////
@@ -283,7 +222,7 @@ Object *gcMoveObject(Object * object)
         return object;
 
     // if the object has already been moved, return its new location
-    if (object->type == (Type) - 1)
+    if (object->type == TYPE_MOVED)
         return object->forward;
 
     // copy object to to-space
@@ -292,7 +231,7 @@ Object *gcMoveObject(Object * object)
     flisp.memory->toOffset += object->size;
 
     // mark object as moved and set forwarding pointer
-    object->type = (Type) - 1;
+    object->type = TYPE_MOVED;
     object->forward = forward;
 
     return object->forward;
@@ -300,6 +239,8 @@ Object *gcMoveObject(Object * object)
 
 void gc(GC_PARAM)
 {
+    debug("collecting garbage\n");
+
     flisp.memory->toOffset = 0;
 
     // move symbols and root objects
@@ -332,6 +273,9 @@ void gc(GC_PARAM)
             object->vars = gcMoveObject(object->vars);
             object->vals = gcMoveObject(object->vals);
             break;
+        case TYPE_MOVED:
+            exceptionWithObject(object, "object already moved");
+            break;
         }
     }
 
@@ -349,7 +293,7 @@ size_t memoryAlign(size_t size, size_t alignment)
     return (size + alignment - 1) & ~(alignment - 1);
 }
 
-Object *memoryAllocObject(Type type, size_t size, GC_PARAM)
+Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
 {
     size = memoryAlign(size, sizeof(void *));
 
@@ -377,7 +321,7 @@ Object *memoryAllocObject(Type type, size_t size, GC_PARAM)
 
 // CONSTRUCTING OBJECTS ///////////////////////////////////////////////////////
 
-Object *newObject(Type type, GC_PARAM)
+Object *newObject(ObjectType type, GC_PARAM)
 {
     return memoryAllocObject(type, sizeof(Object), GC_ROOTS);
 }
@@ -396,7 +340,7 @@ Object *newNumber(double number, GC_PARAM)
     return object;
 }
 
-Object *newObjectWithString(Type type, size_t size, GC_PARAM)
+Object *newObjectWithString(ObjectType type, size_t size, GC_PARAM)
 {
     size = (size > sizeof(((Object *) NULL)->string))
         ? size - sizeof(((Object *) NULL)->string)
@@ -483,7 +427,7 @@ Object *newSymbol(char *string, GC_PARAM)
     return newSymbolWithLength(string, strlen(string), GC_ROOTS);
 }
 
-Object *newObjectWithClosure(Type type, Object ** params, Object ** body, Object ** env, GC_PARAM)
+Object *newObjectWithClosure(ObjectType type, Object ** params, Object ** body, Object ** env, GC_PARAM)
 {
     Object *list;
 
@@ -878,6 +822,9 @@ void writeObject(Object * object, bool readably, Stream *stream)
         CASE(TYPE_MACRO, "Macro", object->params);
         CASE(TYPE_ENV, "Env", object->vars);
 #undef CASE
+    case TYPE_MOVED:
+        writeString("#<Error: gc moved object>", stream);
+        break;
     }
 }
 
@@ -1048,7 +995,7 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
     exceptionWithObject(*e, first->string);
     return *e;
 }
-    
+
 /************************* Editor Extensions **************************************/
 
 #define DEFINE_EDITOR_FUNC(name)                \
@@ -1173,7 +1120,7 @@ Object *e_set_clipboard(Object ** args, GC_PARAM)
 Object *e_get_temp_file(Object ** args, GC_PARAM)
 {
     char *fn = get_temp_file();
-    return newStringWithLength(fn, strlen(fn), GC_ROOTS);    
+    return newStringWithLength(fn, strlen(fn), GC_ROOTS);
 }
 
 Object *e_system(Object ** args, GC_PARAM) {
@@ -1200,10 +1147,10 @@ Object *e_insert_file(Object ** args, GC_PARAM) {
 Object *e_getfilename(Object **args, GC_PARAM) {
 
     ONE_STRING_ARG();
-    
+
     if (FALSE == getfilename(first->string, (char*) response_buf, NAME_MAX))
         return nil;
-    
+
     return newString(response_buf, GC_ROOTS);
 }
 
@@ -1234,9 +1181,9 @@ Object *stringSubstring(Object ** args, GC_PARAM)
     if (first->type != TYPE_STRING)
         exceptionWithObject(first, "is not a string (string.substring)");
     if (second->type != TYPE_NUMBER)
-        exceptionWithObject(second, "is not a number");  
+        exceptionWithObject(second, "is not a number");
     if (third->type != TYPE_NUMBER)
-        exceptionWithObject(third, "is not a number");  
+        exceptionWithObject(third, "is not a number");
 
     int start = (int)(second->number);
     int end = (int)(third->number);
@@ -1266,7 +1213,7 @@ Object *stringLength(Object ** args, GC_PARAM)
     if (first->type != TYPE_STRING)
         exceptionWithObject(first, "is not a string (string.length)");
 
-    return newNumber(strlen(first->string), GC_ROOTS);    
+    return newNumber(strlen(first->string), GC_ROOTS);
 }
 
 Object *e_show_prompt(Object ** args, GC_PARAM)
@@ -2161,14 +2108,19 @@ char *load_file(int infd)
     return flisp.ostream.buffer;
 }
 
-int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
+ResultCode eval(Interpreter *interp, Stream *input_stream)
 {
+    // gcRoots is needed by GC_TRACE
+    Object *gcRoots = interp->theRoot;
+
     GC_TRACE(gcObject, nil);
 
     for (;;) {
-        if (setjmp(*flisp.stackframe)) {
-            debug("exception in call_lisp_body\n");
-            return 1;
+        switch (setjmp(*interp->stackframe)) {
+        case RESULT_ERROR:
+            debug("general exception in eval\n");
+            return RESULT_ERROR;
+            break;
         }
         *gcObject = nil;
 
@@ -2176,26 +2128,47 @@ int call_lisp_body(Object ** env, GC_PARAM, Stream *input_stream)
             writeChar('\n', &flisp.ostream);
             return 0;
         }
-
         *gcObject = readExpr(input_stream, GC_ROOTS);
-        *gcObject = evalExpr(gcObject, env, GC_ROOTS);
+        *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
         writeObject(*gcObject, true, &flisp.ostream);
         writeChar('\n', &flisp.ostream);
     }
-    return 0;
+    return RESULT_OK;
 }
 
+
 /*
- * 2 interface functions that enable lisp to be embedded in an application (eg Editor)
+ * Public interface for embedding fLisp into an application.
  */
 
-int init_lisp(int argc, char **argv, char *flib)
+/** Initialize and return an fLisp interpreter.
+ *
+ * @param argc  argument count
+ * @param argv  null terminated array to arguments
+ * @param flib  path to Lisp library
+ *
+ * @returns On success: a pointer to an fLisp interpreter structure
+ * @returns On failures: NULL
+ *
+ * Note: at the moment we only initialize and the statically allocated
+ * interpreter `flisp` and return a pointer to it.
+ */
+Interpreter *lisp_init(int argc, char **argv, char *library_path)
 {
+    if (lisp_interpreters != NULL) {
+        debug("WARNING: unimplemented. Attempt to initialize more then one interpreter\n");
+        return NULL;
+    }
 
-    debug("init_lisp(%d, %p, \"%s\")\n", argc, argv, flib);
+    debug("lisp_init(%d, %p, \"%s\")\n", argc, argv, library_path);
+
+    flisp.result = RESULT_OK;
+    flisp.output = NULL;
+    flisp.message[0] = '\0';
 
     flisp.stackframe = NULL;
     flisp.memory = memory;
+
     set_stream_file(&flisp.ostream, STDOUT_FILENO);
 
     flisp.theRoot = nil;
@@ -2205,35 +2178,56 @@ int init_lisp(int argc, char **argv, char *flib)
     flisp.symbols = newCons(&t, &flisp.symbols, flisp.theRoot);
 
     flisp.root.type = TYPE_CONS;
-    flisp.root.car = newRootEnv(flisp.theRoot, argc, argv, flib);
+    flisp.root.car = newRootEnv(flisp.theRoot, argc, argv, library_path);
     flisp.root.cdr = flisp.theRoot;
 
     flisp.theEnv = &flisp.root.car;
     flisp.theRoot = &flisp.root;
 
-    return 0;
+    flisp.next = &flisp;
+    lisp_interpreters = &flisp;
+
+    return &flisp;
 }
 
-char *call_lisp(char *input)
+ResultCode lisp_eval(Interpreter *interp, char * format, ...)
 {
-    static jmp_buf *up, exceptionEnv;
+    char input[INPUT_FMT_BUFSIZ];
+    va_list args;
+    int size;
+    jmp_buf exceptionEnv;
+    ResultCode result = RESULT_OK;
 
-    up = flisp.stackframe;
-    flisp.stackframe = &exceptionEnv;
+    va_start (args, format);
 
-    debug("call_lisp(%s)\n", input);
+    size = vsnprintf (input, sizeof(input), format, args);
+    va_end(args);
 
-    assert(input != NULL);
+    // Note: instead of mitigation allocate dynamically and error only on OOM
+    if (size > INPUT_FMT_BUFSIZ) {
+        interp->result = RESULT_ERROR;
+        strncpy(interp->message, "error: input string larger then " "WRITE_FMT_BUFSIZ", WRITE_FMT_BUFSIZ);
+        interp->output = interp->message;
+        return interp->result;
+    }
+
+    debug("lisp_eval(%s)\n", input);
+
+    interp->stackframe = &exceptionEnv;
+
     Stream is = { .type = STREAM_TYPE_STRING };
     set_input_stream_buffer(&is, input);
+    interp->istream = &is;
     reset_output_stream();
-    if (call_lisp_body(flisp.theEnv, flisp.theRoot, &is)) {
-        flisp.stackframe = up;
-        debug("call_lisp(%s) failed: %s\n", input, flisp.ostream.buffer);
-        return "error: call_lisp() failed";
+    interp->message[0] = '\0';
+
+    if ((result = eval(interp, &is))) {
+        debug("lisp_eval() failed: %s\n", interp->message);
+        // interp->message already set by exception code
     }
-    flisp.stackframe = up;
-    return flisp.ostream.buffer;
+    interp->output = interp->ostream.buffer;
+    interp->result = result;
+    return result;
 }
 
 /*
