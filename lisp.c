@@ -51,8 +51,6 @@ Object *t = &(Object) { TYPE_SYMBOL,.string = "t" };
 Object *e = &(Object) { TYPE_STRING,.string = "\0" };
 Object *one = &(Object) { TYPE_NUMBER,.number = 1 };
 
-Object *_out = &(Object) { TYPE_STREAM };
-
 /* List of interpreters */
 Interpreter *lisp_interpreters = NULL;
 
@@ -91,6 +89,12 @@ void fl_debug(Interpreter *interp, char *format, ...)
     (void)fflush(interp->debug);
 }
 
+char *typeNameStrings[] = { "NUMBER", "STRING", "SYMBOL", "CONS", "LAMBDA", "MACRO", "PRIMITIVE", "ENV", "STREAM" };
+
+char *typeName(Object *object)
+{
+    return (object->type == -1) ? "MOVED" : typeNameStrings[object->type];
+}
 
 // EXCEPTION HANDLING /////////////////////////////////////////////////////////
 
@@ -205,7 +209,7 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
     Object **name = &GC_UNIQUE(GC_ROOTS).car;                           \
     GC_ROOTS = &GC_UNIQUE(GC_ROOTS)
 
-Object *gcMoveObject(Object * object)
+Object *gcMoveObject(Interpreter *interp, Object * object)
 {
     // skip object if it is not within from-space (i.e. on the stack)
     if (object < (Object *) interp->memory->fromSpace || object >= (Object *) ((char *)interp->memory->fromSpace + interp->memory->fromOffset)) {
@@ -220,6 +224,11 @@ Object *gcMoveObject(Object * object)
     memcpy(forward, object, object->size);
     interp->memory->toOffset += object->size;
 
+    if (object->type == TYPE_STREAM)
+        fl_debug(interp, "moved stream %p, path %p/%s %s to %p",
+                 (void *)object, (void *)object->path, object->path->string, typeName(object->path), (void *)forward);
+
+
     // mark object as moved and set forwarding pointer
     object->type = TYPE_MOVED;
     object->forward = forward;
@@ -227,17 +236,17 @@ Object *gcMoveObject(Object * object)
     return object->forward;
 }
 
-void gc(GC_PARAM)
+void gc(Interpreter *interp)
 {
     fl_debug(interp, "collecting garbage: %lu/%lu", interp->memory->fromOffset, interp->memory->capacity);
 
     interp->memory->toOffset = 0;
 
     // move symbols and root objects
-    interp->symbols = gcMoveObject(interp->symbols);
+    interp->symbols = gcMoveObject(interp, interp->symbols);
 
-    for (Object * object = GC_ROOTS; object != nil; object = object->cdr)
-        object->car = gcMoveObject(object->car);
+    for (Object * object = interp->theRoot; object != nil; object = object->cdr)
+        object->car = gcMoveObject(interp, object->car);
 
     // iterate over objects in to-space and move all objects they reference
     for (Object * object = interp->memory->toSpace; object < (Object *) ((char *)interp->memory->toSpace + interp->memory->toOffset); object = (Object *) ((char *)object + object->size)) {
@@ -249,22 +258,23 @@ void gc(GC_PARAM)
         case TYPE_PRIMITIVE:
             break;
         case TYPE_STREAM:
-            object->path = gcMoveObject(object->path);
+            fl_debug(interp, "moving path %p/%s of stream %p", (void *)object->path, object->path->string, (void *)object);
+            object->path = gcMoveObject(interp, object->path);
             break;
         case TYPE_CONS:
-            object->car = gcMoveObject(object->car);
-            object->cdr = gcMoveObject(object->cdr);
+            object->car = gcMoveObject(interp, object->car);
+            object->cdr = gcMoveObject(interp, object->cdr);
             break;
         case TYPE_LAMBDA:
         case TYPE_MACRO:
-            object->params = gcMoveObject(object->params);
-            object->body = gcMoveObject(object->body);
-            object->env = gcMoveObject(object->env);
+            object->params = gcMoveObject(interp, object->params);
+            object->body = gcMoveObject(interp, object->body);
+            object->env = gcMoveObject(interp, object->env);
             break;
         case TYPE_ENV:
-            object->parent = gcMoveObject(object->parent);
-            object->vars = gcMoveObject(object->vars);
-            object->vals = gcMoveObject(object->vals);
+            object->parent = gcMoveObject(interp, object->parent);
+            object->vars = gcMoveObject(interp, object->vars);
+            object->vals = gcMoveObject(interp, object->vals);
             break;
         case TYPE_MOVED:
             exceptionWithObject(interp, object, FLISP_GC_ERROR, "object already moved");
@@ -294,7 +304,7 @@ size_t memoryAlign(size_t size, size_t alignment)
     return (size + alignment - 1) & ~(alignment - 1);
 }
 
-Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
+Object *memoryAllocObject(Interpreter *interp, ObjectType type, size_t size, GC_PARAM)
 {
     size = memoryAlign(size, sizeof(void *));
 
@@ -308,7 +318,7 @@ Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
     }
     // run garbage collection if capacity exceeded
     if (interp->memory->fromOffset + size >= interp->memory->capacity)
-        gc(GC_ROOTS);
+        gc(interp);
     if (interp->memory->fromOffset + size >= interp->memory->capacity) {
         if (!interp->catch) return nil;
         exception(interp, FLISP_OOM, "out of memory, %lu bytes", (unsigned long)size);
@@ -327,12 +337,14 @@ Object *memoryAllocObject(ObjectType type, size_t size, GC_PARAM)
 
 Object *newObject(ObjectType type, GC_PARAM)
 {
-    return memoryAllocObject(type, sizeof(Object), GC_ROOTS);
+    // Note: still static ---v
+    return memoryAllocObject(interp, type, sizeof(Object), GC_ROOTS);
 }
 
 Object *newObjectFrom(Object ** from, GC_PARAM)
 {
-    Object *object = memoryAllocObject((*from)->type, (*from)->size, GC_ROOTS);
+    // Note: still static -------------v
+    Object *object = memoryAllocObject(interp, (*from)->type, (*from)->size, GC_ROOTS);
     memcpy(object, *from, (*from)->size);
     return object;
 }
@@ -349,7 +361,9 @@ Object *newObjectWithString(ObjectType type, size_t size, GC_PARAM)
     size = (size > sizeof(((Object *) NULL)->string))
         ? size - sizeof(((Object *) NULL)->string)
         : 0;
-    return memoryAllocObject(type, sizeof(Object) + size, GC_ROOTS);
+
+    // Note: still static ---v
+    return memoryAllocObject(interp, type, sizeof(Object) + size, GC_ROOTS);
 }
 
 Object *newStringWithLength(char *string, size_t length, GC_PARAM)
@@ -516,12 +530,15 @@ Object *newStreamObject(FILE *fd, char *path, GC_PARAM)
     Object *object = newObject(TYPE_STREAM, GC_ROOTS);
     object->fd = fd;
     object->buf = NULL;
-    if (path == NULL) {
-        object->path = NULL;
-    } else {
-        object->path = newString(path, GC_ROOTS);
-    }
-    return object;
+    object->path = NULL;
+#if 0
+    GC_TRACE(gcStream, object);
+#else
+    Object **gcStream = &object;
+#endif
+    if (path != NULL)
+        (*gcStream)->path = newString(path, GC_ROOTS);
+    return *gcStream;
 }
 
 
@@ -996,7 +1013,7 @@ Object *primitiveRead(Object ** args, GC_PARAM)
         // use default input for reading
         if (default_input == nil)
             exception(interp, FLISP_INVALID_VALUE, "no stream to read");
-        
+
         if (default_input->type != TYPE_CONS) {
             if (default_input->type != TYPE_STREAM)
                 exceptionWithObject(interp, default_input, FLISP_INVALID_VALUE, "default input is not a stream");
@@ -1013,10 +1030,10 @@ Object *primitiveRead(Object ** args, GC_PARAM)
         setRootSymbol(interp, ":input", list);
     }
     if (stream->type != TYPE_STREAM)
-        exceptionWithObject(interp, stream, FLISP_INVALID_VALUE, "(read [fd ..]) - fd is not a stream");
+        exceptionWithObject(interp, stream, FLISP_INVALID_VALUE, "(read [fd ..]) - fd is not a stream: %s", typeName(stream));
 
     arg = stream; /* remember input stream parameter */
-    
+
     // read one expression
     Object *result = readExpr(interp, stream);
     if (result == NULL) {
@@ -1336,10 +1353,12 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
             Primitive *primitive = &primitives[(*gcFunc)->primitive];
             int nArgs = 0;
 
-            for (Object * args = *gcArgs; args != nil; args = args->cdr, nArgs++)
+            for (Object * args = *gcArgs; args != nil; args = args->cdr, nArgs++) {
                 if (args->type != TYPE_CONS)
                     exceptionWithObject(interp, args, FLISP_WRONG_TYPE, "(%s args) - args is not a list: arg %d", primitive->name, nArgs);
-
+                if (args->cdr->type == TYPE_MOVED)
+                    exceptionWithObject(interp, args->cdr, FLISP_GC_ERROR, "(%s args) - arg %d is already disposed off", primitive->name, nArgs);
+            }
             if (nArgs < primitive->nMinArgs)
                 exceptionWithObject(interp, *gcFunc, FLISP_PARAMETER_ERROR, "expects at least %d arguments", primitive->nMinArgs);
             if (nArgs > primitive->nMaxArgs && primitive->nMaxArgs >= 0)
@@ -1414,7 +1433,7 @@ void fl_flush_stream(Interpreter *interp, Object *stream)
     int result;
 
     stream = getOutputStream(interp, stream);
-    
+
     if ((result = file_fflush(interp, stream))) {
         exceptionWithObject(interp, stream, FLISP_IO_ERROR, "failed to fflush output stream, errno: %d", result);
     }
@@ -1674,7 +1693,9 @@ Object *primitiveCons(Object ** args, GC_PARAM)
 
 Object *primitiveGc(Object ** args, GC_PARAM)
 {
-    gc(GC_ROOTS);
+    // Note:
+    // v-- static
+    gc(interp);
     return t;
 }
 
@@ -1890,6 +1911,8 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
  */
 int file_fclose(Interpreter *interp, Object *stream)
 {
+    // Note: remove after debugging lisp_eval_string()
+    fl_debug(interp, "file_fclose(%s/%d/%p)",stream->path->string, fileno(stream->fd), (void *)stream->fd);
     // Note: we thought we needed to do this: but we get segfaulted. why?
     //if (stream->buf != NULL)
     //    free(stream->buf);
@@ -2265,7 +2288,7 @@ Interpreter *lisp_new(
     interp->theRoot = &interp->root;
 
     interp->catch = &interp->exceptionEnv;
-    
+
     interp->next = interp;
     lisp_interpreters = interp;
 
@@ -2319,7 +2342,7 @@ void lisp_destroy(Interpreter *interp)
     i->next = interp->next;
     i = NULL;
 
-    
+
     if (interp->memory->fromSpace)
         (void)munmap(interp->memory->fromSpace, interp->memory->capacity * 2);
     // Note: we do not know which one it is, so we free both.
@@ -2355,7 +2378,7 @@ ResultCode lisp_eval(Interpreter *interp, Object *stream)
     args = newCons(&stream, &args, GC_ROOTS);
 
     GC_TRACE(gcObject, nil);
-    
+
     for (;;) {
 
         switch (setjmp(*interp->catch)) {
@@ -2408,7 +2431,14 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
         strncpy(interp->message, "failed to convert input to stream", sizeof(interp->message));
         return interp->result;
     }
+    setRootSymbol(interp, "femto_command", stream);
+    fl_debug(interp, "lisp_eval_string(): created memory stream %p, path %p, %s, %p",
+             (void *)stream, (void *)stream->path, stream->path->string, (void *)stream->fd);
     result = lisp_eval(interp, stream);
+    fl_debug(interp, "result %d", result);
+    stream = getRootSymbol(interp, "femto_command");
+    fl_debug(interp, "lisp_eval_string(): closing memory stream %p type %s, path %p, %s, %p",
+             (void *)stream, typeName(stream), (void *)stream->path, stream->path->string, (void *)stream->fd);
     file_fclose(interp, stream);
     fl_debug(interp, "lisp_eval_string() => %d", interp->result);
     if (result)
