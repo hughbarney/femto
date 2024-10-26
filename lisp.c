@@ -1698,7 +1698,20 @@ Object *primitiveGc(Object ** args, GC_PARAM)
     gc(interp);
     return t;
 }
-
+Object *primitiveRoot(Object ** args, GC_PARAM)
+{
+    // Note:
+    //     v--- static
+    return interp->theRoot;
+}
+Object *primitiveEnv(Object ** args, GC_PARAM)
+{
+    GC_TRACE(env, nil);
+    // Note: static v 
+    *env = newCons(&interp->root.car->vars, env, GC_ROOTS);
+    *env = newCons(&interp->root.car->vals, env, GC_ROOTS);
+    return *env;
+}
 Object *primitiveSignal(Object ** args, GC_PARAM)
 {
     Object *first = (*args)->car;
@@ -2146,6 +2159,8 @@ Primitive primitives[] = {
     {"read", 0, 3, primitiveRead},
     {"write", 1, -1, primitiveWrite},
     {"gc", 0, 0, primitiveGc},
+    {"root", 0, 0, primitiveRoot},
+    {"env", 0, 0, primitiveEnv},
     {"signal", 1, -1, primitiveSignal},
     {"+", 0, -1, primitiveAdd},
     {"-", 0, -1, primitiveSubtract},
