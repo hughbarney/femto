@@ -1,0 +1,5 @@
+femto (2.21.0-1) bookworm; urgency=medium
+
+  * Initial Debian packaging.
+
+ -- Georg Lehner <jorge@magma-soft.at>  Mon, 28 Oct 2024 18:26:21 +0100

@@ -1,0 +1,16 @@
+Source: femto
+Section: editors
+Priority: optional
+Maintainer: Georg Lehner <jorge@magma-soft.at>
+Build-Depends: debhelper (>= 9), libncurses-dev (>= 6)
+
+Package: femto
+Architecture: any
+Depends: libncurses6
+Description: Tiny Emacs clone with tiny Lisp extension language
+  Femto is a minimal functional editor emulating Emacs with a tiny
+  Lisp extension language in less then 10k lines of code.
+  .
+  It is the fifth smallest of the common Emacs emulator and has almost
+  the same level of functionality as MicroEmacs 3.10 for a codebase
+  about 15% of the size.
