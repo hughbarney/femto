@@ -97,6 +97,7 @@ char *eval_string(int do_format, char *format, ...)
     char buf[INPUT_FMT_BUFSIZ], *input;
     int size;
     va_list args;
+    Object *gcRoots = nil;
 
     if (do_format) {
         va_start(args, format);
@@ -112,7 +113,7 @@ char *eval_string(int do_format, char *format, ...)
     }
 
     interp->output = nil;
-    if ((lisp_eval_string(interp, input)))
+    if ((lisp_eval_string(interp, input, gcRoots)))
         // Note: does not print the err'd object, if any
         msg("error: %s", interp->message);
     if (debug_mode) {

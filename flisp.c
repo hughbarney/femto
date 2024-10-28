@@ -28,11 +28,11 @@ void fatal(char *msg)
     exit(1);
 }
 
-void printError(Interpreter *interp)
+void printError(Interpreter *interp, Object *gcRoots)
 {
     if (interp->object != nil) {
         fprintf(stderr, "error: '");
-        writeObject(interp, lisp_stream(interp, stderr, ">STDERR"), interp->object, true);
+        writeObject(interp, lisp_stream(interp, stderr, ">STDERR"), interp->object, true, gcRoots);
         fprintf(stderr, ", %s\n", interp->message);
     } else
         fprintf(stderr,"error: %s\n", interp->message);
@@ -43,7 +43,7 @@ void printError(Interpreter *interp)
 // - isatty()
 // - exception handling in fLisp
 // - file output for error messages
-int repl(Interpreter *interp)
+int repl(Interpreter *interp, Object *gcRoots)
 {
     size_t i;
     ResultCode result;
@@ -65,8 +65,8 @@ int repl(Interpreter *interp)
             continue;
         }
 
-        if (lisp_eval_string(interp, input))
-            printError(interp);
+        if (lisp_eval_string(interp, input, gcRoots))
+            printError(interp, gcRoots);
     }
 
     fflush(stdout);
@@ -82,6 +82,7 @@ int main(int argc, char **argv)
     FILE *fd = NULL;
     Interpreter *interp;
     Object *iniStream;
+    Object *gcRoots = nil;
 
     if ((init_file = getenv("FLISPRC")) == NULL)
         init_file = FL_LIBDIR "/" FL_INITFILE;
@@ -107,7 +108,7 @@ int main(int argc, char **argv)
                 fatal("could not open input file stream for inifile");
             else {
                 // load inifile
-                if (lisp_eval(interp, iniStream))
+                if (lisp_eval(interp, iniStream, gcRoots))
                     fprintf(stderr, "failed to load inifile %s:%d: %s\n", init_file, interp->result, interp->message);
                 // Note: if we could implement the repl in fLisp itself we'd bail out here.
                 if (file_fclose(interp, iniStream))
@@ -118,11 +119,11 @@ int main(int argc, char **argv)
     // Start repl
     //Note: could be omitted if we could implement the repl in fLisp itself.
     if (isatty(0))
-        return repl(interp);
+        return repl(interp, gcRoots);
     
-    // Just eval the *standard-input* stream
-    if ((result = lisp_eval(interp, nil)))
-        printError(interp);
+    // Just eval the standard input
+    if ((result = lisp_eval(interp, lisp_stream(interp, stdin, "STDIN"), gcRoots)))
+        printError(interp, gcRoots);
     lisp_destroy(interp);
     return interp->result;
 }

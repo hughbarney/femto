@@ -985,18 +985,20 @@
       <dd>Frees all resources used by the interpreter.</dd>
       
       <dt>
-	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>, Object *<var>stream</var>)</code>
+	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>, Object *<var>stream</var> Object *<var>gcRoots</var>)</code>
       </dt>
       <dd>
 	<p>
 	  Evaluates the given input stream in the fLisp interpreter <var>interp</var> until end of
-	  file. If <var>stream</var> is <code>nil</code> the default input stream is evaluated.
+	  file. <var>gcRoots</var> must be set to a global variable with initial value <code>nil</code>
 	</p>
       </dd>
       <dt>
-	<code>ResultCode lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>)</code>
+	<code>ResultCode lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>, Object *<var>gcRoots</var>)</code>
       </dt>
-      <dd>Evaluates all Lisp expressions in <var>string</var>.</dd>
+      <dd>
+	Evaluates all Lisp expressions in <var>string</var>. <var>gcRoots</var> must be set to a global variable with
+	initial value <code>nil</code></dd>
       <dt>
 	<code>Object *<var>stream</var> lisp_stream(Interpreter *<var>interp</var>, FILE *<var>path</var>,
 	char *<var>string</var>)</code>
@@ -1030,11 +1032,12 @@
       </dd>
       <dt>
 	<code>void writeObject(Interpreter *<var>interp</var>, Object *<var>object</var>,
-	  Object *<var>stream</var>, bool readably)</code>
+	  Object *<var>stream</var>, bool readably, Object *<var>gcRoots</var>)</code>
       </dt>
       <dd>
 	Format <var>object</var> into a string and write it to <var>stream</var>.  If <var>readably</var> is true, the
-	string can be read in by the interpreter and results in the same object.
+	string can be read in by the interpreter and results in the same object. <var>gcRoots</var> must be set to a
+	global variable with initial value <code>nil</code>
       </dd>
     </dl>
     
@@ -1137,6 +1140,10 @@
       <code><var>GC_TRACE</var>(<var>gcX</var>, <var>X</var>)</code>: add object <var>X</var> to the list and
       declare <code>Object **<var>gcX</var></code> to point to the pointer to <var>X</var> inside the list.
     </p>
+    <p>
+      Information about the garbage collection process and memory status is written to the debug file descriptor.
+    </p>
+    
     <h4 id="memory">Memory Usage</h4>
     <p>
       Some compile time adjustable limits in <code>lisp.h</code>:
