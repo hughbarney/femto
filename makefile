@@ -73,7 +73,7 @@ undo.o: undo.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c undo.c
 
 femto_lisp.o: lisp.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -c lisp.c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -D FLISP_FILE_EXTENSION -c lisp.c -o $@
 
 funcmap.o: funcmap.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c funcmap.c

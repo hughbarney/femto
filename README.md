@@ -301,7 +301,7 @@ mode. It provides the 'core' functionality.
 
 Standard Lisp function:
 
-* `defmacro`, `defun`, `string`, `concat`, `memq`, 
+* `defmacro`, `defun`, `string`, `concat`, `memq`, `load`
 
 Lisp library functions:
 

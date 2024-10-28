@@ -99,7 +99,6 @@ char *typeName(Object *object)
 // EXCEPTION HANDLING /////////////////////////////////////////////////////////
 
 void resetBuf(Interpreter *);
-void setRootSymbol(Interpreter *, char *, Object *);
 
 /** exceptionWithObject - break out of errors
  *
@@ -123,8 +122,6 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
     interp->object = object;
     interp->result = result;
     resetBuf(interp);
-
-    (void)setRootSymbol(interp, ":input", interp->input);
 
     int len = sizeof(interp->message);
     va_list(args);
@@ -979,72 +976,35 @@ Object *readExpr(Interpreter *interp, Object *stream)
     }
 }
 
-Object * getRootSymbol(Interpreter *, char *);
-
-/** (read [args]) - read one object from input stream
+/** (fread stream eofv) - read one object from input stream
  *
- * @param stream  optional, default nil. If nil the current input stream is read.
- * @param eofp    optional, default t. If not nil EOF throws an exception.
- * @param eofv    optional, default nil. Returned on EOF if *eofp* is nil.
+ * @param stream  input stream to read.
+ * @param eofv    On EOF: if nil throw exception, else value to return.
  *
  * returns: Object
  *
  * throws: FLISP_INVALID_VALUE, FLISP_IO_ERROR, FLISP_EOF
  */
-Object *primitiveRead(Object ** args, GC_PARAM)
+Object *primitiveFread(Object ** args, GC_PARAM)
 {
-    Object *stream, *arg = *args;
-    Object *eofp = t;
     Object *eofv = nil;
 
-    Object *default_input = getRootSymbol(interp, ":input");
+    ONE_STREAM_ARG(fread);
 
-    if (arg == nil)
-        stream = nil;
-    else {
-        stream = arg->car;
-        if ((arg = arg->cdr) != nil) {
-            eofp = arg->car;
-            if ((arg = arg->cdr) != nil)
-                eofv = arg->car;
-        }
-    }
-    if (stream == nil) {
-        // use default input for reading
-        if (default_input == nil)
-            exception(interp, FLISP_INVALID_VALUE, "no stream to read");
+    if ((*args)->cdr != nil)
+        eofv = (*args)->cdr->car;
 
-        if (default_input->type != TYPE_CONS) {
-            if (default_input->type != TYPE_STREAM)
-                exceptionWithObject(interp, default_input, FLISP_INVALID_VALUE, "default input is not a stream");
-            stream = default_input;
-        } else {
-            if (default_input->car->type != TYPE_STREAM)
-                exceptionWithObject(interp, default_input, FLISP_INVALID_VALUE, "default input is not a stream");
-            stream = default_input->car;
-        }
-    } else {
-        //   push *fd* to :input
-        //   use *fd* for read
-        Object *list = newCons(&stream, &default_input, GC_ROOTS);
-        setRootSymbol(interp, ":input", list);
-    }
     if (stream->type != TYPE_STREAM)
         exceptionWithObject(interp, stream, FLISP_INVALID_VALUE, "(read [fd ..]) - fd is not a stream: %s", typeName(stream));
 
-    arg = stream; /* remember input stream parameter */
+    GC_TRACE(gcStream, stream);
 
-    // read one expression
-    Object *result = readExpr(interp, stream);
+    Object *result = readExpr(interp, *gcStream, GC_ROOTS);
     if (result == NULL) {
-        if (eofp == nil)
-            result = eofv;
+        if (eofv == nil)
+            exceptionWithObject(interp, *gcStream, FLISP_EOF, "(read [..]) input exhausted");
         else
-            exceptionWithObject(interp, stream, FLISP_EOF, "(read [..]) input exhausted");
-    }
-    if (arg != nil) { /* remembered optional input stream parameter */
-        //   pop *fd* from :input
-        setRootSymbol(interp, ":input", default_input);
+            result = eofv;
     }
     return result;
 }
@@ -1392,6 +1352,11 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
             exceptionWithObject(interp, *gcFunc, FLISP_WRONG_TYPE, "is not a function");
         }
     }
+}
+
+Object *primitiveEval(Object **args, GC_PARAM)
+{
+    return evalExpr(&(*args)->car, interp->theEnv, GC_ROOTS);
 }
 
 
@@ -2156,7 +2121,8 @@ Primitive primitives[] = {
     {"car", 1, 1, primitiveCar},
     {"cdr", 1, 1, primitiveCdr},
     {"cons", 2, 2, primitiveCons},
-    {"read", 0, 3, primitiveRead},
+    {"fread", 0, 3, primitiveFread},
+    {"eval", 1, 1, primitiveEval},
     {"write", 1, -1, primitiveWrite},
     {"gc", 0, 0, primitiveGc},
     {"root", 0, 0, primitiveRoot},
@@ -2181,7 +2147,7 @@ Primitive primitives[] = {
     {"number-to-string", 1, 1, numberToString},
     {"ascii", 1, 1, asciiToString},
     {"ascii->number", 1, 1, asciiToNumber},
-    {"load", 1, 1, primitiveLoad},
+//    {"load", 1, 1, primitiveLoad},
     {"os.getenv", 1, 1, os_getenv},
     {"system", 1, 1, fl_system},
     FLISP_REGISTER_FILE_EXTENSION
@@ -2330,21 +2296,17 @@ Interpreter *lisp_new(
     /* input stream */
     GC_TRACE(gcInput, nil);
     if (input)
-        *gcInput = newStreamObject(input, "*standard-input*", interp->theRoot);
+        *gcInput = newStreamObject(input, "STDIN", interp->theRoot);
     interp->input = *gcInput;
-    *gcVar = newSymbol("*standard-input*", GC_ROOTS);
-    envSet(gcVar, gcInput, interp->theEnv, GC_ROOTS);
-    *gcVar = newSymbol(":input", GC_ROOTS);
+    *gcVar = newSymbol("INPUT", GC_ROOTS);
     envSet(gcVar, gcInput, interp->theEnv, GC_ROOTS);
 
     /* output stream */
     GC_TRACE(gcOutput, nil);
     if (output)
-        *gcOutput = newStreamObject(output, "*standard-output*", interp->theRoot);
+        *gcOutput = newStreamObject(output, "STDOUT", interp->theRoot);
     interp->output = *gcOutput;
-    *gcVar = newSymbol("*standard-output*", GC_ROOTS);
-    envSet(gcVar, gcOutput, interp->theEnv, GC_ROOTS);
-    *gcVar = newSymbol(":output", GC_ROOTS);
+    *gcVar = newSymbol("OUTPUT", GC_ROOTS);
     envSet(gcVar, gcOutput, interp->theEnv, GC_ROOTS);
 
     return interp;

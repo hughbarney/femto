@@ -40,6 +40,18 @@
     ((eq o (car l)) l)
     (t (memq o (cdr l)))))
 
+;; load
+(defun fload (f)
+  (setq r nil o (fread f :eof))
+  (cond
+    ((eq o :eof) r)
+    (t
+     (setq r (eval o))
+     (fload f))))
+(defun load (p)
+  (setq f (fopen p "r"))
+  (fload f))
+
 ;; Features
 (setq features nil)
 
