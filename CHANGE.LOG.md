@@ -1,4 +1,4 @@
-## Femto 2.21 25 October 2024
+## Femto 2.21 28 October 2024
 
 This release introduces a separation between the fLisp interpreter and
 the Femto editor.  A simple Lisp command line interpreter can be built
@@ -11,12 +11,12 @@ interpreter.
 
 Lisp initialization allocates memory dynamically, it receives now the
 input and output stream as parameters and exposes them in Lisp as
-`*standard-input*` and `*standard-output`.  Current input output is
-exposed as `:input` and `:output`.
+`STDIN` and `STDOUT`.
 
-Lisp primitives `read`, `write` and `gc` have been added, `print` and
-`printc` are moved out into the `stdlib` Lisp library.  `:` has been
-added to the syntax, to allow for keyword arguments.
+Lisp primitives `fread`, `write` and `gc` have been added, `load`,
+`print` and `printc` are moved out into the `core` and `stdlib` Lisp
+library.  `:` has been added to the syntax, to allow for keyword
+arguments.
 
 Both inline documentation and the fLisp manual have been extended.
 The latter includes information on the Lisp libraries and embedding of
