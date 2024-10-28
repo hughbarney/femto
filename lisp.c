@@ -48,7 +48,7 @@ Object *nil = &(Object) { TYPE_SYMBOL,.string = "nil" };
 Object *t = &(Object) { TYPE_SYMBOL,.string = "t" };
 
 /* intern */
-Object *e = &(Object) { TYPE_STRING,.string = "\0" };
+Object *empty = &(Object) { TYPE_STRING,.string = "\0" };
 Object *one = &(Object) { TYPE_NUMBER,.number = 1 };
 
 /* List of interpreters */
@@ -56,7 +56,7 @@ Interpreter *lisp_interpreters = NULL;
 
 // Note: remove after rewriting the whole fLisp core to pass the
 // interpreter instead of GC_PARAM
-static Interpreter *interp = 0;
+static Interpreter *interp = NULL;
 
 
 // DEBUG LOG ///////////////////////////////////////////////////////////////////
@@ -371,7 +371,7 @@ Object *newStringWithLength(char *string, size_t length, GC_PARAM)
     int nEscapes = 0;
 
     if (length == 0)
-        return e;
+        return empty;
 
     for (int i = 1; i < length; ++i)
         if (string[i - 1] == '\\' && strchr("\\\"trn", string[i]))
