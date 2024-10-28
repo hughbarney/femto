@@ -314,13 +314,11 @@ objects. `(signal 'error 'nil)` is probably the simplest signal.
 
 ##### Input / Output and Others
 
-`(read`\[ `stream `\[`eof-error-p`\[ `eof-value`\]\]\]`)`
+`(fread` `stream`\[ `eof-value`\]`)`
 
-Reads the next complete Lisp expression from the default input stream,
-or from *stream* if given. The read in object is returned. If end of
-file is reached, an exception is raised, unless *eof-error-p* is set to
-`nil`. In that case `eof-value` is returned. All optional arguments
-default to `nil`.
+Reads the next complete Lisp expression from *stream*. The read in
+object is returned. If end of file is reached, an exception is raised,
+unless *eof-value* is not `nil`. In that case `eof-value` is returned.
 
 `(write object`\[ `keys`\]\]`)`
 
@@ -335,9 +333,9 @@ stream. With key `:stream` output is written to the given stream. With
 key `:readable` not `nil` output is formatted in a way which which gives
 the same object when read again. `write` returns the *object*.
 
-`(load path)`
+`(eval object)`
 
-Reads all objects from file *path*, returns the last one.
+Evaluates *object* and returns the result.
 
 `(system string)`
 
@@ -517,6 +515,12 @@ Returns concatenation of all arguments converted to strings.
 `(memq arg list)`  
 If *arg* is contained in *list*, returns the sub list of *list* starting
 with the first occurrence of *arg*, otherwise returns `nil`.
+
+`(fload ` `stream)`  
+Reads and evaluates all Lisp objects in *stream*.
+
+`(load ` `path)`  
+Reads and evaluates all Lisp objects in file at *path*.
 
 `(provide feature)`  
 Used as the final expression of a library to register symbol *feature*
@@ -1045,12 +1049,14 @@ Debug output stream. If set to `NULL` no debug information is generated.
 `(void) lisp_destroy(Interpreter *interp)`  
 Frees all resources used by the interpreter.
 
-`ResultCode lisp_eval(Interpreter *interp, Object *stream)`  
+`ResultCode lisp_eval(Interpreter *interp, Object *stream Object *gcRoots)`  
 Evaluates the given input stream in the fLisp interpreter *interp* until
-end of file. If *stream* is `nil` the default input stream is evaluated.
+end of file. *gcRoots* must be set to a global variable with initial
+value `nil`
 
-`ResultCode lisp_eval_string(Interpreter *interp, char *string)`  
-Evaluates all Lisp expressions in *string*.
+`ResultCode lisp_eval_string(Interpreter *interp, char *string, Object *gcRoots)`  
+Evaluates all Lisp expressions in *string*. *gcRoots* must be set to a
+global variable with initial value `nil`
 
 `Object *stream lisp_stream(Interpreter *interp, FILE *path,     char *string)`  
 Returns a Lisp stream object with open file descriptor *fd*. *path*
@@ -1077,10 +1083,11 @@ associated file descriptor
 Call `fflush()` on the file descriptor associated to *stream* and return
 `errno`. file descriptor
 
-`void writeObject(Interpreter *interp, Object *object,       Object *stream, bool readably)`  
+`void writeObject(Interpreter *interp, Object *object,       Object *stream, bool readably, Object *gcRoots)`  
 Format *object* into a string and write it to *stream*. If *readably* is
 true, the string can be read in by the interpreter and results in the
-same object.
+same object. *gcRoots* must be set to a global variable with initial
+value `nil`
 
 <span class="mark">Note: currently only one interpreter can be
 created.</span>
@@ -1173,6 +1180,9 @@ points to the objects pointer inside the list.
 
 `GC_TRACE(gcX, X)`: add object *X* to the list and declare
 `Object **gcX` to point to the pointer to *X* inside the list.
+
+Information about the garbage collection process and memory status is
+written to the debug file descriptor.
 
 #### Memory Usage
 
