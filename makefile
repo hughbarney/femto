@@ -107,11 +107,14 @@ flisp.rc: flisp.sht lisp/core.lsp
 measure: strip FORCE
 	@echo Total
 	@echo binsize: $$(set -- $$(ls -l femto); echo $$5)
+	@echo C-lines: $$(cat *.c *.h | wc -l)
 	@echo linecount: $$(cat *.c *.h *.rc lisp/*.lsp | wc -l)
 	@echo sloccount: $$(set -- $$(which sloccount >/dev/null && { sloccount *.c *.h *.rc lisp/*.lsp | grep ansic=; }); echo $$3)
 	@echo files: $$(ls *.c *.h *.rc lisp/*.lsp | wc -l)
 	@echo C-files: $$(ls *.c *.h | wc -l)
 	@echo Minimum
+	@echo flisp: $$(cat flisp.c | wc -l)
+	@echo flispsloc: $$(set -- $$(which sloccount >/dev/null && { sloccount flisp.c | grep ansic=; }); echo $$3)
 	@echo linecount: $$(cat *.c *.h $(LISPFILES) | wc -l) 
 	@echo sloccount: $$(set -- $$(which sloccount >/dev/null && { sloccount *.c *.h *.rc $(LISPFILES) | grep ansic=; }); echo $$3)
 	@echo files: $$(ls *.c *.h $(LISPFILES) | wc -l) 
@@ -130,7 +133,7 @@ doc: docs/flisp.md README.html
 doxygen: FORCE
 	doxygen
 
-test: femto FORCE
+test: flisp femto FORCE
 	(cd test && ./run)
 
 run: femto FORCE
