@@ -524,18 +524,98 @@ Object *newEnv(Object ** func, Object ** vals, GC_PARAM)
  */
 Object *newStreamObject(FILE *fd, char *path, GC_PARAM)
 {
-    Object *object = newObject(TYPE_STREAM, GC_ROOTS);
-    object->fd = fd;
-    object->buf = NULL;
-    object->path = NULL;
-#if 0
-    GC_TRACE(gcStream, object);
-#else
-    Object **gcStream = &object;
-#endif
+    Object *stream = newObject(TYPE_STREAM, GC_ROOTS);
+    stream->fd = fd;
+    stream->buf = NULL;
+    stream->path = NULL;
+
     if (path != NULL)
-        (*gcStream)->path = newString(path, GC_ROOTS);
-    return *gcStream;
+        (stream)->path = newString(path, GC_ROOTS);
+    return stream;
+}
+
+
+// ENVIRONMENT ////////////////////////////////////////////////////////////////
+
+/* An environment consists of a pointer to its parent environment (if any) and
+ * two parallel lists - vars and vals.
+ *
+ * Case 1 - vars is a regular list:
+ *   vars: (a b c), vals: (1 2 3)        ; a = 1, b = 2, c = 3
+ *
+ * Case 2 - vars is a dotted list:
+ *   vars: (a b . c), vals: (1 2)        ; a = 1, b = 2, c = nil
+ *   vars: (a b . c), vals: (1 2 3)      ; a = 1, b = 2, c = (3)
+ *   vars: (a b . c), vals: (1 2 3 4 5)  ; a = 1, b = 2, c = (3 4 5)
+ *
+ * Case 3 - vars is a symbol:
+ *   vars: a, vals: nil                  ; a = nil
+ *   vars: a, vals: (1)                  ; a = (1)
+ *   vars: a, vals: (1 2 3)              ; a = (1 2 3)
+ *
+ * Case 4 - vars and vals are both nil:
+ *   vars: nil, vals: nil
+ */
+
+Object *envLookup(Object * var, Object * env)
+{
+    for (; env != nil; env = env->parent) {
+        Object *vars = env->vars, *vals = env->vals;
+
+        for (; vars->type == TYPE_CONS; vars = vars->cdr, vals = vals->cdr)
+            if (vars->car == var)
+                return vals->car;
+
+        if (vars == var)
+            return vals;
+    }
+
+    exceptionWithObject(interp, var, FLISP_INVALID_VALUE, "has no value");
+}
+
+Object *envAdd(Object ** var, Object ** val, Object ** env, GC_PARAM)
+{
+    GC_TRACE(gcVars, newCons(var, &nil, GC_ROOTS));
+    GC_TRACE(gcVals, newCons(val, &nil, GC_ROOTS));
+
+    (*gcVars)->cdr = (*env)->vars, (*env)->vars = *gcVars;
+    (*gcVals)->cdr = (*env)->vals, (*env)->vals = *gcVals;
+
+    return *val;
+}
+
+Object *envSet(Object ** var, Object ** val, Object ** env, GC_PARAM)
+{
+    GC_TRACE(gcEnv, *env);
+
+    for (;;) {
+        Object *vars = (*gcEnv)->vars, *vals = (*gcEnv)->vals;
+
+        for (; vars->type == TYPE_CONS; vars = vars->cdr, vals = vals->cdr) {
+            if (vars->car == *var)
+                return vals->car = *val;
+            if (vars->cdr == *var)
+                return vals->cdr = *val;
+        }
+
+        if ((*gcEnv)->parent == nil)
+            return envAdd(var, val, gcEnv, GC_ROOTS);
+        else
+            *gcEnv = (*gcEnv)->parent;
+    }
+}
+void setRootSymbol(Interpreter *interp, char *name, Object *value, GC_PARAM)
+{
+    Object *symbol = newSymbol(name, GC_ROOTS);
+    envSet(&symbol, &value, interp->theEnv, GC_ROOTS);
+}
+
+Object *evalExpr(Object **, Object **, Object *);
+
+Object * getRootSymbol(Interpreter *interp, char *name, GC_PARAM)
+{
+    Object *symbol = newSymbol(name, GC_ROOTS);
+    return evalExpr(&symbol, interp->theEnv, GC_ROOTS);
 }
 
 
@@ -1007,90 +1087,6 @@ Object *primitiveFread(Object ** args, GC_PARAM)
             result = eofv;
     }
     return result;
-}
-
-
-// ENVIRONMENT ////////////////////////////////////////////////////////////////
-
-/* An environment consists of a pointer to its parent environment (if any) and
- * two parallel lists - vars and vals.
- *
- * Case 1 - vars is a regular list:
- *   vars: (a b c), vals: (1 2 3)        ; a = 1, b = 2, c = 3
- *
- * Case 2 - vars is a dotted list:
- *   vars: (a b . c), vals: (1 2)        ; a = 1, b = 2, c = nil
- *   vars: (a b . c), vals: (1 2 3)      ; a = 1, b = 2, c = (3)
- *   vars: (a b . c), vals: (1 2 3 4 5)  ; a = 1, b = 2, c = (3 4 5)
- *
- * Case 3 - vars is a symbol:
- *   vars: a, vals: nil                  ; a = nil
- *   vars: a, vals: (1)                  ; a = (1)
- *   vars: a, vals: (1 2 3)              ; a = (1 2 3)
- *
- * Case 4 - vars and vals are both nil:
- *   vars: nil, vals: nil
- */
-
-Object *envLookup(Object * var, Object * env)
-{
-    for (; env != nil; env = env->parent) {
-        Object *vars = env->vars, *vals = env->vals;
-
-        for (; vars->type == TYPE_CONS; vars = vars->cdr, vals = vals->cdr)
-            if (vars->car == var)
-                return vals->car;
-
-        if (vars == var)
-            return vals;
-    }
-
-    exceptionWithObject(interp, var, FLISP_INVALID_VALUE, "has no value");
-}
-
-Object *envAdd(Object ** var, Object ** val, Object ** env, GC_PARAM)
-{
-    GC_TRACE(gcVars, newCons(var, &nil, GC_ROOTS));
-    GC_TRACE(gcVals, newCons(val, &nil, GC_ROOTS));
-
-    (*gcVars)->cdr = (*env)->vars, (*env)->vars = *gcVars;
-    (*gcVals)->cdr = (*env)->vals, (*env)->vals = *gcVals;
-
-    return *val;
-}
-
-Object *envSet(Object ** var, Object ** val, Object ** env, GC_PARAM)
-{
-    GC_TRACE(gcEnv, *env);
-
-    for (;;) {
-        Object *vars = (*gcEnv)->vars, *vals = (*gcEnv)->vals;
-
-        for (; vars->type == TYPE_CONS; vars = vars->cdr, vals = vals->cdr) {
-            if (vars->car == *var)
-                return vals->car = *val;
-            if (vars->cdr == *var)
-                return vals->cdr = *val;
-        }
-
-        if ((*gcEnv)->parent == nil)
-            return envAdd(var, val, gcEnv, GC_ROOTS);
-        else
-            *gcEnv = (*gcEnv)->parent;
-    }
-}
-void setRootSymbol(Interpreter *interp, char *name, Object *value)
-{
-    Object *symbol = newSymbol(name, interp->theRoot);
-    envSet(&symbol, &value, interp->theEnv, interp->theRoot);
-}
-
-Object *evalExpr(Object **, Object **, Object *);
-
-Object * getRootSymbol(Interpreter *interp, char *name)
-{
-    Object *symbol = newSymbol(name, interp->theRoot);
-    return evalExpr(&symbol, interp->theEnv, interp->theRoot);
 }
 
 
