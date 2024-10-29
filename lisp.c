@@ -1471,7 +1471,7 @@ void writeString(Interpreter *interp, Object *stream, char *str)
     stream = getOutputStream(interp, stream);
 
     len = strlen(str);
-    if(fprintf(stream->fd, str) != len)
+    if(fprintf(stream->fd, "%s", str) != len)
         exceptionWithObject(interp, stream, FLISP_IO_ERROR, "failed to write %d files, errno: %d", len, errno);
 }
 /** writeFmt - write printf formatted string to Lisp stream
@@ -1721,7 +1721,7 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
         exceptionWithObject(interp, first , FLISP_WRONG_TYPE, "(signal type data) - type is not a symbol");
 
     GC_TRACE(e, newCons(&first, &second, GC_ROOTS));
-    exceptionWithObject(interp, *e, FLISP_USER, first->string);
+    exceptionWithObject(interp, *e, FLISP_USER, "%s", first->string);
     return *e;
 }
 

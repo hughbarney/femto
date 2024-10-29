@@ -264,7 +264,7 @@ Object *e_log_message(Object ** args, GC_PARAM)
 Object *e_log_debug(Object ** args, GC_PARAM)
 {
     ONE_STRING_ARG(log-debug);
-    fl_debug(interp, arg->string);
+    fl_debug(interp, "%s", arg->string);
     return t;
 }
 
