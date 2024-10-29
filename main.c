@@ -5,6 +5,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <errno.h>
 #include "header.h"
 
 void load_config(); /* Load configuration/init file */
@@ -16,6 +17,30 @@ void gui(); /* The GUI loop used in interactive mode */
 static Interpreter *interp;
 char debug_file[] = "debug.out";
 FILE *debug_fp = NULL;
+
+void try_load(char *file)
+{
+    FILE *fd;
+    Object *stream;
+    Object *gcRoots = nil;
+    // Note: not lisp_eval()'ing it, because we want to have
+    //     consistent error handling.
+    //if (eval_string(true, "(load \"%s\")", init_file) != NULL)
+//            close_eval_output();
+    if (!(fd = fopen(file, "r"))) {
+        debug("failed to open file %s: %d", file, errno);
+        return;
+    }
+    if (nil == (stream = lisp_stream(interp, fd, file))) {
+        debug("failed to open stream for file %s: %d\n", file, errno);
+        return;
+    }
+    if (lisp_eval(interp, stream, gcRoots))
+        debug("failed to load file %s: %ul - %s\n", file, interp->result, interp->message);
+
+    if (file_fclose(interp, stream))
+        debug("failed to close stream for file %s:%d: %s\n", file, interp->result, interp->message);
+}
 
 int main(int argc, char **argv)
 {
@@ -52,12 +77,8 @@ int main(int argc, char **argv)
     if (interp == NULL)
         fatal("fLisp initialization failed");
 
-    if (strlen(init_file)) {
-        // Note: not lisp_eval()'ing it, because we want to have
-        //     consistent error handling.
-        if (eval_string(true, "(load \"%s\")", init_file) != NULL)
-            close_eval_output();
-    }
+    if (strlen(init_file))
+        try_load(init_file);
 
     /* GUI */
     if (!batch_mode) gui();
@@ -76,6 +97,7 @@ char *eval_string(int do_format, char *format, ...)
     char buf[INPUT_FMT_BUFSIZ], *input;
     int size;
     va_list args;
+    Object *gcRoots = nil;
 
     if (do_format) {
         va_start(args, format);
@@ -91,7 +113,7 @@ char *eval_string(int do_format, char *format, ...)
     }
 
     interp->output = nil;
-    if ((lisp_eval_string(interp, input)))
+    if ((lisp_eval_string(interp, input, gcRoots)))
         // Note: does not print the err'd object, if any
         msg("error: %s", interp->message);
     if (debug_mode) {

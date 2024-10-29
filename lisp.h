@@ -140,14 +140,14 @@ extern Interpreter *lisp_interpreters;
 // PUBLIC INTERFACE ///////////////////////////////////////////////////////
 extern Interpreter *lisp_new(size_t, char**, char*, FILE*, FILE*, FILE*);
 extern void lisp_destroy(Interpreter *);
-extern ResultCode lisp_eval(Interpreter *, Object *);
-extern ResultCode lisp_eval_string(Interpreter *, char *);
+extern ResultCode lisp_eval(Interpreter *, Object *, Object *);
+extern ResultCode lisp_eval_string(Interpreter *, char *, Object *);
 
 extern Object *lisp_stream(Interpreter *, FILE *, char *);
 extern int file_fclose(Interpreter *, Object *);
 extern int file_fflush(Interpreter *, Object *);
 
-extern void writeObject(Interpreter *, Object *, Object *, bool);
+extern void writeObject(Interpreter *, Object *, Object *, bool, Object *);
 
 
 #ifdef FLISP_FILE_EXTENSION

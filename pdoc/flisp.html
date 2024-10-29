@@ -320,12 +320,11 @@
 
     <h5 id="in_out">Input / Output and Others</h5>
     <dl>
-      <dt><code>(read</code>[ <code><var>stream</var> </code>[<code>eof-error-p</code>[ <code>eof-value</code>]]]<code>)</code></dt>
+      <dt><code>(fread</code> <code><var>stream</var></code>[ <code>eof-value</code>]<code>)</code></dt>
       <dd>
-	Reads the next complete Lisp expression from the default input stream, or from <var>stream</var> if given.  The
-	read in object is returned.  If end of file is reached, an exception is raised, unless <var>eof-error-p</var> is
-	set to <code>nil</code>. In that case <code>eof-value</code> is returned. All optional arguments default
-	to <code>nil</code>.
+	Reads the next complete Lisp expression from <var>stream</var>.  The
+	read in object is returned.  If end of file is reached, an exception is raised, unless <var>eof-value</var> is
+	not <code>nil</code>. In that case <code>eof-value</code> is returned.
       </dd>
       <dt><code>(write <var>object</var></code>[ <code><var>keys</var></code>]]<code>)</code>
       </dt>
@@ -342,8 +341,8 @@
 	not <code>nil</code> output is formatted in a way which which gives the same object when read again.
 	<code>write</code> returns the <var>object</var>.
       </dd>
-      <dt><code>(load <var>path</var>)</code></dt>
-      <dd>Reads all objects from file <var>path</var>, returns the last one.</dd>
+      <dt><code>(eval <var>object</var>)</code></dt>
+      <dd>Evaluates <var>object</var> and returns the result.</dd>
 
       <dt><code>(system <var>string</var>)</code></dt>
       <dd>
@@ -516,6 +515,10 @@
 	If <var>arg</var> is contained in <var>list</var>, returns the sub list of <var>list</var> starting with the
 	first occurrence of <var>arg</var>, otherwise returns <code>nil</code>.
       </dd>
+      <dt><code>(fload </code> <code><var>stream</var>)</code></dt>
+      <dd>Reads and evaluates all Lisp objects in <var>stream</var>.</dd>
+      <dt><code>(load </code> <code><var>path</var>)</code></dt>
+      <dd>Reads and evaluates all Lisp objects in file at <var>path</var>.</dd>
       <dt><code>(provide <var>feature</var>)</code></dt>
       <dd>
 	Used as the final expression of a library to register symbol <var>feature</var> as loaded into the
@@ -982,18 +985,20 @@
       <dd>Frees all resources used by the interpreter.</dd>
       
       <dt>
-	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>, Object *<var>stream</var>)</code>
+	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>, Object *<var>stream</var> Object *<var>gcRoots</var>)</code>
       </dt>
       <dd>
 	<p>
 	  Evaluates the given input stream in the fLisp interpreter <var>interp</var> until end of
-	  file. If <var>stream</var> is <code>nil</code> the default input stream is evaluated.
+	  file. <var>gcRoots</var> must be set to a global variable with initial value <code>nil</code>
 	</p>
       </dd>
       <dt>
-	<code>ResultCode lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>)</code>
+	<code>ResultCode lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>, Object *<var>gcRoots</var>)</code>
       </dt>
-      <dd>Evaluates all Lisp expressions in <var>string</var>.</dd>
+      <dd>
+	Evaluates all Lisp expressions in <var>string</var>. <var>gcRoots</var> must be set to a global variable with
+	initial value <code>nil</code></dd>
       <dt>
 	<code>Object *<var>stream</var> lisp_stream(Interpreter *<var>interp</var>, FILE *<var>path</var>,
 	char *<var>string</var>)</code>
@@ -1027,11 +1032,12 @@
       </dd>
       <dt>
 	<code>void writeObject(Interpreter *<var>interp</var>, Object *<var>object</var>,
-	  Object *<var>stream</var>, bool readably)</code>
+	  Object *<var>stream</var>, bool readably, Object *<var>gcRoots</var>)</code>
       </dt>
       <dd>
 	Format <var>object</var> into a string and write it to <var>stream</var>.  If <var>readably</var> is true, the
-	string can be read in by the interpreter and results in the same object.
+	string can be read in by the interpreter and results in the same object. <var>gcRoots</var> must be set to a
+	global variable with initial value <code>nil</code>
       </dd>
     </dl>
     
@@ -1134,6 +1140,10 @@
       <code><var>GC_TRACE</var>(<var>gcX</var>, <var>X</var>)</code>: add object <var>X</var> to the list and
       declare <code>Object **<var>gcX</var></code> to point to the pointer to <var>X</var> inside the list.
     </p>
+    <p>
+      Information about the garbage collection process and memory status is written to the debug file descriptor.
+    </p>
+    
     <h4 id="memory">Memory Usage</h4>
     <p>
       Some compile time adjustable limits in <code>lisp.h</code>:
