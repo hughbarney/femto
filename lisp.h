@@ -88,7 +88,6 @@ typedef struct Memory {
     void *fromSpace, *toSpace;
 } Memory;
 
-typedef struct Interpreter Interpreter;
 typedef struct Interpreter {
     Object *object;                  /* result or error object */
     char message[WRITE_FMT_BUFSIZ];  /* error string */
@@ -107,10 +106,10 @@ typedef struct Interpreter {
     jmp_buf exceptionEnv; /* exception handling */
     jmp_buf *catch;
     struct { char *buf; size_t len; size_t capacity; };  /* read buffer */
-    Interpreter *next;    /* linked list of interpreters */
+    struct Interpreter *next;    /* linked list of interpreters */
 } Interpreter;
 
-extern Interpreter *lisp_interpreters;
+/*@null@*/extern Interpreter *lisp_interpreters;
 
 // PROGRAMMING INTERFACE ////////////////////////////////////////////////
 

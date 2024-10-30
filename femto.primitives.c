@@ -3,7 +3,6 @@
 
 #define F_NONE          0
 #define F_CLEAR         1
-typedef long point_t;
 
 
 #define DEFINE_EDITOR_FUNC(name)                \

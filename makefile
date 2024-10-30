@@ -5,7 +5,7 @@
 CC      = cc
 CPP     = cpp
 CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DNDEBUG
-CFLAGS += -O2 -std=c11 -Wall -pedantic
+CFLAGS += -O2 -std=c11 -Wall -pedantic -pedantic-errors
 LD      = cc
 LDFLAGS =
 LIBS    = -lncursesw
@@ -139,6 +139,8 @@ fld: flisp FORCE
 	FLISPRC=flisp.rc FLISPLIB=lisp FLISP_DEBUG=f.log gdb ./flisp
 flv: flisp FORCE
 	FLISPRC=flisp.rc FLISPLIB=lisp FLISP_DEBUG=f.log valgrind ./flisp
+frama-c: FORCE
+	frama-c -c11 -cpp-extra-args="-I$(frama-c -print-path)/libc -I/usr/include -I." -kernel-msg-key pp -metrics *.c
 
 measure: strip FORCE
 	@echo Total
@@ -157,6 +159,9 @@ measure: strip FORCE
 
 run: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto
+
+splint: FORCE
+	splint +posixlib -macrovarprefix "M_" *.c *.h
 
 strip: femto FORCE
 	strip femto

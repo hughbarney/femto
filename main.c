@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-char *eval_string(int do_format, char *format, ...)
+char *eval_string(bool do_format, char *format, ...)
 {
     char buf[INPUT_FMT_BUFSIZ], *input;
     int size;

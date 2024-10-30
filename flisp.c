@@ -4,7 +4,6 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
@@ -14,10 +13,10 @@
 #define CPP_STR(s) #s
 
 ResultCode result;
-//#define FLISP_MEMORY_SIZE   65536UL /* 64 k */
-//#define FLISP_MEMORY_SIZE  131072UL /* 128k */
+//#define FLISP_MEMORY_SIZE   65536UL // 64 k
+//#define FLISP_MEMORY_SIZE  131072UL // 128k
   #define FLISP_MEMORY_SIZE  300000UL
-//#define FLISP_MEMORY_SIZE 4194304UL /* 4M */
+//#define FLISP_MEMORY_SIZE 4194304UL // 4M
 // Note: wouldn't need, if we could implement the repl in fLisp
 #define INPUT_BUFSIZE 4095
 char input[INPUT_BUFSIZE+1]; // Note: termios paste limit or so

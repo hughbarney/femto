@@ -1,5 +1,6 @@
 /* complete.c, Atto Emacs, Hugh Barney, Public Domain, 2016 */
 
+#include <unistd.h>
 #include "header.h"
 
 /* basic filename completion, based on code in uemacs/PK */

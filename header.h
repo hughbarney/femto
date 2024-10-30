@@ -10,13 +10,9 @@
 #include <assert.h>
 #include <curses.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <ctype.h>
 #include <limits.h>
 #include <string.h>
-#include <unistd.h>
 #include <wchar.h>
 #include "lisp.h"
 int mkstemp(char *);
@@ -128,6 +124,10 @@ typedef struct undo_tt {
     char_t   u_type;
     struct undo_tt *u_prev;
 } undo_tt;
+
+#ifndef NAME_MAX
+#define NAME_MAX _POSIX_NAME_MAX
+#endif
 
 typedef struct buffer_t
 {
@@ -279,7 +279,6 @@ extern int save_buffer_byname(char *);
 extern int select_buffer(char *);
 extern point_t document_size(buffer_t *);
 extern void add_mode(buffer_t *, buffer_flags_t);
-extern void buffer_init(buffer_t *);
 extern void delete_mode(buffer_t *, buffer_flags_t);
 extern void list_buffers();
 extern void next_buffer();
@@ -370,7 +369,7 @@ extern void b2w(window_t *w);
 extern void clear_message_line();
 extern void display_char(buffer_t *, char_t *);
 extern void display_prompt_and_response(char *, char *);
-extern void display_utf8(buffer_t *, char_t, int);
+extern void display_utf8(buffer_t *, int);
 extern void display(window_t *, int);
 extern void dispmsg();
 extern void modeline(window_t *);
@@ -488,15 +487,15 @@ extern window_t *popup_window(char *);
 extern window_t *split_current_window();
 
 /* fLisp interpreter used for femto */
-//#define FLISP_MEMORY_SIZE          131072UL  /* 128k */
-//#define FLISP_MEMORY_SIZE          262144UL  /* 256k */
-//#define FLISP_MEMORY_SIZE          524288UL  /* 512k */
-//#define FLISP_MEMORY_SIZE         4194304UL  /*   4M */
-//#define FLISP_MEMORY_SIZE         8388608UL  /*   8M */
-//#define FLISP_MEMORY_SIZE        16777216UL  /*  16M */
-  #define FLISP_MEMORY_SIZE        33554432UL  /*  32M */
+//#define FLISP_MEMORY_SIZE          131072UL  // 128k
+//#define FLISP_MEMORY_SIZE          262144UL  // 256k
+//#define FLISP_MEMORY_SIZE          524288UL  // 512k
+//#define FLISP_MEMORY_SIZE         4194304UL  //   4M
+//#define FLISP_MEMORY_SIZE         8388608UL  //   8M
+//#define FLISP_MEMORY_SIZE        16777216UL  //  16M
+#define FLISP_MEMORY_SIZE        33554432UL  //  32M
 
-extern char *eval_string(int, char *, ...);
+extern char *eval_string(bool, char *, ...);
 extern void close_eval_output();
 
 

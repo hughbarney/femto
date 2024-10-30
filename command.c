@@ -553,7 +553,7 @@ void log_debug_message(char *format, ...)
     va_list args;
 
     va_start(args, format);
-    vsprintf(buffer, format, args);
+    (void)vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
     log_message(buffer);
@@ -715,7 +715,7 @@ void resize_terminal()
 /* return char at current point */
 char *get_char()
 {
-    static char ch[2] = "\0\0";
+    static char ch[2] = "\0";
     ch[0] = (char)*(ptr(curbp, curbp->b_point));
     return ch;
 }

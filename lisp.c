@@ -15,16 +15,13 @@
  */
 
 #include <sys/mman.h>
-#include <sys/stat.h>
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <curses.h>
 #include <limits.h>
 
@@ -44,19 +41,33 @@
 
 /* Constant objects */
 /* public */
+#ifndef S_SPLINT_S
 Object *nil = &(Object) { TYPE_SYMBOL,.string = "nil" };
 Object *t = &(Object) { TYPE_SYMBOL,.string = "t" };
+#else
+Object _nil =  { TYPE_SYMBOL, 0, .string = "nil" };
+Object *nil = &_nil; //&(Object) { TYPE_SYMBOL, 0, .string = "nil" };
+Object _t = { TYPE_SYMBOL, 0, .string = "t" };
+Object *t = &_t;
+#endif
 
 /* intern */
+#ifndef S_SPLINT_S
 Object *empty = &(Object) { TYPE_STRING,.string = "\0" };
 Object *one = &(Object) { TYPE_NUMBER,.number = 1 };
+#else
+Object _empty = { TYPE_STRING, 0, .string = "\0" };
+Object *empty = &_empty;
+Object _one =  { TYPE_NUMBER, 0, .number = 1 };
+Object *one = &_one;
+#endif
 
 /* List of interpreters */
 Interpreter *lisp_interpreters = NULL;
 
 // Note: remove after rewriting the whole fLisp core to pass the
 // interpreter instead of GC_PARAM
-static Interpreter *interp = NULL;
+/*@null@*/static Interpreter *interp = NULL;
 
 
 // DEBUG LOG ///////////////////////////////////////////////////////////////////
@@ -119,13 +130,13 @@ void exceptionWithObject(Interpreter *, Object * object, ResultCode, char *forma
 #endif
 void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result, char *format, ...)
 {
-    int written;
-    
+    size_t written;
+
     interp->object = object;
     interp->result = result;
     resetBuf(interp);
 
-    int len = sizeof(interp->message);
+    size_t len = sizeof(interp->message);
     va_list(args);
     va_start(args, format);
     written = vsnprintf(interp->message, len, format, args);
@@ -238,6 +249,8 @@ Object *gcMoveObject(Interpreter *interp, Object * object)
 
 void gc(Interpreter *interp, GC_PARAM)
 {
+    Object *object;
+
     fl_debug(interp, "collecting garbage: %lu/%lu", interp->memory->fromOffset, interp->memory->capacity);
 
     interp->memory->toOffset = 0;
@@ -246,11 +259,11 @@ void gc(Interpreter *interp, GC_PARAM)
     *interp->theEnv = gcMoveObject(interp, *interp->theEnv);
     interp->symbols = gcMoveObject(interp, interp->symbols);
 
-    for (Object * object = GC_ROOTS; object != nil; object = object->cdr)
+    for (object = GC_ROOTS; object != nil; object = object->cdr)
         object->car = gcMoveObject(interp, object->car);
 
     // iterate over objects in to-space and move all objects they reference
-    for (Object * object = interp->memory->toSpace; object < (Object *) ((char *)interp->memory->toSpace + interp->memory->toOffset); object = (Object *) ((char *)object + object->size)) {
+    for (object = interp->memory->toSpace; object < (Object *) ((char *)interp->memory->toSpace + interp->memory->toOffset); object = (Object *) ((char *)object + object->size)) {
 
         switch (object->type) {
         case TYPE_NUMBER:
@@ -369,19 +382,19 @@ Object *newObjectWithString(ObjectType type, size_t size, GC_PARAM)
 
 Object *newStringWithLength(char *string, size_t length, GC_PARAM)
 {
-    int nEscapes = 0;
+    int i, r, w, nEscapes = 0;
 
     if (length == 0)
         return empty;
 
-    for (int i = 1; i < length; ++i)
+    for (i = 1; i < length; ++i)
         if (string[i - 1] == '\\' && strchr("\\\"trn", string[i]))
             ++i, ++nEscapes;
 
     Object *object = newObjectWithString(TYPE_STRING,
                                          length - nEscapes + 1, GC_ROOTS);
 
-    for (int r = 1, w = 0; r <= length; ++r) {
+    for (r = 1, w = 0; r <= length; ++r) {
         if (string[r - 1] == '\\' && r < length) {
             switch (string[r]) {
             case '\\':
@@ -431,7 +444,8 @@ Object *newCons(Object ** car, Object ** cdr, GC_PARAM)
 
 Object *newSymbolWithLength(char *string, size_t length, GC_PARAM)
 {
-    for (Object * object = interp->symbols; object != nil; object = object->cdr)
+    Object *object;
+    for (object = interp->symbols; object != nil; object = object->cdr)
         if (memcmp(object->car->string, string, length) == 0 && object->car->string[length] == '\0')
             return object->car;
 
@@ -490,6 +504,7 @@ Object *newPrimitive(int primitive, char *name, GC_PARAM)
 
 Object *newEnv(Object ** func, Object ** vals, GC_PARAM)
 {
+    int nArgs;
     Object *object = newObject(TYPE_ENV, GC_ROOTS);
 
     if ((*func) == nil)
@@ -497,7 +512,7 @@ Object *newEnv(Object ** func, Object ** vals, GC_PARAM)
     else {
         Object *param = (*func)->params, *val = *vals;
 
-        for (int nArgs = 0;; param = param->cdr, val = val->cdr, ++nArgs) {
+        for (nArgs = 0;; param = param->cdr, val = val->cdr, ++nArgs) {
             if (param == nil && val == nil)
                 break;
             else if (param != nil && param->type == TYPE_SYMBOL)
@@ -874,6 +889,7 @@ int readWhile(Interpreter *interp, Object *stream, int (*predicate) (int ch))
  */
 Object *readString(Interpreter *interp, Object *stream, GC_PARAM)
 {
+    bool isEscaped;
     int ch;
     Object *string;
 
@@ -881,7 +897,7 @@ Object *readString(Interpreter *interp, Object *stream, GC_PARAM)
 
     resetBuf(interp);
 
-    for (bool isEscaped = false;;) {
+    for (isEscaped = false;;) {
         ch = streamGetc(interp, stream);
         if (ch == EOF) {
             exceptionWithObject(interp, stream, FLISP_READ_INCOMPLETE, "unexpected end of stream in string literal");
@@ -1304,8 +1320,9 @@ Object *evalExpr(Object ** object, Object ** env, GC_PARAM)
         } else if ((*gcFunc)->type == TYPE_PRIMITIVE) {
             Primitive *primitive = &primitives[(*gcFunc)->primitive];
             int nArgs = 0;
+            Object *args;
 
-            for (Object * args = *gcArgs; args != nil; args = args->cdr, nArgs++) {
+            for (args = *gcArgs; args != nil; args = args->cdr, nArgs++) {
                 if (args->type != TYPE_CONS)
                     exceptionWithObject(interp, args, FLISP_WRONG_TYPE, "(%s args) - args is not a list: arg %d", primitive->name, nArgs);
                 if (args->cdr->type == TYPE_MOVED)
@@ -1486,7 +1503,8 @@ void writeObject(Interpreter *interp, Object *stream, Object *object, bool reada
     case TYPE_STRING:
         if (readably) {
             writeChar(interp, stream, '"', GC_ROOTS);
-            for (char *string = object->string; *string; ++string) {
+            char *string;
+            for (string = object->string; *string; ++string) {
                 switch (*string) {
                 case '"':
                     writeString(interp, stream, "\\\"", GC_ROOTS);
@@ -2136,7 +2154,8 @@ Object *newRootEnv(GC_PARAM)
     // add primitives
     int nPrimitives = sizeof(primitives) / sizeof(primitives[0]);
 
-    for (int i = 0; i < nPrimitives; ++i) {
+    int i;
+    for (i = 0; i < nPrimitives; ++i) {
         *gcVar = newSymbol(primitives[i].name, GC_ROOTS);
         *gcVal = newPrimitive(i, primitives[i].name, GC_ROOTS);
 
@@ -2241,16 +2260,17 @@ Interpreter *lisp_new(
     Object *gcRoots = interp->theRoot; // gcRoots is needed by GC_TRACE and GC_ROOTS
     GC_TRACE(gcVar, newSymbol("argv0", GC_ROOTS));
     GC_TRACE(gcVal, newString(*argv, GC_ROOTS));
-    envSet(gcVar, gcVal, interp->theEnv, GC_ROOTS);
+    (void)envSet(gcVar, gcVal, interp->theEnv, GC_ROOTS);
 
     /* Add argv to the environement */
     *gcVar = newSymbol("argv", GC_ROOTS);
     *gcVal = nil;
-    for (Object **i = gcVal; *++argv; i = &(*i)->cdr) {
+    Object **i;
+    for (i = gcVal; *++argv; i = &(*i)->cdr) {
         *i = newCons(&nil, &nil, GC_ROOTS);
         (*i)->car = newString(*argv, GC_ROOTS);
     }
-    envSet(gcVar, gcVal, interp->theEnv, GC_ROOTS);
+    (void)envSet(gcVar, gcVal, interp->theEnv, GC_ROOTS);
 
     /* Add library_path to the environment */
     *gcVar = newSymbol("script_dir", GC_ROOTS);
@@ -2263,7 +2283,7 @@ Interpreter *lisp_new(
         *gcInput = newStreamObject(input, "STDIN", interp->theRoot);
     interp->input = *gcInput;
     *gcVar = newSymbol("INPUT", GC_ROOTS);
-    envSet(gcVar, gcInput, interp->theEnv, GC_ROOTS);
+    (void)envSet(gcVar, gcInput, interp->theEnv, GC_ROOTS);
 
     /* output stream */
     GC_TRACE(gcOutput, nil);
@@ -2271,7 +2291,7 @@ Interpreter *lisp_new(
         *gcOutput = newStreamObject(output, "STDOUT", interp->theRoot);
     interp->output = *gcOutput;
     *gcVar = newSymbol("OUTPUT", GC_ROOTS);
-    envSet(gcVar, gcOutput, interp->theEnv, GC_ROOTS);
+    (void)envSet(gcVar, gcOutput, interp->theEnv, GC_ROOTS);
 
     return interp;
 }
@@ -2376,7 +2396,7 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input, GC_PARAM)
             Object *str = file_outputMemStream(interp);
             writeObject(interp, str, interp->object, true, GC_ROOTS);
             fl_debug(interp, "lisp_eval_string() => error: '%s', %s", str->buf, interp->message);
-            file_fclose(interp, str);
+            (void)file_fclose(interp, str);
         }
     }
     return result;
