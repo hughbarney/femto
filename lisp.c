@@ -119,6 +119,8 @@ void exceptionWithObject(Interpreter *, Object * object, ResultCode, char *forma
 #endif
 void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result, char *format, ...)
 {
+    int written;
+    
     interp->object = object;
     interp->result = result;
     resetBuf(interp);
@@ -126,10 +128,10 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
     int len = sizeof(interp->message);
     va_list(args);
     va_start(args, format);
-    if (vsnprintf(interp->message, len, format, args) <0)
+    if ((written = vsnprintf(interp->message, len, format, args)) < 0)
         strncpy(interp->message, "failed to format error message", len);
     va_end(args);
-    if (snprintf(NULL, 0, format, args) > len)
+    if (written > len)
         strcpy(interp->message+len-4, "...");
 
     assert(interp->catch != NULL);
