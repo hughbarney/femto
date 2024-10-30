@@ -128,11 +128,12 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
     int len = sizeof(interp->message);
     va_list(args);
     va_start(args, format);
-    if ((written = vsnprintf(interp->message, len, format, args)) < 0)
-        strncpy(interp->message, "failed to format error message", len);
+    written = vsnprintf(interp->message, len, format, args);
     va_end(args);
     if (written > len)
         strcpy(interp->message+len-4, "...");
+    else if (written < 0)
+        strncpy(interp->message, "failed to format error message", len);
 
     assert(interp->catch != NULL);
     longjmp(*interp->catch, FLISP_ERROR);
