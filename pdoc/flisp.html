@@ -320,6 +320,10 @@
 
     <h5 id="in_out">Input / Output and Others</h5>
     <dl>
+      <dt><code>(fopen <var>path</var> <var>mode</var>)</code></dt>
+      <dd>Open file at <var>path</var> with <var>mode</var> and return a stream object</dd>
+      <dt><code>(fclose <var>stream</var>)</code></dt>
+      <dd>Close <var>stream</var> object</dd>
       <dt><code>(fread</code> <code><var>stream</var></code>[ <code>eof-value</code>]<code>)</code></dt>
       <dd>
 	Reads the next complete Lisp expression from <var>stream</var>.  The
@@ -897,20 +901,20 @@
       <dt><code>lisp_destroy()</code></dt><dd>Destroy an interpreter, releasing resources.</dd>
       <dt><code>lisp_eval()</code></dt><dd>Evaluate input stream until exhausted or error.</dd>
       <dt><code>lisp_eval_string()</code></dt><dd>Evaluate given string until exhausted or error.</dd>
-      <dt><code>lisp_stream()</code></dt><dd>Create a Lisp stream object from file.</dd>
-      <dt><code>file_fclose()</code></dt><dd>Close a Lisp stream object.</dd>
-      <dt><code>file_fflush()</code></dt><dd>Flush contents of Lisp output stream.</dd>
-      <dt><code>writeObject()</code></dt><dd>Format and write object to Lisp stream.</dd>
+      <dt><code>lisp_write_object()</code></dt><dd>Format and write object to file descriptor.</dd>
+      <dt><code>lisp_write_error()</code></dt>
+      <dd>Format and write the error object and error message of an interpreter to a file descriptor.</dd>
     </dl>
     <p>
       Different flows of operation can be implemented. The Femto editor initializes the interpreter without input/output
-      streams and sends strings of Lisp commands to the interpreter, either when a key is pressed or upon explicit
-      request via the editor interface.
+      file descriptors and sends strings of Lisp commands to the interpreter, either when a key is pressed or upon
+      explicit request via the editor interface.
     </p>
     <p>
-      The <code>flisp</code> command line interpreter sets the standard output as the default output stream of the fLisp
-      interpreter and feeds it with strings of lines read from the terminal. If the standard input is not a terminal
-      it is set as the default input stream and fLisp reads it through until end of file.
+      The <code>flisp</code> command line interpreter sets <code>stdout</code> as the default output file descriptors of
+      the fLisp interpreter and feeds it with strings of lines read from the terminal. If the standard input is not a
+      terminal <code>stdin</code> is set as the default input file descriptor and fLisp reads it through until end of
+      file.
     </p>
     <p>
       After processing the given input, the interpreter puts a pointer to the object which is the result of the last
@@ -919,13 +923,12 @@
       the empty string.
     </p>
     <p>
-      fLisp sends all output to the default output stream. If <code>NULL</code> is given on initialization, a memory
-      based stream is opened and used.  The resulting string is available in the output streams <code>buf</code> field of the
-      interpreter structure, the length of the string is available in the <code>len</code> field.
+      fLisp sends all output to the default output stream. If <code>NULL</code> is given on initialization, output is
+      suppressed altogether.
     <p>
-      If an exception is thrown inside the Lisp interpreter, the default input stream is reset, an error message is
-      formatted and copied to the <code>message</code> buffer of the interpreter, A pointer to the object causing the
-      error is set to the <code>object</code> field. The <code>result</code> field is set to an error specific code:
+      If an exception is thrown inside the Lisp interpreter an error message is formatted and copied to
+      the <code>message</code> buffer of the interpreter, A pointer to the object causing the error is set to
+      the <code>object</code> field. The <code>result</code> field is set to an error specific code:
     </p>
     <dl>
       <dt><code>FLISP_ERROR</code></dt><dd>Generic error code.</dd>
@@ -941,6 +944,10 @@
       <dt><code>FLISP_OOM</code></dt><dd>fLisp ran out of memory.</dd>
       <dt><code>FLISP_GC</code></dt><dd>The garbage collector encountered an error.</dd>
     </dl>
+    <p>
+      In this <dfn>error state</dfn> of the interpreter, the function <code>lisp_write_error()</code> can be used to
+      write a standardized error message including the error object to a file descriptor of choice
+    </p>
     
     <h4 id="c_api">fLisp C Interface</h4>
     <dl>
@@ -985,12 +992,13 @@
       <dd>Frees all resources used by the interpreter.</dd>
       
       <dt>
-	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>, Object *<var>stream</var> Object *<var>gcRoots</var>)</code>
+	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>, Object *<var>gcRoots</var>)</code>
       </dt>
       <dd>
 	<p>
-	  Evaluates the given input stream in the fLisp interpreter <var>interp</var> until end of
-	  file. <var>gcRoots</var> must be set to a global variable with initial value <code>nil</code>
+	  Evaluates the input file set in the <var>input</var> field of the fLisp interpreter <var>interp</var> until
+	  end of file. <var>gcRoots</var> must be set to a global variable with initial value <code>nil</code>. If no
+	  input file is set, <code>interp</code> is set to a respective error state.
 	</p>
       </dd>
       <dt>
@@ -1000,44 +1008,23 @@
 	Evaluates all Lisp expressions in <var>string</var>. <var>gcRoots</var> must be set to a global variable with
 	initial value <code>nil</code></dd>
       <dt>
-	<code>Object *<var>stream</var> lisp_stream(Interpreter *<var>interp</var>, FILE *<var>path</var>,
-	char *<var>string</var>)</code>
-      </dt>
-      <dd>
-	<p>
-	  Returns a Lisp stream object with open file descriptor <var>fd</var>. <var>path</var> should be set to the
-	  path of the associated regular file or for file descriptors obtained by other means:
-	</p>
-	<dl>
-	  <dt><code>&lt;STRING</code></dt><dd><code>fmemopen()</code></dd>
-	  <dt><code>&gt;STRING</code></dt><dd><code>open_memostream()</code></dd>
-	  <dt><code>&ltSTDIN</code>, <code>&gt;STDOUT</code> and <code>&gt;STDERR</code></dt>
-	  <dd>For <code>stdin</code>, <code>stdout</code> and <code>stderr</code>.</dd>
-	  <dt><code>&lt;<var>n</var></code>, <code>&gt;<var>n</var></code></dt>
-	  <dd>
-	    For <code>fdopen(<var>n</var>, &quot;r&quot;)</code>, and <code>fdopen(<var>n</var>, &quot;w&quot;)</code>,
-	    respectively.
-	  </dd>
-	</dl>
-      </dd>
-      <dt><code>int file_close(Interpreter *<var>interp</var>, Object *<var>stream</var>)</code></dt>
-      <dd>
-	Close <var>stream</var> and return <code>errno</code> from the <code>fclose()</code> call of the associated
-	file descriptor
-      </dd>
-      <dt><code>int file_fflush(Interpreter *<var>interp</var>, Object *<var>stream</var>)</code></dt>
-      <dd>
-	Call <code>fflush()</code> on the file descriptor associated to <var>stream</var> and
-	return <code>errno</code>. file descriptor
-      </dd>
-      <dt>
-	<code>void writeObject(Interpreter *<var>interp</var>, Object *<var>object</var>,
-	  Object *<var>stream</var>, bool readably, Object *<var>gcRoots</var>)</code>
+	<code>void lisp_write_object(Interpreter *<var>interp</var>, FILE <var>*fd</var>, Object *<var>object</var>,
+	  bool readably, Object *<var>gcRoots</var>)</code>
       </dt>
       <dd>
 	Format <var>object</var> into a string and write it to <var>stream</var>.  If <var>readably</var> is true, the
 	string can be read in by the interpreter and results in the same object. <var>gcRoots</var> must be set to a
 	global variable with initial value <code>nil</code>
+      </dd>
+      <dt>
+	<code>void lisp_write_error(Interpreter *<var>interp</var>, FILE <var>*fd</var>,
+	Object *<var>gcRoots</var>)</code>
+      </dt>
+      <dd>
+	Format the error <var>object</var> and the error message of the interpreter into a string and write it
+	to <var>fd</var>. The <var>object</var> is written
+	with <var>readably</var> <code>true</code>. <var>gcRoots</var> must be set to a global variable with initial
+	value <code>nil</code>
       </dd>
     </dl>
     
@@ -1178,7 +1165,10 @@
       interactive repl with <code>stdin</code>/<code>stdout</code> streams, by reading and eval&apos;ing
       until no more <q>incomplete input</q> result codes are returned.
     </p>
-    
+    <p>
+      The file extension only contains <code>(fflush)</code>,  <code>(ftell)</code> and  <code>(fgetc)</code> and could
+      easily be extended into something useful. <code>(fstat)</code> would be most pressing for
+      improving <code>femto.rc</code> and <code>flisp.rc</code>.
   </body>
 </html>
 <!--

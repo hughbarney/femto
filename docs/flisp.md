@@ -314,6 +314,14 @@ objects. `(signal 'error 'nil)` is probably the simplest signal.
 
 ##### Input / Output and Others
 
+`(fopen path mode)`
+
+Open file at *path* with *mode* and return a stream object
+
+`(fclose stream)`
+
+Close *stream* object
+
 `(fread` `stream`\[ `eof-value`\]`)`
 
 Reads the next complete Lisp expression from *stream*. The read in
@@ -934,28 +942,23 @@ Evaluate input stream until exhausted or error.
 `lisp_eval_string()`  
 Evaluate given string until exhausted or error.
 
-`lisp_stream()`  
-Create a Lisp stream object from file.
+`lisp_write_object()`  
+Format and write object to file descriptor.
 
-`file_fclose()`  
-Close a Lisp stream object.
-
-`file_fflush()`  
-Flush contents of Lisp output stream.
-
-`writeObject()`  
-Format and write object to Lisp stream.
+`lisp_write_error()`  
+Format and write the error object and error message of an interpreter to
+a file descriptor.
 
 Different flows of operation can be implemented. The Femto editor
-initializes the interpreter without input/output streams and sends
-strings of Lisp commands to the interpreter, either when a key is
+initializes the interpreter without input/output file descriptors and
+sends strings of Lisp commands to the interpreter, either when a key is
 pressed or upon explicit request via the editor interface.
 
-The `flisp` command line interpreter sets the standard output as the
-default output stream of the fLisp interpreter and feeds it with strings
-of lines read from the terminal. If the standard input is not a terminal
-it is set as the default input stream and fLisp reads it through until
-end of file.
+The `flisp` command line interpreter sets `stdout` as the default output
+file descriptors of the fLisp interpreter and feeds it with strings of
+lines read from the terminal. If the standard input is not a terminal
+`stdin` is set as the default input file descriptor and fLisp reads it
+through until end of file.
 
 After processing the given input, the interpreter puts a pointer to the
 object which is the result of the last evaluation into the `object`
@@ -964,16 +967,12 @@ field of the interpreter structure. The `result` field is set to
 to the empty string.
 
 fLisp sends all output to the default output stream. If `NULL` is given
-on initialization, a memory based stream is opened and used. The
-resulting string is available in the output streams `buf` field of the
-interpreter structure, the length of the string is available in the
-`len` field.
+on initialization, output is suppressed altogether.
 
-If an exception is thrown inside the Lisp interpreter, the default input
-stream is reset, an error message is formatted and copied to the
-`message` buffer of the interpreter, A pointer to the object causing the
-error is set to the `object` field. The `result` field is set to an
-error specific code:
+If an exception is thrown inside the Lisp interpreter an error message
+is formatted and copied to the `message` buffer of the interpreter, A
+pointer to the object causing the error is set to the `object` field.
+The `result` field is set to an error specific code:
 
 `FLISP_ERROR`  
 Generic error code.
@@ -1008,6 +1007,10 @@ fLisp ran out of memory.
 
 `FLISP_GC`  
 The garbage collector encountered an error.
+
+In this <span class="dfn">error state</span> of the interpreter, the
+function `lisp_write_error()` can be used to write a standardized error
+message including the error object to a file descriptor of choice
 
 #### fLisp C Interface
 
@@ -1049,45 +1052,27 @@ Debug output stream. If set to `NULL` no debug information is generated.
 `(void) lisp_destroy(Interpreter *interp)`  
 Frees all resources used by the interpreter.
 
-`ResultCode lisp_eval(Interpreter *interp, Object *stream Object *gcRoots)`  
-Evaluates the given input stream in the fLisp interpreter *interp* until
-end of file. *gcRoots* must be set to a global variable with initial
-value `nil`
+`ResultCode lisp_eval(Interpreter *interp, Object *gcRoots)`  
+Evaluates the input file set in the *input* field of the fLisp
+interpreter *interp* until end of file. *gcRoots* must be set to a
+global variable with initial value `nil`. If no input file is set,
+`interp` is set to a respective error state.
 
 `ResultCode lisp_eval_string(Interpreter *interp, char *string, Object *gcRoots)`  
 Evaluates all Lisp expressions in *string*. *gcRoots* must be set to a
 global variable with initial value `nil`
 
-`Object *stream lisp_stream(Interpreter *interp, FILE *path,     char *string)`  
-Returns a Lisp stream object with open file descriptor *fd*. *path*
-should be set to the path of the associated regular file or for file
-descriptors obtained by other means:
-
-`<STRING`  
-`fmemopen()`
-
-`>STRING`  
-`open_memostream()`
-
-`&ltSTDIN`, `>STDOUT` and `>STDERR`  
-For `stdin`, `stdout` and `stderr`.
-
-`<n`, `>n`  
-For `fdopen(n, "r")`, and `fdopen(n, "w")`, respectively.
-
-`int file_close(Interpreter *interp, Object *stream)`  
-Close *stream* and return `errno` from the `fclose()` call of the
-associated file descriptor
-
-`int file_fflush(Interpreter *interp, Object *stream)`  
-Call `fflush()` on the file descriptor associated to *stream* and return
-`errno`. file descriptor
-
-`void writeObject(Interpreter *interp, Object *object,       Object *stream, bool readably, Object *gcRoots)`  
+`void lisp_write_object(Interpreter *interp, FILE *fd, Object *object,       bool readably, Object *gcRoots)`  
 Format *object* into a string and write it to *stream*. If *readably* is
 true, the string can be read in by the interpreter and results in the
 same object. *gcRoots* must be set to a global variable with initial
 value `nil`
+
+`void lisp_write_error(Interpreter *interp, FILE *fd,     Object *gcRoots)`  
+Format the error *object* and the error message of the interpreter into
+a string and write it to *fd*. The *object* is written with *readably*
+`true`. *gcRoots* must be set to a global variable with initial value
+`nil`
 
 <span class="mark">Note: currently only one interpreter can be
 created.</span>
@@ -1222,3 +1207,7 @@ increase portability and speed while reducing size.
 Exception handling returns differentiated error codes. One could to
 implement interactive repl with `stdin`/`stdout` streams, by reading and
 eval'ing until no more “incomplete input” result codes are returned.
+
+The file extension only contains `(fflush)`, `(ftell)` and `(fgetc)` and
+could easily be extended into something useful. `(fstat)` would be most
+pressing for improving `femto.rc` and `flisp.rc`.
