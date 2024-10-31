@@ -93,10 +93,10 @@ typedef struct Interpreter {
     char message[WRITE_FMT_BUFSIZ];  /* error string */
     ResultCode result;               /* result of last evaluation */
     /* private */
-    Object *input;                  /* default input stream object */
-    Object *output;                 /* default output stream object */
+    FILE *input;                  /* default input stream object */
+    FILE *output;                   /* default output file descriptor */
     FILE *debug;                    /* debug stream */
-    
+
     Object *theRoot;      /* root object */
     Object **theEnv;      /* environment object */
     Object *symbols;      /* symbols list */
@@ -139,22 +139,16 @@ typedef struct Interpreter {
 // PUBLIC INTERFACE ///////////////////////////////////////////////////////
 extern Interpreter *lisp_new(size_t, char**, char*, FILE*, FILE*, FILE*);
 extern void lisp_destroy(Interpreter *);
-extern ResultCode lisp_eval(Interpreter *, Object *, Object *);
+extern ResultCode lisp_eval(Interpreter *, Object *);
 extern ResultCode lisp_eval_string(Interpreter *, char *, Object *);
-
-extern Object *lisp_stream(Interpreter *, FILE *, char *);
-extern int file_fclose(Interpreter *, Object *);
-extern int file_fflush(Interpreter *, Object *);
-
-extern void writeObject(Interpreter *, Object *, Object *, bool, Object *);
+extern void lisp_write_object(Interpreter *, FILE *, Object *, bool, Object *);
+extern void lisp_write_error(Interpreter *, FILE *, Object *);
 
 
 #ifdef FLISP_FILE_EXTENSION
 #define FLISP_REGISTER_FILE_EXTENSION \
-    {"fopen", 2, 2, primitiveFopen}, \
-    {"fclose", 1, 1, primitiveFclose}, \
     {"fflush", 1, 1, primitiveFflush}, \
-    {"ftell", 1, 1, primitiveFtell}, \
+    {"ftell", 1, 1, primitiveFtell},   \
     {"fgetc", 1, 1, primitiveFgetc},
 #else
 #define FLISP_REGISTER_FILE_EXTENSION

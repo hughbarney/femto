@@ -8,7 +8,6 @@
 #include <errno.h>
 #include "header.h"
 
-void load_config(); /* Load configuration/init file */
 void gui(); /* The GUI loop used in interactive mode */
 
 #define CPP_XSTR(s) CPP_STR(s)
@@ -16,30 +15,28 @@ void gui(); /* The GUI loop used in interactive mode */
 
 static Interpreter *interp;
 char debug_file[] = "debug.out";
-FILE *debug_fp = NULL;
+FILE *prev, *debug_fp = NULL;
+char* output;
+size_t len;
+Object *gcRoots;
 
-void try_load(char *file)
+void load_config(char *file)
 {
     FILE *fd;
-    Object *stream;
-    Object *gcRoots = nil;
-    // Note: not lisp_eval()'ing it, because we want to have
-    //     consistent error handling.
-    //if (eval_string(true, "(load \"%s\")", init_file) != NULL)
-//            close_eval_output();
     if (!(fd = fopen(file, "r"))) {
         debug("failed to open file %s: %d", file, errno);
         return;
     }
-    if (nil == (stream = lisp_stream(interp, fd, file))) {
-        debug("failed to open stream for file %s: %d\n", file, errno);
-        return;
-    }
-    if (lisp_eval(interp, stream, gcRoots))
+    interp->input = fd;
+    interp->output = debug_fp;
+    if (lisp_eval(interp, gcRoots)) {
         debug("failed to load file %s: %ul - %s\n", file, interp->result, interp->message);
+        lisp_write_error(interp, debug_fp, gcRoots);
+    }
+    interp->input = interp->output = NULL;
 
-    if (file_fclose(interp, stream))
-        debug("failed to close stream for file %s:%d: %s\n", file, interp->result, interp->message);
+    if (fclose(fd))
+        debug("failed to close file %s\n", file);
 }
 
 int main(int argc, char **argv)
@@ -76,9 +73,10 @@ int main(int argc, char **argv)
     interp = lisp_new(FLISP_MEMORY_SIZE, argv, library_path, NULL, NULL, debug_fp);
     if (interp == NULL)
         fatal("fLisp initialization failed");
+    gcRoots = nil;
 
     if (strlen(init_file))
-        try_load(init_file);
+        load_config(init_file);
 
     /* GUI */
     if (!batch_mode) gui();
@@ -92,12 +90,24 @@ int main(int argc, char **argv)
     return 0;
 }
 
+void msg_lisp_err(Interpreter *interp)
+{
+    char *buf;
+    size_t len;
+    FILE *fd;
+    if (NULL == (fd = open_memstream(&buf, &len)))
+        fatal("failed to allocate error formatting buffer");
+    lisp_write_error(interp, fd, gcRoots);
+    msg("%s", buf);
+    fclose(fd);
+    free(buf);
+}
+
 char *eval_string(bool do_format, char *format, ...)
 {
     char buf[INPUT_FMT_BUFSIZ], *input;
     int size;
     va_list args;
-    Object *gcRoots = nil;
 
     if (do_format) {
         va_start(args, format);
@@ -112,27 +122,27 @@ char *eval_string(bool do_format, char *format, ...)
         input = format;
     }
 
-    interp->output = nil;
+    prev = interp->output;  // Note: save for double invocation with user defined functions.
+    interp->output = open_memstream(&output, &len);
     if ((lisp_eval_string(interp, input, gcRoots)))
-        // Note: does not print the err'd object, if any
-        msg("error: %s", interp->message);
+        msg_lisp_err(interp);
     if (debug_mode) {
         if (interp->result)
-            debug("error: %s\n", interp->message);
-        else
-            debug("=> %s\n", interp->output->buf);
+            lisp_write_error(interp, debug_fp, gcRoots);
+        debug("=> %s\n", output);
     }
     if (interp->result) {
-        //  close_eval_output();
+        free_lisp_output();
         return NULL;
     }
-    return interp->output->buf;
+    return output;
 }
-void close_eval_output()
+void free_lisp_output()
 {
-    assert(interp->output->fd != NULL);
-    if (file_fclose(interp, interp->output))
-        debug("error: closing output stream");
+    fflush(interp->output);
+    fclose(interp->output);
+    free(output);
+    interp->output = prev;
 }
 
 void gui()
@@ -219,14 +229,8 @@ void debug(char *format, ...)
     va_list args;
 
     if (debug_fp == NULL) return;
-//    if (!debug_mode) return;
 
     va_start (args, format);
-
-//    static FILE *debug_fp = NULL;
-
-//    if (debug_fp == NULL)
-//        debug_fp = fopen("debug.out","w");
 
     vsnprintf (buffer, sizeof(buffer), format, args);
     va_end(args);

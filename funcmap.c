@@ -219,7 +219,7 @@ void describe_bindings()
     bp = find_buffer(str_help_buf, TRUE);
     assert(bp != NULL);
     zero_buffer(bp);
-    
+
     for (ky = khead; ky != NULL; ky = ky->k_next) {
         sprintf(binding, "%-16s %s\n", ky->k_name, ky->k_funcname);
         append_string(bp, binding);
@@ -366,9 +366,9 @@ void execute_command()
         funct = name_to_function(command_name);
 
         if (funct == NULL || funct == user_func) {
-            
+
             if (eval_string(true, "(%s)", command_name) != NULL)
-                close_eval_output();
+                free_lisp_output();
         } else {
             (funct)();
         }

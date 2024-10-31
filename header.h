@@ -496,8 +496,7 @@ extern window_t *split_current_window();
 #define FLISP_MEMORY_SIZE        33554432UL  //  32M
 
 extern char *eval_string(bool, char *, ...);
-extern void close_eval_output();
-
+extern void free_lisp_output();
 
 /*
  * Local Variables:
