@@ -1,17 +1,18 @@
 #ifndef FILE_C
 #define FILE_C
 
-Object *primitiveFopen(Object ** args, GC_PARAM)
+/** file_fflush - flush output stream
+ *
+ * @param interp  fLisp interpreter
+ * @param stream  open output stream
+ *
+ * returns: 0 on success, erno otherwise
+ *
+ * Public C Interface
+ */
+int file_fflush(Interpreter *interp, Object *stream)
 {
-    TWO_STRING_ARGS(fopen);
-    return file_fopen(interp, first->string, second->string);
-}
-Object *primitiveFclose(Object** args, GC_PARAM)
-{
-    ONE_STREAM_ARG(fclose);
-    if (stream->fd == NULL)
-        exception(interp, FLISP_INVALID_VALUE, "(fflush stream) - stream already closed");
-    return newNumber(file_fclose(interp, stream), GC_ROOTS);
+    return (fflush(stream->fd) == EOF) ? errno : 0;
 }
 Object *primitiveFflush(Object** args, GC_PARAM)
 {
@@ -37,10 +38,10 @@ Object *primitiveFgetc(Object** args, GC_PARAM)
 {
     char s[] = "\0\0";
     ONE_STREAM_ARG(getc);
-    
+
     int c = getc(stream->fd);
     if (c == EOF)
-	return nil;
+        return nil;
     s[0] = (char)c;
     return newString(s, GC_ROOTS);
 }

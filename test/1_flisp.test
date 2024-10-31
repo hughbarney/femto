@@ -60,7 +60,7 @@ flisp_expr; ok progn-1 no args evaluate to nil
 IN="(progn 'one)" OUT=one
 flisp_expr; ok progn-2 one arg evaluates to arg
 
-IN="(progn (princ 'first) 'second)" OUT=firstsecond
+IN="(progn (write 'first) 'second)" OUT=firstsecond
 flisp_expr 2; ok progn-3 two args evaluate in sequence
 
 # if <- to be moved to std

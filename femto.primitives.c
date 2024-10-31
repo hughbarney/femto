@@ -9,8 +9,8 @@
     extern void name();                         \
     Object *e_##name(Object ** args, GC_PARAM)  \
     {                                           \
-        name();                                 \
-        return t;                               \
+	name();                                 \
+	return t;                               \
     }
 
 DEFINE_EDITOR_FUNC(beginning_of_buffer)
@@ -132,7 +132,7 @@ Object *e_getfilename(Object **args, GC_PARAM) {
     ONE_STRING_ARG(prompt-filename);
 
     if (FALSE == getfilename(arg->string, (char*) response_buf, NAME_MAX))
-        return nil;
+	return nil;
 
     return newString(response_buf, GC_ROOTS);
 }

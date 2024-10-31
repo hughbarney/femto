@@ -63,7 +63,7 @@ data.o: data.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c data.c
 
 debug: CPPFLAGS += -UNDEBUG -g
-debug: femto
+debug: femto flisp
 
 display.o: display.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c display.c
@@ -74,13 +74,13 @@ femto: $(OBJ) femto.rc
 femto.rc: femto.sht lisp/core.lsp
 
 femto_lisp.o: lisp.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -D FLISP_FILE_EXTENSION -c lisp.c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -c lisp.c -o $@
 
 flisp: $(FLISP_OBJ) flisp.rc
 	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ)
 
 flisp.o: flisp.c lisp.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FILE_EXTENSION -c $<
 
 flisp.rc: flisp.sht lisp/core.lsp
 
@@ -153,9 +153,9 @@ measure: strip FORCE
 	@echo Minimum
 	@echo flisp: $$(cat flisp.c | wc -l)
 	@echo flispsloc: $$(set -- $$(which sloccount >/dev/null && { sloccount flisp.c | grep ansic=; }); echo $$3)
-	@echo linecount: $$(cat *.c *.h $(LISPFILES) | wc -l) 
+	@echo linecount: $$(cat *.c *.h $(LISPFILES) | wc -l)
 	@echo sloccount: $$(set -- $$(which sloccount >/dev/null && { sloccount *.c *.h *.rc $(LISPFILES) | grep ansic=; }); echo $$3)
-	@echo files: $$(ls *.c *.h $(LISPFILES) | wc -l) 
+	@echo files: $$(ls *.c *.h $(LISPFILES) | wc -l)
 
 run: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto
