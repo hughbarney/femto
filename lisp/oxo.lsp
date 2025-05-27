@@ -38,7 +38,6 @@
  (cond (oxo-debugging (log-debug s))))
 
 (defun init()
- (gc)
  (oxo-debug "(init)\n")
  (select-buffer "*oxo*")
  (beginning-of-buffer)
