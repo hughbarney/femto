@@ -1,7 +1,7 @@
 #!./run
 # test the fLisp library
 # leg20231129: Femto
-tap 46
+tap 51
 
 export FLISPRC=../lisp/core.lsp
 flisplib() { IN="(require 'flisp) $IN" flisp_expr "$@"; }
@@ -21,7 +21,24 @@ IN="(null (cons nil nil))" OUT=nil
 flisplib 1; ok null-3 cons is not null
 
 # not
-true; ok not \# Skip not is null
+IN="(not t)" OUT=nil
+flisplib 1; ok not-1 not t is nil
+
+IN="(not nil)" OUT=t
+flisplib 1; ok not-2 not nil is t
+
+IN="(not 1)" OUT=nil
+flisplib 1; ok not-3 not 1 is nil
+
+IN='(not "a")' OUT=nil
+flisplib 1; ok not-4 not string is nil
+
+IN="(not 'a)" OUT=nil
+flisplib 1; ok not-5 not symbol is nil
+
+IN="(not '(1))" OUT=nil
+flisplib 1; ok not-6 not list is nil
+
 
 # listp
 IN='(listp nil)' OUT=t
@@ -68,7 +85,7 @@ IN='(and "a" 0 t)' OUT=t
 flisplib 1; ok and-10 triple t is true
 
 
-false; ok \# TODO map1
+false; ok map1 \# TODO
 
 
 IN='(or)' OUT=nil
@@ -95,7 +112,7 @@ flisplib 1; ok or-7 triple nil is nil
 IN='(or nil nil nil "a" "b" nil)' OUT='"a"'
 flisplib 1; ok or-8 nil with not nil is first itself
 
-false; ok reduce-1 \#TODO
+false; ok reduce-1 \# TODO
 
 IN='(max)'
 ERR="(env) expects at least 1 arguments"

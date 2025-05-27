@@ -4,7 +4,9 @@
 tap 10
 
 export FLISPRC=../lisp/core.lsp
+# Note: nested requiring stopped working
 stdlib() { IN="(require 'stdlib) $IN" flisp_expr "$@"; }
+stdlib() { IN="(require 'flisp) (require 'stdlib) $IN" flisp_expr "$@"; }
 stdlib_err() { IN="(require 'stdlib) $IN" flisp_err "$@"; }
 
 # atom

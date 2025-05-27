@@ -6,7 +6,6 @@
 
 : ${VERBOSE:=}
 
-
 [ "$1" = "-?" ] && {
     cat <<EOF
 Femto test suite
@@ -82,6 +81,7 @@ femto_err () {
 nil" ]
 }
 
+if [ "$SUMMARY" ]; then SUMMARY=./tapview; else SUMMARY=cat; fi
 
 for test; do  (
     #mkdir -p tmp
@@ -89,7 +89,9 @@ for test; do  (
 
     export FEMTOLIB=../lisp
     export FLISPLIB=../lisp
-
-. ./${test}
+    echo testsuite: $test
+    [ "$VERBOSE" ] && set -x
+    . ./${test} | $SUMMARY
+    set +x
 ); done
 #rm -rf tmp

@@ -4,7 +4,7 @@
 
 export FLISPRC=
 
-tap 35
+tap 63
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -21,12 +21,54 @@ ok flisp-1 flisp exists and is executable;
 (: | FLISPRC= ../flisp)
 ok flisp-2 empty input succeeds
 
-# repl
+# reader
 IN='(' ERR='unexpected end of stream in list'
 flisp_err; ok reader-1 incomplete sexp error msg
 
-IN="'(nil 'symbol)" OUT='(nil (quote symbol))'
-flisp_expr; ok reader-2 read "'" ok, writer succeeds
+IN='"' ERR='unexpected end of stream in string literal'
+flisp_err; ok reader-2 incomplete string error msg
+
+IN='\\' ERR="\`'" OBJ="unexpected character, \`'"
+flisp_err; ok reader-3 unexpected character error msg
+
+IN="0" OUT='0'
+flisp_expr; ok reader-4 read number
+
+IN="t" OUT='t'
+flisp_expr; ok reader-5 read constant t
+
+IN="nil" OUT='nil'
+flisp_expr; ok reader-6 read constant nil
+
+IN="()" OUT='nil'
+flisp_expr; ok reader-7 read empty list
+
+IN="(quote a)" OUT='a'
+flisp_expr; ok reader-8 read quote-ed yields symbol
+
+IN="'a" OUT='a'
+flisp_expr; ok reader-9 read tick-quoted yields symbol
+
+IN=":a" OUT='a'
+flisp_expr; ok reader-10 read colon-quoted yields symbol
+
+IN="'(0 (\"a\" b))" OUT='(0 ("a" b))'
+flisp_expr; ok reader-11 read nested list
+
+IN="'(0 . 1)" OUT='(0 . 1)'
+flisp_expr; ok reader-12 read dotted pair
+
+IN="'(0 1 . 2)" OUT='(0 1 . 2)'
+flisp_expr; ok reader-13 read dotted list
+
+IN="'(0 1 . 2 3)" ERR="unexpected object at end of dotted list" OBJ=
+flisp_err; ok reader-14 read dotted list with extra element
+
+IN="'(0 1 .)" ERR="expected object at end of dotted list" OBJ=
+flisp_err; ok reader-15 read dotted list without cdr
+
+IN="'(" ERR="unexpected end of stream in list" OBJ=
+flisp_err; ok reader-16 read list without end
 
 # Special forms
 IN='(quote)' ERR='expects at least 1 arguments' OBJ='#<Primitive quote>'
@@ -63,7 +105,6 @@ flisp_expr; ok progn-2 one arg evaluates to arg
 IN="(progn (write 'first) 'second)" OUT=firstsecond
 flisp_expr 2; ok progn-3 two args evaluate in sequence
 
-# if <- to be moved to std
 # cond
 IN='(cond)'  OUT=nil
 flisp_expr; ok cond-1 empty cond gives nil
@@ -117,12 +158,55 @@ IN='(cond (t . t))' ERR='(cond (pred action) ..) action is not a list' OBJ='(t .
 flisp_err; ok cond-17 fail if t and clause action is not a list
 
 # lambda
+IN='(lambda nil)' OUT="#<Lambda nil>"
+flisp_expr; ok lambda-1 arg nil
+
+IN='(lambda a nil)' OUT="#<Lambda a>"
+flisp_expr; ok lambda-2 args a nil 
+
+IN='(lambda nil nil)' OUT="#<Lambda nil>"
+flisp_expr; ok lambda-3 args nil nil 
+
+IN='(lambda (a b) nil)' OUT="#<Lambda (a b)>"
+flisp_expr; ok lambda-4 args a b
+
+IN='(lambda (a . b) nil)' OUT="#<Lambda (a . b)>"
+flisp_expr; ok lambda-5 args a . b nil 
+
+IN='(lambda (a b) a b)' OUT="#<Lambda (a b)>"
+flisp_expr; ok lambda-6 args nil nil 
+
+IN='((lambda (a b) a b) 0 "a")' OUT='"a"'
+flisp_expr; ok lambda-7 apply return b string a
+
 # macro
+IN='(macro nil)' OUT='#<Macro nil>'
+flisp_expr; ok macro-1 arg nil
+
+IN='(macro a nil)' OUT='#<Macro a>'
+flisp_expr; ok macro-2 args a nil
+
+IN='(macro (a b) nil)' OUT='#<Macro (a b)>'
+flisp_expr; ok macro-3 args a b
+
+IN='(macro (a . b) nil)' OUT='#<Macro (a . b)>'
+flisp_expr; ok macro-4 args a . b
+
+IN='((macro (a b) a b) 0 "a")' OUT='"a"'
+flisp_expr; ok macro-5  apply return b string a
+
+# macroexpand-1
+IN='(macroexpand-1 nil)' OUT='nil'
+flisp_expr; ok macroexpand-1_1  arg nil
+
+IN='(macroexpand-1 (macro a a) b)' OUT='(b)'
+flisp_expr; ok macroexpand-1_2  apply return b list b
+
+return
 
 # Primitives
 ## Write
-# print
-# princ
+# write
 
 ## Objects
 # consp

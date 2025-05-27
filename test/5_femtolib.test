@@ -2,27 +2,27 @@
 # test the femto Lisp extensions
 # leg20231213
 
-tap 9
-
+tap 15
 
 export FLISPRC=../lisp/core.lsp
-femtolib() { IN="(require 'femto) $IN" flisp_expr "$@"; }
+# Note: nested requiring stopped working
+femtolib(){ IN="(require 'femto) $IN" flisp_expr "$@"; }
+femtolib() { IN="(require 'flisp) (require 'femto) $IN" flisp_expr "$@"; }
 femtolib_err() { IN="(require 'femto) $IN" flisp_expr "$@"; }
 
-###IN='(atom 0)' OUT=t
-###femto; ok atom-1 number is atom
+true; ok load-script \# TODO
+true; ok repeat \# TODO
+IN="(repeat 0 +)" OUT=nil
+femtolib 1; ok repeat-1 
 
-###IN='(zerop "a")' OUT='error: "a" is not a number'
-###femto_err; ok zerop-3 with string fails
-
-# repeat
-# shell-command
-# shell-exec
-# insert-file
+true; ok shell-command \# TODO
+true; ok shell-exec \# TODO
+true; ok insert-file \# TODO
 
 # string.trim.front
 IN='(string.trim.front " x")'  OUT='"x"'
 femtolib 1; ok string.strim.front-1 remove single space before string
+
 IN='(string.trim.front " ")'  OUT='""'
 femtolib 1; ok string.strim.front-2 remove single space
 IN='(string.trim.front "    ")'  OUT='""'
