@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #define FL_NAME     "fLisp"
-#define FL_VERSION  "0.3"
+#define FL_VERSION  "0.4"
 
 #define FL_INITFILE "flisp.rc"
 #define FL_LIBDIR "/usr/local/share/flisp"
@@ -22,6 +22,10 @@
 #define INPUT_FMT_BUFSIZ 2048
 /* buffersize for Lisp result output */
 #define WRITE_FMT_BUFSIZ 2048
+
+/* Debugging */
+#define DEBUG_GC 0
+#define DEBUG_GC_ALWAYS 0
 
 /* Lisp objects */
 
@@ -93,19 +97,24 @@ typedef struct Interpreter {
     char message[WRITE_FMT_BUFSIZ];  /* error string */
     ResultCode result;               /* result of last evaluation */
     /* private */
-    FILE *input;                  /* default input stream object */
-    FILE *output;                   /* default output file descriptor */
-    FILE *debug;                    /* debug stream */
+    FILE *input;                     /* default input stream object */
+    FILE *output;                    /* default output file descriptor */
+    FILE *debug;                     /* debug stream */
 
-    Object *theRoot;      /* root object */
-    Object **theEnv;      /* environment object */
-    Object *symbols;      /* symbols list */
-    Object root;          /* reified root node */
-    Memory *memory;       /* memory available for object allocation,
-                             cleaned up by garbage collector */
-    jmp_buf exceptionEnv; /* exception handling */
+    /* globals */
+    Object *symbols;                 /* symbols list */
+    Object *global;                   /* global environment */
+    /* GC */
+    Object *gcTop;                   /* dynamic gc trace stack */
+    Memory *memory;                  /* memory available for object
+                                      * allocation, cleaned up by
+                                      * garbage collector */
+    /* exeptions */
+    jmp_buf exceptionEnv;  /* exception handling */
     jmp_buf *catch;
+    /* reader */
     struct { char *buf; size_t len; size_t capacity; };  /* read buffer */
+    /* interpreters */
     struct Interpreter *next;    /* linked list of interpreters */
 } Interpreter;
 
@@ -139,10 +148,10 @@ typedef struct Interpreter {
 // PUBLIC INTERFACE ///////////////////////////////////////////////////////
 extern Interpreter *lisp_new(size_t, char**, char*, FILE*, FILE*, FILE*);
 extern void lisp_destroy(Interpreter *);
-extern ResultCode lisp_eval(Interpreter *, Object *);
-extern ResultCode lisp_eval_string(Interpreter *, char *, Object *);
-extern void lisp_write_object(Interpreter *, FILE *, Object *, bool, Object *);
-extern void lisp_write_error(Interpreter *, FILE *, Object *);
+extern ResultCode lisp_eval(Interpreter *);
+extern ResultCode lisp_eval_string(Interpreter *, char *);
+extern void lisp_write_object(Interpreter *, FILE *, Object *, bool);
+extern void lisp_write_error(Interpreter *, FILE *);
 
 
 #ifdef FLISP_FILE_EXTENSION

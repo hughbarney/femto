@@ -18,7 +18,6 @@ char debug_file[] = "debug.out";
 FILE *prev, *debug_fp = NULL;
 char* output;
 size_t len;
-Object *gcRoots;
 
 void load_config(char *file)
 {
@@ -29,9 +28,9 @@ void load_config(char *file)
     }
     interp->input = fd;
     interp->output = debug_fp;
-    if (lisp_eval(interp, gcRoots)) {
+    if (lisp_eval(interp)) {
         debug("failed to load file %s: %ul - %s\n", file, interp->result, interp->message);
-        lisp_write_error(interp, debug_fp, gcRoots);
+        lisp_write_error(interp, debug_fp);
     }
     interp->input = interp->output = NULL;
 
@@ -73,7 +72,6 @@ int main(int argc, char **argv)
     interp = lisp_new(FLISP_MEMORY_SIZE, argv, library_path, NULL, NULL, debug_fp);
     if (interp == NULL)
         fatal("fLisp initialization failed");
-    gcRoots = nil;
 
     if (strlen(init_file))
         load_config(init_file);
@@ -97,7 +95,7 @@ void msg_lisp_err(Interpreter *interp)
     FILE *fd;
     if (NULL == (fd = open_memstream(&buf, &len)))
         fatal("failed to allocate error formatting buffer");
-    lisp_write_error(interp, fd, gcRoots);
+    lisp_write_error(interp, fd);
     msg("%s", buf);
     fclose(fd);
     free(buf);
@@ -124,11 +122,11 @@ char *eval_string(bool do_format, char *format, ...)
 
     prev = interp->output;  // Note: save for double invocation with user defined functions.
     interp->output = open_memstream(&output, &len);
-    if ((lisp_eval_string(interp, input, gcRoots)))
+    if ((lisp_eval_string(interp, input)))
         msg_lisp_err(interp);
     if (debug_mode) {
         if (interp->result)
-            lisp_write_error(interp, debug_fp, gcRoots);
+            lisp_write_error(interp, debug_fp);
         debug("=> %s\n", output);
     }
     if (interp->result) {

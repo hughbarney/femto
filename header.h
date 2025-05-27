@@ -27,7 +27,7 @@ int mkstemp(char *);
 #ifndef E_INITFILE
 #define E_INITFILE      "/usr/local/share/femto/femto.rc"
 #endif
-#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, October 2024, by Hugh Barney,  No warranty."
+#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, May 2025, by Hugh Barney,  No warranty."
 
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
@@ -490,10 +490,14 @@ extern window_t *split_current_window();
 //#define FLISP_MEMORY_SIZE          131072UL  // 128k
 //#define FLISP_MEMORY_SIZE          262144UL  // 256k
 //#define FLISP_MEMORY_SIZE          524288UL  // 512k
+//#define FLISP_MEMORY_SIZE         1048576UL  //   1M
+//#define FLISP_MEMORY_SIZE         1572864UL  //  1.5M
+//#define FLISP_MEMORY_SIZE         2097152UL  //   2M
 //#define FLISP_MEMORY_SIZE         4194304UL  //   4M
+//#define FLISP_MEMORY_SIZE         6291456UL  //   6M
 //#define FLISP_MEMORY_SIZE         8388608UL  //   8M
-//#define FLISP_MEMORY_SIZE        16777216UL  //  16M
-#define FLISP_MEMORY_SIZE        33554432UL  //  32M
+#define FLISP_MEMORY_SIZE        16777216UL  //  16M
+//#define FLISP_MEMORY_SIZE        33554432UL  //  32M
 
 extern char *eval_string(bool, char *, ...);
 extern void free_lisp_output();

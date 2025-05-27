@@ -1,14 +1,11 @@
 BUGS encountered during fLisp refactoring and batch mode
 
-- core.lsp: (open) should close the file, but if we do (fclose) it errs with: "already closed".
-
 - valgrind detects several memory leaks, call with:
   FEMTO_DEBUG=0 valgrind --leak-check=full --track-origins=yes femto
 
 - The status line has a ' ' space before the buffer name, but none after.
 
-- oxo segfaults, garbage collection is deemed to be responsible, possibly
-  the string functions.
+- oxo does not issue its own moves, we get stuck in the input loop.
 
 Valgrind
 ========

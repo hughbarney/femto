@@ -4,8 +4,10 @@
 
 CC      = cc
 CPP     = cpp
-CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DNDEBUG
-CFLAGS += -O2 -std=c11 -Wall -pedantic -pedantic-errors
+#CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DNDEBUG
+CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE
+#CFLAGS += -O2 -std=c11 -Wall -pedantic -pedantic-errors
+CFLAGS += -O0 -std=c11 -Wall -pedantic -pedantic-errors -g
 LD      = cc
 LDFLAGS =
 LIBS    = -lncursesw
@@ -80,7 +82,7 @@ flisp: $(FLISP_OBJ) flisp.rc
 	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ)
 
 flisp.o: flisp.c lisp.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FILE_EXTENSION -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 flisp.rc: flisp.sht lisp/core.lsp
 
@@ -167,7 +169,12 @@ strip: femto FORCE
 	strip femto
 
 test: flisp femto FORCE
-	(cd test && ./run)
+	(cd test && SUMMARY=1 ./run)
+
+test_core: test/core.lsp flisp
+	<$< FLISPRC= FLISPLIB= ./flisp > test/core.now &&  sed 's/Stream 0x\(.\+\),/Stream /' test/core.now | diff -q - test/core.out
+test/core.out: test/core.lsp flisp
+	<$< FLISPRC= FLISPLIB= ./flisp | sed 's/Stream 0x\(.\+\),/Stream /' > test/core.out
 
 val: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1 valgrind ./femto 2> val.log

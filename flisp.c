@@ -10,8 +10,8 @@
 #include "lisp.h"
 
 // Specify in kByte.
-#define FLISP_MEMORY_SIZE  300000UL
-// 64, 128 are to small for femto.lsp
+#define FLISP_MEMORY_SIZE   300
+// less then this is too small for femto.lsp
 
 
 #define CPP_XSTR(s) CPP_STR(s)
@@ -33,7 +33,7 @@ void fatal(char *msg)
 // - isatty()
 // - exception handling in fLisp
 // - file output for error messages
-int repl(Interpreter *interp, Object *gcRoots)
+int repl(Interpreter *interp)
 {
     size_t i;
     ResultCode result;
@@ -54,8 +54,8 @@ int repl(Interpreter *interp, Object *gcRoots)
             continue;
         }
 
-        if (lisp_eval_string(interp, input, gcRoots))
-            lisp_write_error(interp, stderr, gcRoots);
+        if (lisp_eval_string(interp, input))
+            lisp_write_error(interp, stderr);
     }
     result = interp->result;
     // Note: close output, error?
@@ -68,7 +68,6 @@ int main(int argc, char **argv)
     char *library_path, *init_file, *debug_file;
     FILE *fd = NULL;
     Interpreter *interp;
-    Object *gcRoots = nil;
 
     if ((init_file = getenv("FLISPRC")) == NULL)
         init_file = FL_LIBDIR "/" FL_INITFILE;
@@ -92,7 +91,7 @@ int main(int argc, char **argv)
         else {
             // load inifile
             interp->input = fd;
-            if (lisp_eval(interp, gcRoots))
+            if (lisp_eval(interp))
                     fprintf(stderr, "failed to load inifile %s:%d: %s\n", init_file, interp->result, interp->message);
             // Note: if we could implement the repl in fLisp itself we'd bail out here.
             if (fclose(fd))
@@ -102,12 +101,12 @@ int main(int argc, char **argv)
     // Start repl
     //Note: could be omitted if we could implement the repl in fLisp itself.
     if (isatty(0))
-        return repl(interp, gcRoots);
+        return repl(interp);
 
     // Just eval the standard input
     interp->input = stdin;
-    if (lisp_eval(interp, gcRoots))
-        lisp_write_error(interp, stderr, gcRoots);
+    if (lisp_eval(interp))
+        lisp_write_error(interp, stderr);
 
     result = interp->result;
     //lisp_destroy(interp);

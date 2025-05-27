@@ -355,7 +355,6 @@
       </dd>
       <dt><code>(os.getenv <var>string</var>) </code></dt>
       <dd>Returns the value of the environment variable named <var>string</var>.</dd>
-      <dt><code>(gc) </code></dt><dd>Run the garbage collector.</dd>
     </dl>    
 
     <h5 id="object_ops">Object Operations</h5>
@@ -970,8 +969,8 @@
 	  <dl>
 	    <dt><var>size</var></dt>
 	    <dd>
-	      Memory size to allocate for the Lisp objects.  This is divided into to pages for garbage
-	      collection. only one page is used by the interpreter at any moment.
+	      Memory size to allocate for the Lisp objects.  This is divided into two pages for garbage
+	      collection. Only one page is used by the interpreter at any moment.
 	    </dd>
 	    <dt><var>input</var></dt>
 	    <dd>
@@ -1136,21 +1135,17 @@
       Some compile time adjustable limits in <code>lisp.h</code>:
     </p>
     <dl>
-      <dt>Object memory</dt><dd>4M, <code>FLISP_MEMORY_SIZE</code>.</dd>
       <dt>Input buffer</dt><dd>2048, <code>INPUT_FMT_BUFSIZ</code>, size of the formatting buffer for <code>lisp_eval()</code>.</dd>
       <dt>Output buffer</dt><dd>2048, <code>WRITE_FMT_BUFSIZ</code>, size of the output and message formatting buffer.</dd>
     </dl>
     <p>
-      fLisp can live with much less object memory, but the <q>OXO</q> game requires a lot and <mark>the garbage
-	collector surfaces a bug</mark> which makes OXO segfault.
+      fLisp can live with as little as 300k object memory. The Femto editor requires 16M since the <q>OXO</q> game requires a lot of memory.
     </p>
 
     <h4 id="future">Future Directions</h4>
     <p>
-      Lisp object memory should be allocated on interpreter initialization.  The two memory pages should be separated
-      and the second one should be allocated only during garbage collection.  When memory runs out, the garbage
-      collection should be restarted with an increased capacity of the new page.  This might help find the culprit of
-      the corruptions during garbage collection.
+      The two memory pages should be separated and the second one should be allocated only during garbage collection.
+      When memory runs out, the garbage collection should be restarted with an increased capacity of the new page.
     </p>
     <p>
       It should be able to trap exceptions within Lisp code.  This, together with an <code>(eval)</code> primitive would
@@ -1161,9 +1156,9 @@
       size.
     </p>
     <p>
-      Exception handling returns differentiated error codes. One could to implement
-      interactive repl with <code>stdin</code>/<code>stdout</code> streams, by reading and eval&apos;ing
-      until no more <q>incomplete input</q> result codes are returned.
+      Exception handling returns differentiated error codes. One could implement an interactive repl
+      with <code>stdin</code>/<code>stdout</code> streams, by reading and eval&apos;ing until no more <q>incomplete
+      input</q> result codes are returned.
     </p>
     <p>
       The file extension only contains <code>(fflush)</code>,  <code>(ftell)</code> and  <code>(fgetc)</code> and could

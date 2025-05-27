@@ -14,27 +14,27 @@ int file_fflush(Interpreter *interp, Object *stream)
 {
     return (fflush(stream->fd) == EOF) ? errno : 0;
 }
-Object *primitiveFflush(Object** args, GC_PARAM)
+Object *primitiveFflush(Interpreter *interp, Object** args, Object **env)
 {
     ONE_STREAM_ARG(fflush);
     if (stream->fd == NULL)
         exception(interp, FLISP_INVALID_VALUE, "(fflush stream) - stream already closed");
-    return newNumber(file_fflush(interp, stream), GC_ROOTS);
+    return newNumber(interp, file_fflush(interp, stream));
 }
 
 off_t file_ftell(Interpreter *interp, Object *stream)
 {
     return ftello(stream->fd);
 }
-Object *primitiveFtell(Object** args, GC_PARAM)
+Object *primitiveFtell(Interpreter *interp, Object** args, Object **env)
 {
     ONE_STREAM_ARG(ftell);
     if (stream->fd == NULL)
         exception(interp, FLISP_INVALID_VALUE, "(ftell stream) - stream already closed");
-    return newNumber(file_ftell(interp, stream), GC_ROOTS);
+    return newNumber(interp, file_ftell(interp, stream));
 }
 
-Object *primitiveFgetc(Object** args, GC_PARAM)
+Object *primitiveFgetc(Interpreter *interp, Object** args, Object **env)
 {
     char s[] = "\0\0";
     ONE_STREAM_ARG(getc);
@@ -43,7 +43,7 @@ Object *primitiveFgetc(Object** args, GC_PARAM)
     if (c == EOF)
         return nil;
     s[0] = (char)c;
-    return newString(s, GC_ROOTS);
+    return newString(interp, s);
 }
 #endif
 

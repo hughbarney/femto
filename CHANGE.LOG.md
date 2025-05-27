@@ -1,3 +1,15 @@
+## Femto 2.21/fLisp 0.5 May 2025
+
+The fLisp interpreter has been refactored. Code has been moved around
+and put into order. The GC tracing code has been changed and does not
+use the heap anymore. GC tracing has been reduced as much as
+possible. The interpreter does not rely on global variables anymore,
+everything is hold in a single `Interpreter` struct.
+
+Garbage collection has been stressed extensively and no segfault has
+been experienced anymore.
+
+
 ## Femto 2.21 28 October 2024
 
 This release introduces a separation between the fLisp interpreter and
