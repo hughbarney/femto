@@ -1,4 +1,4 @@
-## Femto 2.21/fLisp 0.5 May 2025
+## Femto 2.21/fLisp 0.4 May 2025
 
 The fLisp interpreter has been refactored. Code has been moved around
 and put into order. The GC tracing code has been changed and does not
