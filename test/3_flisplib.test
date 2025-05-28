@@ -1,7 +1,7 @@
 #!./run
 # test the fLisp library
 # leg20231129: Femto
-tap 51
+tap 52
 
 export FLISPRC=../lisp/core.lsp
 flisplib() { IN="(require 'flisp) $IN" flisp_expr "$@"; }
@@ -83,6 +83,9 @@ flisplib 1; ok and-9 not nil at end is itself
 
 IN='(and "a" 0 t)' OUT=t
 flisplib 1; ok and-10 triple t is true
+
+IN='(defun aa (p) (and p p)) (aa nil)' OUT=nil
+flisplib 1; ok and-11 macro env not working
 
 
 false; ok map1 \# TODO

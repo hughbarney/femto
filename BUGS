@@ -5,7 +5,9 @@ BUGS encountered during fLisp refactoring and batch mode
 
 - The status line has a ' ' space before the buffer name, but none after.
 
-- oxo does not issue its own moves, we get stuck in the input loop.
+- macros have an issue with the environment. e.g. macro `and` cannot be
+  used inside a defun, because the parameters are not bound.
+   
 
 Valgrind
 ========

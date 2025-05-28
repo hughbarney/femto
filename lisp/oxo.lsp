@@ -122,12 +122,12 @@
      (oxo-debug "repeat\n")
      (check_for_win (cdr l) p)) ))
   
-(defun game_not_over()
+(defun game_over()
   (oxo-debug "game_not_over\n")
-  (and
-   (not (check_for_win wins "X"))
-   (not (check_for_win wins "O"))
-   (not (board_full (cdr board))) ))
+  (or
+   (check_for_win wins "X")
+   (check_for_win wins "O")
+   (board_full (cdr board)) ))
 
 (defun get-move()
   (oxo-debug "get-move\n")
@@ -135,32 +135,28 @@
   (setq m (string-to-number m))
   (cond
     ((or (> m 9) (< m 1)) (msg "Please select a free cell between 1 and 9" t) (get-move))
-    ((not (is_free m)) (msg "That cell is taken" t) (get-move)) )
+    ((taken m) (msg "That cell is taken" t) (get-move)) )
   m)
 
 (defun find_free(b)
   (cond
-    ((and (not (eq "X" (car b))) (not (eq "O" (car b))) (not (eq "E" (car b)))) (string-to-number (car b)))
-    (t (find_free (cdr b))) ))
-
-(defun is_free(n)
-  (and (not (eq "X" (val n))) (not (eq "O" (val n))) (not (eq "E" (val n))) ))
-
-(defun not_taken(v)
-  (and (not (eq "X" v)) (not (eq "O" v)) (not (eq "E" v)) ))
+    ((taken (car b)) (find_free (cdr b)))
+    ((string-to-number (car b)))))
 
 (defun board_full(brd)
   (oxo-debug "board_full\n")
   (cond
-    ((eq brd ()) t)
-    ((not_taken (car brd)) nil)
-    (t (board_full (cdr brd))) ))
+    ((null brd))
+    ((taken (car brd)) (board_full (cdr brd)))))
+
+(defun taken(v)
+  (or (eq "X" v) (eq "O" v) (eq "E" v)) )
 
 (defun msg(s pause)
   (cond (pause
 	 (print_message (concat s " - press a key to continue "))
 	 (getch))
-	(t (print_message s)) ))
+	((print_message s)) ))
 
 (defun print_message(s)
   (oxo-debug "print_message\n")
@@ -185,7 +181,7 @@
   (cond
     ((check_for_win wins "X") (msg "X wins !" t))
     ((check_for_win wins "O") (msg "O wins !" t))
-    (t (msg "Draw !" t)) ))
+    ((msg "Draw !" t)) ))
 
 (defun play_again()
   (setq m (inputat 8 "Play again (y or n) ? " ""))
@@ -198,12 +194,12 @@
   (oxo-debug "about to update display\n")
   (update-display)
   (oxo-debug "updated\n")
-  (cond ((game_not_over) (setq board (set-nth board (get-move) "X")))
-	(t (show_result)) )
-  (cond ((game_not_over)
+  (cond ((not (game_over)) (setq board (set-nth board (get-move) "X")))
+	((show_result)) )
+  (cond ((not (game_over))
 	 (computer_move)
 	 (play))
-	(t (show_result)) ))
+	((show_result)) ))
 
 (defun oxo()
   (init)
