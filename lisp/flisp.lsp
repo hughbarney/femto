@@ -7,21 +7,11 @@
 (setq not null)
 (defun listp (x) (cond ((null x)) ((consp x))))
 
-;; Note: macro evaluation is broken: env lookups do not work
-;; Workaround: we use defun instead, so we loose shortcircuit evaluation.
-;; (defmacro and args
-;;   (cond
-;;     ((null args))
-;;     ((cond
-;;        ((cdr args) (cond ((car args) (cons 'and  (cdr args)))))
-;;        (t (car args))))))
-
-(defun and args
+(defmacro and args
   (cond
     ((null args))
-    ((cond
-       ((cdr args) (cond ((car args) (cons 'and  (cdr args)))))
-       (t (car args))))))
+    ((null (cdr args)) (car args))
+    (t (list 'cond (list (car args) (cons 'and (cdr args)))))))
 
 (defun map1 (func xs)
   (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))

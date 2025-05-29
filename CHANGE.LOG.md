@@ -1,3 +1,8 @@
+## Femto 2.21/fLisp 0.5 May 2025
+
+Fix remaining gc issues with macros and re-instate and macro.
+
+
 ## Femto 2.21/fLisp 0.4 May 2025
 
 The fLisp interpreter has been refactored. Code has been moved around

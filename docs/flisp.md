@@ -25,7 +25,7 @@ use other resources eg.
     or
 -   [The Scheme Programming Language](https://www.scheme.org/).
 
-This manual refers to version 0.3 or later of fLisp.
+This manual refers to version 0.5 or later of fLisp.
 
 Table of Contents
 

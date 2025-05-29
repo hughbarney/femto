@@ -561,37 +561,31 @@ Object *newPrimitive(Interpreter *interp, int primitive, char *name)
 Object *newEnv(Interpreter *interp, Object ** func, Object ** vals)
 {
     int nArgs;
-
-    GC_CHECKPOINT;
-    GC_TRACE(gcFunc, *func);
-    GC_TRACE(gcVals, *vals);
     Object *object = newObject(interp, TYPE_ENV);
-    GC_RELEASE;
-    // Note: this can be moved out of GC handling
-    if ((*gcFunc) == nil)
+    if ((*func) == nil) {
         object->parent = object->vars = object->vals = nil;
-    else {
-        Object *param = (*gcFunc)->params, *val = *gcVals;
-
-        for (nArgs = 0;; param = param->cdr, val = val->cdr, ++nArgs) {
-            if (param == nil && val == nil)
-                break;
-            else if (param != nil && param->type == TYPE_SYMBOL)
-                break;
-            else if (val != nil && val->type != TYPE_CONS)
-                exceptionWithObject(interp, val, FLISP_WRONG_TYPE, "(env) is not a list: val %d", nArgs);
-            else if (param == nil && val != nil)
-                exceptionWithObject(interp, *func, FLISP_PARAMETER_ERROR, "(env) expects at most %d arguments", nArgs);
-            else if (param != nil && val == nil) {
-                for (; param->type == TYPE_CONS; param = param->cdr, ++nArgs);
-                exceptionWithObject(interp, *func, FLISP_PARAMETER_ERROR, "(env) expects at least %d arguments", nArgs);
-            }
-        }
-
-        object->parent = (*gcFunc)->env;
-        object->vars = (*gcFunc)->params;
-        object->vals = *gcVals;
+        return object;
     }
+    Object *param = (*func)->params, *val = *vals;
+    
+    for (nArgs = 0;; param = param->cdr, val = val->cdr, ++nArgs) {
+        if (param == nil && val == nil)
+            break;
+        else if (param != nil && param->type == TYPE_SYMBOL)
+            break;
+        else if (val != nil && val->type != TYPE_CONS)
+            exceptionWithObject(interp, val, FLISP_WRONG_TYPE, "(env) is not a list: val %d", nArgs);
+        else if (param == nil && val != nil)
+            exceptionWithObject(interp, *func, FLISP_PARAMETER_ERROR, "(env) expects at most %d arguments", nArgs);
+        else if (param != nil && val == nil) {
+            for (; param->type == TYPE_CONS; param = param->cdr, ++nArgs);
+            exceptionWithObject(interp, *func, FLISP_PARAMETER_ERROR, "(env) expects at least %d arguments", nArgs);
+        }
+    }
+    
+    object->parent = (*func)->env;
+    object->vars = (*func)->params;
+    object->vals = *vals;
 
     return object;
 }
@@ -1285,28 +1279,25 @@ Object *evalMacro(Interpreter *interp, Object ** args, Object ** env)
 Object *expandMacro(Interpreter *interp, Object ** macro, Object ** args)
 {
     GC_CHECKPOINT;
-    GC_TRACE(gcMacro, *macro);
-    GC_TRACE(gcEnv, newEnv(interp, gcMacro, args));
-    Object *object = evalProgn(interp, &(*gcMacro)->body, gcEnv);
-    object = evalExpr(interp, &object, gcEnv);
-    GC_RELEASE;
-    return object;
+    GC_TRACE(gcBody, (*macro)->body);
+    GC_TRACE(gcEnv, newEnv(interp, macro, args));
+    
+    GC_TRACE(gcObject, evalProgn(interp, gcBody, gcEnv));
+    GC_RETURN(evalExpr(interp, gcObject, gcEnv));
 }
 
 Object *expandMacroTo(Interpreter *interp, Object ** macro, Object ** args)
 {
-    Object *body = expandMacro(interp, macro, args);
+    Object *object = expandMacro(interp, macro, args);
 
-    if (body->type == TYPE_CONS)
-        return body;
+    if (object->type == TYPE_CONS)
+        return object;
 
     GC_CHECKPOINT;
-    GC_TRACE(gcBody, body);
-    GC_TRACE(gcCons, newCons(interp, &nil, &nil));
-    (*gcCons)->car = newSymbol(interp, "progn");
-    (*gcCons)->cdr = newCons(interp, gcBody, &nil);
-    GC_RELEASE;
-    return *gcCons;
+    GC_TRACE(gcBody, object);
+    GC_TRACE(gcCons, newCons(interp, gcBody, &nil));
+    GC_TRACE(gcProg, newSymbol(interp, "progn"));
+    GC_RETURN(newCons(interp, gcProg, gcCons));
 }
 
 Object *evalMacroExpand(Interpreter *interp, Object **args, Object ** env)
@@ -1316,12 +1307,11 @@ Object *evalMacroExpand(Interpreter *interp, Object **args, Object ** env)
 
     GC_CHECKPOINT;
     GC_TRACE(gcArgs, (*args)->cdr);
-    Object *macro = evalExpr(interp, &(*args)->car, env);
-    GC_RELEASE;
-    if (macro->type != TYPE_MACRO)
-        return macro;
+    GC_TRACE(gcMacro, evalExpr(interp, &(*args)->car, env));
+    if ((*gcMacro)->type != TYPE_MACRO)
+        GC_RETURN(*gcMacro);
 
-    return expandMacro(interp, &macro, gcArgs);
+    GC_RETURN(expandMacro(interp, gcMacro, gcArgs));
 }
 
 Object *evalList(Interpreter *interp, Object ** args, Object ** env)
