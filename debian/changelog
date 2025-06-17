@@ -1,3 +1,8 @@
+femto (2.21.7-1) bookworm; urgency=medium
+
+  * Improve doc build, maintenance release.
+ -- Georg Lehner <jorge@magma-soft.at>  Tue, 17 Jun 2025 09:34:17 +0100
+
 femto (2.21.6-1) bookworm; urgency=medium
 
   * Fix macro gc, maintenance release.

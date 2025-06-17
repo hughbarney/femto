@@ -5,6 +5,7 @@ clean:
 	echo rm -rf $(DESTDIR)
 
 build:
+	@make doc DESTDIR=debian/femto
 	@make DESTDIR=debian/femto PREFIX=/usr
 
 binary:
