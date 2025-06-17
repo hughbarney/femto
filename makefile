@@ -40,7 +40,8 @@ LISPFILES = femto.rc lisp/startup.lsp lisp/defmacro.lsp			\
 
 FLISPFILES = flisp.rc lisp/flisp.lsp lisp/stdlib.lsp
 
-DOCFILES = BUGS CHANGE.LOG.md README.md docs/flisp.md pdoc/flisp.html
+DOCFILES = BUGS CHANGE.LOG.md README.md pdoc/flisp.html
+MOREDOCS = README.html docs/flisp.md
 
 FLISP_DOCFILES = README.flisp.md docs/flisp.md pdoc/flisp.html
 
@@ -50,7 +51,7 @@ FLISP_DOCFILES = README.flisp.md docs/flisp.md pdoc/flisp.html
 	./sht $*.sht >$@
 
 # Artifacts
-all: femto docs/flisp.md
+all: femto
 
 buffer.o: buffer.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c buffer.c
@@ -121,7 +122,10 @@ utils.o: utils.c header.h
 window.o: window.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c window.c
 
-# Documentation
+# Additional documentation formats
+
+# require pandoc
+doc: $(MOREDOCS)
 
 docs/flisp.md: pdoc/flisp.html pdoc/h2m.lua
 	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
@@ -129,12 +133,11 @@ docs/flisp.md: pdoc/flisp.html pdoc/h2m.lua
 README.html: README.md
 	pandoc -o $@ -f gfm $<
 
-doc: docs/flisp.md README.html
-
+# require doxygen
 doxygen: FORCE
 	doxygen
 
-# Phony
+# Development
 fl: flisp FORCE
 	FLISPRC=flisp.rc FLISPLIB=lisp FLISP_DEBUG=f.log  ./flisp
 fld: flisp FORCE
@@ -165,9 +168,6 @@ run: femto FORCE
 splint: FORCE
 	splint +posixlib -macrovarprefix "M_" *.c *.h
 
-strip: femto FORCE
-	strip femto
-
 test: flisp femto FORCE
 	(cd test && SUMMARY=1 ./run)
 
@@ -180,10 +180,13 @@ val: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1 valgrind ./femto 2> val.log
 
 # Install/package
+strip: femto FORCE
+	strip femto
+
 clean: FORCE
 	-$(RM) -f $(OBJ) $(FLISP_OBJ) $(BINARIES) $(RC_FILES)
 	-$(RM) -rf doxygen
-	-$(RM) -f docs/flisp.md README.html
+	-$(RM) -f $(MOREDOCS)
 	-$(RM) -f val.log debug.out f.log test/f.log
 	-$(RM) -rf debian/femto debian/files \
 		debian/femto.debhelper.log debian/femto.substvars
@@ -191,6 +194,7 @@ clean: FORCE
 deb: FORCE
 	dpkg-buildpackage -b -us -uc
 
+# fLisp standalone
 flisp-install: flisp-install-bin flisp-install-lib flisp-install-doc
 
 flisp-install-bin: flisp FORCE
@@ -212,6 +216,7 @@ flisp-uninstall: FORCE
 	-$(RM) -rf $(DESTDIR)$(DOCDIR)/$(FLISP_PACKAGE)
 
 
+# Femto
 install: install-bin install-lib install-doc FORCE
 
 install-bin: femto FORCE
@@ -222,6 +227,7 @@ install-doc: FORCE
 	-$(MKDIR) -p $(DESTDIR)$(DOCDIR)/$(PACKAGE)/examples
 	-$(CP) $(DOCFILES) $(DESTDIR)$(DOCDIR)/$(PACKAGE)
 	-$(CP) lisp/examples/*.lsp $(DESTDIR)$(DOCDIR)/$(PACKAGE)/examples
+	-for f in $(MOREDOCS); do [ -f $$f ] && $(CP) $$f $(DESTDIR)$(DOCDIR)/$(PACKAGE); done; true
 
 install-lib: $(LISPFILES) FORCE
 	-$(MKDIR) -p $(DESTDIR)$(DATADIR)/$(PACKAGE)
