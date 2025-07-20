@@ -58,7 +58,7 @@ Editor Extension
 
 *fLisp* is a tiny yet practical interpreter for a dialect of the Lisp
 programming language. It is used as extension language for the
-[Femto](https://github.com/matp/tiny-lisp) text editor.
+[Femto](https://github.com/hughbarney/femto) text editor.
 
 *fLisp* originates from [Tiny-Lisp by
 matp](https://github.com/matp/tiny-lisp) (pre 2014), was integrated into
@@ -68,7 +68,7 @@ and compacted by Georg Lehner in 2023.
 This is a reference manual. If you want to learn about Lisp programming
 use other resources eg.
 
--   The [Common Lisp](lisp-lang.org) web site,
+-   The [Common Lisp](https://lisp-lang.org) web site,
 -   [An Introduction to Programming in Emacs
     Lisp](https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html)
     or

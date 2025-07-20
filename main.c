@@ -40,12 +40,19 @@ int main(int argc, char **argv)
     if (flisp_interp == NULL)
         fatal("fLisp initialization failed");
 
+    if (debug_mode)
+        if (nil == (flisp_interp->debug = file_fopen(flisp_interp, "debug.out", "a")))
+            fatal("could not open debug stream");
+    
     if ((init_file = getenv("FEMTORC")) == NULL)
         init_file = CPP_XSTR(E_INITFILE);
 
-    if (lisp_eval(flisp_interp, "(load \"%s\")", init_file))
-        msg(flisp_interp->message);
-
+    if (strlen(init_file)) {
+        // Note: not lisp_eval()'ing it, because we want to have consistent error handling.
+        eval_string(true, "(load \"%s\")", init_file);
+        close_eval();
+    }
+    
     /* GUI */
     if (!batch_mode) gui();
 
@@ -53,6 +60,46 @@ int main(int argc, char **argv)
     // Note: exit frees all memory, do we need this here?
     if (scrap != NULL) free(scrap);
     return 0;
+}
+
+char *eval_string(int do_format, char *format, ...)
+{
+    ResultCode result;
+    char buf[INPUT_FMT_BUFSIZ], *input;
+    int size;
+    va_list args;
+
+    if (do_format) {
+        va_start(args, format);
+        size = vsnprintf (buf, sizeof(buf), format, args);
+        va_end(args);
+        if (size > INPUT_FMT_BUFSIZ) {
+            msg("input string larger then %d", INPUT_FMT_BUFSIZ);
+            return NULL;
+        }
+        input = buf;
+    } else {
+        input = format;
+    }
+
+    flisp_interp->output = file_fopen(flisp_interp, "", ">");
+    if ((result = lisp_eval_string(flisp_interp, input)))
+        msg("error: %s", flisp_interp->message);
+    if (debug_mode) {
+        if (result)
+            debug("error: %s\n", flisp_interp->message);
+        debug(flisp_interp->output->buf);
+    }
+    if (result) {
+        close_eval();
+        return NULL;
+    }
+    return flisp_interp->output->buf;
+}
+void close_eval()
+{
+    if (file_fclose(flisp_interp, flisp_interp->output))
+        debug("error: closing output stream");
 }
 
 void gui()
