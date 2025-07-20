@@ -133,11 +133,13 @@ Lisp file. The second number includes all provided Lisp files.
     C-P   previous line
     C-R   search-backwards
     C-S	  search-forwards
+	C-T   transpose-chars
     C-U   Undo
     C-V   Page Down
     C-W   Kill Region (Cut)
     C-X   CTRL-X command prefix
     C-Y   Yank (Paste)
+	C-Z   suspend
 
     M-<   Start of file
     M->   End of file
@@ -321,6 +323,7 @@ Lisp library functions:
 * `describe-key`
 * `find_start_p`, `find_end_p`, `find_and_eval_sexp` - Lisp evaluation
   in buffers.
+* `transpose-chars` - swap current end previous character.
 
 `startup.lsp` loads extensions, creates key bindings for them, shows
 the startup message, loads the user specified configuration file and
