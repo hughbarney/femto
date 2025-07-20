@@ -1,5 +1,4 @@
 #define VALGRIND 0
-
 /*
  * header.h, femto, Hugh Barney, 2023
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
@@ -19,10 +18,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <wchar.h>
+#include "lisp.h"
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.18"
+#define E_VERSION       "2.19"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND     "<not bound>"
 #ifndef E_SCRIPTDIR
@@ -31,7 +31,7 @@ int mkstemp(char *);
 #ifndef E_INITFILE
 #define E_INITFILE      "/usr/local/share/femto/femto.rc"
 #endif
-#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, March 2024, by Hugh Barney,  No warranty."
+#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, October 2024, by Hugh Barney,  No warranty."
 
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
@@ -423,10 +423,6 @@ extern void execute_key();
 extern void make_key(char *, char *);
 extern void setup_keys();
 
-/* functions in lisp.c */
-extern char *call_lisp(char *);
-extern int init_lisp(int, char**, char*);
-
 /* functions in main.c */
 extern int main(int argc, char **);
 extern void debug(char *format, ...);
@@ -489,6 +485,10 @@ extern window_t *find_window(char *);
 extern window_t* new_window();
 extern window_t *popup_window(char *);
 extern window_t *split_current_window();
+
+/* fLisp interpreter used for femto */
+extern Interpreter *flisp_interp;
+
 
 /*
  * Local Variables:
