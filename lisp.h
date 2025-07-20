@@ -64,11 +64,12 @@ extern Object *t;
 typedef enum ResultCode {
     FLISP_OK,
     FLISP_ERROR,
-    FLISP_USER,    /* user generated exception */
+    FLISP_RETURN,         /* successfull return */
+    FLISP_USER,           /* user generated exception */
     /* Parser/reader */
     FLISP_READ_INCOMPLETE,
     FLISP_READ_INVALID,
-    FLISP_READ_RANGE, /* number range over/underflow */
+    FLISP_READ_RANGE,     /* number range over/underflow */
     /* Parameter */
     FLISP_WRONG_TYPE,
     FLISP_INVALID_VALUE,

@@ -101,8 +101,8 @@ void resetBuf(Interpreter *);
  * @param result  result code corresponding to error type, FLISP_ERROR for general errors.
  * @param format ... printf style error string
  *
- * *object* and *result* are stored in the interpreter structure, *result* is also used as
- * "return" code for longjmp.
+ * *object* and *result* are stored in the interpreter structure.
+ * The return code for longjmp is FLISP_ERROR
  *
  * The error message is formatted into the message buffer of the interpreter. If it has to
  * be truncated the last three characters are overwritten with "..."
@@ -114,7 +114,7 @@ void resetBuf(Interpreter *);
  */
 #ifdef __GNUC__
 void exceptionWithObject(Interpreter *, Object * object, ResultCode, char *format, ...)
-    __attribute__ ((noreturn, format(printf, 4, 5)));
+    __attribute__ ((format(printf, 4, 5)));
 #endif
 void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result, char *format, ...)
 {
@@ -125,14 +125,17 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
     int len = sizeof(interp->message);
     va_list(args);
     va_start(args, format);
-    if (vsnprintf(interp->message, len, format, args) < 0)
+    if (vsnprintf(interp->message, len, format, args) <0)
         strncpy(interp->message, "failed to format error message", len);
+    va_end(args);
     if (snprintf(NULL, 0, format, args) > len)
         strcpy(interp->message+len-4, "...");
-    va_end(args);
 
-    if (interp->stackframe)
-        longjmp(*interp->stackframe, result);
+    if (interp->stackframe != NULL) {
+        longjmp(*interp->stackframe, FLISP_ERROR);
+        __builtin_unreachable();
+    }
+    // See note about "fall through" in comment above
 }
 
 /** exception - break out of errors
@@ -140,8 +143,9 @@ void exceptionWithObject(Interpreter *interp, Object * object, ResultCode result
  * @param interp  interpreter in which the error occurred.
  * @param result  result code corresponding to error type, FLISP_ERROR for general errors.
  *
- * `nil` and *result* are stored in the interpreter structure, *result* is also used as
- * "return" code for longjmp.
+ * *result* is stored in the interpreter structures result field, nil in the object field
+ * The longjmp return code is FLISP_ERROR.
+ *
  *
  * The error message is formatted into the message buffer of the interpreter. If it has to
  * be truncated the last three characters are overwritten with "..."
@@ -190,9 +194,11 @@ void writeFmt(Object *, char *format, ...)
 #endif
 void writeFmt(Object *stream, char *format, ...)
 {
+    assert(stream->fd != NULL);
     va_list(args);
     va_start(args, format);
     if (vfprintf(stream->fd, format, args) < 0) {
+        exit(3);
         va_end(args);
         exceptionWithObject(&flisp, stream, FLISP_IO_ERROR, "failed to fprintf, errno: %d", errno);
     }
@@ -964,7 +970,7 @@ void writeObject(Object * stream, Object *object, bool readably)
         CASE(TYPE_NUMBER, "%g", object->number);
         CASE(TYPE_SYMBOL, "%s", object->string);
         CASE(TYPE_PRIMITIVE, "#<Primitive %s>", object->name);
-        CASE(TYPE_STREAM, "#<Stream %p, %s>", (void *) object->fd, object->path->string);
+        CASE(TYPE_STREAM, "#<Stream %p, %s>", (void *) object->fd, (object->fd == NULL) ? "<closed>" : object->path->string);
 #undef CASE
     case TYPE_STRING:
         if (readably) {
@@ -1063,6 +1069,7 @@ Object *envLookup(Object * var, Object * env)
     }
 
     exceptionWithObject(&flisp, var, FLISP_INVALID_VALUE, "has no value");
+    __builtin_unreachable();
 }
 
 Object *envAdd(Object ** var, Object ** val, Object ** env, GC_PARAM)
@@ -1142,8 +1149,9 @@ Object *primitiveCar(Object ** args, GC_PARAM)
         return nil;
     else if (first->type == TYPE_CONS)
         return first->car;
-    else
-        exceptionWithObject(&flisp, first, FLISP_WRONG_TYPE, "(car arg) - arg must be a list");
+
+    exceptionWithObject(&flisp, first, FLISP_WRONG_TYPE, "(car arg) - arg must be a list");
+    __builtin_unreachable();
 }
 
 Object *primitiveCdr(Object ** args, GC_PARAM)
@@ -1154,8 +1162,9 @@ Object *primitiveCdr(Object ** args, GC_PARAM)
         return nil;
     else if (first->type == TYPE_CONS)
         return first->cdr;
-    else
-        exceptionWithObject(&flisp, first, FLISP_WRONG_TYPE, "(cdr arg) - arg must be a list");
+
+    exceptionWithObject(&flisp, first, FLISP_WRONG_TYPE, "(cdr arg) - arg must be a list");
+    __builtin_unreachable();
 }
 
 Object *primitiveCons(Object ** args, GC_PARAM)
@@ -1203,9 +1212,7 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
     Object *name(Object **args, GC_PARAM) {                             \
         if (*args == nil)                                               \
             return newNumber(init, GC_ROOTS);                           \
-        else if ((*args)->car->type != TYPE_NUMBER)                     \
-            exceptionWithObject(&flisp, (*args)->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " arg ..) - arg is not a number"); \
-        else {                                                          \
+        if ((*args)->car->type == TYPE_NUMBER) {                        \
             Object *object, *rest;                                      \
                                                                         \
             if ((*args)->cdr == nil) {                                  \
@@ -1226,16 +1233,22 @@ Object *primitiveSignal(Object ** args, GC_PARAM)
                                                                         \
             return object;                                              \
         }                                                               \
+        exceptionWithObject(&flisp, (*args)->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " arg ..) - arg is not a number"); \
+        __builtin_unreachable();                                        \
     }
+
+
+DEFINE_PRIMITIVE_ARITHMETIC(primitiveAdd, +, 0)
+DEFINE_PRIMITIVE_ARITHMETIC(primitiveSubtract, -, 0)
+DEFINE_PRIMITIVE_ARITHMETIC(primitiveMultiply, *, 1)
+DEFINE_PRIMITIVE_ARITHMETIC(primitiveDivide, /, 1)
 
 Object *primitiveMod(Object **args, GC_PARAM) {
     if (*args == nil)
         return one;
-    else if ((*args)->car->type != TYPE_NUMBER)
-        exceptionWithObject(&flisp, (*args)->car, FLISP_WRONG_TYPE, "(%% dividend ..) - dividend is not a number");
-    else {
+    if ((*args)->car->type == TYPE_NUMBER) {
         Object *object, *rest;
-
+        
         if ((*args)->cdr == nil) {
             object = one;
             rest = *args;
@@ -1244,42 +1257,39 @@ Object *primitiveMod(Object **args, GC_PARAM) {
             object = newObjectFrom(gcFirst, GC_ROOTS);
             rest = (*args)->cdr;
         }
-
+        
         for (; rest != nil; rest = rest->cdr) {
             if (rest->car->type != TYPE_NUMBER)
                 exceptionWithObject(&flisp, rest->car, FLISP_WRONG_TYPE, "(%% dividend divisor ..) - divisor is not a number");
-
+            
             object->number = (int)object->number % (int)rest->car->number;
         }
 
         return object;
     }
+    exceptionWithObject(&flisp, (*args)->car, FLISP_WRONG_TYPE, "(%% dividend ..) - dividend is not a number");
+    __builtin_unreachable();
 }
 
 
-DEFINE_PRIMITIVE_ARITHMETIC(primitiveAdd, +, 0)
-    DEFINE_PRIMITIVE_ARITHMETIC(primitiveSubtract, -, 0)
-    DEFINE_PRIMITIVE_ARITHMETIC(primitiveMultiply, *, 1)
-    DEFINE_PRIMITIVE_ARITHMETIC(primitiveDivide, /, 1)
-
 #define DEFINE_PRIMITIVE_RELATIONAL(name, op)                           \
     Object *name(Object **args, GC_PARAM) {                             \
-        if ((*args)->car->type != TYPE_NUMBER)                          \
-            exceptionWithObject(&flisp, (*args)->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " arg ..) - arg is not a number"); \
-        else {                                                          \
-            Object *rest = *args;                                       \
-            bool result = true;                                         \
+    if ((*args)->car->type == TYPE_NUMBER) {                            \
+        Object *rest = *args;                                           \
+        bool result = true;                                             \
                                                                         \
-            for (; result && rest->cdr != nil; rest = rest->cdr) {      \
-                if (rest->cdr->car->type != TYPE_NUMBER)                \
-                    exceptionWithObject(&flisp, rest->cdr->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " number arg ..) - arg is not a number"); \
+        for (; result && rest->cdr != nil; rest = rest->cdr) {          \
+            if (rest->cdr->car->type != TYPE_NUMBER)                    \
+                exceptionWithObject(&flisp, rest->cdr->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " number arg ..) - arg is not a number"); \
                                                                         \
-                result &= rest->car->number op rest->cdr->car->number;  \
-            }                                                           \
-                                                                        \
-            return result ? t : nil;                                    \
+            result &= rest->car->number op rest->cdr->car->number;      \
         }                                                               \
-    }
+                                                                        \
+        return result ? t : nil;                                        \
+    }                                                                   \
+    exceptionWithObject(&flisp, (*args)->car, FLISP_WRONG_TYPE, "(" CPP_XSTR(op) " arg ..) - arg is not a number"); \
+    __builtin_unreachable();                                            \
+}
 
 DEFINE_PRIMITIVE_RELATIONAL(primitiveEqual, ==)
 DEFINE_PRIMITIVE_RELATIONAL(primitiveLess, <)
@@ -1536,7 +1546,7 @@ Object *os_getenv(Object ** args, GC_PARAM)
 Object *file_fopen(Interpreter *interp, char *path, char* mode) {
     FILE * fd;
     Object *gcRoots = interp->theRoot;
-    
+
     if (strcmp("<", mode) == 0) {
         fd = fmemopen(path, strlen(path), "r");
         if (fd == NULL) {
@@ -1572,7 +1582,7 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
         }
         return newStreamObject(fd, path, GC_ROOTS);
     }
-    
+
     fd = fopen(path, mode);
     if (fd == NULL) {
         exception(interp, FLISP_IO_ERROR, "failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
@@ -1593,34 +1603,17 @@ no_handler:
  */
 int file_fclose(Interpreter *interp, Object *stream)
 {
-    int result;
-    jmp_buf exceptionEnv;
-
-    if (interp->stackframe == NULL) {
-        interp->stackframe = &exceptionEnv;
-        return file_fclose(interp, stream);
-    }
-    else if (interp->stackframe == &exceptionEnv) {
-        if (setjmp(exceptionEnv)) {
-            interp->stackframe = NULL;
-            return EOF;
-        }
-    }
-    
     if (stream->fd == NULL) {
         exception(interp, FLISP_INVALID_VALUE, "(fclose arg) - stream arg already closed");
-        goto no_handler;
+        // if we fall through exception
+        return interp->result;
     }
     // Note: we thought we needed to do this: but we get segfaulted. why?
     //if (stream->buf != NULL)
     //    free(stream->buf);
-    result = (fclose(stream->fd) == EOF) ? errno : 0;
-    if (!result)
-        stream->fd = NULL;
-    return result;
-
-no_handler:
-    return interp->result;
+    if (fclose(stream->fd) == EOF) return errno;
+    stream->fd = NULL;
+    return 0;
 }
 int file_fflush(Interpreter *interp, Object *stream)
 {
@@ -2398,6 +2391,14 @@ Interpreter *lisp_init(int argc, char **argv, char *library_path)
 
     return &flisp;
 }
+
+void lisp_flush_output(Interpreter *interp)
+{
+    int result;
+    if ((result = file_fflush(interp, interp->output))) {
+        exceptionWithObject(interp, interp->output, FLISP_IO_ERROR, "failed to fflush output stream, errno: %d", result);
+    }
+}
 /** lisp_eval(interp) - protected evaluation of interpreters input stream
  *
  * @param interp  fLisp interpreter
@@ -2410,7 +2411,6 @@ ResultCode lisp_eval(Interpreter *interp)
 {
     // gcRoots is needed by GC_TRACE
     Object *gcRoots = interp->theRoot;
-    int result;
 
     GC_TRACE(gcObject, nil);
 
@@ -2418,17 +2418,8 @@ ResultCode lisp_eval(Interpreter *interp)
 
         switch (setjmp(*interp->stackframe)) {
         case FLISP_OK: break;
-
-        case FLISP_USER: return FLISP_USER;
-        case FLISP_READ_INCOMPLETE: return FLISP_READ_INCOMPLETE;
-        case FLISP_READ_INVALID: return FLISP_READ_INVALID;
-        case FLISP_WRONG_TYPE: return FLISP_WRONG_TYPE;
-        case FLISP_INVALID_VALUE: return  FLISP_INVALID_VALUE;
-        case FLISP_PARAMETER_ERROR: return  FLISP_PARAMETER_ERROR;
-        case FLISP_IO_ERROR: return FLISP_IO_ERROR;
-        case FLISP_OOM: return FLISP_OOM;
-        case FLISP_GC_ERROR: return FLISP_GC_ERROR;
-        default: return FLISP_ERROR; /* includes FLISP_ERROR itself */
+        case FLISP_RETURN: return FLISP_OK;
+        default: return FLISP_ERROR;
         }
 
         *gcObject = nil;
@@ -2436,19 +2427,18 @@ ResultCode lisp_eval(Interpreter *interp)
         if (peekNext(interp) == EOF) {
             writeChar(interp->output, '\n');
             interp->object = *gcObject;
-            return FLISP_OK;
+            lisp_flush_output(interp);
+            //return FLISP_OK;
+            break;
         }
         *gcObject = readExpr(interp);
         *gcObject = evalExpr(gcObject, interp->theEnv, GC_ROOTS);
         writeObject(interp->output, *gcObject, true);
         writeChar(interp->output, '\n');
-        if ((result = file_fflush(interp, interp->output))) {
-            exceptionWithObject(interp, interp->output, FLISP_IO_ERROR, "failed to fflush output stream, errno: %d", result);
+        lisp_flush_output(interp);
         }
-    }
+    longjmp(*interp->stackframe, FLISP_RETURN);
 }
-
-
 
 /** lisp_eval_string() - interpret a string in Lisp
  *
@@ -2472,7 +2462,7 @@ ResultCode lisp_eval(Interpreter *interp)
  */
 ResultCode lisp_eval_string(Interpreter *interp, char * input)
 {
-    jmp_buf exceptionEnv;
+    jmp_buf exceptionEnv, *prevEnv;
     ResultCode result;
 
     fl_debug(interp, "lisp_eval_string(\"%s\")", input);
@@ -2481,22 +2471,22 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
     interp->result = FLISP_OK;
 
     if (nil == (interp->input = file_fopen(interp, input, "<")))
+        // If falling through exception:
         return interp->result;
-    
-    interp->stackframe = &exceptionEnv;
 
+    prevEnv = interp->stackframe;
+    interp->stackframe = &exceptionEnv;
     result = lisp_eval(interp);
-    fl_debug(interp, "lisp_eval_string() => %d", result);
-    if (file_fflush(interp, interp->output)) {
-        interp->result = FLISP_IO_ERROR;
-        strncpy(interp->message, "failed to fflush output stream", sizeof(interp->message));
-    }
+    interp->stackframe = prevEnv;
+
+    fl_debug(interp, "lisp_eval_string() => %d", interp->result);
     if (result)
         fl_debug(interp, "lisp_eval_string() => error: %s", interp->message);
     if (file_fflush(interp, interp->debug)) {
         interp->result = FLISP_IO_ERROR;
         strncpy(interp->message, "failed to fflush debug stream", sizeof(interp->message));
     }
+    //if (interp->stackframe != NULL) longjmp(interp->stackframe, result);
     return result;
 }
 

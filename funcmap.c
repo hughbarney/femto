@@ -368,7 +368,7 @@ void execute_command()
         if (funct == NULL || funct == user_func) {
             
             if (eval_string(true, "(%s)", command_name) != NULL)
-                close_eval();
+                close_eval_output();
         } else {
             (funct)();
         }

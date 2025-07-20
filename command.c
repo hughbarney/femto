@@ -779,7 +779,7 @@ void repl()
         append_string(bp, output);
         (void)popup_window(bp->b_bname);
     }
-    close_eval();
+    close_eval_output();
 }
 
 /*
@@ -799,29 +799,26 @@ void eval_block()
     assert(strlen((char *)scrap) > 0);
 
     insert_string("\n");
-    
+
     if ((output = eval_string(false, (char *)scrap)) == NULL)
         return;
     // Note: femto used to insert error messages in the current buffer. Now we don't anymore.
     insert_string(output);
-    close_eval();
+    // Note: we'd segfault here if m-c-]. 
+    //close_eval_output();
 }
 
 /* this is called for every user key setup by a call to set_key */
 void user_func()
 {
-    char funcname[80];
-
     assert(key_return != NULL);
     if (0 == strcmp(key_return->k_funcname, E_NOT_BOUND)) {
         msg(E_NOT_BOUND);
         return;
     }
 
-    sprintf(funcname, "(%s)", key_return->k_funcname);
-    if (eval_string(false, funcname) == NULL)
-        return;
-    close_eval();
+    if (eval_string(true, "(%s)", key_return->k_funcname) != NULL)
+        close_eval_output();
 }
 
 /*
