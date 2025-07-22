@@ -384,6 +384,16 @@ in [flisp.html](pdoc/flisp.html) or [flisp.md](docs/flisp.md) respectively.
 
 ## Building
 
+### Build and Installation
+
+These instructions should work with most versions of linux
+
+    $ cd $HOME
+    $ mkdir -p ~/src
+    $ git clone https://github.com/hughbarney/femto.git
+    $ cd femto
+    $ sudo make install
+
 ### Documentation
 
 Femto comes with Markdown and HTML documentation. To rebuild the
