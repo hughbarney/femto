@@ -81,5 +81,7 @@
  config_dir ".config/femto"
  config_file "femto.rc")
 
-(load (confn config_file))
+(setq rc (system (concat "test -f " (confn config_file))))
+(cond ((= 0 rc) (load (confn config_file))))
+
 (getopts argv 0)

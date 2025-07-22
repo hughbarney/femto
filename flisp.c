@@ -4,29 +4,24 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include "lisp.h"
+
+// Specify in kByte.
+#define FLISP_MEMORY_SIZE   300
+// less then this is too small for femto.lsp
+
 
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
 
-Interpreter *interp;
-Object *stderrStream;
 ResultCode result;
 
 // Note: wouldn't need, if we could implement the repl in fLisp
 #define INPUT_BUFSIZE 4095
 char input[INPUT_BUFSIZE+1]; // Note: termios paste limit or so
-
-#define FLUSH_STDOUT \
-    if (file_fflush(interp, interp->output)) \
-        fatal("failed to flush output stream")
-#define FLUSH_STDERR \
-    if (file_fflush(interp, stderrStream)) \
-        fatal("failed to flush error stream")
-
 
 void fatal(char *msg)
 {
@@ -41,103 +36,81 @@ void fatal(char *msg)
 int repl(Interpreter *interp)
 {
     size_t i;
+    ResultCode result;
 
-    writeString(interp->output, FL_NAME " " FL_VERSION "\n");
+    puts(FL_NAME " " FL_VERSION);
+    puts("exit with Ctrl+D");
     while (true) {
-        writeString(interp->output, "> ");
-        FLUSH_STDOUT;
-        FLUSH_STDERR;
+        printf("> ");
+        fflush(stdout);
 
         if (!fgets(input, sizeof(input), stdin)) break;
         i=strlen(input);
         if (input[i-1] == '\n')
             input[i-1] = '\0';
         else {
-            writeString(stderrStream, "error: more then " CPP_STR(INPUT_BUFSIZ) "read, skipping...\n");
+            fprintf(stderr, "error: more then " CPP_STR(INPUT_BUFSIZ) "read, skipping...\n");
+            fflush(stderr);
             continue;
         }
 
-        if (lisp_eval_string(interp, input)) {
-            writeString(stderrStream, "error: ");
-            if (interp->object != nil) {
-                writeString(stderrStream, "object '");
-                writeObject(stderrStream, interp->object, true);
-                writeString(stderrStream, "', ");
-            }
-
-            writeString(stderrStream, interp->message);
-            writeChar(stderrStream, '\n');
-        }
+        if (lisp_eval_string(interp, input))
+            lisp_write_error(interp, stderr);
     }
-    if (ferror(interp->input->fd))
-        fatal("failed to read input stream");
-
-    FLUSH_STDOUT;
-    FLUSH_STDERR;
-
-    return interp->result;
+    result = interp->result;
+    // Note: close output, error?
+    lisp_destroy(interp);
+    return result;
 }
 
 int main(int argc, char **argv)
 {
     char *library_path, *init_file, *debug_file;
-    jmp_buf exceptionEnv;
+    FILE *fd = NULL;
+    Interpreter *interp;
 
     if ((init_file = getenv("FLISPRC")) == NULL)
         init_file = FL_LIBDIR "/" FL_INITFILE;
 
     if ((library_path=getenv("FLISPLIB")) == NULL)
-        library_path = CPP_XSTR(FL_LIBDIR);
+        library_path = FL_LIBDIR;
 
-    interp = lisp_init(argc, argv, library_path);
+    debug_file=getenv("FLISP_DEBUG");
+    if (debug_file != NULL) {
+        if (!(fd = fopen(debug_file, "w")))
+            fprintf(stderr, "failed to open debug file %s for writing: %d\n", debug_file, errno);
+    }
+
+    interp = lisp_new(FLISP_MEMORY_SIZE*1024, argv, library_path, stdin, stdout, fd);
     if (interp == NULL)
         fatal("fLisp interpreter initialization failed");
 
-    debug_file=getenv("FLISP_DEBUG");
-
-    if (nil == (interp->output = file_fopen(interp, ">1", "a")))
-        fatal("could not open output stream");
-    if (nil == (stderrStream = file_fopen(interp, ">2", "a")))
-        fatal("could not open error stream");
-    if (debug_file != NULL)
-        if (nil == (interp->debug = file_fopen(interp, debug_file, "w")))
-            fprintf(stderr, "failed to open debug file %s:%d: %s\n", debug_file, interp->result, interp->message);
-
     if (strlen(init_file)) {
-        if (nil == (interp->input = file_fopen(interp, init_file, "r")))
-            fprintf(stderr, "failed to open inifile %s:%d: %s\n", init_file, interp->result, interp->message);
+        if (!(fd = fopen(init_file, "r")))
+            fprintf(stderr, "failed to open inifile %s: %d\n", init_file, errno);
         else {
-            interp->stackframe = &exceptionEnv;
-            // Note: if we could implement the repl in fLisp itself we'd bail out here.
+            // load inifile
+            interp->input = fd;
             if (lisp_eval(interp))
-                fprintf(stderr, "failed to load inifile %s:%d: %s\n", init_file, interp->result, interp->message);
-            interp->stackframe = NULL;
-            if (file_fclose(interp, interp->input))
+                    fprintf(stderr, "failed to load inifile %s:%d: %s\n", init_file, interp->result, interp->message);
+            // Note: if we could implement the repl in fLisp itself we'd bail out here.
+            if (fclose(fd))
                 fprintf(stderr, "failed to close inifile %s:%d %s\n", init_file, interp->result, interp->message);
         }
     }
-    if (nil == (interp->input = file_fopen(interp, "<0", "r")))
-        fatal("failed to open input stream");
-
+    // Start repl
     //Note: could be omitted if we could implement the repl in fLisp itself.
-    if (isatty(fileno(interp->input->fd)))
+    if (isatty(0))
         return repl(interp);
 
-    interp->stackframe = &exceptionEnv;
-    result = lisp_eval(interp);
-    FLUSH_STDOUT;
-    if (result) {
-        writeString(stderrStream, "error: ");
-        if (interp->object != nil) {
-            writeString(stderrStream, "object '");
-            writeObject(stderrStream, interp->object, true);
-            writeString(stderrStream, "', ");
-        }
-        writeString(stderrStream, interp->message);
-        FLUSH_STDERR;
-        return result;
-    }
-    return 0;
+    // Just eval the standard input
+    interp->input = stdin;
+    if (lisp_eval(interp))
+        lisp_write_error(interp, stderr);
+
+    result = interp->result;
+    //lisp_destroy(interp);
+    return result;
 }
 
 /*

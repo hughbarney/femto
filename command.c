@@ -553,7 +553,7 @@ void log_debug_message(char *format, ...)
     va_list args;
 
     va_start(args, format);
-    vsprintf(buffer, format, args);
+    (void)vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
     log_message(buffer);
@@ -715,7 +715,7 @@ void resize_terminal()
 /* return char at current point */
 char *get_char()
 {
-    static char ch[2] = "\0\0";
+    static char ch[2] = "\0";
     ch[0] = (char)*(ptr(curbp, curbp->b_point));
     return ch;
 }
@@ -771,7 +771,7 @@ void repl()
     //       Decision about whether to insert the result into the
     //       buffer or show it in the message line is done based on
     //       key pressed/function invoked
-    
+
     if (strlen(output) < 60) {
         msg(output);
     } else {
@@ -779,7 +779,7 @@ void repl()
         append_string(bp, output);
         (void)popup_window(bp->b_bname);
     }
-    close_eval_output();
+    free_lisp_output();
 }
 
 /*
@@ -788,7 +788,7 @@ void repl()
 void eval_block()
 {
     char *output;
-    
+
     if (curbp->b_mark == NOMARK || curbp->b_mark >= curbp->b_point) {
         msg("no block defined");
         return;
@@ -804,8 +804,7 @@ void eval_block()
         return;
     // Note: femto used to insert error messages in the current buffer. Now we don't anymore.
     insert_string(output);
-    // Note: we'd segfault here if m-c-]. 
-    //close_eval_output();
+    free_lisp_output();
 }
 
 /* this is called for every user key setup by a call to set_key */
@@ -817,8 +816,9 @@ void user_func()
         return;
     }
 
-    if (eval_string(true, "(%s)", key_return->k_funcname) != NULL)
-        close_eval_output();
+    if (eval_string(true, "(%s)", key_return->k_funcname) == NULL)
+        return;
+    free_lisp_output();
 }
 
 /*

@@ -43,18 +43,18 @@ point_t segstart(buffer_t *bp, point_t start, point_t finish)
 /* Forward scan for start of logical line segment following 'finish' */
 point_t segnext(buffer_t *bp, point_t start, point_t finish)
 {
-    char_t *p;
+    point_t scan = segstart(bp, start, finish);
+    char_t *p = ptr(bp, scan);
     int c = 0;
 
-    point_t scan = segstart(bp, start, finish);
     for (;;) {
-        p = ptr(bp, scan);
         if (bp->b_ebuf <= p || COLS <= c)
             break;
         scan += utf8_size(*ptr(bp,scan));
         if (*p == '\n')
             break;
         c += *p == '\t' ? 8 - (c & 7) : 1;
+        p = ptr(bp, scan);
     }
     return (p < bp->b_ebuf ? scan : pos(bp, bp->b_ebuf));
 }
@@ -99,6 +99,17 @@ void display_char(buffer_t *bp, char_t *p)
     }
     addch(*p);
 }
+
+void dispmsg()
+{
+    move(MSGLINE, 0);
+    if (msgflag) {
+        addstr(msgline);
+        msgflag = FALSE;
+    }
+    clrtoeol();
+}
+
 
 void display(window_t *wp, int flag)
 {
@@ -153,7 +164,7 @@ void display(window_t *wp, int flag)
                 /* reset if invalid multi-byte character */
                 if (mbtowc(&c, (char*)p, 6) < 0) mbtowc(NULL, NULL, 0); 
                 j += wcwidth(c) < 0 ? 1 : wcwidth(c);
-                display_utf8(bp, *p, nch);
+                display_utf8(bp, nch);
             } else if (isprint(*p) || *p == '\t' || *p == '\n') {
                 j += *p == '\t' ? 8-(j&7) : 1;
                 token_type = parse_text(bp, bp->b_epage);
@@ -191,7 +202,7 @@ void display(window_t *wp, int flag)
     wp->w_update = FALSE;
 }
 
-void display_utf8(buffer_t *bp, char_t c, int n)
+void display_utf8(buffer_t *bp, int n)
 {
     char sbuf[6];
     int i = 0;
@@ -222,16 +233,6 @@ void modeline(window_t *wp)
     for (i = strlen(modeline) + 1; i <= COLS; i++)
         addch(lch);
     attron(COLOR_PAIR(ID_SYMBOL));
-}
-
-void dispmsg()
-{
-    move(MSGLINE, 0);
-    if (msgflag) {
-        addstr(msgline);
-        msgflag = FALSE;
-    }
-    clrtoeol();
 }
 
 void clear_message_line()

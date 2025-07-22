@@ -89,7 +89,8 @@ language.
   expectations.
 * In late 2017 Hugh Barney decided to return to the **Femto** editor
   and extend it using Tiny-Lisp.
-* In 2023/24 Georg Lehner refactored the Lisp infrastructure.
+* In 2023/24/25 Georg Lehner refactored the Lisp infrastructure and
+  started to add additional Emacs functionality.
 
 For a full version history please refer to the file [CHANGE.LOG.md](./CHANGE.LOG.md)
 
@@ -104,7 +105,7 @@ for a codebase about 15% of the size.
     atto           atto       33002     1.9k      10
     pEmacs         pe         59465     5.7K      16
     Esatz-Emacs    ee         59050     5.7K      14
-    femto          femto     120872     8.9k/6.3k 20/30 **
+    femto          femto     141456  9.3k/6.6k 22/33 **
     GNOME          GNOME      55922     9.8k      13
     Zile           zile      257360    11.7k      48
     Mg             mg        585313    16.5K      50
@@ -301,7 +302,7 @@ mode. It provides the 'core' functionality.
 
 Standard Lisp function:
 
-* `defmacro`, `defun`, `string`, `concat`, `memq`, 
+* `defmacro`, `defun`, `string`, `concat`, `memq`, `load`
 
 Lisp library functions:
 

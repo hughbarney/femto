@@ -300,7 +300,7 @@ void list_buffers()
             over_ch = ((bp->b_flags & B_OVERWRITE) ? 'O' : ' ');
             bn = (bp->b_bname[0] != '\0' ? bp->b_bname : blank);
             fn = (bp->b_fname[0] != '\0' ? bp->b_fname : blank);
-            sprintf(report_line, "%c%c %7d %-16s %s\n",  mod_ch, over_ch, bp->b_size, bn, fn);
+            snprintf(report_line, sizeof(report_line),  "%c%c %7d %-16s %s\n",  mod_ch, over_ch, bp->b_size, bn, fn);
             insert_string(report_line);
         }
         bp = bp->b_next;

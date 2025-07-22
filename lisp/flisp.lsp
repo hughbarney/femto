@@ -2,6 +2,8 @@
 
 ;; Expected Lisp idioms
 
+(require 'core)
+
 (setq not null)
 (defun listp (x) (cond ((null x)) ((consp x))))
 
@@ -9,8 +11,7 @@
   (cond
     ((null args))
     ((null (cdr args)) (car args))
-    ((null (car args)) nil) ;; Note: unnecessary optimization?
-    (t (cons 'cond (list (list (car args) (cons 'and (cdr args)))))) ))
+    (t (list 'cond (list (car args) (cons 'and (cdr args)))))))
 
 (defun map1 (func xs)
   (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))
@@ -48,5 +49,4 @@
 (defun nth (n list)
   (car (nthcdr n list)))
 
-(require 'core)
 (provide 'flisp)

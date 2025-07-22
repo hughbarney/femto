@@ -1,3 +1,52 @@
+## Femto 2.21/fLisp 0.5 May 2025
+
+Fix remaining gc issues with macros and re-instate and macro.
+
+
+## Femto 2.21/fLisp 0.4 May 2025
+
+The fLisp interpreter has been refactored. Code has been moved around
+and put into order. The GC tracing code has been changed and does not
+use the heap anymore. GC tracing has been reduced as much as
+possible. The interpreter does not rely on global variables anymore,
+everything is hold in a single `Interpreter` struct.
+
+Garbage collection has been stressed extensively and no segfault has
+been experienced anymore.
+
+
+## Femto 2.21 28 October 2024
+
+This release introduces a separation between the fLisp interpreter and
+the Femto editor.  A simple Lisp command line interpreter can be built
+as `flisp`.
+
+The editor extensions are extracted out of lisp.c and included on
+demand.  lisp.c code has been completely reordered and follows
+roughly the order: memory, reader, evaluation, writer, primitives,
+interpreter.
+
+Lisp initialization allocates memory dynamically, it receives now the
+input and output stream as parameters and exposes them in Lisp as
+`STDIN` and `STDOUT`.
+
+Lisp primitives `fread`, `write` and `gc` have been added, `load`,
+`print` and `printc` are moved out into the `core` and `stdlib` Lisp
+library.  `:` has been added to the syntax, to allow for keyword
+arguments.
+
+Both inline documentation and the fLisp manual have been extended.
+The latter includes information on the Lisp libraries and embedding of
+fLisp in C code.
+
+The Lisp tests have been reactivated and use the `flisp` interpreter
+instead of the `femto` binary.  The Lisp debug facility has been
+stabilized and is used in more places.
+
+Some potential buffer overflow and missing initialization has been
+fixed.
+
+
 ## Femto 2.20 18 October 2024
 
 fLisp input/output is now based on libc file I/O instead of the
@@ -15,7 +64,7 @@ exposes the stream functionality to Lisp.
 A simplistic standalone Lisp interpreter can be built via the `flisp`
 target and a README.flisp.md file is provided.
 
-Code has been extensibly documented in the source.
+Code has been extensively documented in the source.
 
 
 ## Femto 2.19 11 October 2024

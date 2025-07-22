@@ -5,16 +5,38 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <errno.h>
 #include "header.h"
 
-void load_config(); /* Load configuration/init file */
 void gui(); /* The GUI loop used in interactive mode */
 
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
 
-Interpreter *flisp_interp;
-FILE *debug_fp = NULL;
+static Interpreter *interp;
+char debug_file[] = "debug.out";
+FILE *prev, *debug_fp = NULL;
+char* output;
+size_t len;
+
+void load_config(char *file)
+{
+    FILE *fd;
+    if (!(fd = fopen(file, "r"))) {
+        debug("failed to open file %s: %d", file, errno);
+        return;
+    }
+    interp->input = fd;
+    interp->output = debug_fp;
+    if (lisp_eval(interp)) {
+        debug("failed to load file %s: %ul - %s\n", file, interp->result, interp->message);
+        lisp_write_error(interp, debug_fp);
+    }
+    interp->input = interp->output = NULL;
+
+    if (fclose(fd))
+        debug("failed to close file %s\n", file);
+}
 
 int main(int argc, char **argv)
 {
@@ -26,20 +48,13 @@ int main(int argc, char **argv)
     if ((library_path=getenv("FEMTOLIB")) == NULL)
         library_path = CPP_XSTR(E_SCRIPTDIR);
 
-
-    /* Lisp interpreter */
-    flisp_interp = lisp_init(argc, argv, library_path);
-    if (flisp_interp == NULL)
-        fatal("fLisp initialization failed");
-
     if ((init_file = getenv("FEMTORC")) == NULL)
         init_file = CPP_XSTR(E_INITFILE);
 
-    if (debug_mode) {
-        if (nil == (flisp_interp->debug = file_fopen(flisp_interp, "debug.out", "w")))
-            fatal("could not open debug stream");
-        debug_fp = flisp_interp->debug->fd;
-    }
+    if (debug_mode)
+        if (!(debug_fp = fopen(debug_file, "w")))
+            fatal("could not open debug file");
+
     debug("start\n");
 
     /* buffers */
@@ -51,26 +66,42 @@ int main(int argc, char **argv)
     wheadp = curwp = new_window();
     associate_b2w(curbp, curwp);
 
-    /* Lisp startup */
     setup_keys();
-    
-    if (strlen(init_file)) {
-        // Note: not lisp_eval()'ing it, because we want to have
-        //     consistent error handling.
-        if (eval_string(true, "(load \"%s\")", init_file) != NULL)
-            close_eval_output();
-    }
-    
+
+    /* Lisp interpreter */
+    interp = lisp_new(FLISP_MEMORY_SIZE, argv, library_path, NULL, NULL, debug_fp);
+    if (interp == NULL)
+        fatal("fLisp initialization failed");
+
+    if (strlen(init_file))
+        load_config(init_file);
+
     /* GUI */
     if (!batch_mode) gui();
 
     debug("main(): shutdown\n");
     // Note: exit frees all memory, do we need this here?
+    // Note: we can't do
+    //lisp_destroy(interp);
+    //here, because we get segfaults in wide character routines.
     if (scrap != NULL) free(scrap);
     return 0;
 }
 
-char *eval_string(int do_format, char *format, ...)
+void msg_lisp_err(Interpreter *interp)
+{
+    char *buf;
+    size_t len;
+    FILE *fd;
+    if (NULL == (fd = open_memstream(&buf, &len)))
+        fatal("failed to allocate error formatting buffer");
+    lisp_write_error(interp, fd);
+    msg("%s", buf);
+    fclose(fd);
+    free(buf);
+}
+
+char *eval_string(bool do_format, char *format, ...)
 {
     char buf[INPUT_FMT_BUFSIZ], *input;
     int size;
@@ -89,28 +120,27 @@ char *eval_string(int do_format, char *format, ...)
         input = format;
     }
 
-    if (nil == (flisp_interp->output = file_fopen(flisp_interp, "", ">")))
-        fatal("could not open string output stream");
-
-    if ((lisp_eval_string(flisp_interp, input)))
-        msg("error: %s", flisp_interp->message);
+    prev = interp->output;  // Note: save for double invocation with user defined functions.
+    interp->output = open_memstream(&output, &len);
+    if ((lisp_eval_string(interp, input)))
+        msg_lisp_err(interp);
     if (debug_mode) {
-        if (flisp_interp->result)
-            debug("error: %s\n", flisp_interp->message);
+        if (interp->result)
+            lisp_write_error(interp, debug_fp);
+        debug("=> %s\n", output);
     }
-    debug(flisp_interp->output->buf);
-    if (flisp_interp->result) {
-        // Note: close output buf...? if we get segfaults.
-        //close_eval_output();
+    if (interp->result) {
+        free_lisp_output();
         return NULL;
     }
-    return flisp_interp->output->buf;
+    return output;
 }
-void close_eval_output()
+void free_lisp_output()
 {
-    assert(flisp_interp->output->fd != NULL);
-    if (file_fclose(flisp_interp, flisp_interp->output))
-        debug("error: closing output stream");
+    fflush(interp->output);
+    fclose(interp->output);
+    free(output);
+    interp->output = prev;
 }
 
 void gui()
@@ -197,14 +227,8 @@ void debug(char *format, ...)
     va_list args;
 
     if (debug_fp == NULL) return;
-//    if (!debug_mode) return;
 
     va_start (args, format);
-
-//    static FILE *debug_fp = NULL;
-
-//    if (debug_fp == NULL)
-//        debug_fp = fopen("debug.out","w");
 
     vsnprintf (buffer, sizeof(buffer), format, args);
     va_end(args);

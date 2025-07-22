@@ -6,7 +6,6 @@
 
 : ${VERBOSE:=}
 
-
 [ "$1" = "-?" ] && {
     cat <<EOF
 Femto test suite
@@ -47,28 +46,52 @@ ok () {
 
 [ $# = 0 ] && set -- *.test
 
-femto () { ../femto "$@"; }
+export FLISP_DEBUG=f.log
 
 # pipe expr $IN to fLisp, extract $1 last values of output, default 1. Filters trailing 't.
 # Compare output with $OUT
 flisp_expr () {
+    [ "$( echo -n "$IN" | ../flisp | tail -n ${1:-5})" = "$OUT" ]
+}
+flisp_err () {
+    echo -n "$IN" | ../flisp 2>&1 | tail -n ${1:-5} |{
+	read PRE REST
+	: $PRE
+	: $REST
+	MSG=${REST#*, }
+	[ "$OBJ" ] && {
+	    EOBJ=${REST%%\',*}
+	    EOBJ=${EOBJ#\'}
+	    [ "$PRE" = "error:" -a "$MSG" = "$ERR" -a "$OBJ" = "$EOBJ" ]
+	    RC=$? ERR= OBJ=
+	    return $RC
+	}
+	[ "$PRE" = "error:" -a "$MSG" = "$ERR" ]
+	RC=$? PRE= OBJ=
+	return $RC
+    }
+}
+
+femto_expr () {
     [ "$( echo -n "$IN" | FEMTO_BATCH=1 FEMTORC=- FEMTOLIB=../lisp ../femto | tail -n $(($1+3)) )" = "$OUT
 t" ]
 }
-flisp_err () {
+femto_err () {
     [ "$( echo -n "$IN" | FEMTO_BATCH=1 FEMTORC=- FEMTOLIB=../lisp ../femto | tail -n $(($1+3)) )" = "$OUT
 nil" ]
 }
 
+if [ "$SUMMARY" ]; then SUMMARY=./tapview; else SUMMARY=cat; fi
 
 for test; do  (
     #mkdir -p tmp
     #rm -rf tmp/*
 
-    export FEMTO_BATCH=1
-    export FEMTO_DEBUG=1
-    export FEMTORC=-
     export FEMTOLIB=../lisp
-    . ./${test}
+    export FLISPLIB=../lisp
+    echo testsuite: $test
+    [ "$VERBOSE" ] && set -x
+    . ./${test} | $SUMMARY
+    set +x
 ); done
 #rm -rf tmp

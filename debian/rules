@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+
+clean:
+	@make clean
+	echo rm -rf $(DESTDIR)
+
+build:
+	@make doc DESTDIR=debian/femto
+	@make DESTDIR=debian/femto PREFIX=/usr
+
+binary:
+	make install DESTDIR=debian/femto PREFIX=/usr
+	dh_gencontrol
+	dh_builddeb

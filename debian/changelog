@@ -1,0 +1,19 @@
+femto (2.21.7-1) bookworm; urgency=medium
+
+  * Improve doc build, maintenance release.
+ -- Georg Lehner <jorge@magma-soft.at>  Tue, 17 Jun 2025 09:34:17 +0100
+
+femto (2.21.6-1) bookworm; urgency=medium
+
+  * Fix macro gc, maintenance release.
+ -- Georg Lehner <jorge@magma-soft.at>  Thu, 29 May 2025 04:47:25 +0100
+
+femto (2.21.5-1) bookworm; urgency=medium
+
+  * Reworked fLisp garbage collector, maintenance release.
+ -- Georg Lehner <jorge@magma-soft.at>  Wed, 28 May 2025 19:31:43 +0100
+
+femto (2.21.4-1) bookworm; urgency=medium
+
+  * Initial Debian packaging.
+ -- Georg Lehner <jorge@magma-soft.at>  Mon, 28 Oct 2024 18:26:21 +0100

@@ -1,0 +1,249 @@
+#!./run
+# test executable and fLisp functionality
+# leg20231128: Femto
+
+export FLISPRC=
+
+tap 63
+
+[ -x ../femto ]
+ok femto-1 femto exists and is executable;
+
+(FEMTORC= FEMTO_BATCH=1 ../femto >/dev/null)
+ok femto-2 w/o femto.rc femto in batch mode succeds
+
+(: | FEMTORC=- FEMTO_BATCH=1 ../femto >/dev/null)
+ok femto-3 empty input succeeds
+
+[ -x ../flisp ]
+ok flisp-1 flisp exists and is executable;
+
+(: | FLISPRC= ../flisp)
+ok flisp-2 empty input succeeds
+
+# reader
+IN='(' ERR='unexpected end of stream in list'
+flisp_err; ok reader-1 incomplete sexp error msg
+
+IN='"' ERR='unexpected end of stream in string literal'
+flisp_err; ok reader-2 incomplete string error msg
+
+IN='\\' ERR="\`'" OBJ="unexpected character, \`'"
+flisp_err; ok reader-3 unexpected character error msg
+
+IN="0" OUT='0'
+flisp_expr; ok reader-4 read number
+
+IN="t" OUT='t'
+flisp_expr; ok reader-5 read constant t
+
+IN="nil" OUT='nil'
+flisp_expr; ok reader-6 read constant nil
+
+IN="()" OUT='nil'
+flisp_expr; ok reader-7 read empty list
+
+IN="(quote a)" OUT='a'
+flisp_expr; ok reader-8 read quote-ed yields symbol
+
+IN="'a" OUT='a'
+flisp_expr; ok reader-9 read tick-quoted yields symbol
+
+IN=":a" OUT='a'
+flisp_expr; ok reader-10 read colon-quoted yields symbol
+
+IN="'(0 (\"a\" b))" OUT='(0 ("a" b))'
+flisp_expr; ok reader-11 read nested list
+
+IN="'(0 . 1)" OUT='(0 . 1)'
+flisp_expr; ok reader-12 read dotted pair
+
+IN="'(0 1 . 2)" OUT='(0 1 . 2)'
+flisp_expr; ok reader-13 read dotted list
+
+IN="'(0 1 . 2 3)" ERR="unexpected object at end of dotted list" OBJ=
+flisp_err; ok reader-14 read dotted list with extra element
+
+IN="'(0 1 .)" ERR="expected object at end of dotted list" OBJ=
+flisp_err; ok reader-15 read dotted list without cdr
+
+IN="'(" ERR="unexpected end of stream in list" OBJ=
+flisp_err; ok reader-16 read list without end
+
+# Special forms
+IN='(quote)' ERR='expects at least 1 arguments' OBJ='#<Primitive quote>'
+flisp_err; ok quote-1 w/o arg error message
+
+IN="(setq var 'val)" OUT=val
+flisp_expr; ok setq-1 assignment returns value
+
+IN="(setq var 'val) var" OUT="val"
+flisp_expr 1; ok setq-2 var evaluates to val
+
+IN='(setq)' OUT=nil
+flisp_expr; ok setq-3 no args evaluate to nil
+
+IN='(setq var1)' OBJ='#<Primitive setq>' ERR='expects a multiple of 2 arguments'
+flisp_err; ok setq-4 one arg fails
+
+EXPR="(setq var1 'val1  var2 'val2)"
+IN="$EXPR" OUT=val2
+flisp_expr 1; ok setq-5 four args returns last value
+
+IN="$EXPR var1" OUT=val1
+flisp_expr 1; ok setq-6 four args first var evaluates to first value
+
+IN="$EXPR var2" OUT=val2
+flisp_expr 1; ok setq-7 four args second var evaluates to second value
+
+IN='(progn)' OUT=nil
+flisp_expr; ok progn-1 no args evaluate to nil
+
+IN="(progn 'one)" OUT=one
+flisp_expr; ok progn-2 one arg evaluates to arg
+
+IN="(progn (write 'first) 'second)" OUT=firstsecond
+flisp_expr 2; ok progn-3 two args evaluate in sequence
+
+# cond
+IN='(cond)'  OUT=nil
+flisp_expr; ok cond-1 empty cond gives nil
+
+IN='(cond nil)' OUT=nil
+flisp_expr; ok cond-2 cond with nil gives nil
+
+IN='(cond ())' OUT=nil
+flisp_expr; ok cond-3 cond with empty list gives nil
+
+IN='(cond ("a"))' OUT='"a"'
+flisp_expr; ok cond-4 cond with single string predictate gives string
+
+IN='(cond (0))' OUT=0
+flisp_expr; ok cond-5 cond with single number predicate gives number
+
+IN='(cond (nil))' OUT=nil
+flisp_expr; ok cond-6 cond with single nil predicate gives nil
+
+IN='(cond (t))' OUT=t
+flisp_expr; ok cond-7 cond with single t predictate gives t
+
+IN='(cond ("a" "b"))' OUT='"b"'
+flisp_expr; ok cond-8 cond with two string list gives second string
+
+IN='(cond nil (t "else"))' OUT='"else"'
+flisp_expr; ok cond-9 cond with t clause
+
+IN='(cond nil nil)' OUT=nil
+flisp_expr; ok cond-10 cond with nils gives nil
+
+IN='(cond nil ())' OUT=nil
+flisp_expr; ok cond-11 cond with nil and empty list gives nil
+
+IN='(cond nil ("a"))' OUT='"a"'
+flisp_expr; ok cond-12 cond with last expresion single string list gives its value
+
+IN="(cond nil ((consp (quote (a b)))))" OUT=t
+flisp_expr; ok cond-13 cond with last expresion funcall gives result
+
+IN='(cond . "a")' ERR='(cond args) - args is not a list: arg 0' OBJ='"a"'
+flisp_err; ok cond-14 fail if not called with a cons
+
+IN='(cond "a" ())' OBJ='"a"' ERR='(cond clause ..) - is not a list: clause'
+flisp_err; ok cond-15 fail if clause is not a cons
+
+IN='(cond (nil . "a"))' ERR='unexpected dot at start of list' OBJ=
+flisp_err; ok cond-16 fail if clause is cons with car nil - captured by reader
+
+IN='(cond (t . t))' ERR='(cond (pred action) ..) action is not a list' OBJ='(t . t)'
+flisp_err; ok cond-17 fail if t and clause action is not a list
+
+# lambda
+IN='(lambda nil)' OUT="#<Lambda nil>"
+flisp_expr; ok lambda-1 arg nil
+
+IN='(lambda a nil)' OUT="#<Lambda a>"
+flisp_expr; ok lambda-2 args a nil 
+
+IN='(lambda nil nil)' OUT="#<Lambda nil>"
+flisp_expr; ok lambda-3 args nil nil 
+
+IN='(lambda (a b) nil)' OUT="#<Lambda (a b)>"
+flisp_expr; ok lambda-4 args a b
+
+IN='(lambda (a . b) nil)' OUT="#<Lambda (a . b)>"
+flisp_expr; ok lambda-5 args a . b nil 
+
+IN='(lambda (a b) a b)' OUT="#<Lambda (a b)>"
+flisp_expr; ok lambda-6 args nil nil 
+
+IN='((lambda (a b) a b) 0 "a")' OUT='"a"'
+flisp_expr; ok lambda-7 apply return b string a
+
+# macro
+IN='(macro nil)' OUT='#<Macro nil>'
+flisp_expr; ok macro-1 arg nil
+
+IN='(macro a nil)' OUT='#<Macro a>'
+flisp_expr; ok macro-2 args a nil
+
+IN='(macro (a b) nil)' OUT='#<Macro (a b)>'
+flisp_expr; ok macro-3 args a b
+
+IN='(macro (a . b) nil)' OUT='#<Macro (a . b)>'
+flisp_expr; ok macro-4 args a . b
+
+IN='((macro (a b) a b) 0 "a")' OUT='"a"'
+flisp_expr; ok macro-5  apply return b string a
+
+# macroexpand-1
+IN='(macroexpand-1 nil)' OUT='nil'
+flisp_expr; ok macroexpand-1_1  arg nil
+
+IN='(macroexpand-1 (macro a a) b)' OUT='(b)'
+flisp_expr; ok macroexpand-1_2  apply return b list b
+
+return
+
+# Primitives
+## Write
+# write
+
+## Objects
+# consp
+# numberp
+# stringp
+# symbolp
+# symbol-name
+# eq
+## Cons'es
+# car
+# cdr
+# cons
+
+## Arithmetic
+# + - * / %
+# = <= > >=
+
+## Strings
+# string.length
+# string.append
+# string.substring
+# string-to-number
+# number-to-string
+# ascii
+# ascii->number
+
+
+## I/O
+# signal
+# exit
+# os.getenv
+# get-temp-file
+
+# Text buffers
+# ...
+
+
+# Local Variables:
+# mode: sh
+# End:

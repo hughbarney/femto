@@ -10,20 +10,22 @@
 #include <stdbool.h>
 
 #define FL_NAME     "fLisp"
-#define FL_VERSION  "0.2"
+#define FL_VERSION  "0.5"
 
 #define FL_INITFILE "flisp.rc"
 #define FL_LIBDIR "/usr/local/share/flisp"
 
-//#define FLISP_MEMORY_SIZE          131072UL
-//#define FLISP_MEMORY_SIZE          262144UL  /* 256k */
-//#define FLISP_MEMORY_SIZE          524288UL
-#define FLISP_MEMORY_SIZE         4194304UL  /* 4M */
+/* minimal Lisp object space size */
+#define FLISP_MIN_MEMORY  26624UL  /* currently ~26k */
 
 /* buffersize for Lisp eval input */
 #define INPUT_FMT_BUFSIZ 2048
 /* buffersize for Lisp result output */
 #define WRITE_FMT_BUFSIZ 2048
+
+/* Debugging */
+#define DEBUG_GC 0
+#define DEBUG_GC_ALWAYS 0
 
 /* Lisp objects */
 
@@ -64,7 +66,8 @@ extern Object *t;
 typedef enum ResultCode {
     FLISP_OK,
     FLISP_ERROR,
-    FLISP_RETURN,         /* successfull return */
+    FLISP_RETURN,         /* successful return */
+    FLISP_EOF,            /* eof upon read */
     FLISP_USER,           /* user generated exception */
     /* Parser/reader */
     FLISP_READ_INCOMPLETE,
@@ -83,55 +86,78 @@ typedef enum ResultCode {
 
 // Note: WIP, relevant procedures must get a handle to the
 //   Interpreter, instead of accessing the static allocated flisp.
-//   init_lisp() must allocate the memory by itself and return an
-//   Interpreter to be used by call_lisp().
 
 typedef struct Memory {
     size_t capacity, fromOffset, toOffset;
     void *fromSpace, *toSpace;
 } Memory;
 
-typedef struct Interpreter Interpreter;
 typedef struct Interpreter {
-    Object *input;                   /* input stream */
-    Object *output;                  /* output stream */
     Object *object;                  /* result or error object */
     char message[WRITE_FMT_BUFSIZ];  /* error string */
     ResultCode result;               /* result of last evaluation */
-    Object *debug;                   /* debug stream */
     /* private */
-    Object *theRoot;      /* root object */
-    Object **theEnv;      /* environment object */
-    Object *symbols;      /* symbols list */
-    Object root;          /* reified root node */
-    Memory *memory;       /* memory available for object allocation,
-                             cleaned up by garbage collector */
-    jmp_buf *stackframe;  /* exception handling */
+    FILE *input;                     /* default input stream object */
+    FILE *output;                    /* default output file descriptor */
+    FILE *debug;                     /* debug stream */
+
+    /* globals */
+    Object *symbols;                 /* symbols list */
+    Object *global;                   /* global environment */
+    /* GC */
+    Object *gcTop;                   /* dynamic gc trace stack */
+    Memory *memory;                  /* memory available for object
+                                      * allocation, cleaned up by
+                                      * garbage collector */
+    /* exeptions */
+    jmp_buf exceptionEnv;  /* exception handling */
+    jmp_buf *catch;
+    /* reader */
     struct { char *buf; size_t len; size_t capacity; };  /* read buffer */
-    Interpreter *next;    /* linked list of interpreters */
+    /* interpreters */
+    struct Interpreter *next;    /* linked list of interpreters */
 } Interpreter;
 
-extern Interpreter *lisp_interpreters;
+/*@null@*/extern Interpreter *lisp_interpreters;
 
-extern Interpreter *lisp_init(int, char**, char*);
+// PROGRAMMING INTERFACE ////////////////////////////////////////////////
+
+#define TWO_STRING_ARGS(func)                                   \
+    Object *first = (*args)->car;                               \
+    Object *second = (*args)->cdr->car;                         \
+    if (first->type != TYPE_STRING)                             \
+        exceptionWithObject(interp, first, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) "  first second) - first is not a string"); \
+    if (second->type != TYPE_STRING)                            \
+        exceptionWithObject(interp, second, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " first second) - second is not a string");
+
+#define ONE_STRING_ARG(func)                                  \
+    Object *arg = (*args)->car;                               \
+    if (arg->type != TYPE_STRING)                             \
+        exceptionWithObject(interp, arg, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " arg) - arg is not a string");
+
+#define ONE_NUMBER_ARG(func)                                  \
+    Object *num = (*args)->car;                               \
+    if (num->type != TYPE_NUMBER)                             \
+        exceptionWithObject(interp, num, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " num) - num is not a number");
+
+#define ONE_STREAM_ARG(func)                                  \
+    Object *stream = (*args)->car;                            \
+    if (stream->type != TYPE_STREAM)                          \
+        exceptionWithObject(interp, stream, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " fd) - fd is not a stream");
+
+// PUBLIC INTERFACE ///////////////////////////////////////////////////////
+extern Interpreter *lisp_new(size_t, char**, char*, FILE*, FILE*, FILE*);
+extern void lisp_destroy(Interpreter *);
 extern ResultCode lisp_eval(Interpreter *);
 extern ResultCode lisp_eval_string(Interpreter *, char *);
-
-Object *file_fopen(Interpreter *, char *, char*);
-int file_fclose(Interpreter *, Object *);
-int file_fflush(Interpreter *, Object *);
-
-void writeChar(Object *, char);
-void writeString(Object *, char *);
-void writeObject(Object *, Object *, bool);
+extern void lisp_write_object(Interpreter *, FILE *, Object *, bool);
+extern void lisp_write_error(Interpreter *, FILE *);
 
 
 #ifdef FLISP_FILE_EXTENSION
 #define FLISP_REGISTER_FILE_EXTENSION \
-    {"fopen", 2, 2, primitiveFopen}, \
-    {"fclose", 1, 1, primitiveFclose}, \
     {"fflush", 1, 1, primitiveFflush}, \
-    {"ftell", 1, 1, primitiveFtell}, \
+    {"ftell", 1, 1, primitiveFtell},   \
     {"fgetc", 1, 1, primitiveFgetc},
 #else
 #define FLISP_REGISTER_FILE_EXTENSION

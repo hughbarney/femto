@@ -40,6 +40,25 @@
     ((eq o (car l)) l)
     (t (memq o (cdr l)))))
 
+(defun prog1 (arg . args) arg)
+
+;; load
+(defun fload (f . r)
+  (setq o (fread f :eof))
+  (cond
+    ((eq o :eof) (car r))
+    (t
+     (setq r (eval o))
+     (fload f r))))
+(defun load (p)
+  (setq f (fopen p "r"))
+  (setq r (fload f))
+  ;(fclose f)
+  r
+  )
+
+
+
 ;; Features
 (setq features nil)
 
@@ -48,16 +67,16 @@
   ;; Elisp, subfeatures not implemented
   (setq features (cons (car args) features)))
 
-(defun require args
+(defun require (feature . args)
   ;; args: (feature [filename [noerror]])
-  ;; Elisp, optional parameters not implemented
-  (setq feature (car args))
-  (cond ((memq feature features) feature)
-	(t
-	 ;; Emacs optionally uses provided filename here
-	 (setq path (concat script_dir "/" (symbol-name feature) ".lsp"))
-	 (load path)
-	 ;; Emacs checks if load fails and returns nil instead of feature.
-	 (cond ((memq feature features)	feature)))))
+  ;; Elisp optional parameters not implemented
+  (cond
+    ((memq feature features) feature)
+    (t
+     ;; Emacs optionally uses provided filename here
+     (setq path (concat script_dir "/" (symbol-name feature) ".lsp"))
+     (load path)
+     ;; Emacs checks if load fails and returns nil instead of feature.
+     (cond ((memq feature features)	feature)))))
 
 (provide 'core)

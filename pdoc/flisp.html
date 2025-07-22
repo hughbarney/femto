@@ -11,8 +11,38 @@
   <body>
     <h1>fLisp Manual</h1>
 
+    <h3 id="introduction">Introduction</h3>
+    <blockquote>
+      <p>
+	A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing
+	left to take away.
+      </p>
+
+      <p>&mdash; Antoine de Saint-Exupery</p>
+    </blockquote>
+    <p>
+      <i>fLisp</i> is a tiny yet practical interpreter for a dialect of the Lisp programming language. It is used as
+      extension language for the <a href="https://github.com/hughbarney/femto">Femto</a> text editor.
+    </p>
+    <p>
+      <i>fLisp</i> originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was
+      integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barnes (pre 2016) and compacted by
+      Georg Lehner in 2023.
+    </p>
+    <p>This is a reference manual. If you want to learn about Lisp programming use other resources eg.</p>
+    <ul>
+      <li>The <a href="https://lisp-lang.org">Common Lisp</a> web site,</li>
+      <li>
+	<a href="https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html">An Introduction to Programming in
+	  Emacs Lisp</a> or
+      </li>
+      <li><a href="https://www.scheme.org/">The Scheme Programming Language</a>.</li>
+    </ul>
+
+    This manual refers to version 0.5 or later of fLisp.
+    
     <aside>
-      <p>Table of Contents</p>
+      <p id="toc">Table of Contents</p>
       <ol>
 	<li><a href="#introduction">Introduction</a></li>
 	<li><a href="#lisp">Lisp</a></li>
@@ -25,12 +55,22 @@
 	  <li><a href="#primitives">Primitives</a></li>
 	  <ol>
 	    <li><a href="#interp_ops">Interpreter Operations</a></li>
+	    <li><a href="#in_out">Input / Output and Others</a></li>
 	    <li><a href="#object_ops">Object Operations</a></li>
-	    <li><a href="#string_ops">String Operations</a></li>
 	    <li><a href="#arithmetic_ops">Arithmetic Operations</a></li>
+	    <li><a href="#string_ops">String Operations</a></li>
 	  </ol>
 	</ol>
-	<li><a href="#editor">Editor Extension</li>
+	<li><a href="#exceptions">Error Handling</a></li>
+	<li><a href="#libraries">Lisp Libraries</a></li>
+	<ol>
+	  <li><a href="#startup">Library Loading</a></li>
+	  <li><a href="#core_lib">Core Library</a></li>
+	  <li><a href="#flisp_lib">fLlisp Library</a></li>
+	  <li><a href="#std_lib">Standard Library</a></li>
+	  <li><a href="#femto_lib">Femto Library</a></li>
+	</ol>
+	<li><a href="#editor">Editor Extension</a></li>
 	<ol>
 	  <li><a href="#buffers">Buffers</a></li>
 	  <ol>
@@ -47,8 +87,12 @@
 	    <li><a href="#programming_system">Programming and System Interaction</a></li>
 	  </ol>
 	</ol>
-	<li><a href="#exceptions">Error Handling</a></li>
 	<li><a href="#embedding">Embedding fLisp</a></li>
+	<ol>
+	  <li><a href="#embedding">Embedding Overview</a></li>
+	  <li><a href="#c_api">fLisp C Interface</a></li>
+	  <li><a href="#extensions">Building Extensions</a></li>
+	</ol>
 	<li><a href="#implementation">Implementation Details</a></li>
 	<ol>
 	  <li><a href="#gc">Garbage Collection</a></li>
@@ -58,33 +102,7 @@
       </ol>
     </aside>
 
-    <h3 id="introduction">Introduction</h3>
-    <blockquote>
-      <p>
-	A designer knows he has achieved perfection not when there is nothing left to add, but when there is nothing
-	left to take away.
-      </p>
-
-      <p>&mdash; Antoine de Saint-Exupery</p>
-    </blockquote>
-    <p>
-      <i>fLisp</i> is a tiny yet practical interpreter for a dialect of the Lisp programming language. It is used as
-      extension language for the <a href="https://github.com/hughbarney/femto">Femto</a> text editor.
-    </p>
-    <p>
-      <i>fLisp</i> originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was
-    integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barnes (pre 2016) and compacted by
-    Georg Lehner in 2023.
-    </p>
-    <p>This is a reference manual. If you want to learn about Lisp programming use other resources eg.</p>
-    <ul>
-      <li>The <a href="https://lisp-lang.org">Common Lisp</a> web site,</li>
-      <li>
-	<a href="https://www.gnu.org/software/emacs/manual/html_node/eintr/index.html">An Introduction to Programming in
-	  Emacs Lisp</a> or
-      </li>
-      <li><a href="https://www.scheme.org/">The Scheme Programming Language</a>.</li>
-    </ul>
+    <nav><a href="#toc">^</a></nav>
     <h3 id="lisp">Lisp</h3>
     <h4 id="notation">Notation Convention</h4>
 
@@ -136,9 +154,8 @@
       <li>Print: the result of the evaluation is returned to the invoker.</li>
     </ol>
     <p>
-      Core functions of the language operate on built-in objects only. <i>fLisp</i> is extended with additional
-      functions in order to interact with editor related objects. With respect to the interpreter, extension functions
-      behave the same as core functions.
+      Core functions of the language operate on built-in objects only. <i>fLisp</i> can be extended with additional
+      functions. With respect to the interpreter, extension functions behave the same as core functions.
     </p>
 
     <h4 id="syntax">Syntax</h4>
@@ -152,19 +169,29 @@
     <dl>
       <dt><code>(</code></dt>
       <dd>Starts a function invocation, <i>list</i> or <i>cons</i> object (see <a href="#objects_and_data_types">Objects
-      and Data Types</a>).</dd>
-      <dt><code>)</code></dt>
-      <dd>Finishes a function invocation, <i>list</i> or <i>cons</i> object</dd>
-      <dt><code>&quot;</code></dt>
-      <dd>Encloses strings.</dd>
+	  and Data Types</a>).</dd>
+      <dt><code>)</code></dt><dd>Finishes a function invocation, <i>list</i> or <i>cons</i> object</dd>
       <dt><code>&#39;</code></dt>
-      <dd>With a single quote prefix before a <abbr>sexp</abbr>, the <abbr>sexp</abbr> is expanded
-      to <code>(quote <var>sexp</var>)</code> before it is evaluated.</dd>
+      <dt><code>:</code></dt>
+      <dd>
+	With a single quote or a colon prefix before a <abbr>sexp</abbr>, the <abbr>sexp</abbr> is expanded
+	to <code>(quote <var>sexp</var>)</code> before it is evaluated.
+      </dd>
       <dt><code>.</code></dt>
-      <dd>The expression<code> (<var>a</var> . <var>b</var>)</code> evaluates to a <i>cons</i> object, holding the
-      objects <var>a</var> and <var>b</var>.</dd>
+      <dd>
+	The expression<code> (<var>a</var> . <var>b</var>)</code> evaluates to a <i>cons</i> object, holding the
+	objects <var>a</var> and <var>b</var>.
+      </dd>
+      <dt><code>&quot;</code></dt><dd>Encloses strings.</dd>
+      <dt><code>\</code></dt>
+      <dd>
+	Escape character. When reading a string, the next character is read as character, even if it is special to the
+	reader.
+      </dd>
     </dl>
-    <p>Numbers are represented in decimal notation.</p>
+    <p>
+      Numbers are read and written in decimal notation. Exponent notation is not supported.
+    </p>
     <p>A list of objects has the form:</p>
     <blockquote>
       <code>([<var>element</var> ..])</code>
@@ -185,7 +212,7 @@
 
     <h4 id="objects_and_data_types">Objects and Data Types</h4>
 
-    <p><i>fLisp</i> objects have exactly one of the following data types:</p>
+    <p><i>fLisp</i> objects have one of the following data types:</p>
     <dl>
       <dt><dfn>number</dfn></dt>
       <dd>
@@ -202,6 +229,8 @@
       <dd>anonymous function with parameter evaluation</dd>
       <dt><dfn>macro</dfn></dt>
       <dd>anonymous function without parameter evaluation</dd>
+      <dt><dfn>stream</dfn></dt>
+      <dd>An input/output stream</dd>
     </dl>
     <p>
       Objects are immutable, functions either create new objects or return existing ones.
@@ -278,10 +307,8 @@
       </dd>
       <dt><code>(macro <var>params</var> <var>body</var>)</code></dt>
       <dt><code>(macro ([<var>param</var> ..]) <var>body</var>)</code></dt>
-      <dt><code>(macro (<var>param</var>[ <var>param</var><..] . <var>opt</var>) <var>body</var>)</code></dt>
-      <dd>
-	These forms return a macro function. Parameter handling is the same as with lambda.
-      </dd>
+      <dt><code>(macro (<var>param</var>[ <var>param</var>..] . <var>opt</var>) <var>body</var>)</code></dt>
+      <dd> These forms return a macro function. Parameter handling is the same as with lambda.</dd>
       <dt><code>(quote <var>expr</var>)</code></dt>
       <dd>Returns <var>expr</var> without evaluating it.
       </dd>
@@ -290,6 +317,45 @@
 	and must contain a list of exception related objects.  <code>(signal 'error 'nil)</code> is probably the
 	simplest signal.</dd>
     </dl>
+
+    <h5 id="in_out">Input / Output and Others</h5>
+    <dl>
+      <dt><code>(fopen <var>path</var> <var>mode</var>)</code></dt>
+      <dd>Open file at <var>path</var> with <var>mode</var> and return a stream object</dd>
+      <dt><code>(fclose <var>stream</var>)</code></dt>
+      <dd>Close <var>stream</var> object</dd>
+      <dt><code>(fread</code> <code><var>stream</var></code>[ <code>eof-value</code>]<code>)</code></dt>
+      <dd>
+	Reads the next complete Lisp expression from <var>stream</var>.  The
+	read in object is returned.  If end of file is reached, an exception is raised, unless <var>eof-value</var> is
+	not <code>nil</code>. In that case <code>eof-value</code> is returned.
+      </dd>
+      <dt><code>(write <var>object</var></code>[ <code><var>keys</var></code>]]<code>)</code>
+      </dt>
+      <dd><code><var>keys</var></code>:</dd>
+      <dd>
+	<dl>
+	  <dt><code>:stream</code> <code><var>stream</var></code></dt>
+	  <dt><code>:readably</code> <code><var>flag</var></code></dt>
+	</dl>
+      </dd>
+      <dd>
+	Formats <var>object</var> into a string and writes it to the default output stream. With
+	key <code>:stream</code>  output is written to the given stream.  With key <code>:readable</code>
+	not <code>nil</code> output is formatted in a way which which gives the same object when read again.
+	<code>write</code> returns the <var>object</var>.
+      </dd>
+      <dt><code>(eval <var>object</var>)</code></dt>
+      <dd>Evaluates <var>object</var> and returns the result.</dd>
+
+      <dt><code>(system <var>string</var>)</code></dt>
+      <dd>
+	Executes the <a href="https://man7.org/linux/man-pages/man3/system.3.html">system(1)</a> function
+	with <var>string</var> as parameter.
+      </dd>
+      <dt><code>(os.getenv <var>string</var>) </code></dt>
+      <dd>Returns the value of the environment variable named <var>string</var>.</dd>
+    </dl>    
 
     <h5 id="object_ops">Object Operations</h5>
 
@@ -314,49 +380,6 @@
       <dd>Returns the second object of <var>cons</var>.</dd>
       <dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
       <dd>Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, <code>nil</code> otherwise.</dd>
-      <dt><code>(print <var>object</var>)</code></dt>
-      <dd>
-	Formats <var>object</var> into a string which can be read by the reader and returns it. As a side effect, the
-	string is printed to the output stream with a leading and a closing newline. <code>print</code> escapes quotes
-	in strings with a backslash.
-      </dd>
-      <dt><code>(princ <var>object</var>)</code></dt>
-      <dd>
-	Formats <var>object</var> into a string and returns it, As a side effect, the string is printed to the output
-	stream.
-      </dd>
-    </dl>
-
-    <h5 id="string_ops">String Operations</h5>
-
-    <dl>
-      <dt><code>(string.length <var>string</var>)</code></dt>
-      <dd>Returns the length of <var>string</var> as a <i>number</i>.</dd>
-      <dt><code>(string.substring <var>string</var> <var>start</var> <var>end</var>)</code></dt>
-      <dd>
-	Returns the sub string from <var>string</var> which starts with the character at index <var>start</var> and ends
-	with index <var>end</var>. String indexes are zero based.
-      </dd>
-      <dt><code>(string.append <var>string1</var> <var>string2</var>)</code></dt>
-      <dd>Returns a new string consisting of the concatenation of <var>string1</var> with <var>string2</var>.</dd>
-      <dt><code>(string-to-number <var>string</var>)</code></dt>
-      <dd>
-	Converts <var>string</var> into a corresponding <i>number</i> object. String is interpreted as decimal based
-	integer.
-      </dd>
-      <dt><code>(number-to-string <var>number</var>)</code></dt>
-      <dd>Converts <var>number</var> into a <i>string</i> object.
-      </dd>
-      <dt><code>(ascii <var>number</var>)</code></dt>
-      <dd>
-	Converts <var>number</var> into a <i>string</i> with one character, which corresponds to the ASCII
-	representation of <var>number</var>.
-      </dd>
-      <dt><code>(ascii-&gt;number <var>string</var>)</code></dt>
-      <dd>
-	Converts the first character of <var>string</var> into a <i>number</i> which corresponds to its ASCII
-	value.
-      </dd>
     </dl>
 
     <h5 id="arithmetic_ops">Arithmetic Operations</h5>
@@ -395,6 +418,162 @@
       </dd>
     </dl>
 
+    <h5 id="string_ops">String Operations</h5>
+
+    <dl>
+      <dt><code>(string.length <var>string</var>)</code></dt>
+      <dd>Returns the length of <var>string</var> as a <i>number</i>.</dd>
+      <dt><code>(string.substring <var>string</var> <var>start</var> <var>end</var>)</code></dt>
+      <dd>
+	Returns the sub string from <var>string</var> which starts with the character at index <var>start</var> and ends
+	with index <var>end</var>. String indexes are zero based.
+      </dd>
+      <dt><code>(string.append <var>string1</var> <var>string2</var>)</code></dt>
+      <dd>Returns a new string consisting of the concatenation of <var>string1</var> with <var>string2</var>.</dd>
+      <dt><code>(string-to-number <var>string</var>)</code></dt>
+      <dd>
+	Converts <var>string</var> into a corresponding <i>number</i> object. String is interpreted as decimal based
+	integer.
+      </dd>
+      <dt><code>(number-to-string <var>number</var>)</code></dt>
+      <dd>Converts <var>number</var> into a <i>string</i> object.
+      </dd>
+      <dt><code>(ascii <var>number</var>)</code></dt>
+      <dd>
+	Converts <var>number</var> into a <i>string</i> with one character, which corresponds to the ASCII
+	representation of <var>number</var>.
+      </dd>
+      <dt><code>(ascii-&gt;number <var>string</var>)</code></dt>
+      <dd>
+	Converts the first character of <var>string</var> into a <i>number</i> which corresponds to its ASCII
+	value.
+      </dd>
+    </dl>
+
+    <nav><a href="#toc">^</a></nav>
+    <h3 id="exceptions">Error handling</h3>
+    <p>
+      Whenever fLisp encounters an error an exception is thrown. Exceptions have a non-zero result code and a human
+      readable error message. fLisp does not implement stack backtracking. exceptions are only caught on the top level
+      of an evaluation.
+    </p>
+    <p>
+      In the <code>flisp</code> interpreter the error message is formated as <code>error: <var>message</var></code> if
+      the error object is <code>nil</code> otherwise as <code>error: '<var>object</var>', <var>message</var></code>,
+      where <var>object</var> is the serialization of the object causing the error and <var>message</var> is the error
+      message.
+    </p>
+    <p>
+      When called from C-code, the <code>object</code> field of the interpreter is set to the object causing the error
+      instead of the evaluation result.
+    </p>
+    <p>
+      Exceptions can be thrown from within in Lisp code via the <a href="#interp_ops"><code>signal</code></a>
+      function.
+    </p>
+    
+    <nav><a href="#toc">^</a></nav>
+    <h3 id="libraries">Lisp Libraries</h3>
+
+    <h4 id="startup">Library Loading</h4>
+    <p>
+      On startup, both <code>femto</code> and <code>flisp</code> try to load a single Lisp file.  The default location
+      and name of this <dfn>startup file</dfn> are hardcoded in the binary and can be overwritten with environment
+      variables:
+    </p>
+    <dl>
+      <dt>Library path</dt>
+      <dd>femto: <code>/usr/local/share/femto</code>, <code>FEMTOLIB</code></dd>
+      <dd>flisp: <code>/usr/local/share/flisp</code>, <code>FLISPLIB</code></dd>
+      <dt>Startup file</dt>
+      <dd>femto: <code>femto.rc</code>, <code>FEMTORC</code></dd>
+      <dd>flisp: <code>flisp.rc</code>, <code>FLISPRC</code></dd>
+    </dl>
+    <p>
+      The library path is exposed to the Lisp interpreter as the variable <code>script_dir</code>.
+    </p>
+    <p>
+      The provided startup files implement a minimal library loader, which allows to load Lisp files from the library
+      path conveniently and without repetition.  The command to load the file <code>example.lsp</code> from the
+      library is <code>(require &apos;example)</code>.
+    </p>
+    <p>Femto provides a set of libraries, some of them are required by the editor</p>
+
+    <h4 id="core_lib">Core Library</h4>
+    <p>
+      This library is built into the startup file.
+    </p>
+    <dl>
+      <dt><code>(list</code> [<code><var>element</var></code> ..]<code>)</code></dt>
+      <dd>Returns the list of all provided elements.</dd>
+      <dt><code>(defmacro <var>name</var> <var>params</var> <var>body</var>)</code></dt>
+      <dt><code>(defun <var>name</var> <var>params</var> <var>body</var>)</code></dt>
+      <dd>Defines and returns a macro or function, respectively.</dd>
+      <dt><code>(string <var>arg</var>)</code></dt>
+      <dd>Returns the string conversion of argument.</dd>
+      <dt><code>(concat </code>[<code><var>arg</var></code> ..]<code>)</code></dt>
+      <dd>Returns concatenation of all arguments converted to strings.</dd>
+      <dt><code>(memq <var>arg</var> <var>list</var>)</code></dt>
+      <dd>
+	If <var>arg</var> is contained in <var>list</var>, returns the sub list of <var>list</var> starting with the
+	first occurrence of <var>arg</var>, otherwise returns <code>nil</code>.
+      </dd>
+      <dt><code>(fload </code> <code><var>stream</var>)</code></dt>
+      <dd>Reads and evaluates all Lisp objects in <var>stream</var>.</dd>
+      <dt><code>(load </code> <code><var>path</var>)</code></dt>
+      <dd>Reads and evaluates all Lisp objects in file at <var>path</var>.</dd>
+      <dt><code>(provide <var>feature</var>)</code></dt>
+      <dd>
+	Used as the final expression of a library to register symbol <var>feature</var> as loaded into the
+	interpreter.
+      </dd>
+      <dt><code>(require <var>feature</var>)</code></dt>
+      <dd>
+	If the <var>feature</var> is not alreaded loaded, the file <code><var>feature</var>.lsp</code> is loaded from
+	the library path and registers the <var>feature</var> if loading was successful. The register is the
+	variable <code><var>features</var></code>.
+      </dd>
+    </dl>
+
+    <h4 id="flisp_lib">fLisp Library</h4>
+    <p>
+      This library implements commonly excpected Lisp idioms, which are used in the editor libraries.
+    </p>
+    <dl>
+      <dt>not</dt>
+      <dt>listp</dt>
+      <dt>and</dt>
+      <dt>map1</dt>
+      <dt>or</dt>
+      <dt>reduce</dt>
+      <dt>max</dt>
+      <dt>min</dt>
+      <dt>nthcdr</dt>
+      <dt>nth</dt>
+    </dl>
+
+    <h4 id="std_lib">Standard Library</h4>
+    <p>
+      This library implements some Common Lisp functions, which are not used in the editor libraries.  They are provided
+      for reference.
+    </p>
+    <dl>
+      <dt>atom</dt>
+      <dt>zerop</dt>
+      <dt>if</dt>
+      <dt>equal</dt>
+      <dt>append</dt>
+      <dt>print</dt>
+      <dt>princ</dt>
+    </dl>
+
+    <h4 id="femto_lib">Femto Library</h4>
+    <p>
+      This library implements helper function required by the Femto editor. It is written only in Lisp idioms provided
+      by fLisp itself plus the <a href="#flisp_lib">fLisp Library</a>.
+    </p>
+    
+    <nav><a href="#toc">^</a></nav>
     <h3 id="editor">Editor Extension</h3>
 
     <p>The editor extensions introduces several types of objects/functionality:</p>
@@ -692,13 +871,6 @@
 	this <var>region</var> and inserts the result at <var>point</var>. If <var>point</var> is
 	before <var>mark</var> <code>eval-block</code> does nothing but returning <samp>t</samp>.
       </dd>
-      <dt><code>(system <var>string</var>)</code></dt>
-      <dd>
-	Executes the <a href="https://man7.org/linux/man-pages/man3/system.3.html">system(1)</a> function
-	with <var>string</var> as parameter.
-      </dd>
-      <dt><code>(os.getenv <var>string</var>) </code></dt>
-      <dd>Returns the value of the environment variable named <var>string</var>.</dd>
       <dt><code>(log-message <var>string</var>)</code></dt>
       <dd>Logs <var>string</var> to the <samp>*messages*</samp> buffer. </dd>
       <dt><code>(log-debug <var>string</var>)</code></dt>
@@ -706,32 +878,82 @@
       <dt><code>(get-version-string)</code></dt>
       <dd>Returns the complete version string of Femto, including the copyright.</dd>
     </dl>
-    
 
-    <h3 id="exceptions">Error handling</h3>
-    <p>
-      Whenever fLisp encounters an error an exception is thrown. Exceptions have a non-zero result code and an error
-      message.  The error message is a string containing the serialization of the object causing the error — if any —
-      and an individual user readable string.
-    </p>
-    <p>
-      fLisp does not implement stack backtracking. exceptions are only caught on the top level of an evaluation.
-    </p>
-    <p>Exceptions can be thrown in Lisp code via the <a href="#interp_ops"><code>signal</code></a> function.</p>
-    <p>
-      <mark>Note: currently the error result code is always 1. It is planned to distinguish different error classes,
-	e.g. parsing errors, execution errors, I/O errors, input errors, …
-      </mark>
-    </p>
+    <nav><a href="#toc">^</a></nav>
     <h3 id="embedding">Embedding fLisp</h3>
+    <h4 id="embed_overview">Embedding Overview</h4>
+    
     <p>
-      fLisp exposes the following public interfaces:
+      fLisp can be embedded into a C application.  Two examples of embedding are the `femto` editor and the simplistic
+      `flisp` command line Lisp interpreter.
+    <p>
+    <p>
+      Currently embedding can only be done by extending the build system.  Application specific binary Lisp extensions
+      are stored in separated C files and the interface code is conditionally included into the <code>lisp.c</code>
+      file.  Two extensions are provided: the Femto extension which provides the editor functionality and the file
+      extension which provides access to the low level stream I/O functions and adds some more.
+    </p>
+    fLisp exposes the following public interface functions:
     </p>
     <dl>
-      <dt><code><var>Interpreter</var> *lisp_init(int <var>argc</var>, char **<var>argv</var>, char
-	  *<var>library_path</var>)</code></dt>
+      <dt><code>lisp_new()</code></dt><dd>Create a new interpreter.</dd>
+      <dt><code>lisp_destroy()</code></dt><dd>Destroy an interpreter, releasing resources.</dd>
+      <dt><code>lisp_eval()</code></dt><dd>Evaluate input stream until exhausted or error.</dd>
+      <dt><code>lisp_eval_string()</code></dt><dd>Evaluate given string until exhausted or error.</dd>
+      <dt><code>lisp_write_object()</code></dt><dd>Format and write object to file descriptor.</dd>
+      <dt><code>lisp_write_error()</code></dt>
+      <dd>Format and write the error object and error message of an interpreter to a file descriptor.</dd>
+    </dl>
+    <p>
+      Different flows of operation can be implemented. The Femto editor initializes the interpreter without input/output
+      file descriptors and sends strings of Lisp commands to the interpreter, either when a key is pressed or upon
+      explicit request via the editor interface.
+    </p>
+    <p>
+      The <code>flisp</code> command line interpreter sets <code>stdout</code> as the default output file descriptors of
+      the fLisp interpreter and feeds it with strings of lines read from the terminal. If the standard input is not a
+      terminal <code>stdin</code> is set as the default input file descriptor and fLisp reads it through until end of
+      file.
+    </p>
+    <p>
+      After processing the given input, the interpreter puts a pointer to the object which is the result of the last
+      evaluation into the <code>object</code> field of the interpreter structure.  The <code>result</code> field is set
+      to <code>FLISP_OK</code>, which has the integer value <code>0</code>.  The <code>message</code> field is set to
+      the empty string.
+    </p>
+    <p>
+      fLisp sends all output to the default output stream. If <code>NULL</code> is given on initialization, output is
+      suppressed altogether.
+    <p>
+      If an exception is thrown inside the Lisp interpreter an error message is formatted and copied to
+      the <code>message</code> buffer of the interpreter, A pointer to the object causing the error is set to
+      the <code>object</code> field. The <code>result</code> field is set to an error specific code:
+    </p>
+    <dl>
+      <dt><code>FLISP_ERROR</code></dt><dd>Generic error code.</dd>
+      <dt><code>FLISP_USER</code></dt><dd>User generated exception.</dd>
+      <dt><code>FLISP_READ_INCOMPLETE</code></dt><dd>End of file before valid Lisp expression was read in.</dd>
+      <dt><code>FLISP_READ_INVALID</code></dt><dd>Lisp expression is invalid.</dd>
+      <dt><code>FLISP_READ_RANGE</code></dt><dd>Integer or float under or overrflow.</dd>
+      <dt><code>FLISP_WRONG_TYPE</code></dt><dd>A Lisp function received an argument of wrong type.</dd>
+      <dt><code>FLISP_INVALID_VALUE</code></dt><dd>A Lisp function received an argument with invalid value.</dd>
+      <dt><code>FLISP_PARAMETER_ERROR</code></dt>
+      <dd>A macro or function invocation received an incorrect number of arguments.</dd>
+      <dt><code>FLISP_IO_ERROR</code></dt><dd>An operation on a stream failed.</dd>
+      <dt><code>FLISP_OOM</code></dt><dd>fLisp ran out of memory.</dd>
+      <dt><code>FLISP_GC</code></dt><dd>The garbage collector encountered an error.</dd>
+    </dl>
+    <p>
+      In this <dfn>error state</dfn> of the interpreter, the function <code>lisp_write_error()</code> can be used to
+      write a standardized error message including the error object to a file descriptor of choice
+    </p>
+    
+    <h4 id="c_api">fLisp C Interface</h4>
+    <dl>
+      <dt><code><var>Interpreter</var> *lisp_new(int <var>size</var>, char **<var>argv</var>, char
+	  *<var>library_path</var>, FILE *input, FILE *output, FILE* debug)</code></dt>
       <dd>
-	<p><code>lisp_init()</code> creates and initializes an fLisp interpreter.  The initial environment contains the
+	<p><code>lisp_new()</code> creates and initializes an fLisp interpreter.  The initial environment contains the
 	  following symbols:
 	</p>
 	<dl>
@@ -741,23 +963,121 @@
 	</dl>
 	<p>A pointer to an <var>Interpreter</var> struct is returned, which is used to operate the interpreter.</p>
       </dd>
-      <dt><code><var>ResultCode</var> lisp_eval(<var>interp</var>, <var>format</var>, …)</code></dt>
       <dd>
 	<p>
-	  Evaluates input in the fLisp interpreter <var>interp</var>.  The input is generated the same way as
-	  in <code>printf()</code> from the <var>format</var> string and any following optional arguments.
+	  The other arguments to <code>lisp_new()</code> are:
+	  <dl>
+	    <dt><var>size</var></dt>
+	    <dd>
+	      Memory size to allocate for the Lisp objects.  This is divided into two pages for garbage
+	      collection. Only one page is used by the interpreter at any moment.
+	    </dd>
+	    <dt><var>input</var></dt>
+	    <dd>
+	      Default input stream. If <var>input</var> is set to <code>NULL</code>, the input stream has to be
+	      specified for each invocation of <code>lisp_eval()</code>.
+	    </dd>
+	    <dt><var>output</var></dt>
+	    <dd>
+	      Default output stream. If <var>output</var> is set to <code>NULL</code> a memory stream is created at the
+	      first invocation of the interpreter and set as the default output stream.
+	      <dt><var>debug</var></dt>
+	    <dd>Debug output stream. If set to <code>NULL</code> no debug information is generated.</dd>
+	  </dl>
 	</p>
+      </dd>
+
+      <dt><code>(void) lisp_destroy(Interpreter *<var>interp</var>)</code></dt>
+      <dd>Frees all resources used by the interpreter.</dd>
+      
+      <dt>
+	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>, Object *<var>gcRoots</var>)</code>
+      </dt>
+      <dd>
 	<p>
-	  The <var>ResultCode</var> is <code>0</code> when the input is evaluated successfully and non-zero if any error
-	  occurred during evaluation.  The result code is also stored in <var>interp-&gt;result</var>.
+	  Evaluates the input file set in the <var>input</var> field of the fLisp interpreter <var>interp</var> until
+	  end of file. <var>gcRoots</var> must be set to a global variable with initial value <code>nil</code>. If no
+	  input file is set, <code>interp</code> is set to a respective error state.
 	</p>
-	<p>
-	  After evaluation <var>interp-&gt;output</var> contains the output of the evaluation
-	  and <var>interp-&gt;message</var> contains the error message if result code is non-zero.
+      </dd>
+      <dt>
+	<code>ResultCode lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>, Object *<var>gcRoots</var>)</code>
+      </dt>
+      <dd>
+	Evaluates all Lisp expressions in <var>string</var>. <var>gcRoots</var> must be set to a global variable with
+	initial value <code>nil</code></dd>
+      <dt>
+	<code>void lisp_write_object(Interpreter *<var>interp</var>, FILE <var>*fd</var>, Object *<var>object</var>,
+	  bool readably, Object *<var>gcRoots</var>)</code>
+      </dt>
+      <dd>
+	Format <var>object</var> into a string and write it to <var>stream</var>.  If <var>readably</var> is true, the
+	string can be read in by the interpreter and results in the same object. <var>gcRoots</var> must be set to a
+	global variable with initial value <code>nil</code>
+      </dd>
+      <dt>
+	<code>void lisp_write_error(Interpreter *<var>interp</var>, FILE <var>*fd</var>,
+	Object *<var>gcRoots</var>)</code>
+      </dt>
+      <dd>
+	Format the error <var>object</var> and the error message of the interpreter into a string and write it
+	to <var>fd</var>. The <var>object</var> is written
+	with <var>readably</var> <code>true</code>. <var>gcRoots</var> must be set to a global variable with initial
+	value <code>nil</code>
       </dd>
     </dl>
-    <p><mark>Note: currently only one interpreter can be created.</mark></p>
     
+    <p><mark>Note: currently only one interpreter can be created.</mark></p>
+
+    <h4 id="extensions">Building Extensions</h4>
+
+    <p>
+      An extensions has to create C functions with the
+      signature: <code>Object *<var>primitive</var>(Object **args, GCPARAM)</code>, where <var>primitive</var> is a
+      distinct name in C space. This function has to be added to the global variable <code>primitives</code> in the
+      following
+      format: <code>{&quot;<var>name</var>&quot;, <var>argMin</var>, <var>argMax</var>, <var>primitive</var>}</code>. Here
+      <var>name</var> is a distinct name in Lisp space.
+    </p>
+    <p>
+      <var>argMin</var> is the minimum number of arguments, <var>argMax</var> is the maximum number of arguments allowed
+      for the function.  If <var>argMax</var> is a negative number, arguments must be given in tuples
+      of <var>argMax</var> and the number of tuples is not restricted.
+    </p>
+    <p>
+      <code>CG_PARAM</code> is a CPP macro which carries on the interpreter root node for the garbage collector.  Its
+      companion are <code>GC_ROOTS</code> which is used in the place of <code>GC_PARAM</code> when calling a primitive
+      and <code>GC_TRACE(<var>name</var>, <var>value</var></code> which creates an object variable <var>name</var>, sets
+      it to <var>value</var> and adds it to the root node.
+    </p>
+    <p>
+      Some CPP macros are provided to simplify argument validation in primitives, all of them receive
+      the <var>name</var> of the primitive as a parameter:
+    </p>
+    <dl>
+      <dt><code>TWO_STRING_ARGS(<var>name</var>)</code></dt>
+      <dd>
+	Assures that the first two arguments are of type string.  They are assigned to the <code>Object *</code>
+	variables <var>first</var> and <var>second</var>.
+      </dd>
+      <dt><code>ONE_STRING_ARG(<var>name</var>)</code></dt>
+      <dd>
+	Assures that the first argument is of type string. It is assigned to the <code>Object *</code>
+	variable <var>arg</var>.
+      </dd>
+      <dt><code>ONE_NUMBER_ARG(<var>name</var>)</code></dt>
+      <dd>
+	Assures that the first argument is of type number. It is assigned to the <code>Object *</code>
+	variable <var>num</var>.
+      </dd>
+      <dt><code>ONE_STREAM_ARG(<var>name</var>)</code></dt>
+      <dd>
+	Assures that the first argument is of type stream. It is assigned to the <code>Object *</code>
+	variable <var>stream</var>.
+      </dd>
+    </dl>
+    
+    <nav><a href="#toc">^</a></nav>
     <h3 id="implementation">Implementation Details</h3>
 
     <h4 id="gc">Garbage Collection</h4>
@@ -786,13 +1106,13 @@
       instead:
     </p>
     <pre>
-function:              pointer to pointer inside list (Object **)
-                               |
-                               v
-list of root objects:  pointer to object (Object *)
-                               |
-                               v
-semi space:             object in memory
+      function:              pointer to pointer inside list (Object **)
+      |
+      v
+      list of root objects:  pointer to object (Object *)
+      |
+      v
+      semi space:             object in memory
     </pre>
     <p>
       <code><var>GC_ROOTS</var></code> and <code><var>GC_PARAM</var></code> are used to pass the list from function to
@@ -806,43 +1126,44 @@ semi space:             object in memory
       <code><var>GC_TRACE</var>(<var>gcX</var>, <var>X</var>)</code>: add object <var>X</var> to the list and
       declare <code>Object **<var>gcX</var></code> to point to the pointer to <var>X</var> inside the list.
     </p>
+    <p>
+      Information about the garbage collection process and memory status is written to the debug file descriptor.
+    </p>
+    
     <h4 id="memory">Memory Usage</h4>
     <p>
       Some compile time adjustable limits in <code>lisp.h</code>:
     </p>
     <dl>
-      <dt>Object memory</dt><dd>4M, <code>FLISP_MEMORY_SIZE</code>.</dd>
       <dt>Input buffer</dt><dd>2048, <code>INPUT_FMT_BUFSIZ</code>, size of the formatting buffer for <code>lisp_eval()</code>.</dd>
       <dt>Output buffer</dt><dd>2048, <code>WRITE_FMT_BUFSIZ</code>, size of the output and message formatting buffer.</dd>
     </dl>
     <p>
-      fLisp can live with much less object memory, but the <q>OXO</q> game requires a lot and <mark>the garbage
-	collector has a bug</mark> which makes OXO segfault.
+      fLisp can live with as little as 300k object memory. The Femto editor requires 16M since the <q>OXO</q> game requires a lot of memory.
     </p>
 
     <h4 id="future">Future Directions</h4>
     <p>
-      fLisp could be made completely independent of Femto, thus making the interpreter embeddable in any
-      application. The <code>debug()</code> function is still borrowed from <code>main.c</code> and it has to be devised
-      how to extend the interpreter dynamically; the editor extensions are currently compiled into the interpreter.
+      The two memory pages should be separated and the second one should be allocated only during garbage collection.
+      When memory runs out, the garbage collection should be restarted with an increased capacity of the new page.
     </p>
     <p>
-      Integer arithmetic would be sufficient for all current purposes and increase portability, speed while reducing
+      It should be able to trap exceptions within Lisp code.  This, together with an <code>(eval)</code> primitive would
+      allow to write the repl directly in Lisp.
+    </p>
+    <p>
+      Integer arithmetic would be sufficient for all current purposes and increase portability and speed while reducing
       size.
     </p>
     <p>
-      The internally used <q>Stream</q> abstraction for reading Lisp input and writing output is incomplete and
-      complicated. An alternative would be to use only string input and output. File input can be read as a whole into
-      memory and use the string input processing.  This would also have consequences for the Lisp reader and probably
-      simplify implementation of improved error reporting, a lá line/char offset reporting.  The downside is, that this
-      would remove support for <code>stdin</code>/<code>stdout</code> reading/writing.
+      Exception handling returns differentiated error codes. One could implement an interactive repl
+      with <code>stdin</code>/<code>stdout</code> streams, by reading and eval&apos;ing until no more <q>incomplete
+      input</q> result codes are returned.
     </p>
     <p>
-      Exception handling should be improved by returning differentiated error codes. One of the benefits would be the
-      possibility to implement externally an interactive repl with <code>stdin</code>/<code>stdout</code> streams, by
-      reading and eval&apos;ing until no more <q>incomplete input</q> result codes are returned.
-    </p>
-    
+      The file extension only contains <code>(fflush)</code>,  <code>(ftell)</code> and  <code>(fgetc)</code> and could
+      easily be extended into something useful. <code>(fstat)</code> would be most pressing for
+      improving <code>femto.rc</code> and <code>flisp.rc</code>.
   </body>
 </html>
 <!--

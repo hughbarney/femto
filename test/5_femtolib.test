@@ -1,52 +1,48 @@
+#!./run
 # test the femto Lisp extensions
 # leg20231213
-tap 9
 
-_femto() {
-    IN=$(cat <<EOF
-(load "../femto.rc")
-(require 'femto)
-$IN
-EOF
-      )
-}
-femto() { _femto; flisp_expr $1; }
-femto_err() { _femto; flisp_err $1; } 
+tap 15
 
-###IN='(atom 0)' OUT=t
-###femto; ok atom-1 number is atom
+export FLISPRC=../lisp/core.lsp
+# Note: nested requiring stopped working
+femtolib(){ IN="(require 'femto) $IN" flisp_expr "$@"; }
+femtolib() { IN="(require 'flisp) (require 'femto) $IN" flisp_expr "$@"; }
+femtolib_err() { IN="(require 'femto) $IN" flisp_expr "$@"; }
 
-###IN='(zerop "a")' OUT='error: "a" is not a number'
-###femto_err; ok zerop-3 with string fails
+true; ok load-script \# TODO
+true; ok repeat \# TODO
+IN="(repeat 0 +)" OUT=nil
+femtolib 1; ok repeat-1 
 
-# repeat
-# shell-command
-# shell-exec
-# insert-file
+true; ok shell-command \# TODO
+true; ok shell-exec \# TODO
+true; ok insert-file \# TODO
 
 # string.trim.front
 IN='(string.trim.front " x")'  OUT='"x"'
-femto; ok string.strim.front-1 remove single space before string
+femtolib 1; ok string.strim.front-1 remove single space before string
+
 IN='(string.trim.front " ")'  OUT='""'
-femto; ok string.strim.front-2 remove single space
+femtolib 1; ok string.strim.front-2 remove single space
 IN='(string.trim.front "    ")'  OUT='""'
-femto; ok string.strim.front-3 remove several spaces
+femtolib 1; ok string.strim.front-3 remove several spaces
 IN='(string.trim.front "")'  OUT='""'
-femto; ok string.strim.front-4 empty string
+femtolib 1; ok string.strim.front-4 empty string
 
 # string.trim.back
 IN='(string.trim.back "x ")'  OUT='"x"'
-femto; ok string.strim.back-1 remove single space after string
+femtolib 1; ok string.strim.back-1 remove single space after string
 IN='(string.trim.back " ")'  OUT='""'
-femto; ok string.strim.back-2 remove single space
+femtolib 1; ok string.strim.back-2 remove single space
 IN='(string.trim.back "    ")'  OUT='""'
-femto; ok string.strim.back-3 remove several spaces
+femtolib 1; ok string.strim.back-3 remove several spaces
 IN='(string.trim.back "")'  OUT='""'
-femto; ok string.strim.back-4 empty string
+femtolib 1; ok string.strim.back-4 empty string
 
 # string.trim
 IN='(string.trim " ")'  OUT='""'
-femto; ok string.strim-1 remove single space
+femtolib 1; ok string.strim-1 remove single space
 
 # delete-next-word
 # delete-previous-word

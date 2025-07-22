@@ -10,19 +10,15 @@
 #include <assert.h>
 #include <curses.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <ctype.h>
 #include <limits.h>
 #include <string.h>
-#include <unistd.h>
 #include <wchar.h>
 #include "lisp.h"
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.20"
+#define E_VERSION       "2.21"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND     "<not bound>"
 #ifndef E_SCRIPTDIR
@@ -31,7 +27,7 @@ int mkstemp(char *);
 #ifndef E_INITFILE
 #define E_INITFILE      "/usr/local/share/femto/femto.rc"
 #endif
-#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, October 2024, by Hugh Barney,  No warranty."
+#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, May 2025, by Hugh Barney,  No warranty."
 
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
@@ -128,6 +124,10 @@ typedef struct undo_tt {
     char_t   u_type;
     struct undo_tt *u_prev;
 } undo_tt;
+
+#ifndef NAME_MAX
+#define NAME_MAX _POSIX_NAME_MAX
+#endif
 
 typedef struct buffer_t
 {
@@ -279,7 +279,6 @@ extern int save_buffer_byname(char *);
 extern int select_buffer(char *);
 extern point_t document_size(buffer_t *);
 extern void add_mode(buffer_t *, buffer_flags_t);
-extern void buffer_init(buffer_t *);
 extern void delete_mode(buffer_t *, buffer_flags_t);
 extern void list_buffers();
 extern void next_buffer();
@@ -370,7 +369,7 @@ extern void b2w(window_t *w);
 extern void clear_message_line();
 extern void display_char(buffer_t *, char_t *);
 extern void display_prompt_and_response(char *, char *);
-extern void display_utf8(buffer_t *, char_t, int);
+extern void display_utf8(buffer_t *, int);
 extern void display(window_t *, int);
 extern void dispmsg();
 extern void modeline(window_t *);
@@ -488,9 +487,20 @@ extern window_t *popup_window(char *);
 extern window_t *split_current_window();
 
 /* fLisp interpreter used for femto */
-extern char *eval_string(int, char *, ...);
-extern void close_eval_output();
+//#define FLISP_MEMORY_SIZE          131072UL  // 128k
+//#define FLISP_MEMORY_SIZE          262144UL  // 256k
+//#define FLISP_MEMORY_SIZE          524288UL  // 512k
+//#define FLISP_MEMORY_SIZE         1048576UL  //   1M
+//#define FLISP_MEMORY_SIZE         1572864UL  //  1.5M
+//#define FLISP_MEMORY_SIZE         2097152UL  //   2M
+//#define FLISP_MEMORY_SIZE         4194304UL  //   4M
+//#define FLISP_MEMORY_SIZE         6291456UL  //   6M
+//#define FLISP_MEMORY_SIZE         8388608UL  //   8M
+#define FLISP_MEMORY_SIZE        16777216UL  //  16M
+//#define FLISP_MEMORY_SIZE        33554432UL  //  32M
 
+extern char *eval_string(bool, char *, ...);
+extern void free_lisp_output();
 
 /*
  * Local Variables:

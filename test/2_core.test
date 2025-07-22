@@ -1,46 +1,88 @@
+#!./run
 # test the fLisp core library
 # leg20231129: Femto
-tap 10
 
-flisp_core() {
-    IN=$(cat <<EOF
-(load "../femto.rc")
-$IN
-EOF
-      )
-    flisp_expr "$@"
-}
+export FLISPRC=../lisp/core.lsp
+
+tap 23
 
 # list
 IN='(list)' OUT=nil
-flisp_core; ok list-1 empty list
+flisp_expr 1; ok list-1 empty list
 
 IN="(list 'element)" OUT='(element)'
-flisp_core; ok list-2 single element
+flisp_expr 1; ok list-2 single element
 
 IN="(list 'first 'second)" OUT='(first second)'
-flisp_core; ok list-3 two elements
+flisp_expr 1; ok list-3 two elements
 
 # defmacro
-true; ok defmacro \# TODO 
+IN="(defmacro m (a b) (list 'list a b)) (m 1 2)" OUT='(1 2)'
+flisp_expr 1; ok defmacro-1  simple macroexpansion
 
 # defun
-true; ok defun \# TODO
+IN="(defun f (a b) (list a b)) (f 1 2)" OUT='(1 2)'
+flisp_expr 1; ok defun-1  simple function invocation
 
 # string
-true; ok string \# TODO
+IN="(string nil)" OUT='""'
+flisp_expr 1; ok string-1 nil is empty string
+
+IN="(string +03)" OUT='"3"'
+flisp_expr 1; ok string-2 number converts to number string
+
+IN='(string "a")' OUT='"a"'
+flisp_expr 1; ok string-3 string returns itself
+
+IN="(string 'a)" OUT='"a"'
+flisp_expr 1; ok string-4 symbols converts to its name
+
+IN="(string (cons 'a  2))" OUT='"a2"'
+flisp_expr 1; ok string-5 cons converts to concatenated strings of elements
+
+IN="(string car)" OBJ='(wrong-type-argument ("cannot convert to string" #<Primitive car>))'  ERR="wrong-type-argument"
+flisp_err 1; ok string-6 lambda err\'s
 
 # concat
-true; ok concat \# TODO
+IN="(concat 1 'a \"?\")" OUT='"1a?"'
+flisp_expr 1; ok concat-1 simple string concatenation
 
 # memq
-true; ok memq \# TODO
+IN="(memq 'a (list 0 'a 3))" OUT="(a 3)"
+flisp_expr 1; ok memq-1 find object in list
+
+IN='(memq '\''a '\''(1 '\''two 3))' OUT=nil
+flisp_expr 1; ok memq-2 do not find object in list
+
+# fload
+IN='(setq f (fopen "empty.lsp" "r")) (fload f)' OUT=nil
+flisp_expr 1; ok fload-1 load empty file
+
+IN='(setq f (fopen "one_word.lsp" "r")) (fload f)' OUT='"one_word"'
+flisp_expr 1; ok fload-2 load file with one word
 
 # provide
-true; ok provide \# TODO
+IN="(provide)" OUT="(nil core)"
+flisp_expr 1; ok provide-1 providing nothing adds nil
+IN="(provide 'a)" OUT="(a core)"
+flisp_expr 1; ok provide-2 providing feature a prepends a to features
+IN="(provide 'a 'b)" OUT="(a core)"
+flisp_expr 1; ok provide-3 providing features a and subfeature b only prepends a to features
 
 # require
-true; ok require \# TODO
+IN="(require)" OBJ="#<Lambda (feature . args)>" ERR="(env) expects at least 1 arguments"
+flisp_err 1; ok require-1 requiring nothing errs
+
+IN="(require '_no_file)" OBJ="" ERR="errno: 2"
+flisp_err 1; ok require-2 requiring not existing features fails
+
+IN="(require 'core)" OUT="(core)
+core"
+flisp_expr 2; ok require-3 requiring existing feature returns feature
+
+IN="(require 'flisp)" OUT="(core)
+flisp"
+flisp_expr 2; ok require-4 requiring new feature returns feature
 
 
 # Local Variables:
