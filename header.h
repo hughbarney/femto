@@ -27,7 +27,7 @@ int mkstemp(char *);
 #ifndef E_INITFILE
 #define E_INITFILE      "/usr/local/share/femto/femto.rc"
 #endif
-#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, July 2025, by Hugh Barney,  No warranty."
+#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, July 2025, by Hugh Barney, Georg Lehner, No warranty."
 
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
