@@ -1,4 +1,13 @@
+/*
+This file is included in lisp.c
+
+Here we register editor commands that we want to be
+available to be called as lisp functions
+
+*/
+
     {"get-temp-file", 0, 0, e_get_temp_file},
+    {"toggle-text-mode", 0, 0, e_toggle_text_mode},
     {"add-mode-global", 1, 1, e_add_mode_global},
     {"message", 1, 1, e_message},
     {"log-message", 1, 1, e_log_message},

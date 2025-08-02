@@ -79,7 +79,8 @@ int parse_text(buffer_t *bp, point_t pt)
         return ID_DOUBLE_STRING;
     }
 
-    if (state == ID_DEFAULT && c_now == '\'')
+    // suppress single quote matching if in text mode
+    if ( !(bp->b_flags & B_TEXT)  && state == ID_DEFAULT && c_now == '\'')
         return (next_state = ID_SINGLE_STRING);
 
     if (state == ID_SINGLE_STRING && c_now == '\\') {

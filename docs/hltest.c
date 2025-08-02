@@ -79,3 +79,10 @@ s="£";
 s=":";
 
 /* */
+
+'This text will appear as a string (GOLD) as the single quote is not completed
+except in TEXT mode where it will appear as normal text
+do esc-x toggle-text-mode and see how this text gets rendered
+when text mode is on the text will appear in CYAN
+
+

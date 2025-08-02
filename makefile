@@ -76,7 +76,7 @@ femto: $(OBJ) femto.rc
 
 femto.rc: femto.sht lisp/core.lsp
 
-femto_lisp.o: lisp.c
+femto_lisp.o: lisp.c femto.register.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -c lisp.c -o $@
 
 flisp: $(FLISP_OBJ) flisp.rc

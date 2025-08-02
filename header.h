@@ -18,7 +18,7 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.21"
+#define E_VERSION       "2.22"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND     "<not bound>"
 #ifndef E_SCRIPTDIR
@@ -27,7 +27,7 @@ int mkstemp(char *);
 #ifndef E_INITFILE
 #define E_INITFILE      "/usr/local/share/femto/femto.rc"
 #endif
-#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, July 2025, by Hugh Barney, Georg Lehner, No warranty."
+#define E_VERSION_STR    E_NAME " " E_VERSION ", Public Domain, August 2025, by Hugh Barney, Georg Lehner, No warranty."
 
 #define MSGLINE         (LINES-1)
 #define NOMARK          -1
@@ -91,6 +91,7 @@ typedef enum {
     B_OVERWRITE = 0x02,         /* overwite mode */
     B_SPECIAL = 0x04,           /* is a special buffer name of form '*name*' */
     B_UNDO = 0x08,              /* undo mode */
+    B_TEXT = 0x10,              /* text mode, suppress single quote handling */
 } buffer_flags_t;
 
 typedef struct string_list_t
@@ -351,6 +352,7 @@ extern void unmark();
 extern void up();
 extern void user_func();
 extern void version();
+extern void toggle_text_mode();
 extern void writefile();
 extern void yank();
 
