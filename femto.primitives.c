@@ -43,6 +43,7 @@ DEFINE_EDITOR_FUNC(describe_functions)
 DEFINE_EDITOR_FUNC(split_window)
 DEFINE_EDITOR_FUNC(other_window)
 DEFINE_EDITOR_FUNC(execute_key)
+DEFINE_EDITOR_FUNC(toggle_text_mode)
 
 extern int set_key(char *, char *);
 extern int getinput(char *, char *, int, int);

@@ -288,7 +288,8 @@ int goto_line(int line)
         msg(m_line, line);
         return 1;
     } else {
-        msg(m_lnot_found, line);
+        if (line > 0)
+            msg(m_lnot_found, line);
         return 0;
     }
 }
@@ -400,6 +401,16 @@ void toggle_overwrite_mode() {
         curbp->b_flags &= ~B_OVERWRITE;
     else
         curbp->b_flags |= B_OVERWRITE;
+}
+
+/* suppress single quote matching for text files where we want to ignore apostraphe etc */
+void toggle_text_mode() {
+    if (curbp->b_flags & B_TEXT)
+        curbp->b_flags &= ~B_TEXT;
+    else
+        curbp->b_flags |= B_TEXT;
+
+    redraw(); /* mark the lot for update */
 }
 
 int i_check_region()

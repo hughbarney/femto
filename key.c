@@ -161,6 +161,7 @@ void setup_keys()
     set_key_internal("esc-m",   "set-mark"              , "\x1B\x6D", i_set_mark);
     set_key_internal("esc-n",   "next-buffer"           , "\x1B\x6E", next_buffer);
     set_key_internal("esc-o",   "delete-other-windows"  , "\x1B\x6F", delete_other_windows);
+    set_key_internal("esc-q",   "kill-buffer"           , "\x1B\x71", kill_buffer);
     set_key_internal("esc-r",   "query-replace"         , "\x1B\x72", query_replace);
     set_key_internal("esc-v",   "page-up"               , "\x1B\x76", backward_page);
     set_key_internal("esc-w",   "copy-region"           , "\x1B\x77", copy_region);
@@ -224,9 +225,10 @@ void setup_keys()
 
     set_key_internal("c-c f",     "describe-functions"    , "\x03\x66", describe_functions);
 
+    // command will be registered so that it will get searched for when prompted as execute-command (esc-x)
     register_command("show-version", version);
+    register_command("toggle-text-mode", toggle_text_mode);
 }
-
 
 char_t *get_key(keymap_t *keys, keymap_t **key_return)
 {

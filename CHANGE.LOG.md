@@ -1,3 +1,10 @@
+## Femto 2.22/fLisp 0.5 Aug 2025
+
+Added toggle-text-mode as start of being able to have different syntax high light
+behaviour in different buffers
+
+Fixed reporting of 'Line 0, not found' when files are loaded
+
 ## Femto 2.21/fLisp 0.5 May 2025
 
 Fix remaining gc issues with macros and re-instate and macro.
