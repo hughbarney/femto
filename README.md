@@ -236,7 +236,7 @@ for example:
 
 Place the cursor at the beginning of line 1 and set a mark (hit control-spacebar).
 
-Now move the cursot to line 5 and evaluate the block of code (hit escape followed by ])
+Now move the cursor to line 5 and evaluate the block of code (hit escape followed by ])
 
 Femto will pass the code to lisp for it to be evaluated.
  
@@ -253,10 +253,16 @@ Now call factorial in the same way (mark the start of the code, move to the end 
 
 ## Femto Startup
 
+When Femto is invoked, any number of files to be loaded into editor
+buffers can be specified on the commandline.  If an integer *n*
+preceded by a `+` sign is put *before* a filename, the point is
+advanced to the begining of line *n*.  This is a feature of the
+default `femto.rc` file, loaded by the startup sequence described in
+this section.
+
 The Femto editor itself provides only basic buffer movement and edit
 functions, everything else is done by extending the user interface
 using the Lisp extension language.
-
 
 The `lisp` subdirectory contains essential extensions to the Femto
 editor as well as examples.  With `make install` these are copied to a
