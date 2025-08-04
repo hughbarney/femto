@@ -845,21 +845,15 @@ void readhook(buffer_t *bp)
 {
     char *output;
 
+    // setup the command to be called into the lisp interpreter
     sprintf(response_buf, "(read-hook \"%s\")", bp->b_fname);
 
-    // need to decide if we will allow read hook to display anything
-    // for now we will allow it for testing purposes
-
+    // we dont want any output from the read-hook, leaving message line available
+    // the only thing that could go wrong are errors in the lisp code or 
+    // a missing read-hook function in startup.lsp
     if ((output = eval_string(false, response_buf)) == NULL)
         return;
 
-    if (strlen(output) < 60) {
-        msg(output);
-    } else {
-        bp = find_buffer("*lisp_output*", TRUE);
-        append_string(bp, output);
-        (void)popup_window(bp->b_bname);
-    }
     free_lisp_output();
 }
 
