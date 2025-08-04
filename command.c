@@ -315,6 +315,7 @@ void readfile(char *fname)
             msg(m_newfile, fname);
         }
         safe_strncpy(curbp->b_fname, fname, NAME_MAX);
+        readhook(curbp);
     }
 }
 
@@ -830,6 +831,68 @@ void user_func()
     if (eval_string(true, "(%s)", key_return->k_funcname) == NULL)
         return;
     free_lisp_output();
+}
+
+/*
+ * readhook
+ *
+ * this will be called everytime a file is loaded into 
+ * a buffer, it will execute the lisp function read-hook
+ *
+ */
+
+void readhook(buffer_t *bp)
+{
+    char *output;
+
+    sprintf(response_buf, "(read-hook \"%s\")", bp->b_fname);
+
+    // need to decide if we will allow read hook to display anything
+    // for now we will allow it for testing purposes
+
+    if ((output = eval_string(false, response_buf)) == NULL)
+        return;
+
+    if (strlen(output) < 60) {
+        msg(output);
+    } else {
+        bp = find_buffer("*lisp_output*", TRUE);
+        append_string(bp, output);
+        (void)popup_window(bp->b_bname);
+    }
+    free_lisp_output();
+}
+
+int add_mode_current_buffer(char* modename)
+{
+    if (strcmp(modename, "text") == 0) {
+        add_mode(curbp, B_TEXT);
+        return 1;
+    } else if (strcmp(modename, "special") == 0) {
+        add_mode(curbp, B_SPECIAL);
+        return 1;
+    } else if (strcmp(modename, "modified") == 0) {
+        add_mode(curbp, B_MODIFIED);
+        return 1;
+    }
+   
+    return 0; // we did not add a mode
+}
+
+int delete_mode_current_buffer(char* modename) 
+{
+    if (strcmp(modename, "text") == 0) {
+        delete_mode(curbp, B_TEXT);
+        return 1;
+    } else if (strcmp(modename, "special") == 0) {
+        delete_mode(curbp, B_SPECIAL);
+        return 1;
+    } else if (strcmp(modename, "modified") == 0) {
+        delete_mode(curbp, B_MODIFIED);
+        return 1;
+    }
+    
+    return 0; // we did not delete a mode
 }
 
 /*

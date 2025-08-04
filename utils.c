@@ -69,6 +69,15 @@ void safe_strncpy(char *dest, char *src, int nchars)
     *(dest + nchars - 1) = '\0';  /* force null termination */
 }
 
+char* get_file_extension(char *filename) {
+    char* dot = strrchr(filename, '.');
+
+    if (!dot || dot == filename) {
+        return NULL; // No dot found or dot is the first character
+    }
+    return dot + 1; // Return pointer to extension (after the dot)
+}
+
 /*
  * Local Variables:
  * c-file-style: "k&r"

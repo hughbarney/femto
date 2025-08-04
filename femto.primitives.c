@@ -4,7 +4,6 @@
 #define F_NONE          0
 #define F_CLEAR         1
 
-
 #define DEFINE_EDITOR_FUNC(name)					\
   extern void name();							\
     Object *e_##name(Interpreter *interp, Object ** args, Object **env)	\
@@ -53,10 +52,13 @@ extern char *get_key_name(void);
 extern char *get_key_funcname(void);
 extern char *get_clipboard(void);
 extern char *get_current_bufname(void);
+extern char *get_current_filename(void);
 extern void set_scrap(unsigned char *);
 extern void execute_key(void);
 extern int select_buffer(char *);
 extern int delete_buffer_byname(char *);
+extern int add_mode_current_buffer(char *);
+extern int delete_mode_current_buffer(char *);
 extern int save_buffer_byname(char *);
 extern int count_buffers(void);
 extern void display_prompt_and_response(char *, char *);
@@ -97,6 +99,18 @@ Object *e_add_mode_global(Interpreter *interp, Object **args, Object **env)
 {
     ONE_STRING_ARG(add-mode-global);
     return (1 == add_mode_global(arg->string) ? t : nil);
+}
+
+Object *e_add_mode(Interpreter *interp, Object **args, Object **env)
+{
+    ONE_STRING_ARG(add-mode);
+    return (1 == add_mode_current_buffer(arg->string) ? t : nil);
+}
+
+Object *e_delete_mode(Interpreter *interp, Object **args, Object **env)
+{
+    ONE_STRING_ARG(delete-mode);
+    return (1 == delete_mode_current_buffer(arg->string) ? t : nil);
 }
 
 Object *e_set_clipboard(Interpreter *interp, Object **args, Object **env)
@@ -203,6 +217,7 @@ Object *e_kill_buffer(Interpreter *interp, Object **args, Object **env)
     int result = delete_buffer_byname(arg->string);
     return (result ? t : nil);
 }
+
 Object *e_zero_buffer(Interpreter *interp, Object **args, Object **env)
 {
     assert(curbp != NULL);
@@ -243,10 +258,25 @@ Object *e_getch(Interpreter *interp, Object **args, Object **env)
 
 Object *e_get_buffer_name(Interpreter *interp, Object **args, Object **env)
 {
-    char buf[20];
+    char buf[40];
     strcpy(buf, get_current_bufname());
     return newStringWithLength(interp, buf, strlen(buf));
 }
+
+Object *e_get_buffer_filename(Interpreter *interp, Object **args, Object **env)
+{
+    char buf[128];
+    strcpy(buf, get_current_filename());
+    return newStringWithLength(interp, buf, strlen(buf));
+}
+
+Object *e_get_buffer_file_extension(Interpreter *interp, Object **args, Object **env)
+{
+    char buf[20];
+    strcpy(buf, get_current_file_extension());
+    return newStringWithLength(interp, buf, strlen(buf));
+}
+
 Object *e_message(Interpreter *interp, Object **args, Object **env)
 {
     ONE_STRING_ARG(message);

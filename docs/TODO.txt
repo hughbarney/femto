@@ -17,6 +17,8 @@ DONE
 16/1/18 review all examples\*.lsp for names of functions - should no have () around names
 15/1/18 fix keyboard macros (kill-to-eof) - they stopped working
 
+'dfsdfsdfsdfsdfsd
+'
 
 DONE
 ====
