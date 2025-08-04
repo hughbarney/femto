@@ -8,12 +8,12 @@ test all keyboard keys
 test all command lists
 run command list check
 review all code
-dired.lsp
 prompt that recalls commands
 
 
 DONE
 ====
+10/12/17 dired.lsp
 16/1/18 review all examples\*.lsp for names of functions - should no have () around names
 15/1/18 fix keyboard macros (kill-to-eof) - they stopped working
 

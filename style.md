@@ -1,10 +1,9 @@
 # Coding Style
 
-Femto is coded in C using the following coding style
+Femto is coded in C and Lisp.  For C code use the Kernighan and
+Ritchie (K&R) style, using 4 spaces for indentation.
 
-* Kernighan and Ritchie (K&R) using 4 spaces for indentation
-
-The style can be setup in GNU Emacs using the following elisp code
+This style can be setup in GNU Emacs using the following elisp code
 
 ```lisp
 
@@ -71,3 +70,9 @@ void func2(int n) {
 }
 
 ```
+
+For Lisp files lean to Emacs Lisp formatting, specifically:
+
+- Indentation is two spaces.
+- Do not use tabs.
+- Put trailing parentheses on a single line.
