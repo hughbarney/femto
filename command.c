@@ -851,6 +851,7 @@ void readhook(buffer_t *bp)
     // we dont want any output from the read-hook, leaving message line available
     // the only thing that could go wrong are errors in the lisp code or 
     // a missing read-hook function in startup.lsp
+
     if ((output = eval_string(false, response_buf)) == NULL)
         return;
 
@@ -868,6 +869,9 @@ int add_mode_current_buffer(char* modename)
     } else if (strcmp(modename, "modified") == 0) {
         add_mode(curbp, B_MODIFIED);
         return 1;
+    } else if (strcmp(modename, "cmode") == 0) {
+        add_mode(curbp, B_CMODE);;
+        return 1;
     }
    
     return 0; // we did not add a mode
@@ -883,6 +887,9 @@ int delete_mode_current_buffer(char* modename)
         return 1;
     } else if (strcmp(modename, "modified") == 0) {
         delete_mode(curbp, B_MODIFIED);
+        return 1;
+    } else if (strcmp(modename, "cmode") == 0) {
+        delete_mode(curbp, B_CMODE);;
         return 1;
     }
     
