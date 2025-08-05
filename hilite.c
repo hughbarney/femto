@@ -46,61 +46,74 @@ int parse_text(buffer_t *bp, point_t pt)
     char_t c_now = get_at(bp, pt);
     char_t c_next = get_at(bp, pt + 1);
     state = next_state;
+    int cmode = (bp->b_flags & B_CMODE ? 1 : 0);
 
-    if (state == ID_DEFAULT && c_now == '/' && c_next == '*') {
+    // C start of block comment 
+    if (cmode == 1 && state == ID_DEFAULT && c_now == '/' && c_next == '*') {
         skip_count = 1;
         return (next_state = state = ID_BLOCK_COMMENT);
     }
 
-    if (state == ID_BLOCK_COMMENT && c_now == '*' && c_next == '/') {
+    // C end of block comment
+    if (cmode == 1 && state == ID_BLOCK_COMMENT && c_now == '*' && c_next == '/') {
         skip_count = 1;
         next_state = ID_DEFAULT;
         return ID_BLOCK_COMMENT;
     }
 
-    if (state == ID_DEFAULT && c_now == '/' && c_next == '/') {
+    // C line comment
+    if (cmode == 1 && state == ID_DEFAULT && c_now == '/' && c_next == '/') {
         skip_count = 1;
         return (next_state = state = ID_LINE_COMMENT);
     }
 
-    if (state == ID_LINE_COMMENT && c_now == '\n')
+    // C line comment end
+    if (cmode == 1 && state == ID_LINE_COMMENT && c_now == '\n')
         return (next_state = ID_DEFAULT);
 
-    if (state == ID_DEFAULT && c_now == '"')
+    // double quoted string
+    if (cmode == 1 && state == ID_DEFAULT && c_now == '"')
         return (next_state = ID_DOUBLE_STRING);
 
-    if (state == ID_DOUBLE_STRING && c_now == '\\') {
+    // escape inside double quoted string
+    if (cmode == 1 && state == ID_DOUBLE_STRING && c_now == '\\') {
         skip_count = 1;
         return (next_state = ID_DOUBLE_STRING);
     }
 
-    if (state == ID_DOUBLE_STRING && c_now == '"') {
+    // end of double quoted string
+    if (cmode == 1 && state == ID_DOUBLE_STRING && c_now == '"') {
         next_state = ID_DEFAULT;
         return ID_DOUBLE_STRING;
     }
 
-    // suppress single quote matching if in text mode
-    if ( !(bp->b_flags & B_TEXT)  && state == ID_DEFAULT && c_now == '\'')
+    // single quote matching, dont want in lisp code
+    if (cmode == 1 && state == ID_DEFAULT && c_now == '\'')
         return (next_state = ID_SINGLE_STRING);
 
-    if (state == ID_SINGLE_STRING && c_now == '\\') {
+    // escape inside single quote matching
+    if (cmode == 1 && state == ID_SINGLE_STRING && c_now == '\\') {
         skip_count = 1;
         return (next_state = ID_SINGLE_STRING);
     }
-
-    if (state == ID_SINGLE_STRING && c_now == '\'') {
+    
+    // end of single quote matching 
+    if (cmode == 1 && state == ID_SINGLE_STRING && c_now == '\'') {
         next_state = ID_DEFAULT;
         return ID_SINGLE_STRING;
     }
 
+    // general alphabet text, not attached to any mode    
     if (state != ID_DEFAULT)
         return (next_state = state);
 
+    // digits, not activated by any mode    
     if (state == ID_DEFAULT && c_now >= '0' && c_now <= '9') {
         next_state = ID_DEFAULT;
         return (state = ID_DIGITS);
     }
 
+    // symbols not attivated by any mode
     if (state == ID_DEFAULT && 1 == is_symbol(c_now)) {
         next_state = ID_DEFAULT;
         return (state = ID_SYMBOL);
