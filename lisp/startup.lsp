@@ -76,19 +76,14 @@
 
 (show-startup-message)
 
-
 ;;
 ;; this can be used to set modes for different types of file when they get loaded
 ;;
-;; at the moment we only have text, modified and special mode
-;;
 (defun read-hook (s)
-  ;; for now we just show the filename on the message line
   (cond
-    ((eq "rc" (get-buffer-file-extension)) (add-mode "text"))
-    ((eq "txt" (get-buffer-file-extension)) (add-mode "text"))
-    ((eq "lsp" (get-buffer-file-extension)) (add-mode "text")))
-  (message s))
+    ((eq "c" (get-buffer-file-extension)) (add-mode "cmode"))
+    ((eq "h" (get-buffer-file-extension)) (add-mode "cmode"))
+    ((eq "cpp" (get-buffer-file-extension)) (add-mode "cmode"))))
 
 ;; Load and edit user specific config
 (setq
@@ -99,7 +94,8 @@
 (cond ((= 0 rc) (load (confn config_file))))
 
 
-;; mark the scratch buffer as unmodified
+;; mark the scratch buffer as unmodified, set to C mode so that the comment comes up green
+(add-mode "cmode")
 (delete-mode "modified")
 
 (getopts argv 0)
