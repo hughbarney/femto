@@ -81,8 +81,6 @@ s=":";
 /* */
 
 'This text will appear as a string (GOLD) as the single quote is not completed
-except in TEXT mode where it will appear as normal text
-do esc-x toggle-text-mode and see how this text gets rendered
-when text mode is on the text will appear in CYAN
-
-
+If cmode is truned off (delete-mode "cmode") then it will appear as default text
+do esc-: (delete-mode "cmode") to see how this text gets rendered
+in default mode the text will appear in CYAN, in cmode it will appear GOLD
