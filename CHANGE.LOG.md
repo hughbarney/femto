@@ -1,3 +1,8 @@
+## Femto 2.23/fLisp 0.5 Aug 2025
+
+Added cmode, single / double quote matching, single line comments
+Setup default mode for basic syntax highlighting text, symbols and numbers
+
 ## Femto 2.22/fLisp 0.5 Aug 2025
 
 Added toggle-text-mode as start of being able to have different syntax high light
