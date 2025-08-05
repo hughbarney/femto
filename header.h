@@ -18,7 +18,7 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.22"
+#define E_VERSION       "2.23"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND     "<not bound>"
 #ifndef E_SCRIPTDIR
@@ -92,6 +92,7 @@ typedef enum {
     B_SPECIAL = 0x04,           /* is a special buffer name of form '*name*' */
     B_UNDO = 0x08,              /* undo mode */
     B_TEXT = 0x10,              /* text mode, suppress single quote handling */
+    B_CMODE = 0x20,             /* c mode overrides TEXT mode */
 } buffer_flags_t;
 
 typedef struct string_list_t
