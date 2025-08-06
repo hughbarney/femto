@@ -1,7 +1,11 @@
 ## Femto 2.23/fLisp 0.5 Aug 2025
 
-Added cmode, single / double quote matching, single line comments
 Setup default mode for basic syntax highlighting text, symbols and numbers
+
+Buffer Mode flags that can be set to turn off single and double quote matching so that syntax hightlighting does not look messywhen looking at a text file
+
+(read-hook) - function to be called when a file is loaded by the user
+
 
 ## Femto 2.22/fLisp 0.5 Aug 2025
 

@@ -11,6 +11,22 @@ language.
 > nothing left to add, but when there is nothing left to take away.
 > -- <cite>Antoine de Saint-Exupery</cite>
 
+
+## Documentation
+
+Femto comes with Markdown and HTML documentation. To rebuild the
+documentation [Pandoc](https://pandoc.org/) is required. Rebuild both
+documentation formats from their respective source files by running:
+
+    make doc
+
+The documentation is prebuilt in this repository and can be found in
+
+* [femto.md](docs/femto.md) ([HTML](pdoc/femto.html)) for Femto
+* [flisp.md](docs/flisp.md) ([HTML](pdoc/flisp.html)) for fLisp.
+
+
+
 ## Goals of Femto Emacs
 
 * To be an extendable version of the Atto Emacs editor using a Tiny
@@ -134,19 +150,6 @@ These instructions should work with most versions of linux
     $ cd femto
     $ sudo make install
 
-### Documentation
-
-Femto comes with Markdown and HTML documentation. To rebuild the
-documentation [Pandoc](https://pandoc.org/) is required. Rebuild both
-documentation formats from their respective source files by running:
-
-    make doc
-
-The documentation is prebuilt in this repository and can be found in
-[femto.md](docs/femto.md) ([HTML](pdoc/femto.html)) for Femto and
-[flisp.md](docs/flisp.md) ([HTML](pdoc/flisp.html)) for fLisp.
-
-
 ### Building on Ubuntu (using UTF8 support in ncurses / ncursesw)
 
 When building on Ubuntu you will need to install the libcurses dev package.
@@ -170,13 +173,7 @@ The following enhancements are envisaged.
 
 * Directory and file manegement (Dired) functionality.  A basic start has been made with dired.lsp
 
-* file-read-hook - function to be called when a file is loaded by the user
-
-* Ability to configure the syntax highlighter to different languages based on file extension
-  Add python triple quoted comments for python
-
-* Buffer Mode flags that can be set to turn off single and double quote matching so that syntax hightlighting 
-  does not look messy when looking at a text file
+* Ability to configure the syntax highlighter for python
 
 * Ability to load a file in read-only-mode
 
