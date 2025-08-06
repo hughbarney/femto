@@ -10,6 +10,11 @@ behaviour in different buffers
 
 Fixed reporting of 'Line 0, not found' when files are loaded
 
+Split Femto documentation out of README.md into pdoc/femto.html, from
+which docs/femto.md is build by `make doc`.  Cleanup of `docs`
+directory, move utf test to `test` directory, others to `misc`.
+
+
 ## Femto 2.21/fLisp 0.5 May 2025
 
 Fix remaining gc issues with macros and re-instate and macro.

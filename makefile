@@ -41,7 +41,7 @@ LISPFILES = femto.rc lisp/startup.lsp lisp/defmacro.lsp			\
 FLISPFILES = flisp.rc lisp/flisp.lsp lisp/stdlib.lsp
 
 DOCFILES = BUGS CHANGE.LOG.md README.md pdoc/flisp.html
-MOREDOCS = README.html docs/flisp.md
+MOREDOCS = README.html docs/flisp.md docs/femto.md
 
 FLISP_DOCFILES = README.flisp.md docs/flisp.md pdoc/flisp.html
 
@@ -129,6 +129,10 @@ doc: $(MOREDOCS)
 
 docs/flisp.md: pdoc/flisp.html pdoc/h2m.lua
 	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
+
+docs/femto.md: pdoc/femto.html pdoc/h2m.lua
+	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
+
 
 README.html: README.md
 	pandoc -o $@ -f gfm $<

@@ -1,3 +1,8 @@
+femto (2.22.1-1) bookworm; urgency=medium
+
+ * Minor bug fixes and documentation updates. Upstream version bump.
+ -- Georg Lehner <jorge@magma-soft.at>  Tue, 05 Aug 2025 15:17:33 +0100
+
 femto (2.21.7-1) bookworm; urgency=medium
 
   * Improve doc build, maintenance release.
