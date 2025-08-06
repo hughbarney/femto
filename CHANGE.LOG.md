@@ -1,10 +1,21 @@
 ## Femto 2.23/fLisp 0.5 Aug 2025
 
-Setup default mode for basic syntax highlighting text, symbols and numbers
+* Setup default mode for basic syntax highlighting text, symbols and numbers
 
-Buffer Mode flags that can be set to turn off single and double quote matching so that syntax hightlighting does not look messywhen looking at a text file
+* Buffer mode flags added that comntrol the syntax hilighting for different languages.
 
-(read-hook) - function to be called when a file is loaded by the user
+* startup.lsp now calls (read-hook filename) where filename is the filename of the file that just loaded.
+This enables cmode and LISP mode to be added to the buffer flags for the buffer.
+
+* The default syntax highlighting is now suitable for TEXT files that might contain non matching single quotes
+
+* In cmode block comments, line comments, double and single quotes are matched and strings highlighted
+
+* In lisp_mode anything after ; is treated as a line comment.  It is rather pleasing to see the .lsp files comments rendered in green.
+
+* add-mode and delete-mode functions added
+
+* I plan to add a python mode that will work for python style block comments.
 
 
 ## Femto 2.22/fLisp 0.5 Aug 2025
