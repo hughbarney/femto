@@ -2,18 +2,18 @@
 
 * Setup default mode for basic syntax highlighting text, symbols and numbers
 
-* Buffer mode flags added that comntrol the syntax hilighting for different languages.
+* Buffer mode flags added that control the syntax hilighting for different languages.
 
 * startup.lsp now calls (read-hook filename) where filename is the filename of the file that just loaded.
 This enables cmode and LISP mode to be added to the buffer flags for the buffer.
 
 * The default syntax highlighting is now suitable for TEXT files that might contain non matching single quotes
 
-* In cmode block comments, line comments, double and single quotes are matched and strings highlighted
+* In 'cmode' block comments, line comments, double and single quotes are matched and strings highlighted
 
-* In lisp_mode anything after ; is treated as a line comment.  It is rather pleasing to see the .lsp files comments rendered in green.
+* In 'lispmode' anything after ; is treated as a line comment.  It is rather pleasing to see the .lsp files comments rendered in green.
 
-* add-mode and delete-mode functions added
+* add-mode and delete-mode functions added. E.G.  (add-mode "cmode"), (add-mode "lispmode"), (add-mode "modified")
 
 * I plan to add a python mode that will work for python style block comments.
 
