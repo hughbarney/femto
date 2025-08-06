@@ -7,8 +7,9 @@ available to be called as lisp functions
 */
 
     {"get-temp-file", 0, 0, e_get_temp_file},
-    {"toggle-text-mode", 0, 0, e_toggle_text_mode},
     {"add-mode-global", 1, 1, e_add_mode_global},
+    {"add-mode", 1, 1, e_add_mode},
+    {"delete-mode", 1, 1, e_delete_mode},
     {"message", 1, 1, e_message},
     {"log-message", 1, 1, e_log_message},
     {"log-debug", 1, 1, e_log_debug},
@@ -22,6 +23,8 @@ available to be called as lisp functions
     {"show-prompt", 2, 2, e_show_prompt},
     {"eval-block", 0, 0, e_eval_block},
     {"get-buffer-name", 0, 0, e_get_buffer_name},
+    {"get-buffer-filename", 0, 0, e_get_buffer_filename},
+    {"get-buffer-file-extension", 0, 0, e_get_buffer_file_extension},
     {"get-char", 0, 0, e_get_char},
     {"get-key", 0, 0, e_get_key},
     {"get-key-name", 0, 0, e_get_key_name},

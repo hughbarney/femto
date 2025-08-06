@@ -191,6 +191,12 @@ char* get_buffer_filename(buffer_t *bp)
     return bp->b_fname;
 }
 
+char* get_buffer_file_extension(buffer_t *bp)
+{
+    assert(bp->b_fname != NULL);
+    return get_file_extension(bp->b_fname);
+}
+
 char* get_buffer_modeline_name(buffer_t *bp)
 {
     if (bp->b_fname[0] != '\0')
@@ -270,6 +276,25 @@ char *get_current_bufname()
 {
     assert(curbp != NULL);
     return get_buffer_name(curbp);
+}
+
+char *get_current_filename()
+{
+    assert(curbp != NULL);
+    return get_buffer_filename(curbp);
+}
+
+char *get_current_file_extension()
+{
+    assert(curbp != NULL);
+    static char no_extension[] = "";
+
+    char *ext = get_buffer_file_extension(curbp);
+
+    if (ext == NULL)
+       return no_extension;
+  
+    return ext;
 }
 
 void list_buffers()

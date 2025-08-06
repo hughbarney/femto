@@ -216,6 +216,7 @@ There are two ways to interract with Tiny-Lisp within Femto.
 
 * You can use C-] to find the last s-expression above the cursor and send it to be evaluated.
 * You can mark a region and send the whole region to be evaluated with ESC-].
+* ESC-: evaluate a list expression, enclosed in brackets
 
 ### Lisp Interaction - finding and evaluating the last s-expression
 
@@ -301,7 +302,18 @@ logged to the file `debug.out`, as well as the arguments of the
 invocations of the `log-debug` Lisp primitive.
 
 
+## Modes
+
+Modes control the behaviour of the editor and the syntax highligher
+
+* cmode - highlights single and double quoted stings, block comments and line comments
+* lisp - single line comments start with ;
+
+When a file is read into buffer the (read-hook) function is called with the 
+filename just loaded.  The (read-hook) function is defined in the startup.lsp file. 
+
 ## Basic Femto Extension
+
 
 `femto.rc` implements a simple library loader and handles batch
 mode. It provides the 'core' functionality.

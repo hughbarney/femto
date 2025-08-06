@@ -18,7 +18,7 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.22"
+#define E_VERSION       "2.23"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND     "<not bound>"
 #ifndef E_SCRIPTDIR
@@ -91,7 +91,8 @@ typedef enum {
     B_OVERWRITE = 0x02,         /* overwite mode */
     B_SPECIAL = 0x04,           /* is a special buffer name of form '*name*' */
     B_UNDO = 0x08,              /* undo mode */
-    B_TEXT = 0x10,              /* text mode, suppress single quote handling */
+    B_CMODE = 0x10,             /* c mode overrides TEXT mode */
+    B_LISP = 0x20,              /* lisp mode */
 } buffer_flags_t;
 
 typedef struct string_list_t
@@ -268,9 +269,13 @@ extern char *str_clip_too_big;
 extern buffer_t *find_buffer_by_fname(char *);
 extern buffer_t *find_buffer(char *, int);
 extern char* get_buffer_filename(buffer_t *);
+extern char* get_buffer_file_extension(buffer_t *);
 extern char* get_buffer_modeline_name(buffer_t *);
 extern char* get_buffer_name(buffer_t *);
 extern char *get_current_bufname();
+extern char *get_current_filename();
+extern char *get_current_file_extension();
+
 extern int buffer_is_empty(buffer_t *);
 extern int count_buffers();
 extern int delete_buffer(buffer_t *);
@@ -292,6 +297,8 @@ extern char* get_temp_file();
 extern char *get_version_string();
 extern char *rename_current_buffer(char *);
 extern int add_mode_global(char *);
+extern int add_mode_current_buffer(char *);
+extern int delete_mode_current_buffer(char *);
 extern int goto_line(int);
 extern int i_check_region();
 extern int prev_utf8_char_size();
@@ -337,6 +344,7 @@ extern void suspend();
 extern void quit();
 extern void quit_ask();
 extern void readfile(char *);
+extern void readhook(buffer_t *);
 extern void redraw();
 extern void repl();
 extern void resize_terminal();
@@ -352,7 +360,6 @@ extern void unmark();
 extern void up();
 extern void user_func();
 extern void version();
-extern void toggle_text_mode();
 extern void writefile();
 extern void yank();
 
@@ -470,6 +477,7 @@ extern void make_buffer_name(char *, char *);
 extern void make_buffer_name_uniq(char *);
 extern void remove_control_chars(char_t *);
 extern void safe_strncpy(char *, char *, int);
+extern char* get_file_extension(char *);
 
 /* functions in window.c */
 extern int count_windows();
