@@ -91,8 +91,8 @@ typedef enum {
     B_OVERWRITE = 0x02,         /* overwite mode */
     B_SPECIAL = 0x04,           /* is a special buffer name of form '*name*' */
     B_UNDO = 0x08,              /* undo mode */
-    B_TEXT = 0x10,              /* text mode, suppress single quote handling */
-    B_CMODE = 0x20,             /* c mode overrides TEXT mode */
+    B_CMODE = 0x10,             /* c mode overrides TEXT mode */
+    B_LISP = 0x20,              /* lisp mode */
 } buffer_flags_t;
 
 typedef struct string_list_t
@@ -360,7 +360,6 @@ extern void unmark();
 extern void up();
 extern void user_func();
 extern void version();
-extern void toggle_text_mode();
 extern void writefile();
 extern void yank();
 

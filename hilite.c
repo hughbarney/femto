@@ -47,6 +47,7 @@ int parse_text(buffer_t *bp, point_t pt)
     char_t c_next = get_at(bp, pt + 1);
     state = next_state;
     int cmode = (bp->b_flags & B_CMODE ? 1 : 0);
+    int lisp_mode = (bp->b_flags & B_LISP ? 1 : 0);
 
     // C start of block comment 
     if (cmode == 1 && state == ID_DEFAULT && c_now == '/' && c_next == '*') {
@@ -67,8 +68,14 @@ int parse_text(buffer_t *bp, point_t pt)
         return (next_state = state = ID_LINE_COMMENT);
     }
 
-    // C line comment end
-    if (cmode == 1 && state == ID_LINE_COMMENT && c_now == '\n')
+    // Lisp line comment
+    if (lisp_mode == 1 && state == ID_DEFAULT && c_now == ';') {
+        skip_count = 1;
+        return (next_state = state = ID_LINE_COMMENT);
+    }
+
+    // Lisp and C line comment end
+    if ((cmode == 1 || lisp_mode == 1) && state == ID_LINE_COMMENT && c_now == '\n')
         return (next_state = ID_DEFAULT);
 
     // double quoted string

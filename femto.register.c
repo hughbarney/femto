@@ -7,7 +7,6 @@ available to be called as lisp functions
 */
 
     {"get-temp-file", 0, 0, e_get_temp_file},
-    {"toggle-text-mode", 0, 0, e_toggle_text_mode},
     {"add-mode-global", 1, 1, e_add_mode_global},
     {"add-mode", 1, 1, e_add_mode},
     {"delete-mode", 1, 1, e_delete_mode},

@@ -404,16 +404,6 @@ void toggle_overwrite_mode() {
         curbp->b_flags |= B_OVERWRITE;
 }
 
-/* suppress single quote matching for text files where we want to ignore apostraphe etc */
-void toggle_text_mode() {
-    if (curbp->b_flags & B_TEXT)
-        curbp->b_flags &= ~B_TEXT;
-    else
-        curbp->b_flags |= B_TEXT;
-
-    redraw(); /* mark the lot for update */
-}
-
 int i_check_region()
 {
     if (curbp->b_mark == NOMARK) {
@@ -860,10 +850,7 @@ void readhook(buffer_t *bp)
 
 int add_mode_current_buffer(char* modename)
 {
-    if (strcmp(modename, "text") == 0) {
-        add_mode(curbp, B_TEXT);
-        return 1;
-    } else if (strcmp(modename, "special") == 0) {
+    if (strcmp(modename, "special") == 0) {
         add_mode(curbp, B_SPECIAL);
         return 1;
     } else if (strcmp(modename, "modified") == 0) {
@@ -872,6 +859,9 @@ int add_mode_current_buffer(char* modename)
     } else if (strcmp(modename, "cmode") == 0) {
         add_mode(curbp, B_CMODE);;
         return 1;
+    } else if (strcmp(modename, "lispmode") == 0) {
+        add_mode(curbp, B_LISP);;
+        return 1;
     }
    
     return 0; // we did not add a mode
@@ -879,10 +869,7 @@ int add_mode_current_buffer(char* modename)
 
 int delete_mode_current_buffer(char* modename) 
 {
-    if (strcmp(modename, "text") == 0) {
-        delete_mode(curbp, B_TEXT);
-        return 1;
-    } else if (strcmp(modename, "special") == 0) {
+    if (strcmp(modename, "special") == 0) {
         delete_mode(curbp, B_SPECIAL);
         return 1;
     } else if (strcmp(modename, "modified") == 0) {
@@ -890,6 +877,9 @@ int delete_mode_current_buffer(char* modename)
         return 1;
     } else if (strcmp(modename, "cmode") == 0) {
         delete_mode(curbp, B_CMODE);;
+        return 1;
+    } else if (strcmp(modename, "lispmode") == 0) {
+        delete_mode(curbp, B_LISP);;
         return 1;
     }
     

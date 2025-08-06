@@ -83,7 +83,9 @@
   (cond
     ((eq "c" (get-buffer-file-extension)) (add-mode "cmode"))
     ((eq "h" (get-buffer-file-extension)) (add-mode "cmode"))
-    ((eq "cpp" (get-buffer-file-extension)) (add-mode "cmode"))))
+    ((eq "cpp" (get-buffer-file-extension)) (add-mode "cmode"))
+    ((eq "lsp" (get-buffer-file-extension)) (add-mode "lispmode"))
+    ((eq "rc" (get-buffer-file-extension)) (add-mode "lispmode"))))
 
 ;; Load and edit user specific config
 (setq
