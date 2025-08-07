@@ -2,7 +2,7 @@ femto (2.23.1-1) bookworm; urgency=medium
 
  * Improved syntax highlighter: C, Lisp and text mode
  * File read hook
- -- Georg Lehner <jorge@magma-soft.at>  Tue, 05 Aug 2025 15:17:33 +0100
+ -- Georg Lehner <jorge@magma-soft.at>  Thu, 07 Aug 2025 13:05:41 +0200
 
 femto (2.22.1-1) bookworm; urgency=medium
 
