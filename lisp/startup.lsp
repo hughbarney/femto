@@ -85,7 +85,9 @@
     ((eq "h" (get-buffer-file-extension)) (add-mode "cmode"))
     ((eq "cpp" (get-buffer-file-extension)) (add-mode "cmode"))
     ((eq "lsp" (get-buffer-file-extension)) (add-mode "lispmode"))
-    ((eq "rc" (get-buffer-file-extension)) (add-mode "lispmode"))))
+    ((eq "rc" (get-buffer-file-extension)) (add-mode "lispmode"))
+    ((eq "py" (get-buffer-file-extension)) (add-mode "python"))))
+
 
 ;; Load and edit user specific config
 (setq

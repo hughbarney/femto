@@ -10,6 +10,7 @@ available to be called as lisp functions
     {"add-mode-global", 1, 1, e_add_mode_global},
     {"add-mode", 1, 1, e_add_mode},
     {"delete-mode", 1, 1, e_delete_mode},
+    {"get-mode", 1, 1, e_get_mode},
     {"message", 1, 1, e_message},
     {"log-message", 1, 1, e_log_message},
     {"log-debug", 1, 1, e_log_debug},
