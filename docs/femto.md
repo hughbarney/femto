@@ -11,7 +11,7 @@ This manual describes how to use and customize *Femto*. It refers to
 
 *Femto* is hosted on its [Github
 repository](https://github.com/hughbarney/femto), it is released to the
-public domain by [Hugh Barnes](mailto:hughbarney@gmail.com) in 2017.
+public domain by [Hugh Barney](mailto:hughbarney@gmail.com) in 2017.
 
 The extension language of *Femto* is documented in the [fLisp
 manual](flisp.html) ([Markdown](flisp.md)).

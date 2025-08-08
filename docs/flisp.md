@@ -13,7 +13,7 @@ programming language. It is used as extension language for the
 
 *fLisp* originates from [Tiny-Lisp by
 matp](https://github.com/matp/tiny-lisp) (pre 2014), was integrated into
-[Femto](https://github.com/hughbarney/femto) by Hugh Barnes (pre 2016)
+[Femto](https://github.com/hughbarney/femto) by Hugh Barney (pre 2016)
 and compacted by Georg Lehner in 2023.
 
 This is a reference manual. If you want to learn about Lisp programming
