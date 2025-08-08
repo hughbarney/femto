@@ -5,7 +5,7 @@
     <meta content="text/html; charset=utf-8" http-equiv="content-type" />
     <meta content="Editor, Emacs, tiny, manual" name="keywords" />
     <meta content="User manual for the Femto editor" name="description" />
-    <meta content="Hugh Barnes &lt;hughbarney@gmail.com&gt;" name="author" />
+    <meta content="Hugh Barney &lt;hughbarney@gmail.com&gt;" name="author" />
     <meta content="Georg Lehner &lt;jorge@magma-soft.at&gt;" name="author" />
     <meta content="2017" name="copyright" />
   </head>
@@ -24,13 +24,13 @@
     </p>
     <p>
       <i>Femto</i> is hosted on its <a href="https://github.com/hughbarney/femto">Github repository</a>, it is released
-      to the public domain by <a href="mailto:hughbarney@gmail.com">Hugh Barnes</a> in 2017.
+      to the public domain by <a href="mailto:hughbarney@gmail.com">Hugh Barney</a> in 2017.
     </p>
     <p>
       The extension language of <i>Femto</i> is documented in the <a href="flisp.html">fLisp manual</a>
       (<a href="flisp.md">Markdown</a>).
     </p>
-    
+
     <h2>Femto Key Bindings</h2>
     <pre><code>
 	C-A   begining-of-line
@@ -96,9 +96,9 @@
 	Ctrl+Down    end of file
 	Ctrk+Left    Page Down
 	Ctrl+Right   Page Up</code></pre>
-    
+
     <h3>Copying and moving</h3>
-    
+
     <pre><code>
 	C-&lt;spacebar&gt; Set mark at current position
 	^W   Delete region
@@ -114,7 +114,7 @@
       <li>Delete it (with ^W) or copy it (with M-W) into the kill buffer.</li>
       <li>Move the cursor to the desired location and yank it back (with ^Y).</li>
     </ol>
-    
+
     <h3>Searching</h3>
     <pre><code>
 	C-S or C-R enters the search prompt, where you type the search string
@@ -123,18 +123,18 @@
 	C-R at the search prompt will search backwards, will wrap at start of the buffer
 	ESC will escape from the search prompt and return to the point of the match
 	C-G abort the search and return to point before the search started</code></pre>
-    
+
     <h2>Lisp Interaction</h2>
-    
+
     <p>There are two ways to interact with Tiny-Lisp within Femto.</p>
     <ul>
       <li>You can use C-] to find the last s-expression above the cursor and send it to be evaluated.</li>
       <li>You can mark a region and send the whole region to be evaluated with ESC-].</li>
     </ul>
     <h3>Lisp Interaction - finding and evaluating the last s-expression</h3>
-    
+
     <p>This works in almost the same way as GNU Emacs in the scratch buffer.</p>
-    
+
     <h3>Lisp Interaction - mark and evaluating a region</h3>
     <p>Type a lisp function into the editor, for example:</p>
     <pre><code>
@@ -156,7 +156,7 @@
 	 alt="Screenshot of Femto editor showing Lisp evaluation."
 	  />
 
-    
+
     <h2>Femto Startup</h2>
     <p>
       The Femto editor itself provides only basic buffer movement and edit functions, everything else is done by
@@ -181,6 +181,19 @@
       as <code>script_dir</code>. This default directory can be changed at compile time by changing SCRIPTDIR.  At
       startup <code>femto</code> overrides the default with the value of the environment variable FEMTOLIB if set.
     </p>
+
+    <h2>Modes</h2>
+
+    <p>Modes control the behaviour of the editor and the syntax highligher</p>
+    <dl>
+      <dt>cmode</dt><dd>Highlights single and double quoted stings, block comments and line comments.</dd>
+      <dt>lisp</dt><dd>ingle line comments start with &semi;</dd>
+    </dl>
+    <p>
+      <code>startup.lsp</code> defines a default <code>read-hook</code> function which sets these modes based on the
+      filename.
+    </p>
+
     <!-- Batch mode is currently not available and might be deprecated in -->
 
     <!-- future versions -->
@@ -284,7 +297,7 @@
       <li><code>edit-config</code> - open user specific configuration file in Femto.</li>
       <li><code>show-info</code> - load the <code>info.lsp</code> file.</li>
     </ul>
-    
+
     <h2>Femto Extensions</h2>
     <p>Additional extensions loaded by <code>femto.rc</code></p>
     <ul>

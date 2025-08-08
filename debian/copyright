@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Source: https://github.com/jorge-leon/femto
 Upstream-Name: femto
-Upstream-Contact: Hugh Barnes
+Upstream-Contact: Hugh Barney <hughbarney@gmail.com>
 Files:
  *
 Copyright: 
