@@ -26,7 +26,7 @@
     </p>
     <p>
       <i>fLisp</i> originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was
-      integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barnes (pre 2016) and compacted by
+      integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barney (pre 2016) and compacted by
       Georg Lehner in 2023.
     </p>
     <p>This is a reference manual. If you want to learn about Lisp programming use other resources eg.</p>
@@ -616,10 +616,15 @@
       <dt><var>filename</var></dt>
       <dd>If set the buffer is associated with the respective file.</dd>
       <dt><var>flags</var></dt>
-      <dd>Different flags determine the behavior of the buffer.</dd>
+      <dd>
+	Different flags determine the behavior of the buffer. Editor specific
+	flags: <code>special</code>, <code>modified</code>.
+      </dd>
+      <dd>Mode flags determine the syntax highlighter mode: <code>cmode</code> and <code>lispmode</code> are
+      available. If none is set <code>text</code> mode is used for syntax hightlighting.</dd>
     </dl>
 
-    <p>In the following, all mentions of these variables refer to the current buffers properties.</p>
+    <p>In the following, any mention to one of them refers to the respective current buffers property.</p>
     
     <h5 id="text">Text manipulation</h5>
 
@@ -772,8 +777,15 @@
       <dd>Return the name of the current buffer. Note: <u>C</u> to <code>buffer-name</code> in Elisp.</dd>
       <dt><code>(add-mode-global <var>string</var>)</code></dt>
       <dd>Sets global mode <var>string</var> for all buffers. Currently the only global mode is <kbd>undo</kbd>.</dd>
+      <dt><code>(add-mode <var>string</var>)</code></dt>
+      <dd>Set a flag for the current buffer.</dd>
+      <dt><code>(delete-mode <var>string</var>)</code></dt>
+      <dd>Reset a flag for the current buffer.</dd>
       <dt><code>(find-file <var>string</var>)</code></dt>
-      <dd>Loads file with path string into a new buffer. <u>C</u></dd>
+      <dd>
+	Loads file with path <var>string</var> into a new buffer. After
+	loading <code>(read-hook <var>string</var>)</code> is called. <u>C</u>
+      </dd>
       <dt><code>(save-buffer <var>string</var>)</code></dt>
       <dd>Saves the buffer named <var>string</var> to disk. <u>C</u></dd>
     </dl>

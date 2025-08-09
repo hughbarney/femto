@@ -13,7 +13,7 @@ programming language. It is used as extension language for the
 
 *fLisp* originates from [Tiny-Lisp by
 matp](https://github.com/matp/tiny-lisp) (pre 2014), was integrated into
-[Femto](https://github.com/hughbarney/femto) by Hugh Barnes (pre 2016)
+[Femto](https://github.com/hughbarney/femto) by Hugh Barney (pre 2016)
 and compacted by Georg Lehner in 2023.
 
 This is a reference manual. If you want to learn about Lisp programming
@@ -630,10 +630,15 @@ class="dfn">selection</span> or <span class="dfn">region</span>.
 If set the buffer is associated with the respective file.
 
 *flags*  
-Different flags determine the behavior of the buffer.
+Different flags determine the behavior of the buffer. Editor specific
+flags: `special`, `modified`.
 
-In the following, all mentions of these variables refer to the current
-buffers properties.
+Mode flags determine the syntax highlighter mode: `cmode` and `lispmode`
+are available. If none is set `text` mode is used for syntax
+hightlighting.
+
+In the following, any mention to one of them refers to the respective
+current buffers property.
 
 ##### Text manipulation
 
@@ -803,8 +808,15 @@ in Elisp.
 Sets global mode *string* for all buffers. Currently the only global
 mode is <span class="kbd">undo</span>.
 
+`(add-mode string)`  
+Set a flag for the current buffer.
+
+`(delete-mode string)`  
+Reset a flag for the current buffer.
+
 `(find-file string)`  
-Loads file with path string into a new buffer. <u>C</u>
+Loads file with path *string* into a new buffer. After loading
+`(read-hook string)` is called. <u>C</u>
 
 `(save-buffer string)`  
 Saves the buffer named *string* to disk. <u>C</u>
