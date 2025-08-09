@@ -12,6 +12,24 @@
 (defmacro defun (name params . body)
   (list (quote setq) name (list (quote lambda) params . body)))
 
+(setq
+ flisp-ok 0
+ flisp-error 1
+ flisp-return 2
+ flisp-break 3
+ flisp-eof 4
+ flisp-user 5
+ flisp-read-incomplete 6
+ flisp-read-invalid 7
+ flisp-read-range 8
+ flisp-wrong-type 9
+ flisp-invalid-value 10
+ flisp-parameter-error 11
+ flisp-io-error 12
+ flisp-oom 13
+ flisp-gc-error 14
+ )
+
 (defun string (s)
   ;; Convert argument to string.
   ;; Common Lisp
@@ -21,7 +39,7 @@
     ((stringp s) s)
     ((symbolp s) (symbol-name s))
     ((consp s) (string.append (string (car s)) (string (cdr s))))
-    (t (signal 'wrong-type-argument (list "cannot convert to string" s)))))
+    (t (throw flisp-wrong-type "cannot convert to string" s))))
 
 (defun concat args
   ;; Concatenate all arguments to a string.

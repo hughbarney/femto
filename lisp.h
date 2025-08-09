@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #define FL_NAME     "fLisp"
-#define FL_VERSION  "0.5"
+#define FL_VERSION  "0.6"
 
 #define FL_INITFILE "flisp.rc"
 #define FL_LIBDIR "/usr/local/share/flisp"
@@ -67,8 +67,9 @@ typedef enum ResultCode {
     FLISP_OK,
     FLISP_ERROR,
     FLISP_RETURN,         /* successful return */
+    FLISP_BREAK,          /* non local exit */
     FLISP_EOF,            /* eof upon read */
-    FLISP_USER,           /* user generated exception */
+    FLISP_USER,           /* generic user generated exception */
     /* Parser/reader */
     FLISP_READ_INCOMPLETE,
     FLISP_READ_INVALID,
@@ -83,9 +84,6 @@ typedef enum ResultCode {
     /* Internal */
     FLISP_GC_ERROR,
 } ResultCode;
-
-// Note: WIP, relevant procedures must get a handle to the
-//   Interpreter, instead of accessing the static allocated flisp.
 
 typedef struct Memory {
     size_t capacity, fromOffset, toOffset;

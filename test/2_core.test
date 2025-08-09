@@ -40,7 +40,7 @@ flisp_expr 1; ok string-4 symbols converts to its name
 IN="(string (cons 'a  2))" OUT='"a2"'
 flisp_expr 1; ok string-5 cons converts to concatenated strings of elements
 
-IN="(string car)" OBJ='(wrong-type-argument ("cannot convert to string" #<Primitive car>))'  ERR="wrong-type-argument"
+IN="(string car)" OBJ='#<Primitive car>'  ERR="cannot convert to string"
 flisp_err 1; ok string-6 lambda err\'s
 
 # concat

@@ -4,7 +4,7 @@
 
 export FLISPRC=
 
-tap 63
+tap 75
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -202,7 +202,18 @@ flisp_expr; ok macroexpand-1_1  arg nil
 IN='(macroexpand-1 (macro a a) b)' OUT='(b)'
 flisp_expr; ok macroexpand-1_2  apply return b list b
 
-return
+# catch
+IN='(catch nil)' OUT='(0 "" nil)'
+flisp_expr; ok catch-1_1  catch nil
+
+IN='(catch t)' OUT='(0 "" t)'
+flisp_expr; ok catch-1_2  catch t
+
+IN='(catch (+ 3 4))' OUT='(0 "" 7)'
+flisp_expr; ok catch-1_3  catch expr
+
+IN='(catch (/))' OUT='(11 "expects at least 1 arguments" #<Primitive />)'
+flisp_expr; ok catch-1_4  catch error
 
 # Primitives
 ## Write
@@ -210,6 +221,24 @@ return
 
 ## Objects
 # consp
+IN='(consp nil)' OUT='nil'
+flisp_expr; ok consp-1_1  consp nil is nil
+
+IN='(consp 1)' OUT='nil'
+flisp_expr; ok consp-1_2  consp number is nil
+
+IN="(consp 'a)" OUT='nil'
+flisp_expr; ok consp-1_3  consp string is nil
+
+IN="(consp '(t . t))" OUT='t'
+flisp_expr; ok consp-1_4  consp cons is t
+
+IN="(consp '(1  2))" OUT='t'
+flisp_expr; ok consp-1_5  consp list is t
+
+IN="(consp +)" OUT='nil'
+flisp_expr; ok consp-1_5  consp lambda is nil
+
 # numberp
 # stringp
 # symbolp
@@ -236,6 +265,13 @@ return
 
 ## I/O
 # signal
+# throw
+IN='(throw 42 "answer")' ERR='answer' OBJ=
+flisp_err; ok throw-1_1  throw w/o object
+
+IN='(throw 43 "answer" 1)' ERR='answer' OBJ=1
+flisp_err; ok throw-1_2  throw with object
+
 # exit
 # os.getenv
 # get-temp-file

@@ -310,12 +310,23 @@
       <dt><code>(macro (<var>param</var>[ <var>param</var>..] . <var>opt</var>) <var>body</var>)</code></dt>
       <dd> These forms return a macro function. Parameter handling is the same as with lambda.</dd>
       <dt><code>(quote <var>expr</var>)</code></dt>
-      <dd>Returns <var>expr</var> without evaluating it.
+      <dd>Returns <var>expr</var> without evaluating it.</dd>
+      <dt><code>(catch <var>expression</var>)</code> <u>D</u></dt>
+      <dd>
+	<p>Evaluates <var>expression</var> and returns a list with three elements:</p>
+	<dl>
+	  <dt><var>result</var></dt>
+	  <dd><code>0</code> on success or any other number indicating an error.</dd>
+	  <dt><var>message</var></dt><dd>A human readable error message.</dd>
+	  <dt><var>object</var></dt><dd>The result of the the expression or the object in error.</dd>
+	</dl>
       </dd>
-      <dt><code>(signal <var>type</var> <var>list</var>)</code></dt>
-      <dd>Throws an exception, stopping any further evaluation.  Exceptions can be typed via the symbol <var>type</var>
-	and must contain a list of exception related objects.  <code>(signal 'error 'nil)</code> is probably the
-	simplest signal.</dd>
+      <dt><code>(throw <var>result</var> <var>message</var></code>[ <code><var>object</var></code>]<code>)</code> <u>D</u></dt>
+      <dd>
+	Throws an exception, stopping any further evaluation.  <var>result</var> is the error type
+	number, <var>message</var> is a human readable error string and <var>object</var> is the object in error, if
+	any.
+      </dd>
     </dl>
 
     <h5 id="in_out">Input / Output and Others</h5>
@@ -454,8 +465,8 @@
     <h3 id="exceptions">Error handling</h3>
     <p>
       Whenever fLisp encounters an error an exception is thrown. Exceptions have a non-zero result code and a human
-      readable error message. fLisp does not implement stack backtracking. exceptions are only caught on the top level
-      of an evaluation.
+      readable error message. fLisp does not implement stack backtracking. Exceptions are either caught on the top level
+      of an evaluation or by a <code>catch</code> statement.
     </p>
     <p>
       In the <code>flisp</code> interpreter the error message is formated as <code>error: <var>message</var></code> if
@@ -464,13 +475,24 @@
       message.
     </p>
     <p>
-      When called from C-code, the <code>object</code> field of the interpreter is set to the object causing the error
-      instead of the evaluation result.
+      When an exception occurs while calling <code>lisp_eval()</code> or <code>lisp_eval_string()</code> from C-code,
+      the <code>object</code> field of the interpreter is set to the object causing the error, and
+      the <code>result</code> field is set to the error code.
     </p>
     <p>
-      Exceptions can be thrown from within in Lisp code via the <a href="#interp_ops"><code>signal</code></a>
+      Exceptions can be thrown from within in Lisp code via the <a href="#interp_ops"><code>throw</code></a>
       function.
     </p>
+    <p>
+      The internally used result codes are defined in the <code>ResultCode</code> enum in <code>lisp.h</code> and
+      reverse defined as Lisp symbols in the fLisp core library in <code>core.lsp</code>.  Notable result codes:
+    </p>
+    <dl>
+      <dt><code>flisp-ok</code></dt><dd><code>0</code>: no error.</dd>
+      <dt><code>flisp-error</code></dt><dd><code>1</code>: generic error.</dd>
+      <dt><code>flisp-break</code></dt><dd><code>3</code>: non local exit.</dd>
+      <dt><code>flisp-user</code></dt><dd><code>5</code>: generic error for user code.</dd>
+    </dl>
     
     <nav><a href="#toc">^</a></nav>
     <h3 id="libraries">Lisp Libraries</h3>
