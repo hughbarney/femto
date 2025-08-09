@@ -1,3 +1,9 @@
+## Femto 2.24/fLisp 0.5 Aug 2025
+
+* Added python mode
+* Added string.lsp string library
+* Not yet updated the documents
+
 ## Femto 2.23/fLisp 0.5 Aug 2025
 
 * Setup default mode for basic syntax highlighting text, symbols and numbers

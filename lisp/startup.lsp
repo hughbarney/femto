@@ -83,16 +83,13 @@
 (show-startup-message)
 
 ;;
-;; this can be used to set modes for different types of file when they get loaded
+;; this is used to set modes for different types of file when they get loaded
 ;;
 (defun read-hook (s)
   (cond
-    ((eq "c" (get-buffer-file-extension)) (add-mode "cmode"))
-    ((eq "h" (get-buffer-file-extension)) (add-mode "cmode"))
-    ((eq "cpp" (get-buffer-file-extension)) (add-mode "cmode"))
-    ((eq "lsp" (get-buffer-file-extension)) (add-mode "lispmode"))
-    ((eq "rc" (get-buffer-file-extension)) (add-mode "lispmode"))
-    ((eq "py" (get-buffer-file-extension)) (add-mode "python"))))
+    ((string.contains "|c|h|cpp|" (get-buffer-file-extension)) (add-mode "cmode"))
+    ((string.contains "|rc|lsp|" (get-buffer-file-extension)) (add-mode "lispmode"))
+    ((string.contains "|py|" (get-buffer-file-extension)) (add-mode "python"))))
 
 
 ;; Load and edit user specific config
@@ -104,7 +101,7 @@
 (cond ((= 0 rc) (load (confn config_file))))
 
 
-;; mark the scratch buffer as unmodified, set to C mode so that the comment comes up green
+;; mark the scratch buffer as unmodified, set to lispmode so that the comment comes up green
 (add-mode "lispmode")
 (delete-mode "modified")
 
