@@ -162,6 +162,13 @@ void gui()
     init_pair(ID_DOUBLE_STRING, COLOR_YELLOW, COLOR_BLACK);  /* double quoted strings */
     init_pair(ID_BRACE, COLOR_BLACK, COLOR_CYAN);            /* brace highlight */
 
+    // python pain
+    init_pair(ID_TRIPLE_DOUBLE_QUOTE, COLOR_GREEN, COLOR_BLACK);  /* tripple quoted strings, doc strings */
+    init_pair(ID_TRIPLE_SINGLE_QUOTE, COLOR_GREEN, COLOR_BLACK);  /* tripple quoted strings, doc strings */
+    init_pair(ID_TRIPLE_DOUBLE_QUOTE_S, COLOR_YELLOW, COLOR_BLACK);  /* tripple quoted strings, string assignment */
+    init_pair(ID_TRIPLE_SINGLE_QUOTE_S, COLOR_YELLOW, COLOR_BLACK);  /* tripple quoted strings, string assignment */
+    init_pair(ID_ASSIGNMENT, COLOR_WHITE, COLOR_BLACK);          /* = operator in python  */
+
     /* windows */
     one_window(curwp);
 

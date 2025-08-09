@@ -4,6 +4,7 @@
 ;;
 
 (require 'flisp)
+(require 'string)
 
 (defun load-script(fn)
   (load (concat script_dir "/" fn)))
@@ -41,28 +42,6 @@
   (setq fn (prompt-filename "Insert file: "))
   (cond (fn (insert-file-contents-literally fn))))
 
-;; trim all spaces from front of a string
-(defun string.trim.front(s)
-  (cond
-    ((= 0 (string.length s)) "")
-    ((not (eq (string.substring s 0 0) " ")) s)
-    ((< (string.length s) 2) "")
-    (t (string.trim.front (string.substring s 1 (- (string.length s) 1)))) ))
-
-;; trim all spaces from back of a string
-(defun string.trim.back(s)
-  (setq p (- (string.length s) 1))
-  (cond
-    ((= p -1) "")
-    ((not (eq (string.substring s p p) " ")) s)
-    ((< (string.length s) 2) "")
-    (t (string.trim.back (string.substring s 0 (- (string.length s) 2)))) ))
-
-;; trim spaces off front and back of a string
-(defun string.trim(s)
-  (string.trim.back (string.trim.front s)))
-
-
 ;; delete next word
 (defun delete-next-word()
   (backward-word)
@@ -91,12 +70,6 @@
      (end-of-line)
      (cond ((eq (get-point) (get-mark)) (delete))
 	   (t (kill-region))) )))
-
-;; shrink string by dropping off last char
-(defun shrink(s)
-  (cond
-    ((< (string.length s) 2) "")
-    (t (string.substring s 0 (- (string.length s) 2)))  ))
 
 ;; some keystroke checks that we will use later
 (defun is_ctl_g(k)

@@ -3,15 +3,21 @@
 (defun show-startup-message()
   (cond ((eq "*scratch*" (get-buffer-name))
 	 (insert-string "\n\n\n\n")
-	 (insert-string "  /**********************************\n")
-	 (insert-string "\n\n")
-	 (insert-string "   / _| ___ _ __ ___ | |_ ___     \n")
-	 (insert-string "  | |_ / _ \ '_ ` _ \| __/ _ \    \n")
-	 (insert-string "  |  _|  __/ | | | | | || (_) |   \n")
-	 (insert-string "  |_|  \___|_| |_| |_|\__\___/'    \n\n  ")
-	 (insert-string "\n\n")
-	 (insert-string "  C-x h   for help\n\n")
-	 (insert-string "  **********************************/\n\n\n\n")
+	 (insert-string " ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
+         (insert-string " ;\n")
+         (insert-string " ;\n")
+         (insert-string " ;\n")
+	 (insert-string " ;  / _| ___ _ __ ___ | |_ ___     \n")
+	 (insert-string " ; | |_ / _ \ '_ ` _ \| __/ _ \    \n")
+	 (insert-string " ; |  _|  __/ | | | | | || (_) |   \n")
+	 (insert-string " ; |_|  \___|_| |_| |_|\__\___/'    \n")
+         (insert-string " ;\n")
+         (insert-string " ;\n")
+         (insert-string " ;\n")
+         (insert-string " ;\n")
+	 (insert-string " ; C-x h   for help\n")
+         (insert-string " ;\n")
+	 (insert-string " ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n\n\n\n")
 	 (insert-string "  Tiny Emacs clone with Tiny-Lisp extension language\n  ")
 	 (insert-string (get-version-string))
 	 (insert-string "\n\n\n")
@@ -77,15 +83,14 @@
 (show-startup-message)
 
 ;;
-;; this can be used to set modes for different types of file when they get loaded
+;; this is used to set modes for different types of file when they get loaded
 ;;
 (defun read-hook (s)
   (cond
-    ((eq "c" (get-buffer-file-extension)) (add-mode "cmode"))
-    ((eq "h" (get-buffer-file-extension)) (add-mode "cmode"))
-    ((eq "cpp" (get-buffer-file-extension)) (add-mode "cmode"))
-    ((eq "lsp" (get-buffer-file-extension)) (add-mode "lispmode"))
-    ((eq "rc" (get-buffer-file-extension)) (add-mode "lispmode"))))
+    ((string.contains "|c|h|cpp|" (get-buffer-file-extension)) (add-mode "cmode"))
+    ((string.contains "|rc|lsp|" (get-buffer-file-extension)) (add-mode "lispmode"))
+    ((string.contains "|py|" (get-buffer-file-extension)) (add-mode "python"))))
+
 
 ;; Load and edit user specific config
 (setq
@@ -96,8 +101,8 @@
 (cond ((= 0 rc) (load (confn config_file))))
 
 
-;; mark the scratch buffer as unmodified, set to C mode so that the comment comes up green
-(add-mode "cmode")
+;; mark the scratch buffer as unmodified, set to lispmode so that the comment comes up green
+(add-mode "lispmode")
 (delete-mode "modified")
 
 (getopts argv 0)
