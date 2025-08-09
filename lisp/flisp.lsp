@@ -26,7 +26,7 @@
 (defun max (n . args)
   (cond
     ((null (numberp n))
-     (signal 'wrong-type-argument (list "not a number" n)))
+     (throw flisp-wrong-type "not a number" n))
     ((null args) n)
     (t (reduce
 	(lambda (a b) (cond ((< a b) b) (t a)))
@@ -35,14 +35,14 @@
 (defun min (n . args)
   (cond
     ((null (numberp n))
-     (signal 'wrong-type-argument (list "not a number" n)))
+     (throw flisp-wrong-type "not a number" n))
     ((null args) n)
     (t (reduce (lambda (a b) (cond ((< a b) a) (t b)))
 	args n)) ))
 
 (defun nthcdr (n list)
   (cond 
-    ((> 0 n) (signal 'args-out-of-range '("negativ index" n)))
+    ((> 0 n) (throw flisp-read-range "negativ index" n))
     ((= 0 n) list)
     (t (nthcdr (- n 1) (cdr list)))))
 

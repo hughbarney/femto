@@ -98,6 +98,7 @@ char *typeName(Object *object)
     return (object->type == -1) ? "MOVED" : typeNameStrings[object->type];
 }
 
+
 // EXCEPTION HANDLING /////////////////////////////////////////////////////////
 
 void resetBuf(Interpreter *);
@@ -567,7 +568,7 @@ Object *newEnv(Interpreter *interp, Object ** func, Object ** vals)
         return object;
     }
     Object *param = (*func)->params, *val = *vals;
-    
+
     for (nArgs = 0;; param = param->cdr, val = val->cdr, ++nArgs) {
         if (param == nil && val == nil)
             break;
@@ -582,7 +583,7 @@ Object *newEnv(Interpreter *interp, Object ** func, Object ** vals)
             exceptionWithObject(interp, *func, FLISP_PARAMETER_ERROR, "(env) expects at least %d arguments", nArgs);
         }
     }
-    
+
     object->parent = (*func)->env;
     object->vars = (*func)->params;
     object->vals = *vals;
@@ -604,7 +605,7 @@ Object *newStreamObject(Interpreter *interp, FILE *fd, char *path)
     if (!(buf = malloc(len+1)))
         exception(interp, FLISP_OOM, "failed to allocate %lu bytes for stream path", len);
     memcpy(buf, path, len+1);
-    
+
     GC_CHECKPOINT;
     GC_TRACE(gcPath, newString(interp, buf));
     free(buf);
@@ -666,7 +667,7 @@ Object *envAdd(Interpreter *interp, Object ** var, Object ** val, Object ** env)
     GC_TRACE(gcVars, newCons(interp, gcVar, &nil));
     Object *vals = newCons(interp, gcVal, &nil);
     GC_RELEASE;
-    
+
     (*gcVars)->cdr = (*gcEnv)->vars, (*gcEnv)->vars = *gcVars;
     vals->cdr = (*gcEnv)->vals, (*gcEnv)->vals = vals;
 
@@ -696,6 +697,7 @@ Object *envSet(Interpreter *interp, Object ** var, Object ** val, Object ** env)
 }
 
 Object *evalExpr(Interpreter *, Object **, Object **);
+
 
 // READING S-EXPRESSIONS //////////////////////////////////////////////////////
 
@@ -845,6 +847,7 @@ Object *newDouble(Interpreter *interp)
     resetBuf(interp);
     return number;
 }
+
 
 // Reader /////////
 
@@ -1071,7 +1074,7 @@ Object *readUnary(Interpreter *interp, FILE *fd, char *symbol)
     *gcObject = newCons(interp, gcObject, &nil);
     *gcObject = newCons(interp, gcSymbol, gcObject);
     GC_RELEASE;
-    
+
     return *gcObject;
 }
 /** readExpr - return next lisp sexp object from stream or from interpreter input file
@@ -1132,7 +1135,7 @@ Object *primitiveFread(Interpreter *interp, Object **args, Object **env)
     GC_TRACE(gcStream, stream);
     Object *result = readExpr(interp, (*gcStream)->fd);
     GC_RELEASE;
-    
+
     if (result == NULL) {
         if (eofv == nil)
             exceptionWithObject(interp, *gcStream, FLISP_EOF, "(fread [..]) input exhausted");
@@ -1159,7 +1162,8 @@ enum {
     PRIMITIVE_COND,
     PRIMITIVE_LAMBDA,
     PRIMITIVE_MACRO,
-    PRIMITIVE_MACROEXPAND
+    PRIMITIVE_MACROEXPAND,
+    PRIMITIVE_CATCH
 };
 
 /* Scheme-style tail recursive evaluation. evalProgn and evalCond
@@ -1281,7 +1285,7 @@ Object *expandMacro(Interpreter *interp, Object ** macro, Object ** args)
     GC_CHECKPOINT;
     GC_TRACE(gcBody, (*macro)->body);
     GC_TRACE(gcEnv, newEnv(interp, macro, args));
-    
+
     GC_TRACE(gcObject, evalProgn(interp, gcBody, gcEnv));
     GC_RETURN(evalExpr(interp, gcObject, gcEnv));
 }
@@ -1327,6 +1331,37 @@ Object *evalList(Interpreter *interp, Object ** args, Object ** env)
         GC_RETURN(newCons(interp, gcObject, gcCdr));
     }
 }
+
+Object *evalCatch(Interpreter *interp, Object **args, Object **env)
+{
+    jmp_buf exceptionEnv, *prevEnv;
+    Object *object, *result, *message;
+
+    prevEnv = interp->catch;
+    interp->catch = &exceptionEnv;
+    interp->result = FLISP_OK;
+    if (setjmp(exceptionEnv)) {
+        fl_debug(interp, "catch: %d, '%s'", interp->result, interp->message);
+    } else {
+        do {
+            interp->object = evalExpr(interp, &(*args)->car, env);
+        } while(0);
+    }
+    interp->catch = prevEnv;
+    GC_CHECKPOINT;
+    object = newCons(interp, &interp->object, &nil);
+    GC_TRACE(gcObj, object);
+    message = newString(interp, interp->message);
+    GC_TRACE(gcMessage, message);
+    *gcObj = newCons(interp, gcMessage, gcObj);
+    result = newNumber(interp, interp->result);
+    GC_TRACE(gcResult, result);
+    *gcObj = newCons(interp, gcResult, gcObj);
+    GC_RELEASE;
+    interp->result = FLISP_OK;
+    return *gcObj;
+}
+
 
 Primitive primitives[];
 
@@ -1394,6 +1429,8 @@ Object *evalExpr(Interpreter *interp, Object ** object, Object **env)
                 GC_RETURN(evalMacro(interp, gcArgs, gcEnv));
             case PRIMITIVE_MACROEXPAND:
                 GC_RETURN(evalMacroExpand(interp, gcArgs, gcEnv));
+            case PRIMITIVE_CATCH:
+                GC_RETURN(evalCatch(interp, gcArgs, gcEnv));
             default:
                 *gcArgs = evalList(interp, gcArgs, gcEnv);
                 GC_RETURN(primitive->eval(interp, gcArgs, gcEnv));
@@ -1665,7 +1702,7 @@ Object *primitiveSymbolName(Interpreter *interp, Object ** args, Object **env)
     GC_TRACE(gcFirst, first);
     Object *string = newObjectWithString(interp, TYPE_STRING, len+1);
     GC_RELEASE;
-    memcpy(string->string, (*gcFirst)->string, len+1); 
+    memcpy(string->string, (*gcFirst)->string, len+1);
     return string;
 }
 
@@ -1733,20 +1770,23 @@ Object *primitiveEnv(Interpreter *interp, Object ** args, Object **env)
     return *env;
 }
 #endif
-Object *primitiveSignal(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveThrow(Interpreter *interp, Object ** args, Object **env)
 {
-    Object *first = (*args)->car;
-    Object *second = (*args)->cdr;
+    Object *result = (*args)->car;
+    Object *message = (*args)->cdr->car;
+    Object *object = (*args)->cdr->cdr;
 
-    if (first->type != TYPE_SYMBOL)
-        exceptionWithObject(interp, first , FLISP_WRONG_TYPE, "(signal type data) - type is not a symbol");
+    if (result->type != TYPE_NUMBER)
+        exceptionWithObject(interp, result , FLISP_WRONG_TYPE, "(throw result message object) - result is not a number");
+    if (message->type != TYPE_STRING)
+        exceptionWithObject(interp, message , FLISP_WRONG_TYPE, "(throw result message object) - message is not a string");
 
-    GC_CHECKPOINT;
-    GC_TRACE(gcFirst, first);
-    Object *e = newCons(interp, gcFirst, &second);
-    GC_RELEASE;
-    exceptionWithObject(interp, e, FLISP_USER, "%s", (*gcFirst)->string);
+    if (object->type == TYPE_CONS)
+        object = object->car;
+
+    exceptionWithObject(interp, object, result->number, "%s", message->string);
 }
+
 
 // Math ///////
 
@@ -1774,7 +1814,7 @@ Object *primitiveSignal(Interpreter *interp, Object ** args, Object **env)
         }                                                               \
         return object;                                                  \
     }
-    
+
 DEFINE_PRIMITIVE_ARITHMETIC(primitiveAdd, +, 0)
 DEFINE_PRIMITIVE_ARITHMETIC(primitiveSubtract, -, 0)
 DEFINE_PRIMITIVE_ARITHMETIC(primitiveMultiply, *, 1)
@@ -1799,10 +1839,10 @@ Object *primitiveMod(Interpreter *interp, Object **args, Object **env) {
     for (; *gcRest != nil; *gcRest = (*gcRest)->cdr) {
         if ((*gcRest)->car->type != TYPE_NUMBER)
             exceptionWithObject(interp, (*gcRest)->car, FLISP_WRONG_TYPE, "(%% dividend divisor ..) - divisor is not a number");
-        
+
         object->number = (int)object->number % (int)(*gcRest)->car->number;
     }
-    
+
     return object;
 }
 
@@ -1940,7 +1980,7 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
  * returns: stream object
  *
  * throws: FLISP_IO_ERROR, FLISP_INVALID_VALUE, FLISP_OOM
- */ 
+ */
  Object *primitiveFopen(Interpreter *interp, Object ** args, Object **env)
 {
     TWO_STRING_ARGS(fopen);
@@ -2135,6 +2175,7 @@ Primitive primitives[] = {
     {"lambda", 1, -1 /* special form */ },
     {"macro", 1, -1 /* special form */ },
     {"macroexpand-1", 1, 2 /* special form */ },
+    {"catch", 1, 1 /*special form */ },
     {"null", 1, 1, primitiveNullP},
     {"consp", 1, 1, primitiveConsP},
     {"numberp", 1, 1, primitiveNumberP},
@@ -2157,7 +2198,7 @@ Primitive primitives[] = {
     {"global", 0, 0, primitiveGlobal},
     {"env", 0, 0, primitiveEnv},
 #endif
-    {"signal", 1, -1, primitiveSignal},
+    {"throw", 2, 3, primitiveThrow},
     {"+", 0, -1, primitiveAdd},
     {"-", 0, -1, primitiveSubtract},
     {"*", 0, -1, primitiveMultiply},
@@ -2190,7 +2231,7 @@ void initRootEnv(Interpreter *interp)
 {
     GC_CHECKPOINT;
     GC_TRACE(gcEnv, newEnv(interp, &nil, &nil));
-    
+
     interp->global = *gcEnv;
 
     // add constants
@@ -2216,7 +2257,7 @@ Memory *newMemory(size_t size)
 {
     Memory *memory = malloc(sizeof(Memory));
     if (!memory) return NULL;
-    
+
     memory->capacity = size/2;
     memory->fromOffset = 0;
     memory->toOffset = 0;
@@ -2477,7 +2518,7 @@ ResultCode lisp_eval_string(Interpreter *interp, char * input)
     interp->input = prev;
     (void)fclose(fd);
 
-    fl_debug(interp, "lisp_eval_string() => %d", interp->result);
+    fl_debug(interp, "lisp_eval_string() => %d, '%s'", interp->result, interp->message);
     if (result) {
         if (NULL == (fd = open_memstream(&buf, &len)))  {
             strncpy(interp->message, "failed to allocate output stream", sizeof(interp->message));
