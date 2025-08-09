@@ -176,16 +176,19 @@ interpreter as `script_dir`. This default directory can be changed at
 compile time by changing SCRIPTDIR. At startup `femto` overrides the
 default with the value of the environment variable FEMTOLIB if set.
 
-
 ## Modes
 
 Modes control the behaviour of the editor and the syntax highligher
 
-cmode - highlights single and double quoted stings, block comments and line comments
-lisp - single line comments start with ;
+cmode  
+Highlights single and double quoted stings, block comments and line
+comments.
 
-The (read-hook) function is called whenever a file is loaded.  THe read-hook
-function can be configured to set the modes of a buffer based on the filename
+lisp  
+ingle line comments start with ;
+
+`startup.lsp` defines a default `read-hook` function which sets these
+modes based on the filename.
 
 ## Debugging
 

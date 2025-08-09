@@ -121,9 +121,10 @@ IN='(max)'
 ERR="(env) expects at least 1 arguments"
 OBJ='#<Lambda (n . args)>'
 flisplib_err 1; ok max-1 with nil fails
+
 IN='(max "a")'
-ERR='wrong-type-argument'
-OBJ='(wrong-type-argument ("not a number" "a"))'
+ERR="not a number"
+OBJ='"a"'
 flisplib_err 1; ok max-2 with not number fails
 
 IN='(max 0)' OUT=0
@@ -144,8 +145,8 @@ OBJ='#<Lambda (n . args)>'
 flisplib_err 1; ok min-1 with nil fails
 
 IN='(min "a")'
-ERR='wrong-type-argument'
-OBJ='(wrong-type-argument ("not a number" "a"))'
+ERR="not a number"
+OBJ='"a"'
 flisplib_err 1; ok min-2 with not number fails
 
 IN='(min 0)' OUT=0
@@ -161,8 +162,8 @@ IN='(min 1 2 3)' OUT=1
 flisplib 1; ok min-6 with more then two args
 
 IN='(nthcdr -1 nil)'
-ERR='args-out-of-range'
-OBJ='(args-out-of-range ("negativ index" n))'
+ERR="negativ index"
+OBJ='-1'
 flisplib_err 1; ok nthcdr-1 negativ index fails
 
 IN="(nthcdr 0 '(a b c))" OUT='(a b c)'

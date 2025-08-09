@@ -13,7 +13,7 @@ programming language. It is used as extension language for the
 
 *fLisp* originates from [Tiny-Lisp by
 matp](https://github.com/matp/tiny-lisp) (pre 2014), was integrated into
-[Femto](https://github.com/hughbarney/femto) by Hugh Barnes (pre 2016)
+[Femto](https://github.com/hughbarney/femto) by Hugh Barney (pre 2016)
 and compacted by Georg Lehner in 2023.
 
 This is a reference manual. If you want to learn about Lisp programming
@@ -307,10 +307,22 @@ with lambda.
 `(quote expr)`  
 Returns *expr* without evaluating it.
 
-`(signal type list)`  
-Throws an exception, stopping any further evaluation. Exceptions can be
-typed via the symbol *type* and must contain a list of exception related
-objects. `(signal 'error 'nil)` is probably the simplest signal.
+`(catch expression)` <u>D</u>  
+Evaluates *expression* and returns a list with three elements:
+
+*result*  
+`0` on success or any other number indicating an error.
+
+*message*  
+A human readable error message.
+
+*object*  
+The result of the the expression or the object in error.
+
+`(throw result message`\[ `object`\]`)` <u>D</u>  
+Throws an exception, stopping any further evaluation. *result* is the
+error type number, *message* is a human readable error string and
+*object* is the object in error, if any.
 
 ##### Input / Output and Others
 
@@ -453,19 +465,37 @@ corresponds to its ASCII value.
 
 Whenever fLisp encounters an error an exception is thrown. Exceptions
 have a non-zero result code and a human readable error message. fLisp
-does not implement stack backtracking. exceptions are only caught on the
-top level of an evaluation.
+does not implement stack backtracking. Exceptions are either caught on
+the top level of an evaluation or by a `catch` statement.
 
 In the `flisp` interpreter the error message is formated as
 `error: message` if the error object is `nil` otherwise as
 `error: 'object', message`, where *object* is the serialization of the
 object causing the error and *message* is the error message.
 
-When called from C-code, the `object` field of the interpreter is set to
-the object causing the error instead of the evaluation result.
+When an exception occurs while calling `lisp_eval()` or
+`lisp_eval_string()` from C-code, the `object` field of the interpreter
+is set to the object causing the error, and the `result` field is set to
+the error code.
 
 Exceptions can be thrown from within in Lisp code via the
-[`signal`](#interp_ops) function.
+[`throw`](#interp_ops) function.
+
+The internally used result codes are defined in the `ResultCode` enum in
+`lisp.h` and reverse defined as Lisp symbols in the fLisp core library
+in `core.lsp`. Notable result codes:
+
+`flisp-ok`  
+`0`: no error.
+
+`flisp-error`  
+`1`: generic error.
+
+`flisp-break`  
+`3`: non local exit.
+
+`flisp-user`  
+`5`: generic error for user code.
 
 [^](#toc)
 
@@ -630,10 +660,15 @@ class="dfn">selection</span> or <span class="dfn">region</span>.
 If set the buffer is associated with the respective file.
 
 *flags*  
-Different flags determine the behavior of the buffer.
+Different flags determine the behavior of the buffer. Editor specific
+flags: `special`, `modified`.
 
-In the following, all mentions of these variables refer to the current
-buffers properties.
+Mode flags determine the syntax highlighter mode: `cmode` and `lispmode`
+are available. If none is set `text` mode is used for syntax
+hightlighting.
+
+In the following, any mention to one of them refers to the respective
+current buffers property.
 
 ##### Text manipulation
 
@@ -803,8 +838,15 @@ in Elisp.
 Sets global mode *string* for all buffers. Currently the only global
 mode is <span class="kbd">undo</span>.
 
+`(add-mode string)`  
+Set a flag for the current buffer.
+
+`(delete-mode string)`  
+Reset a flag for the current buffer.
+
 `(find-file string)`  
-Loads file with path string into a new buffer. <u>C</u>
+Loads file with path *string* into a new buffer. After loading
+`(read-hook string)` is called. <u>C</u>
 
 `(save-buffer string)`  
 Saves the buffer named *string* to disk. <u>C</u>

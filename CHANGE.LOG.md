@@ -1,10 +1,10 @@
-## Femto 2.24/fLisp 0.5 Aug 2025
+## Femto 2.24/fLisp 0.6 Aug 2025
 
 * Added python mode
 * Added string.lsp string library
 * Not yet updated the documents
 
-## Femto 2.23/fLisp 0.5 Aug 2025
+## Femto 2.23/fLisp 0.6 Aug 2025
 
 * Setup default mode for basic syntax highlighting text, symbols and numbers
 
@@ -22,6 +22,9 @@ This enables cmode and LISP mode to be added to the buffer flags for the buffer.
 * add-mode and delete-mode functions added. E.G.  (add-mode "cmode"), (add-mode "lispmode"), (add-mode "modified")
 
 * I plan to add a python mode that will work for python style block comments.
+
+* Add exception handling via the `catch` special form. `signal` is
+replace by the simpler `throw` primitive.
 
 
 ## Femto 2.22/fLisp 0.5 Aug 2025
