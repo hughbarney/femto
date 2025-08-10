@@ -70,12 +70,9 @@
      (fload f r))))
 (defun load (p)
   (setq f (fopen p "r"))
-  (setq r (fload f))
-  ;(fclose f)
-  r
-  )
-
-
+  (prog1
+      (fload f)
+    (fclose f)))
 
 ;; Features
 (setq features nil)
@@ -93,8 +90,9 @@
     (t
      ;; Emacs optionally uses provided filename here
      (setq path (concat script_dir "/" (symbol-name feature) ".lsp"))
-     (load path)
-     ;; Emacs checks if load fails and returns nil instead of feature.
-     (cond ((memq feature features)	feature)))))
+     (setq r (catch (load path)))
+     (cond
+       ((= (car r) 0)
+	(cond ((memq feature features)	feature)))))))
 
 (provide 'core)
