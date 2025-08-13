@@ -11,6 +11,9 @@
 programming language. It is used as extension language for the
 [Femto](https://github.com/hughbarney/femto) text editor.
 
+*fLisp* is a Lisp-1 interpreter with Scheme like lexical scoping,
+tailcall optimization and other Scheme influences.
+
 *fLisp* originates from [Tiny-Lisp by
 matp](https://github.com/matp/tiny-lisp) (pre 2014), was integrated into
 [Femto](https://github.com/hughbarney/femto) by Hugh Barney (pre 2016)
@@ -25,7 +28,7 @@ use other resources eg.
     or
 -   [The Scheme Programming Language](https://www.scheme.org/).
 
-This manual refers to version 0.5 or later of fLisp.
+This manual refers to version 0.6 or later of fLisp.
 
 Table of Contents
 
@@ -283,7 +286,13 @@ and no more *clause*s are evaluated.
 Create or update named objects: If *symbol* is the name of an existing
 named object in the current or a parent environment the named object is
 set to *value*, if no symbol with this name exists, a new one is created
-in the current environment. `setq` returns the last *value*.
+in the top level environment. `setq` returns the last *value*.
+
+`(define symbol value[ symbol value..])`  
+Create or update named objects: If *symbol* is the name of an existing
+named object in the current or a parent environment the named object is
+set to *value*, if no symbol with this name exists, a new one is created
+in the current environment. `define` returns the last *value*.
 
 `(lambda params body)`  
 Returns a *lambda* function which accepts 0 or more arguments, which are

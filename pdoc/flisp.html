@@ -25,6 +25,10 @@
       extension language for the <a href="https://github.com/hughbarney/femto">Femto</a> text editor.
     </p>
     <p>
+      <i>fLisp</i> is a Lisp-1 interpreter with Scheme like lexical scoping, tailcall optimization and other Scheme
+      influences.
+    </p>
+    <p>
       <i>fLisp</i> originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was
       integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barney (pre 2016) and compacted by
       Georg Lehner in 2023.
@@ -39,7 +43,7 @@
       <li><a href="https://www.scheme.org/">The Scheme Programming Language</a>.</li>
     </ul>
 
-    This manual refers to version 0.5 or later of fLisp.
+    This manual refers to version 0.6 or later of fLisp.
     
     <aside>
       <p id="toc">Table of Contents</p>
@@ -288,7 +292,13 @@
       <dd>
 	Create or update named objects: If <var>symbol</var> is the name of an existing named object in the current or a
 	parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is
-	created in the current environment. <code>setq</code> returns the last <var>value</var>.
+	created in the top level environment. <code>setq</code> returns the last <var>value</var>.
+      </dd>
+      <dt><code>(define <var>symbol</var> <var>value</var>[ <var>symbol</var> <var>value</var>..])</code></dt>
+      <dd>
+	Create or update named objects: If <var>symbol</var> is the name of an existing named object in the current or a
+	parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is
+	created in the current environment. <code>define</code> returns the last <var>value</var>.
       </dd>
       <dt><code>(lambda <var>params</var> <var>body</var>)</code></dt>
       <dd>

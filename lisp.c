@@ -674,7 +674,17 @@ Object *envAdd(Interpreter *interp, Object ** var, Object ** val, Object ** env)
     return *gcVal;
 }
 
-Object *envSet(Interpreter *interp, Object ** var, Object ** val, Object ** env)
+/** envSet sets a list of variables to corresponding values
+ *
+ * @param interp .. fLisp interpreter
+ * @param var .. List of variable names
+ * @param val .. List of values
+ * @param env .. Environment in which to set the variables
+ * @param top .. If true, set undefined variables in the top level environement, otherwise in the current.
+ *
+ * returns: the last assigned value.
+ */
+Object *envSet(Interpreter *interp, Object ** var, Object ** val, Object ** env, bool top)
 {
 
     for (;;) {
@@ -687,7 +697,7 @@ Object *envSet(Interpreter *interp, Object ** var, Object ** val, Object ** env)
                 return vals->cdr = *val;
         }
 
-        if ((*env)->parent == nil) {
+        if ((*env)->parent == nil || !top) {
             GC_CHECKPOINT;
             GC_TRACE(gcEnv, *env);
             GC_RETURN(envAdd(interp, var, val, gcEnv));
@@ -1158,6 +1168,7 @@ typedef struct Primitive {
 enum {
     PRIMITIVE_QUOTE,
     PRIMITIVE_SETQ,
+    PRIMITIVE_DEFINE,
     PRIMITIVE_PROGN,
     PRIMITIVE_COND,
     PRIMITIVE_LAMBDA,
@@ -1171,7 +1182,22 @@ enum {
  * evalExpr. Macros are expanded in-place the first time they are evaluated.
  */
 
-Object *evalSetq(Interpreter *interp, Object ** args, Object ** env)
+/** evalSetVar sets or defines zero or more variables
+ *
+ * evalSetVar() is used to implement both (setq) and (define)
+ *
+ * @param interp .. fLisp interpeter
+ * @param args .. List of arguments (var val ..)
+ * @param env .. Environment where to set the variable
+ 
+ * If top is set to true, an undefined variable is set in the top
+ * level environment, otherwise it is set in the current environment.
+ *
+ * evalSetVar() is used to implement both (setq) and (define).
+ *
+ * throws: FLISP_WRONG_TYPE
+ */
+Object *evalSetVar(Interpreter *interp, Object ** args, Object ** env, bool top)
 {
     if (*args == nil)
         return nil;
@@ -1179,9 +1205,9 @@ Object *evalSetq(Interpreter *interp, Object ** args, Object ** env)
     Object * var = (*args)->car;
 
     if (var->type != TYPE_SYMBOL)
-        exceptionWithObject(interp, var, FLISP_WRONG_TYPE, "(setq name value) - name is not a symbol");
+        exceptionWithObject(interp, var, FLISP_WRONG_TYPE, "(setq/define name value) - name is not a symbol");
     if (var == nil || var == t)
-        exceptionWithObject(interp, var, FLISP_WRONG_TYPE, "(setq name value) name is a constant and cannot be set");
+        exceptionWithObject(interp, var, FLISP_WRONG_TYPE, "(setq/define name value) name is a constant and cannot be redefined");
 
     GC_CHECKPOINT;
     GC_TRACE(gcEnv, *env);
@@ -1189,12 +1215,12 @@ Object *evalSetq(Interpreter *interp, Object ** args, Object ** env)
     GC_TRACE(gcRest, (*args)->cdr);
     GC_TRACE(gcVal, (*gcRest)->car);
     *gcVal = evalExpr(interp, gcVal, gcEnv);
-    envSet(interp, gcVar, gcVal, gcEnv);
+    envSet(interp, gcVar, gcVal, gcEnv, top);
     GC_RELEASE;
     if ((*gcRest)->cdr == nil)
         return *gcVal;
     else
-        return evalSetq(interp, &(*gcRest)->cdr, gcEnv);
+        return evalSetVar(interp, &(*gcRest)->cdr, gcEnv, top);
 }
 
 Object *evalProgn(Interpreter *interp, Object ** args, Object ** env)
@@ -1416,7 +1442,9 @@ Object *evalExpr(Interpreter *interp, Object ** object, Object **env)
             case PRIMITIVE_QUOTE:
                 GC_RETURN((*gcArgs)->car);
             case PRIMITIVE_SETQ:
-                GC_RETURN(evalSetq(interp, gcArgs, gcEnv));
+                GC_RETURN(evalSetVar(interp, gcArgs, gcEnv, true));
+            case PRIMITIVE_DEFINE:
+                GC_RETURN(evalSetVar(interp, gcArgs, gcEnv, false));
             case PRIMITIVE_PROGN:
                 *gcObject = evalProgn(interp, gcArgs, gcEnv);
                 break;
@@ -2170,6 +2198,7 @@ Object *asciiToNumber(Interpreter *interp, Object ** args, Object **env)
 Primitive primitives[] = {
     {"quote", 1, 1 /* special form */ },
     {"setq", 0, -2 /* special form */ },
+    {"define", 0, -2 /* special form */ },
     {"progn", 0, -1 /* special form */ },
     {"cond", 0, -1 /* special form */ },
     {"lambda", 1, -1 /* special form */ },
@@ -2235,8 +2264,8 @@ void initRootEnv(Interpreter *interp)
     interp->global = *gcEnv;
 
     // add constants
-    envSet(interp, &nil, &nil, &interp->global);
-    envSet(interp, &t, &t, &interp->global);
+    envSet(interp, &nil, &nil, &interp->global, true);
+    envSet(interp, &t, &t, &interp->global, true);
 
     // add primitives
     int nPrimitives = sizeof(primitives) / sizeof(primitives[0]);
@@ -2248,7 +2277,7 @@ void initRootEnv(Interpreter *interp)
         *gcVar = newSymbol(interp, primitives[i].name);
         *gcVal = newPrimitive(interp, i, primitives[i].name);
 
-        envSet(interp, gcVar, gcVal, &interp->global);
+        envSet(interp, gcVar, gcVal, &interp->global, true);
     }
     GC_RELEASE;
 }
@@ -2347,7 +2376,7 @@ Interpreter *lisp_new(
     /* Add argv0 to the environment */
     Object *var = newSymbol(interp, "argv0");
     Object *val = newString(interp, *argv);
-    (void)envSet(interp, &var, &val, &interp->global);
+    (void)envSet(interp, &var, &val, &interp->global, true);
 
     /* Add argv to the environement */
     var = newSymbol(interp, "argv");
@@ -2357,26 +2386,26 @@ Interpreter *lisp_new(
         *i = newCons(interp, &nil, &nil);
         (*i)->car = newString(interp, *argv);
     }
-    (void)envSet(interp, &var, &val, &interp->global);
+    (void)envSet(interp, &var, &val, &interp->global, true);
 
     /* Add library_path to the environment */
     var = newSymbol(interp, "script_dir");
     val = newString(interp, library_path);
-    envSet(interp, &var, &val, &interp->global);
+    envSet(interp, &var, &val, &interp->global, true);
 
     /* input stream */
     if (input) {
         interp->input = input;
         val = newStreamObject(interp, input, "STDIN");
         var = newSymbol(interp, "*INPUT*");
-        (void)envSet(interp, &var, &val, &interp->global);
+        (void)envSet(interp, &var, &val, &interp->global, true);
     }
     /* output stream */
     if (output) {
         interp->output = output;
         val = newStreamObject(interp, output, "STDOUT");
         var = newSymbol(interp, "*OUTPUT*");
-        (void)envSet(interp, &var, &val, &interp->global);
+        (void)envSet(interp, &var, &val, &interp->global, true);
     }
 #if DEBUG_GC && DEBUG_GC_ALWAYS
     gc_always = true;
