@@ -70,9 +70,9 @@
      (fload f r))))
 (defun load (p)
   (setq f (fopen p "r"))
-  (prog1
-      (fload f)
-    (fclose f)))
+  (fload f))
+;; Note: the right way would be as follows, but it segfaults. So we
+;; let the files open for the moment (prog1 (fload f) (fclose f)))
 
 ;; Features
 (setq features nil)

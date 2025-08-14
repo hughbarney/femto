@@ -25,6 +25,9 @@
       extension language for the <a href="https://github.com/hughbarney/femto">Femto</a> text editor.
     </p>
     <p>
+      <i>fLisp</i> is hosted in the Femto <a href="https://github.com/hughbarney/femto">Github</a> repository, it is
+      released to the public domain.
+    <p>
       <i>fLisp</i> is a Lisp-1 interpreter with Scheme like lexical scoping, tailcall optimization and other Scheme
       influences.
     </p>
@@ -45,88 +48,68 @@
 
     This manual refers to version 0.6 or later of fLisp.
     
-    <aside>
-      <p id="toc">Table of Contents</p>
+    <h3 id="toc">Table of Contents</h3>
+    <ol>
+      <li><a href="#introduction">Introduction</a></li>
+      <li>Table of Contents</li>
+      <li><a href="#notation">Notation Convention</a></li>
+      <li><a href="#lisp">Lisp</a></li>
       <ol>
-	<li><a href="#introduction">Introduction</a></li>
-	<li><a href="#lisp">Lisp</a></li>
-	<ol>
-	  <li><a href="#notation">Notation Convention</a></li>
-	  <li><a href="#interpreter">fLisp Interpreter</a></li>
-	  <li><a href="#syntax">Syntax</a></li>
-	  <li><a href="#objects_and_data_types">Objects and Data Types</a></li>
-	  <li><a href="#evaluation">Environments, Functions, Evaluation</a></li>
-	  <li><a href="#primitives">Primitives</a></li>
-	  <ol>
-	    <li><a href="#interp_ops">Interpreter Operations</a></li>
-	    <li><a href="#in_out">Input / Output and Others</a></li>
-	    <li><a href="#object_ops">Object Operations</a></li>
-	    <li><a href="#arithmetic_ops">Arithmetic Operations</a></li>
-	    <li><a href="#string_ops">String Operations</a></li>
-	  </ol>
-	</ol>
+	<li><a href="#interpreter">fLisp Interpreter</a></li>
+	<li><a href="#syntax">Syntax</a></li>
+	<li><a href="#objects_and_data_types">Objects and Data Types</a></li>
+	<li><a href="#evaluation">Environments, Functions, Evaluation</a></li>
 	<li><a href="#exceptions">Error Handling</a></li>
-	<li><a href="#libraries">Lisp Libraries</a></li>
+      </ol>
+      <li><a href="#primitives">Primitives</a></li>
+      <ol>
+	<li><a href="#interp_ops">Interpreter Operations</a></li>
+	<li><a href="#in_out">Input / Output and Others</a></li>
+	<li><a href="#object_ops">Object Operations</a></li>
+	<li><a href="#arithmetic_ops">Arithmetic Operations</a></li>
+	<li><a href="#string_ops">String Operations</a></li>
+      </ol>
+      <li><a href="#libraries">Lisp Libraries</a></li>
+      <ol>
+	<li><a href="#startup">Library Loading</a></li>
+	<li><a href="#core_lib">Core Library</a></li>
+	<li><a href="#flisp_lib">fLlisp Library</a></li>
+	<li><a href="#std_lib">Standard Library</a></li>
+	<li><a href="#femto_lib">Femto Library</a></li>
+      </ol>
+      <li><a href="#editor">Editor Extension</a></li>
+      <ol>
+	<li><a href="#buffers">Buffers</a></li>
 	<ol>
-	  <li><a href="#startup">Library Loading</a></li>
-	  <li><a href="#core_lib">Core Library</a></li>
-	  <li><a href="#flisp_lib">fLlisp Library</a></li>
-	  <li><a href="#std_lib">Standard Library</a></li>
-	  <li><a href="#femto_lib">Femto Library</a></li>
+	  <li><a href="#text">Text manipulation</a></li>
+	  <li><a href="#selection">Selection</a></li>
+	  <li><a href="#cursor">Cursor Movement</a></li>
+	  <li><a href="#buffer_management">Buffer management</a></li>
 	</ol>
-	<li><a href="#editor">Editor Extension</a></li>
+	<li><a href="#ui">User Interaction</a></li>
 	<ol>
-	  <li><a href="#buffers">Buffers</a></li>
-	  <ol>
-	    <li><a href="#text">Text manipulation</a></li>
-	    <li><a href="#selection">Selection</a></li>
-	    <li><a href="#cursor">Cursor Movement</a></li>
-	    <li><a href="#buffer_management">Buffer management</a></li>
-	  </ol>
-	  <li><a href="#ui">User Interaction</a></li>
-	  <ol>
-	    <li><a href="#windows">Window Handling"</a></li>
-	    <li><a href="#message_line">Message Line</a></li>
-	    <li><a href="#keyboard">Keyboard Handling</a></li>
-	    <li><a href="#programming_system">Programming and System Interaction</a></li>
-	  </ol>
-	</ol>
-	<li><a href="#embedding">Embedding fLisp</a></li>
-	<ol>
-	  <li><a href="#embedding">Embedding Overview</a></li>
-	  <li><a href="#c_api">fLisp C Interface</a></li>
-	  <li><a href="#extensions">Building Extensions</a></li>
-	</ol>
-	<li><a href="#implementation">Implementation Details</a></li>
-	<ol>
-	  <li><a href="#gc">Garbage Collection</a></li>
-	  <li><a href="#memory">Memory Usage</a></li>
-	  <li><a href="#future">Future Directions</a></li>
+	  <li><a href="#windows">Window Handling"</a></li>
+	  <li><a href="#message_line">Message Line</a></li>
+	  <li><a href="#keyboard">Keyboard Handling</a></li>
+	  <li><a href="#programming_system">Programming and System Interaction</a></li>
 	</ol>
       </ol>
-    </aside>
+      <li><a href="#embedding">Embedding fLisp</a></li>
+      <ol>
+	<li><a href="#embedding">Embedding Overview</a></li>
+	<li><a href="#c_api">fLisp C Interface</a></li>
+	<li><a href="#extensions">Building Extensions</a></li>
+      </ol>
+      <li><a href="#implementation">Implementation Details</a></li>
+      <ol>
+	<li><a href="#gc">Garbage Collection</a></li>
+	<li><a href="#memory">Memory Usage</a></li>
+	<li><a href="#future">Future Directions</a></li>
+      </ol>
+    </ol>
 
-    <nav><a href="#toc">^</a></nav>
-    <h3 id="lisp">Lisp</h3>
     <h4 id="notation">Notation Convention</h4>
-
-    <p>
-      <i>fLisp</i> fancies to converge toward Emacs Lisp. Function descriptions are annotated with a compatibility
-      scale:
-    </p>
-    <dl>
-      <dt><u>C</u></dt>
-      <dd>Interface compatible, though probably less featureful.</dd>
-      <dt><u>D</u></dt>
-      <dd>Same name, but different behavior.</dd>
-      <dt><u>S: <var>name</var></u></dt>
-      <dd><var>name</var> is a similar but not compatible function in Emacs Lisp.</dd>
-      <dt><u>B</u></dt>
-      <dd>Buggy/incompatible implementation.</dd>
-    </dl>
-    <p>Annotation is omitted if the function does not exist in Emacs Lisp.</p>
-
-    <p>We use the following notation rule for the <i>fLisp</i> syntax:</p>
+    <p>We use the following notation rule to describe the <i>fLisp</i> syntax:</p>
     <dl>
       <dt><code><var>name</var></code></dt>
       <dd>
@@ -139,15 +122,32 @@
       <dt><q><code> </code></q></dt>
       <dd>A single space is used to denote an arbitrary sequence of whitespace.</dd>
     </dl>
+    <p>
+      <i>fLisp</i> does not use <code>[</code>square brackets<code>]</code> and double-dots <code>..</code> as
+      syntactical elements.
+    </p>
+    <p>
+      <i>fLisp</i> fancies to converge towards Emacs and Common Lisp, but includes also Scheme functions.  Function
+      descriptions are annotated according to their compatibility:
+    </p>
+    <dl>
+      <dt><u>C</u></dt>
+      <dd>Interface compatible, though probably less featureful.</dd>
+      <dt><u>D</u></dt>
+      <dd>Same name, but different behavior.</dd>
+      <dt><u>S: <var>name</var></u></dt>
+      <dd><var>name</var> is a similar, but not compatible, function in Emacs Lisp, Common Lisp or Scheme.</dd>
+      <dt><u>B</u></dt>
+      <dd>Buggy/incompatible implementation.</dd>
+    </dl>
+    <p>
+      By default compatibility with Common Lisp is annotated. The suffix <u>e</u> is used to indicate reference to Emacs
+      Lisp, <u>s</u> for Scheme.
+    </p>
+    <nav><a href="#toc">^</a></nav>
 
-    <p>Notes:</p>
-    <ul>
-      <li>
-	<i>fLisp</i> does not use <code>[</code>square brackets<code>]</code> and double-dots <code>..</code> as
-	syntactical elements.
-      </li>
-      <li>String and number notation and formatting conventions are the same as in the C language</li>
-    </ul>
+
+    <h3 id="lisp">Lisp</h3>
     
     <h4 id="interpreter">fLisp Interpreter</h4>
 
@@ -155,28 +155,29 @@
     <ol>
       <li>Read: program text is read in and converted into an internal representation.</li>
       <li>Evaluate: the internal representation is evaluated</li>
-      <li>Print: the result of the evaluation is returned to the invoker.</li>
+      <li>Print: the result of the evaluation is optionally printed and returned to the invoker.</li>
     </ol>
     <p>
       Core functions of the language operate on built-in objects only. <i>fLisp</i> can be extended with additional
       functions. With respect to the interpreter, extension functions behave the same as core functions.
     </p>
 
+    
     <h4 id="syntax">Syntax</h4>
-
     <p>
       Program text is written as a sequence of symbolic expressions - <abbr><dfn>sexp</dfn></abbr>&#39;s - in
-      parenthesized form. A sexp is either a single object or a function invocation enclosed in parens. Function
-      invocations can be infinitely nested.
+      parenthesized form. A <a href="https://en.wikipedia.org/wiki/S-expression">sexp</a> is either a single symbol or a
+      sequence of symbols or sexp's enclosed in parenthesis.
     </p>
     <p>The following characters are special to the reader:</p>
     <dl>
       <dt><code>(</code></dt>
-      <dd>Starts a function invocation, <i>list</i> or <i>cons</i> object (see <a href="#objects_and_data_types">Objects
-	  and Data Types</a>).</dd>
-      <dt><code>)</code></dt><dd>Finishes a function invocation, <i>list</i> or <i>cons</i> object</dd>
-      <dt><code>&#39;</code></dt>
-      <dt><code>:</code></dt>
+      <dd>
+	Starts a function or macro invocation, a <i>list</i> or <i>cons</i> object
+	(see <a href="#objects_and_data_types">Objects and Data Types</a>).
+      </dd>
+      <dt><code>)</code></dt><dd>Finishes a function invocation, <i>list</i> or <i>cons</i> object.</dd>
+      <dt><code>&#39;</code> and  <code>:</code></dt>
       <dd>
 	With a single quote or a colon prefix before a <abbr>sexp</abbr>, the <abbr>sexp</abbr> is expanded
 	to <code>(quote <var>sexp</var>)</code> before it is evaluated.
@@ -192,9 +193,14 @@
 	Escape character. When reading a string, the next character is read as character, even if it is special to the
 	reader.
       </dd>
+      <dt><code>&semi;</code></dt>
+      <dd>
+	Comment character. When the read encounters a semicolon it ignores it and all characters up to the next newline.
+      </dd>
     </dl>
     <p>
-      Numbers are read and written in decimal notation. Exponent notation is not supported.
+      Numbers are read and written in decimal notation. Number notation and formatting conventions are the same as in
+      the C language. Exponent notation is not supported by the reader.
     </p>
     <p>A list of objects has the form:</p>
     <blockquote>
@@ -245,34 +251,67 @@
 
     <p>
       All operations of the interpreter take place in an environment. An <dfn>environment</dfn> is a collection of named
-      objects. The object names are of type symbol.  An object in an environment is said to
-      be <dfn>bound</dfn> to its name. Environments can have a parent.  Each <i>fLisp</i> interpreter starts with
-      a <dfn>root</dfn> environment without a parent.
+      objects. The object names are of type <i>symbol</i>.  An object in an environment is said to be <dfn>bound</dfn>
+      to its name. Environments can have a parent.  Each <i>fLisp</i> interpreter starts with a <dfn>root</dfn>
+      environment without a parent.
     </p>
     <p>
-      lambda and macro objects are functions. They have a parameter list and a sexp as body. When functions are invoked
-      a new environment is created as child of the current environment.  Functions receive zero or more objects from the
-      caller.  These are bound one by one to the symbols in the parameter list in the new environment.
+      <i>lambda</i> and <i>macro</i> objects are functions. They have a parameter list and a sequence of sexp's as
+      body. When functions are invoked a new environment is created as child of the current environment.  Functions
+      receive zero or more objects from the caller.  These are bound one by one to the symbols in the parameter list in
+      the new environment.
     </p>
-    <p>lambdas return the result of evaluating the body in the new environment.</p>
+    <p><i>lambda</i>s return the result of evaluating the body in the new environment.</p>
     <p>
-      macros first evaluate the body in the calling environment. The resulting sexp is evaluated in the new environment
-      and that result is returned.  macro bodies are typically crafted to return new sexp's in terms of the
+      <i>macro</i>s first evaluate the body in the calling environment. The resulting sexp is evaluated in the new environment
+      and that result is returned.  <i>macro</i> bodies are typically crafted to return new sexp's in terms of the
       parameters.</p>
     <p>
       When a sexp is evaluated and encounters a symbol it looks it up in the current environment, and
       then recursively in the environments from which the lambda or macro was invoked.  The symbol
       of the first found binding is then replaced by its object.
     </p>
+    <h4 id="exceptions">Error handling</h4>
+    <p>
+      Whenever fLisp encounters an error an exception is thrown. Exceptions have a non-zero result code and a human
+      readable error message. fLisp does not implement stack backtracking. Exceptions are either caught on the top level
+      of an evaluation or by a <code>catch</code> statement.
+    </p>
+    <p>
+      In the <code>flisp</code> interpreter the error message is formated as <code>error: <var>message</var></code> if
+      the error object is <code>nil</code> otherwise as <code>error: '<var>object</var>', <var>message</var></code>,
+      where <var>object</var> is the serialization of the object causing the error and <var>message</var> is the error
+      message.
+    </p>
+    <p>
+      When an exception occurs while calling <code>lisp_eval()</code> or <code>lisp_eval_string()</code> from C-code,
+      the <code>object</code> field of the interpreter is set to the object causing the error, and
+      the <code>result</code> field is set to the error code.
+    </p>
+    <p>
+      Exceptions can be thrown from within in Lisp code via the <a href="#interp_ops"><code>throw</code></a>
+      function.
+    </p>
+    <p>
+      The internally used result codes are defined in the <code>ResultCode</code> enum in <code>lisp.h</code> and
+      reverse defined as Lisp symbols in the fLisp core library in <code>core.lsp</code>.  Notable result codes:
+    </p>
+    <dl>
+      <dt><code>flisp-ok</code></dt><dd><code>0</code>: no error.</dd>
+      <dt><code>flisp-error</code></dt><dd><code>1</code>: generic error.</dd>
+      <dt><code>flisp-break</code></dt><dd><code>3</code>: non local exit.</dd>
+      <dt><code>flisp-user</code></dt><dd><code>5</code>: generic error for user code.</dd>
+    </dl>
+
+    
+    <h3 id="primitives"><i>fLisp</i> Primitives</h3>
     <p>
       <i>fLisp</i> counts with a set of built-in functions called <dfn>primitives</dfn>. They are grouped in the manual
       by the type of objects they operate on. The primitives are bound in the global environment to the names under
       which they are described.
     </p>
 
-    <h4 id="primitives">Primitives</h4>
-
-    <h5 id="interp_ops">Interpreter Operations</h5>
+    <h4 id="interp_ops">Interpreter Operations</h4>
 
     <dl>
       <dt><code>(progn[ <var>expr</var>..])</code></dt>
@@ -294,30 +333,33 @@
 	parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is
 	created in the top level environment. <code>setq</code> returns the last <var>value</var>.
       </dd>
-      <dt><code>(define <var>symbol</var> <var>value</var>[ <var>symbol</var> <var>value</var>..])</code></dt>
+      <dt><code>(define <var>symbol</var> <var>value</var>[ <var>symbol</var> <var>value</var>..])</code> <u>Ss: define, let</u></dt>
       <dd>
 	Create or update named objects: If <var>symbol</var> is the name of an existing named object in the current or a
 	parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is
 	created in the current environment. <code>define</code> returns the last <var>value</var>.
       </dd>
+      <dd>
+	Note: <code>define</code> cannot be used to define functions, its features rather resemble <code>let</code>.
+      </dd>
       <dt><code>(lambda <var>params</var> <var>body</var>)</code></dt>
       <dd>
-	Returns a <var>lambda</var> function which accepts 0 or more arguments, which are passed as list in the
-	parameter <var>params</var>.
+	Returns a <var>lambda</var> function described by <var>body</var>, which accepts zero or more arguments passed
+	as list in the parameter <var>params</var>.
       </dd> 
-      <dt><code>(lambda ([<var>param</var> ..]) <var>body</var>)</code></dt>
+      <dt><code>(lambda ([<var>param</var> ..]) <var>body</var>)</code> <u>s</u></dt>
       <dd>
 	Returns a <var>lambda</var> function which accepts the exact number of arguments given in the list
 	of <var>param</var>s.
       </dd>
-      <dt><code>(lambda (<var>param</var>[ <var>param</var>..] . <var>opt</var>) <var>body</var>)</code></dt>
+      <dt><code>(lambda (<var>param</var>[ <var>param</var>..] . <var>opt</var>) <var>body</var>)</code> <u>s</u></dt>
       <dd>
 	Returns a <var>lambda</var> function which requires at least the exact number of arguments given in the list
 	of <var>param</var>s. All extra arguments are passed as a list in the parameter <var>opt</var>.
       </dd>
       <dt><code>(macro <var>params</var> <var>body</var>)</code></dt>
-      <dt><code>(macro ([<var>param</var> ..]) <var>body</var>)</code></dt>
-      <dt><code>(macro (<var>param</var>[ <var>param</var>..] . <var>opt</var>) <var>body</var>)</code></dt>
+      <dt><code>(macro ([<var>param</var> ..]) <var>body</var>)</code> <u>s</u></dt>
+      <dt><code>(macro (<var>param</var>[ <var>param</var>..] . <var>opt</var>) <var>body</var>)</code> <u>s</u></dt>
       <dd> These forms return a macro function. Parameter handling is the same as with lambda.</dd>
       <dt><code>(quote <var>expr</var>)</code></dt>
       <dd>Returns <var>expr</var> without evaluating it.</dd>
@@ -331,7 +373,7 @@
 	  <dt><var>object</var></dt><dd>The result of the the expression or the object in error.</dd>
 	</dl>
       </dd>
-      <dt><code>(throw <var>result</var> <var>message</var></code>[ <code><var>object</var></code>]<code>)</code> <u>D</u></dt>
+      <dt><code>(throw <var>result</var> <var>message</var>[ <var>object</var>])</code> <u>D</u></dt>
       <dd>
 	Throws an exception, stopping any further evaluation.  <var>result</var> is the error type
 	number, <var>message</var> is a human readable error string and <var>object</var> is the object in error, if
@@ -339,19 +381,19 @@
       </dd>
     </dl>
 
-    <h5 id="in_out">Input / Output and Others</h5>
+    <h4 id="in_out">Input / Output and Others</h4>
     <dl>
-      <dt><code>(fopen <var>path</var> <var>mode</var>)</code></dt>
+      <dt><code>(fopen <var>path</var> <var>mode</var>)</code> <u>S: open</u></dt>
       <dd>Open file at <var>path</var> with <var>mode</var> and return a stream object</dd>
-      <dt><code>(fclose <var>stream</var>)</code></dt>
+      <dt><code>(fclose <var>stream</var>)</code> <u>S: close</u></dt>
       <dd>Close <var>stream</var> object</dd>
-      <dt><code>(fread</code> <code><var>stream</var></code>[ <code>eof-value</code>]<code>)</code></dt>
+      <dt><code>(fread</code> <code><var>stream</var>[ eof-value])</code> <u>S: read</u></dt>
       <dd>
 	Reads the next complete Lisp expression from <var>stream</var>.  The
 	read in object is returned.  If end of file is reached, an exception is raised, unless <var>eof-value</var> is
 	not <code>nil</code>. In that case <code>eof-value</code> is returned.
       </dd>
-      <dt><code>(write <var>object</var></code>[ <code><var>keys</var></code>]]<code>)</code>
+      <dt><code>(write <var>object</var>[ <var>keys</var>..]]</code>
       </dt>
       <dd><code><var>keys</var></code>:</dd>
       <dd>
@@ -378,8 +420,7 @@
       <dd>Returns the value of the environment variable named <var>string</var>.</dd>
     </dl>    
 
-    <h5 id="object_ops">Object Operations</h5>
-
+    <h4 id="object_ops">Object Operations</h4>
     <dl>
       <dt><code>(null <var>object</var>)</code></dt>
       <dd>Returns <code>t</code> if <var>object</var> is <code>nil</code>, otherwise <code>nil</code>.</dd>
@@ -403,7 +444,7 @@
       <dd>Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, <code>nil</code> otherwise.</dd>
     </dl>
 
-    <h5 id="arithmetic_ops">Arithmetic Operations</h5>
+    <h4 id="arithmetic_ops">Arithmetic Operations</h4>
 
     <dl>
       <dt><code>(+[ <var>arg</var>..])</code></dt>
@@ -439,7 +480,7 @@
       </dd>
     </dl>
 
-    <h5 id="string_ops">String Operations</h5>
+    <h4 id="string_ops">String Operations</h4>
 
     <dl>
       <dt><code>(string.length <var>string</var>)</code></dt>
@@ -472,37 +513,6 @@
     </dl>
 
     <nav><a href="#toc">^</a></nav>
-    <h3 id="exceptions">Error handling</h3>
-    <p>
-      Whenever fLisp encounters an error an exception is thrown. Exceptions have a non-zero result code and a human
-      readable error message. fLisp does not implement stack backtracking. Exceptions are either caught on the top level
-      of an evaluation or by a <code>catch</code> statement.
-    </p>
-    <p>
-      In the <code>flisp</code> interpreter the error message is formated as <code>error: <var>message</var></code> if
-      the error object is <code>nil</code> otherwise as <code>error: '<var>object</var>', <var>message</var></code>,
-      where <var>object</var> is the serialization of the object causing the error and <var>message</var> is the error
-      message.
-    </p>
-    <p>
-      When an exception occurs while calling <code>lisp_eval()</code> or <code>lisp_eval_string()</code> from C-code,
-      the <code>object</code> field of the interpreter is set to the object causing the error, and
-      the <code>result</code> field is set to the error code.
-    </p>
-    <p>
-      Exceptions can be thrown from within in Lisp code via the <a href="#interp_ops"><code>throw</code></a>
-      function.
-    </p>
-    <p>
-      The internally used result codes are defined in the <code>ResultCode</code> enum in <code>lisp.h</code> and
-      reverse defined as Lisp symbols in the fLisp core library in <code>core.lsp</code>.  Notable result codes:
-    </p>
-    <dl>
-      <dt><code>flisp-ok</code></dt><dd><code>0</code>: no error.</dd>
-      <dt><code>flisp-error</code></dt><dd><code>1</code>: generic error.</dd>
-      <dt><code>flisp-break</code></dt><dd><code>3</code>: non local exit.</dd>
-      <dt><code>flisp-user</code></dt><dd><code>5</code>: generic error for user code.</dd>
-    </dl>
     
     <nav><a href="#toc">^</a></nav>
     <h3 id="libraries">Lisp Libraries</h3>
