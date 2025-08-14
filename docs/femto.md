@@ -113,10 +113,10 @@ Generally, the procedure for copying or moving text is:
 
 There are two ways to interact with Tiny-Lisp within Femto.
 
--   You can use C-\] to find the last s-expression above the cursor and
-    send it to be evaluated.
--   You can mark a region and send the whole region to be evaluated with
-    ESC-\].
+- You can use C-\] to find the last s-expression above the cursor and
+  send it to be evaluated.
+- You can mark a region and send the whole region to be evaluated with
+  ESC-\].
 
 ### Lisp Interaction - finding and evaluating the last s-expression
 
@@ -207,7 +207,7 @@ functionality.
 
 Standard Lisp functions:
 
-`list arg` ..
+`list «arg»` ..
 
 Returns a list of all *arg*uments.
 
@@ -225,90 +225,88 @@ Returns a list of all *arg*uments.
 
 Lisp library functions:
 
--   `require` auto-loads a 'feature' from the library if not already
-    loaded.
--   `provides` is used to specify a 'feature' in a library file, it must
-    be the same as the filename without the `.lsp` extension.
+- `require` auto-loads a 'feature' from the library if not already
+  loaded.
+- `provides` is used to specify a 'feature' in a library file, it must
+  be the same as the filename without the `.lsp` extension.
 
 `flisp.lsp` complements commonly known standard lisp functions:
 
--   `not`, `listp`, `and`, `map1`, `or`, `reduce`, `max`, `min`,
-    `nthcdr`
+- `not`, `listp`, `and`, `map1`, `or`, `reduce`, `max`, `min`, `nthcdr`
 
 `femto.lsp` extend the Lisp editor and provide basic editor
 functionality.
 
--   `load-script` *file* - load file from script directory.
--   `delete-next-word`, `delete-previous-word`, `kill-to-eol` - For
-    Emacs like key bindings
--   `describe-key`, `find_end_p`, `find_start_p`, `find_and_eval_sexp`,
-    `show-startup-message`
--   `string.trim.front` *s*, `string.trim.back` *s*, `string.trim` *s*,
-    `shrink` *s* - string operations
--   `repeat` *n func* - Lisp functions
--   `is_ctl_g` *k*, `is_escape` *k*, `is_backspace` *k*, `is_ctl_s` *k*,
-    `is_control_char` *k* - helper functions
--   `shell-command` - backwards compatibility wrapper for `system`,
-    reads command line interactively.
--   `shell-exec` *command* - convenience wrapper for `system`, used by
-    `shell-command`.
--   `insert-file` - prompts for a file name with incremental search and
-    inserts it after the point.
--   `describe-key`
--   `find_start_p`, `find_end_p`, `find_and_eval_sexp` - Lisp evaluation
-    in buffers.
--   `transpose-chars` - swap current end previous character.
+- `load-script` `file` - load file from script directory.
+- `delete-next-word`, `delete-previous-word`, `kill-to-eol` - For Emacs
+  like key bindings
+- `describe-key`, `find_end_p`, `find_start_p`, `find_and_eval_sexp`,
+  `show-startup-message`
+- `string.trim.front` `s`, `string.trim.back` `s`, `string.trim` `s`,
+  `shrink` `s` - string operations
+- `repeat` `n func` - Lisp functions
+- `is_ctl_g` `k`, `is_escape` `k`, `is_backspace` `k`, `is_ctl_s` `k`,
+  `is_control_char` `k` - helper functions
+- `shell-command` - backwards compatibility wrapper for `system`, reads
+  command line interactively.
+- `shell-exec` `command` - convenience wrapper for `system`, used by
+  `shell-command`.
+- `insert-file` - prompts for a file name with incremental search and
+  inserts it after the point.
+- `describe-key`
+- `find_start_p`, `find_end_p`, `find_and_eval_sexp` - Lisp evaluation
+  in buffers.
+- `transpose-chars` - swap current end previous character.
 
 `startup.lsp` loads extensions, creates key bindings for them, shows the
 startup message, loads the user specified configuration file and
 processes the command line arguments. `~/.config/femto/femto.rc`. It
 defines the following functions:
 
--   `getopts` *opts* *pos* - process commandline options starting from
-    position pos.
--   `show-startup-message` - shows the startup banner in the \*scratch\*
-    buffer.
--   `edit-config` - open user specific configuration file in Femto.
--   `show-info` - load the `info.lsp` file.
+- `getopts` `opts` `pos` - process commandline options starting from
+  position pos.
+- `show-startup-message` - shows the startup banner in the \*scratch\*
+  buffer.
+- `edit-config` - open user specific configuration file in Femto.
+- `show-info` - load the `info.lsp` file.
 
 ## Femto Extensions
 
 Additional extensions loaded by `femto.rc`
 
--   **dired** - enbles directory editing (Emacs style filemanager)
+- **dired** - enbles directory editing (Emacs style filemanager)
 
-    -   **C-x C-d** to invoke, then single character keystrokes provide
-        menu options
-    -   **f** load file on current line
-    -   **x** exit dired (other features to be added)
+  - **C-x C-d** to invoke, then single character keystrokes provide menu
+    options
+  - **f** load file on current line
+  - **x** exit dired (other features to be added)
 
--   **grep** - enables searching for text in files and loading of the
-    files at the location of the match into the editor.
+- **grep** - enables searching for text in files and loading of the
+  files at the location of the match into the editor.
 
-    -   **C-x g** to invoke, will request a search string and files to
-        search
-    -   **C-x \`** to load the next matching file
+  - **C-x g** to invoke, will request a search string and files to
+    search
+  - **C-x \`** to load the next matching file
 
--   **bufmenu** - the classic Emacs buffer menu
+- **bufmenu** - the classic Emacs buffer menu
 
-    -   **C-x C-b** to invoke, then single character keystrokes provide
-        menu options
-    -   **1** loads the file on the current line in one window
-    -   **2** loads the file on the current line in a split window
-    -   **s** saves the file on the current line to disk
-    -   **k** unloads the file without saving
-    -   **x** exits bufmenu
+  - **C-x C-b** to invoke, then single character keystrokes provide menu
+    options
+  - **1** loads the file on the current line in one window
+  - **2** loads the file on the current line in a split window
+  - **s** saves the file on the current line to disk
+  - **k** unloads the file without saving
+  - **x** exits bufmenu
 
--   **git** - a simple interface to the git version control tool
-    (similar to GNU Emacs magit).
+- **git** - a simple interface to the git version control tool (similar
+  to GNU Emacs magit).
 
-    -   **C-x g** to invoke, then single character keystrokes menu
-        options
+  - **C-x g** to invoke, then single character keystrokes menu options
 
--   **oxo** - a basic implementation of tick-tack-toe that runs in the
-    Editor.
+- **oxo** - a basic implementation of tick-tack-toe that runs in the
+  Editor.
 
-    -   **C-x C-o** to invoke
+  - **C-x C-o** to invoke
 
 ![Femto
 screenshot](https://github.com/hughbarney/femto/blob/master/screenshots/femto-oxo.jpg)
