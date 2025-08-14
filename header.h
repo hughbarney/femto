@@ -18,7 +18,7 @@
 int mkstemp(char *);
 
 #define E_NAME          "femto"
-#define E_VERSION       "2.23"
+#define E_VERSION       "2.24"
 #define E_LABEL         "Femto:"
 #define E_NOT_BOUND     "<not bound>"
 #ifndef E_SCRIPTDIR
@@ -57,6 +57,13 @@ int mkstemp(char *);
 #define ID_DOUBLE_STRING   7
 #define ID_SINGLE_STRING   8
 #define ID_BRACE           9
+// python pain
+#define ID_TRIPLE_DOUBLE_QUOTE 10
+#define ID_TRIPLE_SINGLE_QUOTE 11
+// python assignment to multiline string
+#define ID_TRIPLE_DOUBLE_QUOTE_S 12
+#define ID_TRIPLE_SINGLE_QUOTE_S 13
+#define ID_ASSIGNMENT 14
 
 /* undo types, in matched pairs */
 #define UNDO_T_NONE        0
@@ -93,6 +100,7 @@ typedef enum {
     B_UNDO = 0x08,              /* undo mode */
     B_CMODE = 0x10,             /* c mode overrides TEXT mode */
     B_LISP = 0x20,              /* lisp mode */
+    B_PYTHON = 0x40,            /* python mode */
 } buffer_flags_t;
 
 typedef struct string_list_t
@@ -299,6 +307,7 @@ extern char *rename_current_buffer(char *);
 extern int add_mode_global(char *);
 extern int add_mode_current_buffer(char *);
 extern int delete_mode_current_buffer(char *);
+extern int get_mode_current_buffer(char *);
 extern int goto_line(int);
 extern int i_check_region();
 extern int prev_utf8_char_size();

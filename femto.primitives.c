@@ -58,6 +58,7 @@ extern int select_buffer(char *);
 extern int delete_buffer_byname(char *);
 extern int add_mode_current_buffer(char *);
 extern int delete_mode_current_buffer(char *);
+extern int get_mode_current_buffer(char *);
 extern int save_buffer_byname(char *);
 extern int count_buffers(void);
 extern void display_prompt_and_response(char *, char *);
@@ -110,6 +111,12 @@ Object *e_delete_mode(Interpreter *interp, Object **args, Object **env)
 {
     ONE_STRING_ARG(delete-mode);
     return (1 == delete_mode_current_buffer(arg->string) ? t : nil);
+}
+
+Object *e_get_mode(Interpreter *interp, Object **args, Object **env)
+{
+    ONE_STRING_ARG(get-mode);
+    return (1 == get_mode_current_buffer(arg->string) ? t : nil);
 }
 
 Object *e_set_clipboard(Interpreter *interp, Object **args, Object **env)
