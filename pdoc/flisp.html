@@ -25,6 +25,10 @@
       extension language for the <a href="https://github.com/hughbarney/femto">Femto</a> text editor.
     </p>
     <p>
+      <i>fLisp</i> is a Lisp-1 interpreter with Scheme like lexical scoping, tailcall optimization and other Scheme
+      influences.
+    </p>
+    <p>
       <i>fLisp</i> originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was
       integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barney (pre 2016) and compacted by
       Georg Lehner in 2023.
@@ -39,7 +43,7 @@
       <li><a href="https://www.scheme.org/">The Scheme Programming Language</a>.</li>
     </ul>
 
-    This manual refers to version 0.5 or later of fLisp.
+    This manual refers to version 0.6 or later of fLisp.
     
     <aside>
       <p id="toc">Table of Contents</p>
@@ -288,7 +292,13 @@
       <dd>
 	Create or update named objects: If <var>symbol</var> is the name of an existing named object in the current or a
 	parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is
-	created in the current environment. <code>setq</code> returns the last <var>value</var>.
+	created in the top level environment. <code>setq</code> returns the last <var>value</var>.
+      </dd>
+      <dt><code>(define <var>symbol</var> <var>value</var>[ <var>symbol</var> <var>value</var>..])</code></dt>
+      <dd>
+	Create or update named objects: If <var>symbol</var> is the name of an existing named object in the current or a
+	parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is
+	created in the current environment. <code>define</code> returns the last <var>value</var>.
       </dd>
       <dt><code>(lambda <var>params</var> <var>body</var>)</code></dt>
       <dd>
@@ -1025,64 +1035,59 @@
       <dd>Frees all resources used by the interpreter.</dd>
       
       <dt>
-	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>, Object *<var>gcRoots</var>)</code>
+	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>)</code>
       </dt>
       <dd>
 	<p>
 	  Evaluates the input file set in the <var>input</var> field of the fLisp interpreter <var>interp</var> until
-	  end of file. <var>gcRoots</var> must be set to a global variable with initial value <code>nil</code>. If no
-	  input file is set, <code>interp</code> is set to a respective error state.
+	  end of file.  If no input file is set, <code>interp</code> is set to a respective error state.
 	</p>
       </dd>
       <dt>
-	<code>ResultCode lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>, Object *<var>gcRoots</var>)</code>
+	<code>ResultCode lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>)</code>
       </dt>
       <dd>
-	Evaluates all Lisp expressions in <var>string</var>. <var>gcRoots</var> must be set to a global variable with
-	initial value <code>nil</code></dd>
+	Evaluates all Lisp expressions in <var>string</var>.</dd>
       <dt>
 	<code>void lisp_write_object(Interpreter *<var>interp</var>, FILE <var>*fd</var>, Object *<var>object</var>,
-	  bool readably, Object *<var>gcRoots</var>)</code>
+	  bool readably)</code>
       </dt>
       <dd>
 	Format <var>object</var> into a string and write it to <var>stream</var>.  If <var>readably</var> is true, the
-	string can be read in by the interpreter and results in the same object. <var>gcRoots</var> must be set to a
-	global variable with initial value <code>nil</code>
+	string can be read in by the interpreter and results in the same object.
       </dd>
-      <dt>
-	<code>void lisp_write_error(Interpreter *<var>interp</var>, FILE <var>*fd</var>,
-	Object *<var>gcRoots</var>)</code>
-      </dt>
+      <dt><code>void lisp_write_error(Interpreter *<var>interp</var>, FILE <var>*fd</var></code></dt>
       <dd>
 	Format the error <var>object</var> and the error message of the interpreter into a string and write it
-	to <var>fd</var>. The <var>object</var> is written
-	with <var>readably</var> <code>true</code>. <var>gcRoots</var> must be set to a global variable with initial
-	value <code>nil</code>
+	to <var>fd</var>. The <var>object</var> is written with <var>readably</var> <code>true</code>.
       </dd>
     </dl>
     
-    <p><mark>Note: currently only one interpreter can be created.</mark></p>
+    <p><mark>Note: currently only creating one interpreter has been tested.</mark></p>
 
     <h4 id="extensions">Building Extensions</h4>
 
     <p>
       An extensions has to create C functions with the
-      signature: <code>Object *<var>primitive</var>(Object **args, GCPARAM)</code>, where <var>primitive</var> is a
-      distinct name in C space. This function has to be added to the global variable <code>primitives</code> in the
-      following
+      signature: <code>Object *<var>primitive</var>(Interpreter *interp, Object **args, Object **env)</code>,
+      where <var>primitive</var> is a distinct name in C space. This function has to be added to the global
+      variable <code>primitives</code> in the following
       format: <code>{&quot;<var>name</var>&quot;, <var>argMin</var>, <var>argMax</var>, <var>primitive</var>}</code>. Here
       <var>name</var> is a distinct name in Lisp space.
     </p>
     <p>
+      <var>interp</var> is the fLisp interpreter in which <var>primitive</var> is executed.
       <var>argMin</var> is the minimum number of arguments, <var>argMax</var> is the maximum number of arguments allowed
       for the function.  If <var>argMax</var> is a negative number, arguments must be given in tuples
       of <var>argMax</var> and the number of tuples is not restricted.
     </p>
     <p>
-      <code>CG_PARAM</code> is a CPP macro which carries on the interpreter root node for the garbage collector.  Its
-      companion are <code>GC_ROOTS</code> which is used in the place of <code>GC_PARAM</code> when calling a primitive
-      and <code>GC_TRACE(<var>name</var>, <var>value</var></code> which creates an object variable <var>name</var>, sets
-      it to <var>value</var> and adds it to the root node.
+      When creating more then one new objects within a primitive, care has to be taken to register them with the garbage
+      collector.  Registration is started with the
+      <code>GC_CHECKPOINT</code> CPP macro. <code>GC_TRACE(<var>name</var>, <var>value</var></code> creates an object
+      variable <var>name</var>, sets it to <var>value</var> and registers it with the garbage collector.  The
+      macro <code>GC_RELEASE</code> must be called to finalize the registration.  The convenience
+      macro <code>GC_RETURN(<var>object</var>)</code> calls <code>GC_RELEASE</code> and returns <var>object</var>.
     </p>
     <p>
       Some CPP macros are provided to simplify argument validation in primitives, all of them receive
@@ -1149,10 +1154,6 @@
       semi space:             object in memory
     </pre>
     <p>
-      <code><var>GC_ROOTS</var></code> and <code><var>GC_PARAM</var></code> are used to pass the list from function to
-      function.
-    </p>
-    <p>
       <code><var>GC_TRACE</var></code> adds an object to the list and declares a variable which points to the objects
       pointer inside the list.
     </p>
@@ -1182,22 +1183,42 @@
       When memory runs out, the garbage collection should be restarted with an increased capacity of the new page.
     </p>
     <p>
-      It should be able to trap exceptions within Lisp code.  This, together with an <code>(eval)</code> primitive would
-      allow to write the repl directly in Lisp.
+      It is now possible to catch exceptions within Lisp code and exceptions return differentiated error codes and use
+      POSIX stream I/O.  This, together with the <code>(eval)</code> primitive would allow to write the repl directly in
+      Lisp, and reading and eval&apos;ing until no more <q>incomplete
+      input</q> result codes are returned.
     </p>
     <p>
       Integer arithmetic would be sufficient for all current purposes and increase portability and speed while reducing
       size.
     </p>
     <p>
-      Exception handling returns differentiated error codes. One could implement an interactive repl
-      with <code>stdin</code>/<code>stdout</code> streams, by reading and eval&apos;ing until no more <q>incomplete
-      input</q> result codes are returned.
-    </p>
-    <p>
       The file extension only contains <code>(fflush)</code>,  <code>(ftell)</code> and  <code>(fgetc)</code> and could
       easily be extended into something useful. <code>(fstat)</code> would be most pressing for
       improving <code>femto.rc</code> and <code>flisp.rc</code>.
+    </p>
+    <p>
+      The string library should implement Elisp <code>substring</code> to replace <code>string.substring</code> and a
+      simplified version of <code>string-search</code> without start index.
+    </p>
+    <p>
+      Implement <code>(type <var>object</var>)</code> returning symbols for each type in C and implement individual type
+      checking predicates in Lisp.
+    </p>
+    <p>
+      Make loop programming easier, by any combination of:
+    </p>
+    <ul>
+      <li>iota</li>
+      <li>apply/funcall</li>
+      <li>labelled let</li>
+      <li>loop/while/for macro</li>
+      <li>Demoing hand crafted loops including breaking with throw.</li>
+    </ul>
+    <p>
+      apply/funcall should be implemented anyway, probably only one of them as special form. identity/always/ignore
+      should be added to one of the libraries.
+    </p>
   </body>
 </html>
 <!--

@@ -11,6 +11,9 @@
 programming language. It is used as extension language for the
 [Femto](https://github.com/hughbarney/femto) text editor.
 
+*fLisp* is a Lisp-1 interpreter with Scheme like lexical scoping,
+tailcall optimization and other Scheme influences.
+
 *fLisp* originates from [Tiny-Lisp by
 matp](https://github.com/matp/tiny-lisp) (pre 2014), was integrated into
 [Femto](https://github.com/hughbarney/femto) by Hugh Barney (pre 2016)
@@ -25,7 +28,7 @@ use other resources eg.
     or
 -   [The Scheme Programming Language](https://www.scheme.org/).
 
-This manual refers to version 0.5 or later of fLisp.
+This manual refers to version 0.6 or later of fLisp.
 
 Table of Contents
 
@@ -283,7 +286,13 @@ and no more *clause*s are evaluated.
 Create or update named objects: If *symbol* is the name of an existing
 named object in the current or a parent environment the named object is
 set to *value*, if no symbol with this name exists, a new one is created
-in the current environment. `setq` returns the last *value*.
+in the top level environment. `setq` returns the last *value*.
+
+`(define symbol value[ symbol value..])`  
+Create or update named objects: If *symbol* is the name of an existing
+named object in the current or a parent environment the named object is
+set to *value*, if no symbol with this name exists, a new one is created
+in the current environment. `define` returns the last *value*.
 
 `(lambda params body)`  
 Returns a *lambda* function which accepts 0 or more arguments, which are
@@ -1090,50 +1099,49 @@ Debug output stream. If set to `NULL` no debug information is generated.
 `(void) lisp_destroy(Interpreter *interp)`  
 Frees all resources used by the interpreter.
 
-`ResultCode lisp_eval(Interpreter *interp, Object *gcRoots)`  
+`ResultCode lisp_eval(Interpreter *interp)`  
 Evaluates the input file set in the *input* field of the fLisp
-interpreter *interp* until end of file. *gcRoots* must be set to a
-global variable with initial value `nil`. If no input file is set,
+interpreter *interp* until end of file. If no input file is set,
 `interp` is set to a respective error state.
 
-`ResultCode lisp_eval_string(Interpreter *interp, char *string, Object *gcRoots)`  
-Evaluates all Lisp expressions in *string*. *gcRoots* must be set to a
-global variable with initial value `nil`
+`ResultCode lisp_eval_string(Interpreter *interp, char *string)`  
+Evaluates all Lisp expressions in *string*.
 
-`void lisp_write_object(Interpreter *interp, FILE *fd, Object *object,       bool readably, Object *gcRoots)`  
+`void lisp_write_object(Interpreter *interp, FILE *fd, Object *object,       bool readably)`  
 Format *object* into a string and write it to *stream*. If *readably* is
 true, the string can be read in by the interpreter and results in the
-same object. *gcRoots* must be set to a global variable with initial
-value `nil`
+same object.
 
-`void lisp_write_error(Interpreter *interp, FILE *fd,     Object *gcRoots)`  
+`void lisp_write_error(Interpreter *interp, FILE *fd`  
 Format the error *object* and the error message of the interpreter into
 a string and write it to *fd*. The *object* is written with *readably*
-`true`. *gcRoots* must be set to a global variable with initial value
-`nil`
+`true`.
 
-<span class="mark">Note: currently only one interpreter can be
-created.</span>
+<span class="mark">Note: currently only creating one interpreter has
+been tested.</span>
 
 #### Building Extensions
 
 An extensions has to create C functions with the signature:
-`Object *primitive(Object **args, GCPARAM)`, where *primitive* is a
-distinct name in C space. This function has to be added to the global
-variable `primitives` in the following format:
+`Object *primitive(Interpreter *interp, Object **args, Object **env)`,
+where *primitive* is a distinct name in C space. This function has to be
+added to the global variable `primitives` in the following format:
 `{"name", argMin, argMax, primitive}`. Here *name* is a distinct name in
 Lisp space.
 
+*interp* is the fLisp interpreter in which *primitive* is executed.
 *argMin* is the minimum number of arguments, *argMax* is the maximum
 number of arguments allowed for the function. If *argMax* is a negative
 number, arguments must be given in tuples of *argMax* and the number of
 tuples is not restricted.
 
-`CG_PARAM` is a CPP macro which carries on the interpreter root node for
-the garbage collector. Its companion are `GC_ROOTS` which is used in the
-place of `GC_PARAM` when calling a primitive and `GC_TRACE(name, value`
-which creates an object variable *name*, sets it to *value* and adds it
-to the root node.
+When creating more then one new objects within a primitive, care has to
+be taken to register them with the garbage collector. Registration is
+started with the `GC_CHECKPOINT` CPP macro. `GC_TRACE(name, value`
+creates an object variable *name*, sets it to *value* and registers it
+with the garbage collector. The macro `GC_RELEASE` must be called to
+finalize the registration. The convenience macro `GC_RETURN(object)`
+calls `GC_RELEASE` and returns *object*.
 
 Some CPP macros are provided to simplify argument validation in
 primitives, all of them receive the *name* of the primitive as a
@@ -1195,9 +1203,6 @@ pointer to the pointer inside the list instead:
           semi space:             object in memory
         
 
-`GC_ROOTS` and `GC_PARAM` are used to pass the list from function to
-function.
-
 `GC_TRACE` adds an object to the list and declares a variable which
 points to the objects pointer inside the list.
 
@@ -1229,17 +1234,34 @@ allocated only during garbage collection. When memory runs out, the
 garbage collection should be restarted with an increased capacity of the
 new page.
 
-It should be able to trap exceptions within Lisp code. This, together
-with an `(eval)` primitive would allow to write the repl directly in
-Lisp.
+It is now possible to catch exceptions within Lisp code and exceptions
+return differentiated error codes and use POSIX stream I/O. This,
+together with the `(eval)` primitive would allow to write the repl
+directly in Lisp, and reading and eval'ing until no more “incomplete
+input” result codes are returned.
 
 Integer arithmetic would be sufficient for all current purposes and
 increase portability and speed while reducing size.
 
-Exception handling returns differentiated error codes. One could
-implement an interactive repl with `stdin`/`stdout` streams, by reading
-and eval'ing until no more “incomplete input” result codes are returned.
-
 The file extension only contains `(fflush)`, `(ftell)` and `(fgetc)` and
 could easily be extended into something useful. `(fstat)` would be most
 pressing for improving `femto.rc` and `flisp.rc`.
+
+The string library should implement Elisp `substring` to replace
+`string.substring` and a simplified version of `string-search` without
+start index.
+
+Implement `(type object)` returning symbols for each type in C and
+implement individual type checking predicates in Lisp.
+
+Make loop programming easier, by any combination of:
+
+-   iota
+-   apply/funcall
+-   labelled let
+-   loop/while/for macro
+-   Demoing hand crafted loops including breaking with throw.
+
+apply/funcall should be implemented anyway, probably only one of them as
+special form. identity/always/ignore should be added to one of the
+libraries.

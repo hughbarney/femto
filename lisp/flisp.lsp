@@ -1,6 +1,6 @@
 ;; flisp Language
 
-;; Expected Lisp idioms
+;; Standard Lisp and Scheme functions
 
 (require 'core)
 
@@ -48,5 +48,30 @@
 
 (defun nth (n list)
   (car (nthcdr n list)))
+
+(defun mapcar (func xs)
+  (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))
+
+(defun cadr (l) (car (cdr l)))
+(defun cddr (l) (cdr (cdr l)))
+
+(defmacro let args
+  (cond
+    ((consp (car args))
+;;; bindings: (car args)
+;;; body:     (cdr args)
+     (cons ; apply
+      (cons 'lambda (cons (mapcar car (car args)) (cdr args))) ; (lambda (names) body)
+      (mapcar cadr (car args)))) ; (values)
+    ((symbolp (car args))
+;;; label:    (car args)
+;;; bindings: (cadr args)
+;;; body:     (cddr args)
+     (list
+      (list 'lambda '()
+	    (list 'define (car args)
+		  (cons 'lambda (cons (mapcar car (cadr args)) (cddr args))))
+	    (cons (car args) (mapcar cadr (cadr args))))))
+    (t (throw flisp-wrong-type "let: first argument neither label nor binding" (car args)))))
 
 (provide 'flisp)
