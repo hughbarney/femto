@@ -58,6 +58,31 @@
     ((eq o (car l)) l)
     (t (memq o (cdr l)))))
 
+(defun map1 (func xs)
+  (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))
+
+(defun cadr (l) (car (cdr l)))
+(defun cddr (l) (cdr (cdr l)))
+
+(defmacro let args
+  (cond
+    ((consp (car args))
+;;; bindings: (car args)
+;;; body:     (cdr args)
+     (cons ; apply
+      (cons 'lambda (cons (map1 car (car args)) (cdr args))) ; (lambda (names) body)
+      (map1 cadr (car args)))) ; (values)
+    ((symbolp (car args))
+;;; label:    (car args)
+;;; bindings: (cadr args)
+;;; body:     (cddr args)
+     (list
+      (list 'lambda '()
+	    (list 'define (car args)
+		  (cons 'lambda (cons (map1 car (cadr args)) (cddr args))))
+	    (cons (car args) (map1 cadr (cadr args))))))
+    (t (throw flisp-wrong-type "let: first argument neither label nor binding" (car args)))))
+
 (defun prog1 (arg . args) arg)
 
 ;; load
@@ -68,11 +93,12 @@
     (t
      (setq r (eval o))
      (fload f r))))
+
 (defun load (p)
-  (setq f (fopen p "r"))
-  (fload f))
-;; Note: the right way would be as follows, but it segfaults. So we
-;; let the files open for the moment (prog1 (fload f) (fclose f)))
+  (let ((f (fopen p "r")))
+    (prog1 (fload f)
+      (fclose f))))
+
 
 ;; Features
 (setq features nil)
