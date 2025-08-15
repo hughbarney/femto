@@ -553,13 +553,29 @@
       <dd>Defines and returns a macro or function, respectively.</dd>
       <dt><code>(string <var>arg</var>)</code></dt>
       <dd>Returns the string conversion of argument.</dd>
-      <dt><code>(concat </code>[<code><var>arg</var></code> ..]<code>)</code></dt>
+      <dt><code>(concat </code>[<code><var>arg</var></code>..]<code>)</code></dt>
       <dd>Returns concatenation of all arguments converted to strings.</dd>
       <dt><code>(memq <var>arg</var> <var>list</var>)</code></dt>
       <dd>
 	If <var>arg</var> is contained in <var>list</var>, returns the sub list of <var>list</var> starting with the
 	first occurrence of <var>arg</var>, otherwise returns <code>nil</code>.
       </dd>
+      <dt><code>(map1 <var>func</var> <var>list</var>)</code> <u>S: mapcar</u></dt>
+      <dd>Apply func to each element in list and return a list of the results.</dd>
+      <dd><code>map1</code> is a specialized form of <code>mapcar</code> restricted to one list only.</dd>
+      <dt><code>(cadr <var>list</var>)</code></dt>
+      <dt>Return the second element in the list, <code>(car (cdr <var>list</var>))</code>.</dt>
+      <dt><code>(cddr <var>list</var>)</code></dt>
+      <dt>Return all elements after the second one in list, <code>(cdr (cdr <var>list</var>))</code>.</dt>
+      <dt><code>(let ((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code></dt>
+      <dd>Bind all <var>name</var>s to the respective <var>value</var>s then evaluate body.</dd>
+      <dt><code>(let <var>label</var>((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code> <u>Cs</u></dt>
+      <dd>
+	Labelled or <q>named</q> <code>let</code>: define a local function <var>label</var> with <var>body</var> and
+	all <var>name</var>s as parameters bound to the <var>values</var>.
+      </dd>
+      <dt><code>(prog1 <var>sexp</var>[<var>sexp</var>..])</code></dt>
+      <dd>Evaluate all <var>sexp</var> in turn and return the value of the first.</dd>
       <dt><code>(fload </code> <code><var>stream</var>)</code></dt>
       <dd>Reads and evaluates all Lisp objects in <var>stream</var>.</dd>
       <dt><code>(load </code> <code><var>path</var>)</code></dt>
@@ -585,7 +601,6 @@
       <dt>not</dt>
       <dt>listp</dt>
       <dt>and</dt>
-      <dt>map1</dt>
       <dt>or</dt>
       <dt>reduce</dt>
       <dt>max</dt>

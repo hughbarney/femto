@@ -548,12 +548,31 @@ Defines and returns a macro or function, respectively.
 `(string «arg»)`  
 Returns the string conversion of argument.
 
-`(concat `\[*arg* ..\]`)`  
+`(concat `\[*arg*..\]`)`  
 Returns concatenation of all arguments converted to strings.
 
 `(memq «arg» «list»)`  
 If *arg* is contained in *list*, returns the sub list of *list* starting
 with the first occurrence of *arg*, otherwise returns `nil`.
+
+`(map1 «func» «list»)` <u>S: mapcar</u>  
+Apply func to each element in list and return a list of the results.
+
+`map1` is a specialized form of `mapcar` restricted to one list only.
+
+`(cadr «list»)`  
+Return the second element in the list, `(car (cdr «list»))`.  
+`(cddr «list»)`  
+Return all elements after the second one in list, `(cdr (cdr «list»))`.  
+`(let ((«name» «value»)[ («name» «value»)..]) «body»)`  
+Bind all *name*s to the respective *value*s then evaluate body.
+
+`(let «label»((«name» «value»)[ («name» «value»)..]) «body»)` <u>Cs</u>  
+Labelled or “named” `let`: define a local function *label* with *body*
+and all *name*s as parameters bound to the *values*.
+
+`(prog1 «sexp»[«sexp»..])`  
+Evaluate all *sexp* in turn and return the value of the first.
 
 `(fload ` *stream*`)`  
 Reads and evaluates all Lisp objects in *stream*.
@@ -580,8 +599,6 @@ not
 listp
 
 and
-
-map1
 
 or
 
