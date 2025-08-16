@@ -116,7 +116,7 @@ Buggy/incompatible implementation.
 
 By default compatibility with Common Lisp is annotated. The suffix
 <u>e</u> is used to indicate reference to Emacs Lisp, <u>s</u> for
-Scheme.
+Scheme. *fLisp* specific function are annotated with <u>f</u>.
 
 [^](#toc)
 
@@ -258,9 +258,9 @@ is then replaced by its object.
 #### Error handling
 
 Whenever fLisp encounters an error an exception is thrown. Exceptions
-have a non-zero result code and a human readable error message. fLisp
-does not implement stack backtracking. Exceptions are either caught on
-the top level of an evaluation or by a `catch` statement.
+have an error type symbol and a human readable error message. fLisp does
+not implement stack backtracking. Exceptions are either caught on the
+top level of an evaluation or by a `catch` statement.
 
 In the `flisp` interpreter the error message is formated as
 `error: «message»` if the error object is `nil` otherwise as
@@ -269,27 +269,26 @@ the object causing the error and *message* is the error message.
 
 When an exception occurs while calling `lisp_eval()` or
 `lisp_eval_string()` from C-code, the `object` field of the interpreter
-is set to the object causing the error, and the `result` field is set to
-the error code.
+is set to the object causing the error, the `result` field is set to the
+error type symbol and the `msg_buf` field is set to the error message.
 
 Exceptions can be thrown from within in Lisp code via the
 [`throw`](#interp_ops) function.
 
-The internally used result codes are defined in the `ResultCode` enum in
-`lisp.h` and reverse defined as Lisp symbols in the fLisp core library
-in `core.lsp`. Notable result codes:
+The following error type symbols are defined and used internally:
 
-`flisp-ok`  
-`0`: no error.
+- `end-of-file`
+- `read-incomplete`
+- `invalid-read-syntax`
+- `range-error`
+- `wrong-type-argument`
+- `invalid-value`
+- `wrong-num-of-arguments`
+- `io-error`
+- `out-of-memory`
+- `gc-error`
 
-`flisp-error`  
-`1`: generic error.
-
-`flisp-break`  
-`3`: non local exit.
-
-`flisp-user`  
-`5`: generic error for user code.
+[^](#toc)
 
 ### *fLisp* Primitives
 
@@ -362,16 +361,35 @@ The result of the the expression or the object in error.
 
 `(throw «result» «message»[ «object»])` <u>D</u>  
 Throws an exception, stopping any further evaluation. *result* is the
-error type number, *message* is a human readable error string and
+error type symbol, *message* is a human readable error string and
 *object* is the object in error, if any.
 
 #### Input / Output and Others
 
-`(fopen «path» «mode»)` <u>S: open</u>
+`(open «path»[ «mode»])` <u>S: open</u>
 
-Open file at *path* with *mode* and return a stream object
+Open file at *path* with *mode* and return a stream object. *mode* is
+`"r"`ead only by default.
 
-`(fclose «stream»)` <u>S: close</u>
+`open` can open or create files, file descriptors and memory based
+streams.
+
+Files:  
+*path*: path to file, *mode*: one of `r`, `w`, `a`, `r+`, `w+`, `a+`
+plus an optional `b` modifier.
+
+File descriptors:  
+*path*: `<«n»` for reading, `>«n»` for writing. *n* is the number of the
+file descriptor. Omit *mode*.
+
+Memory streams:  
+For reading *path* is the string to read, *mode* must be set to: `<`.
+The name of the opened file is set to `<STRING`.
+
+For writing *path* is ignored, *mode* must be set to: `>`. The name of
+the opened file is set to `>STRING`.
+
+`(close «stream»)` <u>S: close</u>
 
 Close *stream* object
 
@@ -502,8 +520,6 @@ corresponds to its ASCII value.
 
 [^](#toc)
 
-[^](#toc)
-
 ### Lisp Libraries
 
 #### Library Loading
@@ -574,7 +590,7 @@ and all *name*s as parameters bound to the *values*.
 `(prog1 «sexp»[«sexp»..])`  
 Evaluate all *sexp* in turn and return the value of the first.
 
-`(fload ` *stream*`)`  
+`(fload ` *stream*`)` <u>f</u>  
 Reads and evaluates all Lisp objects in *stream*.
 
 `(load ` *path*`)`  
@@ -591,10 +607,12 @@ successful. The register is the variable *features*.
 
 #### fLisp Library
 
-This library implements commonly excpected Lisp idioms, which are used
-in the editor libraries.
+This library implements commonly excpected Lisp idioms. *fLisp*
+implements a carefully selected minimum set of commonly used functions.
 
-not
+`(not «object»)`
+
+Logical inverse. In Lisp a synonym for `null`
 
 listp
 
@@ -602,7 +620,14 @@ and
 
 or
 
-reduce
+`(reduce «func» «list» «start»)` <u>D</u>
+
+`reduce` applies the binary *func* to the first element of *list* and
+*start* and then recursively to the first element of the rest of the
+*list* and the result of the previous invocation: it is “right binding”.
+
+Since `reduce` is right associative and *start* is not optional, it
+differs significantly both from Common Lisp and Scheme.
 
 max
 
@@ -1022,51 +1047,16 @@ through until end of file.
 
 After processing the given input, the interpreter puts a pointer to the
 object which is the result of the last evaluation into the `object`
-field of the interpreter structure. The `result` field is set to
-`FLISP_OK`, which has the integer value `0`. The `message` field is set
-to the empty string.
+field of the interpreter structure. The `result` field is set to the
+`nil` and the `msg_buf` field is set to the empty string.
 
 fLisp sends all output to the default output stream. If `NULL` is given
 on initialization, output is suppressed altogether.
 
 If an exception is thrown inside the Lisp interpreter an error message
-is formatted and copied to the `message` buffer of the interpreter, A
+is formatted and copied to the `msg_buf` buffer of the interpreter, A
 pointer to the object causing the error is set to the `object` field.
-The `result` field is set to an error specific code:
-
-`FLISP_ERROR`  
-Generic error code.
-
-`FLISP_USER`  
-User generated exception.
-
-`FLISP_READ_INCOMPLETE`  
-End of file before valid Lisp expression was read in.
-
-`FLISP_READ_INVALID`  
-Lisp expression is invalid.
-
-`FLISP_READ_RANGE`  
-Integer or float under or overrflow.
-
-`FLISP_WRONG_TYPE`  
-A Lisp function received an argument of wrong type.
-
-`FLISP_INVALID_VALUE`  
-A Lisp function received an argument with invalid value.
-
-`FLISP_PARAMETER_ERROR`  
-A macro or function invocation received an incorrect number of
-arguments.
-
-`FLISP_IO_ERROR`  
-An operation on a stream failed.
-
-`FLISP_OOM`  
-fLisp ran out of memory.
-
-`FLISP_GC`  
-The garbage collector encountered an error.
+The `result` field is set to the respective error type symbol.
 
 In this <span class="dfn">error state</span> of the interpreter, the
 function `lisp_write_error()` can be used to write a standardized error
@@ -1109,15 +1099,15 @@ default output stream.
 *debug*  
 Debug output stream. If set to `NULL` no debug information is generated.
 
-`(void) lisp_destroy(Interpreter *«interp»)`  
+`void lisp_destroy(Interpreter *«interp»)`  
 Frees all resources used by the interpreter.
 
-`ResultCode lisp_eval(Interpreter *«interp»)`  
+`void lisp_eval(Interpreter *«interp»)`  
 Evaluates the input file set in the *input* field of the fLisp
 interpreter *interp* until end of file. If no input file is set,
 `interp` is set to a respective error state.
 
-`ResultCode lisp_eval_string(Interpreter *«interp», char *«string»)`  
+`void lisp_eval_string(Interpreter *«interp», char *«string»)`  
 Evaluates all Lisp expressions in *string*.
 
 `void lisp_write_object(Interpreter *«interp», FILE «*fd», Object *«object», bool readably)`  
@@ -1125,7 +1115,7 @@ Format *object* into a string and write it to *stream*. If *readably* is
 true, the string can be read in by the interpreter and results in the
 same object.
 
-`void lisp_write_error(Interpreter *«interp», FILE «*fd»`  
+`void lisp_write_error(Interpreter *«interp», FILE «*fd»)`  
 Format the error *object* and the error message of the interpreter into
 a string and write it to *fd*. The *object* is written with *readably*
 `true`.
@@ -1267,14 +1257,9 @@ start index.
 Implement `(type «object»)` returning symbols for each type in C and
 implement individual type checking predicates in Lisp.
 
-Make loop programming easier, by any combination of:
+loop programming is availble via the labelled let macro. It could made
+easier, by any combination of:
 
 - iota
-- apply/funcall
-- labelled let
 - loop/while/for macro
 - Demoing hand crafted loops including breaking with throw.
-
-apply/funcall should be implemented anyway, probably only one of them as
-special form. identity/always/ignore should be added to one of the
-libraries.
