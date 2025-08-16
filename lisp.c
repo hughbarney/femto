@@ -1999,12 +1999,12 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
 
     if (strcmp("<", mode) == 0) {
         if (nil == (stream = file_inputMemStream(interp, path)))
-            exception(interp, FLISP_IO_ERROR, "failed to open string as memory input stream: %d", errno);
+            exception(interp, io_error, "failed to open string as memory input stream: %d", errno);
         return stream;
     }
     if (strcmp(">", mode) == 0) {
         if (nil == (stream = file_outputMemStream(interp)))
-            exception(interp, FLISP_IO_ERROR, "failed to open memory output stream: %d", errno);
+            exception(interp, io_error, "failed to open memory output stream: %d", errno);
         return stream;
     }
     char c = path[0];
@@ -2013,16 +2013,16 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
         errno = 0;
         long d = strtol(&path[1], &end, 0);
         if (errno || *end != '\0' || d < 0 || d > _POSIX_OPEN_MAX)
-            exception(interp, FLISP_INVALID_VALUE, "invalid I/O stream number: %s", &path[1]);
+            exception(interp, invalid_value, "invalid I/O stream number: %s", &path[1]);
         if (NULL == (fd = fdopen((int)d, c == '<' ? "r" : "a")))
-            exception(interp, FLISP_IO_ERROR, "failed to open I/O stream %ld for %s", d, c == '<' ? "reading" : "writing");
+            exception(interp, io_error, "failed to open I/O stream %ld for %s", d, c == '<' ? "reading" : "writing");
     } else {
         if (NULL == (fd = fopen(path, mode)))
-            exception(interp, FLISP_IO_ERROR, "failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
+            exception(interp, io_error, "failed to open file '%s' with mode '%s', errno: %d", path, mode, errno);
     }
     return newStreamObject(interp, fd, path);
 }
-/** (fopen path mode) - return open stream object
+/** (open path[ mode]) - return open stream object
  *
  * @param path    path to a file to open, string for memory input
  *     or "<num" / ">num" for file descriptor input / output.
@@ -2031,12 +2031,21 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
  *
  * returns: stream object
  *
- * throws: FLISP_IO_ERROR, FLISP_INVALID_VALUE, FLISP_OOM
+ * throws: io-error, invalid-value, out-of-memory
  */
  Object *primitiveFopen(Interpreter *interp, Object ** args, Object **env)
 {
-    TWO_STRING_ARGS(fopen);
-    return file_fopen(interp, first->string, second->string);
+    char *mode = "r";
+    Object *second;
+    
+    ONE_STRING_ARG(open);
+    if ((*args)->cdr != nil) {
+        second = (*args)->cdr->car;
+        if (second->type != TYPE_STRING)
+            exceptionWithObject(interp, second, wrong_type_argument, "(open path[ mode]) - mode is not a string");
+        mode = second->string;
+    }
+    return file_fopen(interp, arg->string, mode);
 }
 /** file_fclose() - closes stream object
  *
@@ -2057,24 +2066,24 @@ int file_fclose(Interpreter *interp, Object *stream)
     }
     return result;
 }
-/** (fclose stream) - closes stream object
+/** (close stream) - closes stream object
  *
  * @param interp  fLisp interpreter
  * @param stream  stream to close
  *
- * throws: FILSP_INVALID_VALUE, FLISP_IO_ERROR
+ * throws: FILSP_INVALID_VALUE, io-error
  */
 Object *primitiveFclose(Interpreter *interp, Object** args, Object **env)
 {
     int result;
 
-    ONE_STREAM_ARG(fclose);
+    ONE_STREAM_ARG(close);
     if (stream->type != TYPE_STREAM)
-        exceptionWithObject(interp, stream, FLISP_INVALID_VALUE, "(fclose stream) - stream is not a stream object");
+        exceptionWithObject(interp, stream, invalid_value, "(fclose stream) - stream is not a stream object");
     if (stream->fd == NULL)
-        exceptionWithObject(interp, stream, FLISP_INVALID_VALUE, "(fclose stream) - stream already closed");
+        exceptionWithObject(interp, stream, invalid_value, "(fclose stream) - stream already closed");
     if ((result = file_fclose(interp, stream)))
-        exceptionWithObject(interp, stream, FLISP_IO_ERROR, "(fclose stream) - failed to close: %s", strerror(result));
+        exceptionWithObject(interp, stream, io_error, "(fclose stream) - failed to close: %s", strerror(result));
     return newNumber(interp, result);
 }
 
@@ -2239,9 +2248,9 @@ Primitive primitives[] = {
     {"car", 1, 1, primitiveCar},
     {"cdr", 1, 1, primitiveCdr},
     {"cons", 2, 2, primitiveCons},
-    {"fopen", 2, 2, primitiveFopen},
-    {"fclose", 1, 1, primitiveFclose},
-    {"fread", 0, 3, primitiveFread},
+    {"open", 1, 2, primitiveFopen},
+    {"close", 1, 1, primitiveFclose},
+    {"fread", 0, 2, primitiveFread},
     {"eval", 1, 1, primitiveEval},
     {"write", 1, -1, primitiveWrite},
 #if DEBUG_GC

@@ -63,24 +63,22 @@
 	    (list 'define (car args)
 		  (cons 'lambda (cons (map1 car (cadr args)) (cddr args))))
 	    (cons (car args) (map1 cadr (cadr args))))))
-    (t (throw flisp-wrong-type "let: first argument neither label nor binding" (car args)))))
+    (t (throw 'wrong-type-argument "let: first argument neither label nor binding" (car args)))))
 
 (defun prog1 (arg . args) arg)
 
 ;; load
-(defun fload (f . r)
-  (setq o (fread f :eof))
-  (cond
-    ((eq o :eof) (car r))
-    (t
-     (setq r (eval o))
-     (fload f r))))
+(defun fload (f)
+  (let loop ((o  nil) (r nil))
+       (setq o (fread f :eof))
+       (cond ((eq o :eof)  r)
+	     (t (setq r (eval o))
+		(loop nil r)))))
 
-(defun load (p)
-  (let ((f (fopen p "r")))
+(defun load args
+  (let ((f (open (car args))))
     (prog1 (fload f)
-      (fclose f))))
-
+      (close f))))
 
 ;; Features
 (setq features nil)
@@ -88,7 +86,8 @@
 (defun provide args
   ;; args: (feature [subfeature ..])
   ;; Elisp, subfeatures not implemented
-  (setq features (cons (car args) features)))
+  (cond ((memq (car args) features) (car args))
+	(t (setq features (cons (car args) features)))))
 
 (defun require (feature . args)
   ;; args: (feature [filename [noerror]])
@@ -99,8 +98,6 @@
      ;; Emacs optionally uses provided filename here
      (setq path (concat script_dir "/" (symbol-name feature) ".lsp"))
      (setq r (catch (load path)))
-     (cond
-       ((= (car r) 0)
-	(cond ((memq feature features)	feature)))))))
+     (cond ((null (car r)) (cond ((memq feature features)  feature)))))))
 
 (provide 'core)
