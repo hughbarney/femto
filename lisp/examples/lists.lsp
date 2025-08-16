@@ -30,13 +30,3 @@ t
 (add_to_cmds (list s))
 ("gg" "ii" "ii")
 
-
-
-
-
-
-
-
-
-
-

@@ -15,13 +15,15 @@
 ;;
 ;;
 ;;
-;; (load_script "dired.lsp") ;; to load
+;; (load "path/dired.lsp")   ;; to load
 ;; (dired)                   ;; to call
 ;;
 ;;
 (require 'femto)
 
-(setq dired-dir (concat (os.getenv "HOME")))
+
+;;
+(setq dired-dir "")
 (setq dired-ls-cmd "ls -la ")
 (setq dired-buffer "*dired*")
 (setq de-obuf "*scratch*")
@@ -35,8 +37,11 @@
 (setq de-is-link nil)
 (setq de-ops 0)
 (setq de-max-ops 300)
+(setq de-debug nil)
 
 (defun dired ()
+  (cond 
+     ((eq dired-dir "") (setq dired-dir (get-cwd))))
   (delete-other-windows)
   (setq de-obuf (get-buffer-name))
   (kill-buffer dired-buffer)
@@ -64,6 +69,8 @@
   (previous-line)
   (beginning-of-line)
   (de-insert-space))
+
+
 
 (defun de-insert-space()
   (insert-string "  ")
@@ -124,6 +131,7 @@
   (find-file (concat dired-dir "/" de-name)))
 
 (defun de-open-dir()
+  (dired-debug de-name)
   (cond
     ((eq ".." de-name) (setq dired-dir (de-up-dir dired-dir)))
     (t (setq dired-dir (concat dired-dir "/" de-name))))
@@ -166,5 +174,32 @@
     ((eq "/" (string.substring d (- (string.length d) 1) (- (string.length d) 1)))
      (string.substring d 0 (- (string.length d) 2)))
     (t (de-up-dir (string.substring d 0 (- (string.length d) 2))))))
+
+
+;;
+;; get current working directory, using let for lobal variables
+;;
+(defun get-cwd() 
+   (let ((obuf (get-buffer-name))
+        (current_working_directory ""))
+   (shell-command "pwd")   
+   (select-buffer "*output*")
+   (beginning-of-buffer)
+   (set-mark)
+   (end-of-line)
+   (copy-region)
+   (setq current_working_directory (string.trim (get-clipboard)))    
+   (select-buffer obuf)
+   (kill-buffer "*output*")
+   current_working_directory))
+
+;;
+;; keep this so we can debug dired if needed
+;;
+(defun dired-debug(m)
+  (cond
+    ((eq dired-debug t) (log-message (concat m "\n")))))
+
+
 
 (provide 'dired)
