@@ -2477,20 +2477,18 @@ void lisp_destroy(Interpreter *interp)
  * @param stream  open readable stream object
  * @param gcRoots gc root object
  *
- * returns: result code of first exception or RESULT_OK if none
- *     happened.
  */
-ResultCode lisp_eval(Interpreter *interp)
+void lisp_eval(Interpreter *interp)
 {
     if (interp->input == NULL) {
-        interp->result = FLISP_INVALID_VALUE;
-        strncpy(interp->message, "no input stream to evaluate", sizeof(interp->message));
+        interp->result = invalid_value;
+        strncpy(interp->msg_buf, "no input stream to evaluate", sizeof(interp->msg_buf));
         interp->object = nil;
-        return interp->result;
+        return;
     }
 
-    interp->result = FLISP_OK;
-    interp->message[0] = '\0';
+    interp->result = nil;
+    interp->msg_buf[0] = '\0';
 
     // start the garbage collector
     interp->gcTop = nil;
@@ -2498,16 +2496,23 @@ ResultCode lisp_eval(Interpreter *interp)
     GC_TRACE(gcObject, nil); // will not be released at all
 
     for (;;) {
-
+        interp->result = nil;
+        interp->msg_buf[0] = '\0';
         switch (setjmp(*interp->catch)) {
-        case FLISP_OK:     break;
-        case FLISP_RETURN: return FLISP_OK;
-        default:           return FLISP_ERROR;
+        case FLISP_OK: break;
+        case FLISP_RETURN: return;
+        default:
+            fl_debug(interp, "error: %s, '%s'", interp->result->string, interp->msg_buf);
+            GC_RELEASE;
+            return;
         }
-
-        if ((*gcObject = readExpr(interp, interp->input)) == NULL)
-            break;
-        // lisp_write_object(interp, interp->output, *gcObject, true);
+        if ((*gcObject = readExpr(interp, interp->input)) == NULL) {
+            interp->result = nil;
+            interp->msg_buf[0] = '0';
+            return;
+        }
+        lisp_write_object(interp, interp->debug, *gcObject, true);
+        writeChar(interp, interp->debug, '\n');
         *gcObject = evalExpr(interp, gcObject, &interp->global);
         interp->object = *gcObject;
         lisp_write_object(interp, interp->output, *gcObject, true);
@@ -2517,6 +2522,32 @@ ResultCode lisp_eval(Interpreter *interp)
     longjmp(*interp->catch, FLISP_RETURN);
     GC_RELEASE; // make the compiler happy
 }
+
+void lisp_eval2(Interpreter *interp)
+{
+    // start the garbage collector
+    interp->gcTop = nil;
+    GC_CHECKPOINT;
+    GC_TRACE(gcObject, nil);
+    Object read = { TYPE_PRIMITIVE, .name = "fread" };
+    Object *doRead = &(Object) { TYPE_CONS, .car = &read, .cdr = nil };
+
+    for (;;) {
+        /* read */
+        *gcObject = evalCatch(interp, &doRead, &interp->global);
+        lisp_write_object(interp, interp->debug, interp->object, true);
+        if (interp->object->car != nil) break;
+        /* eval */
+        *gcObject = interp->object->cdr->cdr->car;
+        *gcObject = evalCatch(interp, gcObject, &interp->global);
+        if (interp->object->car != nil) break;
+        lisp_write_object(interp, interp->output, interp->object, true);
+        writeChar(interp, interp->output, '\n');
+        if (interp->output) fflush(interp->output);
+    }
+    GC_RELEASE;
+}
+
 
 /** lisp_write_error - format error message and write to file
  *
@@ -2547,52 +2578,59 @@ void lisp_write_error(Interpreter *interp, FILE *fd)
  *
  * Before calling `lisp_eval_string()` initialize:
  *
- * Returns: FLISP_OK if successful, FLISP_ERROR otherwise.
- *
- * - interp->result is set to the result code of the evaluation.
+ * - interp->result is set to the result symbol of the evaluation, nil if succesful.
  * - interp->object is set to the resulting object
- *
- * The output from the evaluation is written to the default output of
- * the interpreter.
  *
  * If an error occurs during evaluation:
  *
  * - interp->object is set to the object causing the exception, or nil.
- * - interp->message is set to an error message.
+ * - interp->msg_buf is set to an error message.
  *
  */
-ResultCode lisp_eval_string(Interpreter *interp, char * input)
+void lisp_eval_string(Interpreter *interp, char * input)
 {
     FILE *fd, *prev;
-    ResultCode result;
-    char *buf;
-    size_t len;
 
     fl_debug(interp, "lisp_eval_string(\"%s\")", input);
 
     if (NULL == (fd = fmemopen(input, strlen(input), "r")))  {
-        strncpy(interp->message, "failed to allocate input stream", sizeof(interp->message));
+        strncpy(interp->msg_buf, "failed to allocate input stream", sizeof(interp->msg_buf));
         goto io_error;
     }
     prev = interp->input;
     interp->input = fd;
-    result = lisp_eval(interp);
+    lisp_eval(interp);
     interp->input = prev;
     (void)fclose(fd);
-
-    fl_debug(interp, "lisp_eval_string() => %d, '%s'", interp->result, interp->message);
-    if (result) {
-        if (NULL == (fd = open_memstream(&buf, &len)))  {
-            strncpy(interp->message, "failed to allocate output stream", sizeof(interp->message));
-            goto io_error;
-        }
-        lisp_write_error(interp, fd);
-    }
-    return result;
+    if (interp->result == nil)
+        fl_debug(interp, "lisp_eval_string() result: nil");
+    else
+        fl_debug(interp, "lisp_eval_string() result: error: %s", interp->msg_buf);
+    return;
+    
 io_error:
-    interp->result = FLISP_IO_ERROR;
+    interp->result = io_error;
     interp->object = nil;
-    return interp->result;
+    return;
+}
+
+void lisp_eval_string2(Interpreter *interp, char *input)
+{
+
+    FILE *fd, *prev;
+    fl_debug(interp, "lisp_eval_string(\"%s\")", input);
+
+    if (NULL == (fd = fmemopen(input, strlen(input), "r")))  {
+        strncpy(interp->msg_buf, "failed to allocate input stream", sizeof(interp->msg_buf));
+        interp->result = io_error;
+        interp->object = nil;
+        return;
+    }
+    prev = interp->input;
+    interp->input = fd;
+    lisp_eval2(interp);
+    interp->input = prev;
+    (void)fclose(fd);
 }
 
 /*
