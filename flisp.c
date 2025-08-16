@@ -17,7 +17,7 @@
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
 
-ResultCode result;
+int exit_code = 0;
 
 // Note: wouldn't need, if we could implement the repl in fLisp
 #define INPUT_BUFSIZE 4095
@@ -36,7 +36,6 @@ void fatal(char *msg)
 int repl(Interpreter *interp)
 {
     size_t i;
-    ResultCode result;
 
     puts(FL_NAME " " FL_VERSION);
     puts("exit with Ctrl+D");
@@ -54,13 +53,15 @@ int repl(Interpreter *interp)
             continue;
         }
 
-        if (lisp_eval_string(interp, input))
+        lisp_eval_string(interp, input);
+        if (interp->result != nil)
             lisp_write_error(interp, stderr);
     }
-    result = interp->result;
     // Note: close output, error?
+    if (interp->result != nil)
+        exit_code = 1;
     lisp_destroy(interp);
-    return result;
+    return exit_code;
 }
 
 int main(int argc, char **argv)
@@ -91,11 +92,12 @@ int main(int argc, char **argv)
         else {
             // load inifile
             interp->input = fd;
-            if (lisp_eval(interp))
-                    fprintf(stderr, "failed to load inifile %s:%d: %s\n", init_file, interp->result, interp->message);
+            lisp_eval(interp);
+            if (interp->result != nil && interp->result != t)
+                    fprintf(stderr, "failed to load inifile %s:%s: %s\n", init_file, interp->result->name, interp->msg_buf);
             // Note: if we could implement the repl in fLisp itself we'd bail out here.
             if (fclose(fd))
-                fprintf(stderr, "failed to close inifile %s:%d %s\n", init_file, interp->result, interp->message);
+                fprintf(stderr, "failed to close inifile %s:%s %s\n", init_file, interp->result->name, interp->msg_buf);
         }
     }
     // Start repl
@@ -105,12 +107,13 @@ int main(int argc, char **argv)
 
     // Just eval the standard input
     interp->input = stdin;
-    if (lisp_eval(interp))
+    lisp_eval(interp);
+    if (interp->result != nil && interp->result !=t) {
+        exit_code = 1;
         lisp_write_error(interp, stderr);
-
-    result = interp->result;
-    //lisp_destroy(interp);
-    return result;
+    }
+    lisp_destroy(interp);
+    return exit_code;
 }
 
 /*

@@ -19,7 +19,17 @@ FILE *prev, *debug_fp = NULL;
 char* output;
 size_t len;
 
-void load_config(char *file)
+/** Lisp eval a file
+ *
+ * @param: file .. path to file.
+ *
+ * Tries to open the file indicated by *path* and feeds it to the Lisp
+ * interpreter.
+ *
+ * Output and Errors are logged to the debug file descriptor.
+ *
+ */
+void load_file(char *file)
 {
     FILE *fd;
     if (!(fd = fopen(file, "r"))) {
@@ -28,12 +38,11 @@ void load_config(char *file)
     }
     interp->input = fd;
     interp->output = debug_fp;
-    if (lisp_eval(interp)) {
-        debug("failed to load file %s: %ul - %s\n", file, interp->result, interp->message);
+    lisp_eval(interp);
+    if (interp->result != nil) {
+        debug("failed to load file %s: %s - %s\n", file, interp->result->name, interp->msg_buf);
         lisp_write_error(interp, debug_fp);
     }
-    interp->input = interp->output = NULL;
-
     if (fclose(fd))
         debug("failed to close file %s\n", file);
 }
@@ -41,7 +50,7 @@ void load_config(char *file)
 int main(int argc, char **argv)
 {
     char *envv, *library_path, *init_file;
-
+    
     batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
     debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
 
@@ -74,7 +83,7 @@ int main(int argc, char **argv)
         fatal("fLisp initialization failed");
 
     if (strlen(init_file))
-        load_config(init_file);
+        load_file(init_file);
 
     /* GUI */
     if (!batch_mode) gui();
@@ -88,11 +97,16 @@ int main(int argc, char **argv)
     return 0;
 }
 
+/** Handle errors from Lisp scripts
+ *
+ * @param interp
+ */
 void msg_lisp_err(Interpreter *interp)
 {
     char *buf;
     size_t len;
     FILE *fd;
+
     if (NULL == (fd = open_memstream(&buf, &len)))
         fatal("failed to allocate error formatting buffer");
     lisp_write_error(interp, fd);
@@ -122,22 +136,24 @@ char *eval_string(bool do_format, char *format, ...)
 
     prev = interp->output;  // Note: save for double invocation with user defined functions.
     interp->output = open_memstream(&output, &len);
-    if ((lisp_eval_string(interp, input)))
-        msg_lisp_err(interp);
-    if (debug_mode) {
-        if (interp->result)
-            lisp_write_error(interp, debug_fp);
-        debug("=> %s\n", output);
-    }
-    if (interp->result) {
+    lisp_eval_string(interp, input);
+    if (interp->result == nil) {
         free_lisp_output();
         return NULL;
+    }
+    if (interp->output)
+        fflush(interp->output);
+    msg_lisp_err(interp);
+    if (debug_mode) {
+        lisp_write_error(interp, debug_fp);
+        debug("=> %s\n", output);
     }
     return output;
 }
 void free_lisp_output()
 {
-    fflush(interp->output);
+    if (!interp->output)
+        return;
     fclose(interp->output);
     free(output);
     interp->output = prev;

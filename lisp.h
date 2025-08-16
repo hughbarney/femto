@@ -62,27 +62,10 @@ struct Object {
 extern Object *nil;
 extern Object *t;
 
-
 typedef enum ResultCode {
     FLISP_OK,
     FLISP_ERROR,
     FLISP_RETURN,         /* successful return */
-    FLISP_BREAK,          /* non local exit */
-    FLISP_EOF,            /* eof upon read */
-    FLISP_USER,           /* generic user generated exception */
-    /* Parser/reader */
-    FLISP_READ_INCOMPLETE,
-    FLISP_READ_INVALID,
-    FLISP_READ_RANGE,     /* number range over/underflow */
-    /* Parameter */
-    FLISP_WRONG_TYPE,
-    FLISP_INVALID_VALUE,
-    FLISP_PARAMETER_ERROR,
-    /* System */
-    FLISP_IO_ERROR,
-    FLISP_OOM,
-    /* Internal */
-    FLISP_GC_ERROR,
 } ResultCode;
 
 typedef struct Memory {
@@ -92,8 +75,9 @@ typedef struct Memory {
 
 typedef struct Interpreter {
     Object *object;                  /* result or error object */
-    char message[WRITE_FMT_BUFSIZ];  /* error string */
-    ResultCode result;               /* result of last evaluation */
+    Object *result;                  /* result symbol */
+    char msg_buf[WRITE_FMT_BUFSIZ];  /* error string */
+    
     /* private */
     FILE *input;                     /* default input stream object */
     FILE *output;                    /* default output file descriptor */
@@ -124,33 +108,35 @@ typedef struct Interpreter {
     Object *first = (*args)->car;                               \
     Object *second = (*args)->cdr->car;                         \
     if (first->type != TYPE_STRING)                             \
-        exceptionWithObject(interp, first, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) "  first second) - first is not a string"); \
+        exceptionWithObject(interp, first, wrong_type_argument, "(" CPP_XSTR(func) "  first second) - first is not a string"); \
     if (second->type != TYPE_STRING)                            \
-        exceptionWithObject(interp, second, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " first second) - second is not a string");
+        exceptionWithObject(interp, second, wrong_type_argument, "(" CPP_XSTR(func) " first second) - second is not a string");
 
 #define ONE_STRING_ARG(func)                                  \
     Object *arg = (*args)->car;                               \
     if (arg->type != TYPE_STRING)                             \
-        exceptionWithObject(interp, arg, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " arg) - arg is not a string");
+        exceptionWithObject(interp, arg, wrong_type_argument, "(" CPP_XSTR(func) " arg) - arg is not a string");
 
 #define ONE_NUMBER_ARG(func)                                  \
     Object *num = (*args)->car;                               \
     if (num->type != TYPE_NUMBER)                             \
-        exceptionWithObject(interp, num, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " num) - num is not a number");
+        exceptionWithObject(interp, num, wrong_type_argument, "(" CPP_XSTR(func) " num) - num is not a number");
 
 #define ONE_STREAM_ARG(func)                                  \
     Object *stream = (*args)->car;                            \
     if (stream->type != TYPE_STREAM)                          \
-        exceptionWithObject(interp, stream, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " fd) - fd is not a stream");
+        exceptionWithObject(interp, stream, wrong_type_argument, "(" CPP_XSTR(func) " fd) - fd is not a stream");
 
 // PUBLIC INTERFACE ///////////////////////////////////////////////////////
 extern Interpreter *lisp_new(size_t, char**, char*, FILE*, FILE*, FILE*);
 extern void lisp_destroy(Interpreter *);
-extern ResultCode lisp_eval(Interpreter *);
-extern ResultCode lisp_eval_string(Interpreter *, char *);
+extern void lisp_eval(Interpreter *);
+extern void lisp_eval_string(Interpreter *, char *);
 extern void lisp_write_object(Interpreter *, FILE *, Object *, bool);
 extern void lisp_write_error(Interpreter *, FILE *);
 
+extern void lisp_eval2(Interpreter *);
+extern void lisp_eval_string2(Interpreter *, char *);
 
 #ifdef FLISP_FILE_EXTENSION
 #define FLISP_REGISTER_FILE_EXTENSION \

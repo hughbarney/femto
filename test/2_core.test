@@ -4,7 +4,7 @@
 
 export FLISPRC=../lisp/core.lsp
 
-tap 23
+tap 27
 
 # list
 IN='(list)' OUT=nil
@@ -54,12 +54,26 @@ flisp_expr 1; ok memq-1 find object in list
 IN='(memq '\''a '\''(1 '\''two 3))' OUT=nil
 flisp_expr 1; ok memq-2 do not find object in list
 
+
+IN="(defun incr (x) (+ x 1)) (map1 incr '(1 2 3))" OUT="(2 3 4)"
+flisp_expr 1; ok map1-1 map1 incr elements in list
+
+IN="(map1 / '())" OUT="nil"
+flisp_expr 1; ok map1-2 map1 does nothing on empty list
+
 # fload
-IN='(setq f (fopen "empty.lsp" "r")) (fload f)' OUT=nil
+IN='(setq f (open "empty.lsp" "r")) (fload f)' OUT=nil
 flisp_expr 1; ok fload-1 load empty file
 
-IN='(setq f (fopen "one_word.lsp" "r")) (fload f)' OUT='"one_word"'
+IN='(setq f (open "one_word.lsp" "r")) (fload f)' OUT='"one_word"'
 flisp_expr 1; ok fload-2 load file with one word
+
+# load
+IN='(load "empty.lsp")' OUT=nil
+flisp_expr 1; ok load-1 load empty file
+
+IN='(load "one_word.lsp")' OUT='"one_word"'
+flisp_expr 1; ok load-2 load file with one word
 
 # provide
 IN="(provide)" OUT="(nil core)"
@@ -73,8 +87,8 @@ flisp_expr 1; ok provide-3 providing features a and subfeature b only prepends a
 IN="(require)" OBJ="#<Lambda (feature . args)>" ERR="(env) expects at least 1 arguments"
 flisp_err 1; ok require-1 requiring nothing errs
 
-IN="(require '_no_file)" OBJ="" ERR="errno: 2"
-flisp_err 1; ok require-2 requiring not existing features fails
+IN="(require '_no_file)" OUT="nil"
+flisp_expr 1; ok require-2 requiring not existing features returns nil
 
 IN="(require 'core)" OUT="(core)
 core"
