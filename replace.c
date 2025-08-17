@@ -84,6 +84,68 @@ void query_replace(void)
     msg("%d substitutions", numsub);
 }
 
+
+/*
+
+replace_string_function()
+
+Non interactive version for calling through lisp
+Will replace search string from current point in buffer
+to end of buffer
+
+rcount = number of replacements allowed, 0 means do all
+
+*/
+
+int replace_string_function(char *s, char *r, int rcount)
+{
+    point_t o_point = curbp->b_point;
+    point_t l_point = -1;
+    point_t found;
+    int slen, rlen;   /* length of search and replace strings */
+    int numsub = 0;   /* number of substitutions */
+
+    strcpy(searchtext, s);
+    strcpy(replace, r);
+
+    slen = strlen(searchtext);
+    rlen = strlen(replace);
+
+    /* 
+    We should do some searious sanity checks here
+    to avoid potentiall infinite loops etc
+    */
+
+    /* scan through the file, from point */
+    numsub = 0;
+    while(TRUE) {
+
+        // have we done the allowed number of replacements ?
+        // rcount of 0 means do all
+        if (rcount > 0 && numsub >= rcount)
+            break;
+
+        found = search_forward(searchtext);
+
+        /* if not found set the point to the last point of replacement, or where we started */
+        if (found == -1) {
+            curbp->b_point = (l_point == -1 ? o_point : l_point);
+            break;
+        }
+
+        curbp->b_point = found;
+        /* search_forward places point at end of search, move to start of search */
+        curbp->b_point -= slen;
+
+        l_point = curbp->b_point; /* save last point */
+        replace_string(curbp, searchtext, replace, slen, rlen);
+        numsub++;
+    }
+
+    return numsub;
+}
+
+
 void replace_string(buffer_t *bp, char *s, char *r, int slen, int rlen)
 {
     /*

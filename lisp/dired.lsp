@@ -15,7 +15,9 @@
 ;;
 ;;
 ;;
-;; (load "path/dired.lsp")   ;; to load
+;;
+;; (load "./lisp/dired.lsp") ;; when testing locally or developing
+;;
 ;; (dired)                   ;; to call
 ;;
 ;;
@@ -23,7 +25,10 @@
 
 
 ;;
+;;  these contain the state of dired and need to be global
+;;
 (setq dired-dir "")
+(setq dired-fspec "")
 (setq dired-ls-cmd "ls -la ")
 (setq dired-buffer "*dired*")
 (setq de-obuf "*scratch*")
@@ -36,7 +41,7 @@
 (setq de-is-dir nil)
 (setq de-is-link nil)
 (setq de-ops 0)
-(setq de-max-ops 300)
+(setq de-max-ops 3000)
 (setq de-debug nil)
 
 (defun dired ()
@@ -45,7 +50,7 @@
   (delete-other-windows)
   (setq de-obuf (get-buffer-name))
   (kill-buffer dired-buffer)
-  (shell-command (string.append dired-ls-cmd dired-dir))
+  (shell-command (concat dired-ls-cmd dired-dir "/" dired-fspec))
   (rename-buffer dired-buffer)
   (beginning-of-buffer)
   (set-mark)
@@ -98,7 +103,7 @@
   (setq de-ops (+ de-ops 1))
   (cond
     ((< de-ops de-max-ops)
-     (message "dired menu: f,x")
+     (message "dired menu: s,f,x")
      (update-display)
      (setq de-key (get-key))
      (cond
@@ -124,11 +129,20 @@
        (t (de-open-file)))
      (kill-buffer dired-buffer)
      (setq de-ops (+ de-max-ops 1)))
+    ((memq k '("s"))
+     (de-set-fspec)
+     (dired))
     (t (log-debug (concat "command key=" k "\n")))))
 
 
 (defun de-open-file()
   (find-file (concat dired-dir "/" de-name)))
+
+;;
+;; set the filter specification for the files (eg *.c)
+;;
+(defun de-set-fspec() 
+  (setq dired-fspec (prompt "Enter file filter specification:  " dired-fspec)))
 
 (defun de-open-dir()
   (dired-debug de-name)

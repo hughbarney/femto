@@ -43,6 +43,7 @@ DEFINE_EDITOR_FUNC(split_window)
 DEFINE_EDITOR_FUNC(other_window)
 DEFINE_EDITOR_FUNC(execute_key)
 
+extern int replace_string_function(char *, char*, int);
 extern int set_key(char *, char *);
 extern int getinput(char *, char *, int, int);
 extern char *get_char(void);

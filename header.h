@@ -441,6 +441,7 @@ extern void execute_key();
 extern void make_key(char *, char *);
 extern void setup_keys();
 
+
 /* functions in main.c */
 extern int main(int argc, char **);
 extern void debug(char *format, ...);
@@ -453,6 +454,8 @@ extern void gui();              /* The GUI loop used in interactive mode */
 /* functions in replace.c */
 extern void query_replace(void);
 extern void replace_string(buffer_t *, char *, char *, int, int);
+extern int replace_string_function(char *, char *, int);
+
 
 /* functions in search.c */
 extern point_t search_backwards(char *);
