@@ -1,3 +1,22 @@
+
+
+;;
+;; usual construct for let in common lisp is
+;;
+
+(let ((var1 val1)
+      (var2 val2))
+  body)
+
+;;
+;; scheme also offers a labelled let which acts a function definition
+;;
+
+(let label-name ((var1 val1)
+                 (var2 val2))
+  body)
+
+
 ;;
 ;; a do until construct
 ;;
@@ -10,8 +29,10 @@
 
 
 
-
+;;
 ;; ---- in the *messages* buffer we see --------
+;;
+
 countdown from 5
 5
 4
@@ -32,10 +53,14 @@ countdown from 3
 (let for ((i 1)  (end 10) (step 2))
     (log-message (concat "counter: " i))
     (setq i (+ i step))
-    (cond ((< i end)  (for i))))
+    (cond ((< i end)  (for i end step))))
+
+;;
+;; In the messages window you will see 
+;; counter: 1counter: 3counter: 5counter: 7counter: 9
+;;
 
 
-;;error: '#<Lambda (i end step)>', (env) expects at least 3 arguments
 
 
 ;; 
@@ -48,9 +73,4 @@ countdown from 3
           (log-message (concat "counter: " i "\n"))
           (setq i (+ i step))
           (repeat)))))
-nil
-
-
-
-;; works
 
