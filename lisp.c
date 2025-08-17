@@ -238,19 +238,33 @@ Object *gcReturn(Interpreter *interp, Object *gcTop, Object *result)
     interp->gcTop = &GC_UNIQUE(gcTrace);                                \
     Object **name = &GC_UNIQUE(gcTrace).car;
 
+
+/** gcCollectableObject - check if object is on heap
+ *
+ * @param interp  fLisp interpreter
+ * @param object  object to inspect
+ *
+ * returns: true if object is on heap, false otherwise.
+ *
+ */
+bool gcCollectableObject(Interpreter *interp, Object *object) {
+    return (object >= (Object *) interp->memory->fromSpace &&
+            object < (Object *) ((char *)interp->memory->fromSpace + interp->memory->fromOffset));
+}
+
 /** gcMoveObject - save a single object from garbage collection
  *
  * @param interp  fLisp interpreter
  * @param object  object to save
  *
- * return: object at new location
+ * returns: object at new location
  *
  */
 typedef struct gcStats { size_t moved, constant, skipped; } gcStats;
 Object *gcMoveObject(Interpreter *interp, Object *object, gcStats *stats)
 {
     // skip object if it is not within from-space (i.e. on the stack)
-    if (object < (Object *) interp->memory->fromSpace || object >= (Object *) ((char *)interp->memory->fromSpace + interp->memory->fromOffset)) {
+    if (!gcCollectableObject(interp, object)) {
         stats->constant++;
         return object;
     }
@@ -1159,7 +1173,7 @@ Object *primitiveFread(Interpreter *interp, Object **args, Object **env)
         if (stream->type != TYPE_STREAM)
             exceptionWithObject(interp, stream, invalid_value, "(fread [fd ..]) - fd is not a stream: %s", typeName(stream));
         fd = stream->fd;
-        
+
         if ((*args)->cdr != nil)
             eofv = (*args)->cdr->car;
     }
@@ -1211,7 +1225,7 @@ enum {
  * @param interp .. fLisp interpeter
  * @param args .. List of arguments (var val ..)
  * @param env .. Environment where to set the variable
- 
+
  * If top is set to true, an undefined variable is set in the top
  * level environment, otherwise it is set in the current environment.
  *
@@ -1229,7 +1243,8 @@ Object *evalSetVar(Interpreter *interp, Object ** args, Object ** env, bool top)
     if (var->type != TYPE_SYMBOL)
         exceptionWithObject(interp, var, wrong_type_argument, "(setq/define name value) - name is not a symbol");
     /* Note: we want to check for all constants here */
-    if (var == nil || var == t)
+    //if (var == nil || var == t)
+    if (!gcCollectableObject(interp, var))
         exceptionWithObject(interp, var, wrong_type_argument, "(setq/define name value) name is a constant and cannot be redefined");
 
     GC_CHECKPOINT;
@@ -2037,7 +2052,7 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
 {
     char *mode = "r";
     Object *second;
-    
+
     ONE_STRING_ARG(open);
     if ((*args)->cdr != nil) {
         second = (*args)->cdr->car;
@@ -2291,19 +2306,22 @@ Primitive primitives[] = {
 
 void initRootEnv(Interpreter *interp)
 {
+    int i;
+
     GC_CHECKPOINT;
     GC_TRACE(gcEnv, newEnv(interp, &nil, &nil));
 
     interp->global = *gcEnv;
 
     // add constants
-    envSet(interp, &nil, &nil, &interp->global, true);
-    envSet(interp, &t, &t, &interp->global, true);
-
+    int nConstants = sizeof(flisp_const) / sizeof(flisp_const[0]);
+    for (i = 0; i < nConstants; i++) {
+        envSet(interp, flisp_const[i], flisp_const[i], &interp->global, true);
+        interp->symbols = newCons(interp, flisp_const[i], &interp->symbols);
+    }
     // add primitives
     int nPrimitives = sizeof(primitives) / sizeof(primitives[0]);
 
-    int i;
     GC_TRACE(gcVar, nil);
     GC_TRACE(gcVal, nil);
     for (i = 0; i < nPrimitives; ++i) {
@@ -2607,7 +2625,7 @@ void lisp_eval_string(Interpreter *interp, char * input)
     else
         fl_debug(interp, "lisp_eval_string() result: error: %s", interp->msg_buf);
     return;
-    
+
 io_error:
     interp->result = io_error;
     interp->object = nil;

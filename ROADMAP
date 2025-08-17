@@ -1,5 +1,5 @@
-- Bump fLisp version: reason: error type symbols instead of result codes
-- Add error type symbols to the top level environment
++ Bump fLisp version: reason: error type symbols instead of result codes
++ Add error type symbols to the top level environment
 - Change to 64 bit integers
 - Showcase lisp_eval2 with (catch (fread)) mechanism
 - Implement fstat and improve femto.rc

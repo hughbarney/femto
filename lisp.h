@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #define FL_NAME     "fLisp"
-#define FL_VERSION  "0.7"
+#define FL_VERSION  "0.8"
 
 #define FL_INITFILE "flisp.rc"
 #define FL_LIBDIR "/usr/local/share/flisp"
@@ -77,7 +77,7 @@ typedef struct Interpreter {
     Object *object;                  /* result or error object */
     Object *result;                  /* result symbol */
     char msg_buf[WRITE_FMT_BUFSIZ];  /* error string */
-    
+
     /* private */
     FILE *input;                     /* default input stream object */
     FILE *output;                    /* default output file descriptor */
