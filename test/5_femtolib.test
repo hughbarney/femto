@@ -21,14 +21,14 @@ true; ok insert-file \# TODO
 
 # string.trim.front
 IN='(string.trim.front " x")'  OUT='"x"'
-femtolib 1; ok string.strim.front-1 remove single space before string
+femtolib ; ok string.trim.front-1 remove single space before string
 
 IN='(string.trim.front " ")'  OUT='""'
-femtolib 1; ok string.strim.front-2 remove single space
+femtolib 1; ok string.trim.front-2 remove single space
 IN='(string.trim.front "    ")'  OUT='""'
-femtolib 1; ok string.strim.front-3 remove several spaces
+femtolib 1; ok string.trim.front-3 remove several spaces
 IN='(string.trim.front "")'  OUT='""'
-femtolib 1; ok string.strim.front-4 empty string
+femtolib 1; ok string.trim.front-4 empty string
 
 # string.trim.back
 IN='(string.trim.back "x ")'  OUT='"x"'

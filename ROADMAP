@@ -1,5 +1,7 @@
 + Bump fLisp version: reason: error type symbols instead of result codes
 + Add error type symbols to the top level environment
+  - A priori type checking: GC_DEBUG fails. When throwing exceptions, after loading core.lsp gives:
+    error: wrong-type-argument, '(car args) - arg 1 is not of type type-cons: type-symbol'
 - Change to 64 bit integers
 - Showcase lisp_eval2 with (catch (fread)) mechanism
 - Implement fstat and improve femto.rc

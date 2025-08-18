@@ -243,37 +243,83 @@ flisp_expr; ok null-7 null macro is  nil
 
 # consp
 IN='(consp nil)' OUT='nil'
-flisp_expr; ok consp-1_1  consp nil is nil
+flisp_expr; ok consp-1  consp nil is nil
 
 IN='(consp 1)' OUT='nil'
-flisp_expr; ok consp-1_2  consp number is nil
+flisp_expr; ok consp-2  consp number is nil
 
 IN="(consp 'a)" OUT='nil'
-flisp_expr; ok consp-1_3  consp string is nil
+flisp_expr; ok consp-3  consp string is nil
 
 IN="(consp '(t . t))" OUT='t'
-flisp_expr; ok consp-1_4  consp cons is t
+flisp_expr; ok consp-4  consp cons is t
 
 IN="(consp '(1  2))" OUT='t'
-flisp_expr; ok consp-1_5  consp list is t
+flisp_expr; ok consp-5  consp list is t
 
-IN="(consp +)" OUT='nil'
-flisp_expr; ok consp-1_5  consp lambda is nil
+IN="(consp consp)" OUT='nil'
+flisp_expr; ok consp-5  consp lambda is nil
 
-false; ok  numberp \# TODO
-false; ok  stringp \# TODO
-false; ok  symbolp \# TODO
-false; ok  symbol-name \# TODO
-false; ok  eq \# TODO
+IN="(numberp 42)" OUT='t'
+flisp_expr; ok numberp-1  numberp number is t
+
+IN="(numberp numberp)" OUT='nil'
+flisp_expr; ok numberp-2  numberp lambda is nil
+
+IN='(stringp "answer")' OUT='t'
+flisp_expr; ok stringp-1  stringp string is t
+
+IN="(stringp stringp)" OUT='nil'
+flisp_expr; ok stringp-2  stringp lambda is nil
+
+IN="(symbolp 'a)" OUT='t'
+flisp_expr; ok symbolp-1  symbolp symbol is t
+
+IN="(symbolp symbolp)" OUT='nil'
+flisp_expr; ok symbolp-2  symbolp lambda is nil
+
+IN="(symbol-name 'a)" OUT='"a"'
+flisp_expr; ok symbol-name-1  symbolname is symbol as string
+
+IN="(eq 1 1)" OUT='t'
+flisp_expr; ok eq-1_1  eq same num is t
+
+IN="(eq 1 2)" OUT='nil'
+flisp_expr; ok eq-1_2  eq different num is nil
+
+IN="(eq 1 'a)" OUT='nil'
+flisp_expr; ok eq-1_3  eq num other is nil
+
+IN='(eq "answer" "answer")' OUT='t'
+flisp_expr; ok eq-2_1  eq same string is t
+
+IN='(eq "answer" "everything")' OUT='nil'
+flisp_expr; ok eq-2_2  eq different string is nil
+
+IN='(eq "answer" 42)' OUT='nil'
+flisp_expr; ok eq-2_3  eq string other is nil
+
+IN="(eq 'a 'a)" OUT='t'
+flisp_expr; ok eq-3_1  eq same symbol is t
+
+IN="(eq 'a eq)" OUT='nil'
+flisp_expr; ok eq-3_2  eq symbol lambda is nil
 
 ## Cons'es
-false; ok  car \# TODO
-false; ok  cdr \# TODO
-false; ok  cons \# TODO
+IN="(car '(1 2))" OUT='1'
+flisp_expr; ok car-1  car returns first element
 
+# Intermezzo
+IN="(car 1)" OBJ= ERR='(car args) - arg 1 expected type-cons, got: type-number'
+flisp_err; ok arg_check-1  argument checking '(car 1)' fails
+
+IN="(cdr '(1 2))" OUT='(2)'
+flisp_expr; ok cdr-1  cdr returns rest
+
+IN="(cons 1 'a)" OUT="(1 . a)"
+flisp_expr; ok cons-1  cons returns dottet pair
 
 # I/O
-false; ok open \# TODO
 rm -f _file_
 IN='(open "_file_" "w")' OUT=""
 flisp_expr
@@ -295,8 +341,18 @@ ok open-5 open memory input stream
 echo '(open "" ">")' | $FLISP | grep -q "#<Stream 0x............, >STRING>"
 ok open-6 open memory output stream
 
+IN='(close (open "empty.lsp"))' OUT="0"
+flisp_expr; ok close-1 close file
 
-false; ok close \# TODO
+IN='(close (open ">2"))' OUT="0"
+flisp_expr; ok close-2 close file descriptor
+
+IN='(close (open "any text" "<"))' OUT="0"
+flisp_expr; ok close-3 close memory input stream
+
+IN='(close (open "" ">"))' OUT="0"
+flisp_expr; ok close-4 close memory output stream
+
 false; ok fread \# TODO
 false; ok eval \# TODO
 false; ok write \# TODO
