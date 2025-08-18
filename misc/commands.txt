@@ -1,5 +1,7 @@
 Femto Editor Commands In Alphabetical Order
-===========================================
+These need to be documented in the official README
+==================================================
+
 
 Key
  - not implemented yet
