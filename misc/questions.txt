@@ -1,0 +1,15 @@
+
+what are .sht files ?
+
+
+
+/usr/share/femto/femto.rc ->  startup
+
+startup 
+  loads the extension files
+  set the config keys
+  load the local config from ~/HOME/.config/femto.rc
+  
+core.lsp - not in the share directory
+-- assume loaded by the standalone lisp programme
+
