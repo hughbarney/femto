@@ -8,7 +8,7 @@
 #include <errno.h>
 #include "header.h"
 
-void gui(); /* The GUI loop used in interactive mode */
+void gui(void); /* The GUI loop used in interactive mode */
 
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
@@ -150,7 +150,7 @@ char *eval_string(bool do_format, char *format, ...)
     }
     return output;
 }
-void free_lisp_output()
+void free_lisp_output(void)
 {
     if (!interp->output)
         return;
@@ -159,7 +159,7 @@ void free_lisp_output()
     interp->output = prev;
 }
 
-void gui()
+void gui(void)
 {
     debug("gui(): init\n");
     if (initscr() == NULL) fatal(f_initscr);

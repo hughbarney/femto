@@ -2,7 +2,7 @@
 
 #include "header.h"
 
-undo_tt *new_undo()
+undo_tt *new_undo(void)
 {
     undo_tt *up = (undo_tt *)malloc(sizeof(undo_tt));
 
@@ -210,7 +210,7 @@ undo_tt *execute_undo(undo_tt *up)
 
 
 /* the undo command called by the keyboard binding C-u */
-void undo_command()
+void undo_command(void)
 {
     int continue_undo = 1;
     undo_tt *up = curbp->b_utail;
@@ -249,7 +249,7 @@ void undo_command()
  * wait for next key, if undo return TRUE
  * otherwise handle the key and return FALSE
  */
-int get_undo_again()
+int get_undo_again(void)
 {
     input = get_key(khead, &key_return);
 
@@ -315,7 +315,7 @@ int get_buf_utf8_size(char_t *buf, int pos)
     return 1;
 }
 
-void discard_undo_history()
+void discard_undo_history(void)
 {
     discard_buffer_undo_history(curbp);
 }
@@ -428,7 +428,7 @@ char *get_undo_type_name(undo_tt *up)
     return STR_T_NONE;
 }
 
-void list_undos()
+void list_undos(void)
 {
     dump_undos(curbp);
 }
@@ -480,7 +480,7 @@ void dump_undos(buffer_t *bp)
 }
 
 /* show the undo data for ALL the buffers */
-void list_undo_stats()
+void list_undo_stats(void)
 {
     buffer_t *bp;
     buffer_t *list_bp;
