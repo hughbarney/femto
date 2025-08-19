@@ -2,6 +2,8 @@
 
 #include "header.h"
 
+#include <string.h>
+
 void free_string_list(string_list_t *list)
 {
     string_list_t *next;
@@ -168,7 +170,7 @@ char *shortest_common_string(string_list_t *list)
 }
 
 /* show commands that match a sub-string */
-void apropos()
+void apropos(void)
 {
     buffer_t *bp;
     command_t *fn;
@@ -210,7 +212,7 @@ void apropos()
 }
 
 /* show all the key bindings in a buffer */
-void describe_bindings()
+void describe_bindings(void)
 {
     buffer_t *bp;
     keymap_t *ky;
@@ -229,7 +231,7 @@ void describe_bindings()
 }
 
 /* show all registered functions in a buffer */
-void describe_functions()
+void describe_functions(void)
 {
     buffer_t *bp;
     command_t *cp;
@@ -248,7 +250,7 @@ void describe_functions()
 }
 
 /* Esc-x execute command prompt */
-void execute_command()
+void execute_command(void)
 {
     buffer_t *bp = NULL;
     window_t *wp = NULL;

@@ -6,20 +6,13 @@
 
 ;; trim all spaces from front of a string
 (defun string.trim.front(s)
-  (cond
-    ((= 0 (string.length s)) "")
-    ((not (eq (string.substring s 0 0) " ")) s)
-    ((< (string.length s) 2) "")
-    (t (string.trim.front (string.substring s 1 (- (string.length s) 1)))) ))
+  (cond ((eq (substring s 0 1) " ") (string.trim.front (substring s 1)))
+	(t s)))
 
 ;; trim all spaces from back of a string
 (defun string.trim.back(s)
-  (setq p (- (string.length s) 1))
-  (cond
-    ((= p -1) "")
-    ((not (eq (string.substring s p p) " ")) s)
-    ((< (string.length s) 2) "")
-    (t (string.trim.back (string.substring s 0 (- (string.length s) 2)))) ))
+  (cond  ((eq (substring s -1)  " ") (string.trim.back (substring s 0 -1)))
+	 (t s)))
 
 ;; trim spaces off front and back of a string
 (defun string.trim(s)
@@ -37,7 +30,7 @@
 ;; string.startswith - return t if string starts with search
 ;;
 (defun string.startswith (str search)
-   (eq (string.substring str  0 (- (string.length search) 1)) search))
+   (eq (substring str  0 (- (length search) 1)) search))
 
 
 ;;
@@ -46,8 +39,8 @@
 ;;
 (defun string.drop_first(s)
   (cond
-    ((< (string.length s) 2) "")
-    (t (string.substring s 1 (- (string.length s) 1)))))
+    ((< (length s) 2) "")
+    (t (substring s 1 (- (length s) 1)))))
 
 
 ;;
@@ -57,8 +50,8 @@
 ;;
 (defun shrink(s)
   (cond
-    ((< (string.length s) 2) "")
-    (t (string.substring s 0 (- (string.length s) 2)))  ))
+    ((< (length s) 2) "")
+    (t (substring s 0 (- (length s) 2)))  ))
 
 
 ;;
@@ -66,7 +59,7 @@
 ;;
 (defun string.contains (str search)
    (cond
-     ((< (string.length str) (string.length search)) nil)  
+     ((< (length str) (length search)) nil)  
      ((eq str "") nil)
      ((eq search "") nil)
      ((string.startswith str search) t)

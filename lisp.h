@@ -8,6 +8,7 @@
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 #define FL_NAME     "fLisp"
 #define FL_VERSION  "0.8"
@@ -31,42 +32,52 @@
 
 typedef struct Object Object;
 
-typedef enum ObjectType {
-    TYPE_NUMBER,
-    TYPE_STRING,
-    TYPE_SYMBOL,
-    TYPE_CONS,
-    TYPE_LAMBDA,
-    TYPE_MACRO,
-    TYPE_PRIMITIVE,
-    TYPE_ENV,
-    TYPE_STREAM,
-    TYPE_MOVED = -1
-} ObjectType;
+/* Constants */
+/* Fundamentals */
+extern Object *nil;
+extern Object *t;
+/* Types */
+extern Object *type_integer;
+extern Object *type_number;
+extern Object *type_string;
+extern Object *type_symbol;
+extern Object *type_cons;
+extern Object *type_lambda;
+extern Object *type_macro;
+extern Object *type_primitive;
+extern Object *type_stream;
+/* internal */
+extern Object *type_env;
+extern Object *type_moved;
+/* Exceptions */
+extern Object *end_of_file;
+extern Object *range_error;
+extern Object *wrong_type_argument;
+extern Object *invalid_value;
+extern Object *wrong_num_of_arguments;
+extern Object *io_error;
+extern Object *out_of_memory;
 
 struct Object {
-    ObjectType type;
+    Object *type;
     size_t size;
     union {
-        struct { double number; };                      // number
-        struct { char string[sizeof (Object *[3])]; };  // string, symbol
-        struct { Object *car, *cdr; };                  // cons
-        struct { Object *params, *body, *env; };        // lambda, macro
-        struct { int primitive; char *name; };          // primitive
-        struct { Object *parent, *vars, *vals; };       // env
+        struct { int64_t integer; };                               // integer
+        struct { double number; };                                 // number
+        struct { char string[sizeof (Object *[3])]; };             // string, symbol
+        struct { Object *car, *cdr; };                             // cons
+        struct { Object *params, *body, *env; };                   // lambda, macro
+        struct { int primitive; char *name; Object *type_check; }; // primitive
+        struct { Object *parent, *vars, *vals; };                  // env
         struct { Object *path; FILE *fd; char *buf; size_t len; }; // file descriptor/stream
-        struct { Object *forward; };                    // forwarding pointer
+        struct { Object *forward; };                               // forwarding pointer
     };
 };
 
-extern Object *nil;
-extern Object *t;
-
-typedef enum ResultCode {
-    FLISP_OK,
-    FLISP_ERROR,
-    FLISP_RETURN,         /* successful return */
-} ResultCode;
+typedef struct Constant {
+    Object **symbol;
+    Object **value;
+} Constant;
 
 typedef struct Memory {
     size_t capacity, fromOffset, toOffset;
@@ -104,28 +115,9 @@ typedef struct Interpreter {
 
 // PROGRAMMING INTERFACE ////////////////////////////////////////////////
 
-#define TWO_STRING_ARGS(func)                                   \
-    Object *first = (*args)->car;                               \
-    Object *second = (*args)->cdr->car;                         \
-    if (first->type != TYPE_STRING)                             \
-        exceptionWithObject(interp, first, wrong_type_argument, "(" CPP_XSTR(func) "  first second) - first is not a string"); \
-    if (second->type != TYPE_STRING)                            \
-        exceptionWithObject(interp, second, wrong_type_argument, "(" CPP_XSTR(func) " first second) - second is not a string");
-
-#define ONE_STRING_ARG(func)                                  \
-    Object *arg = (*args)->car;                               \
-    if (arg->type != TYPE_STRING)                             \
-        exceptionWithObject(interp, arg, wrong_type_argument, "(" CPP_XSTR(func) " arg) - arg is not a string");
-
-#define ONE_NUMBER_ARG(func)                                  \
-    Object *num = (*args)->car;                               \
-    if (num->type != TYPE_NUMBER)                             \
-        exceptionWithObject(interp, num, wrong_type_argument, "(" CPP_XSTR(func) " num) - num is not a number");
-
-#define ONE_STREAM_ARG(func)                                  \
-    Object *stream = (*args)->car;                            \
-    if (stream->type != TYPE_STREAM)                          \
-        exceptionWithObject(interp, stream, wrong_type_argument, "(" CPP_XSTR(func) " fd) - fd is not a stream");
+#define FLISP_ARG_ONE (*args)->car
+#define FLISP_ARG_TWO (*args)->cdr->car
+#define FLISP_ARG_THREE (*args)->cdr->cdr->car
 
 // PUBLIC INTERFACE ///////////////////////////////////////////////////////
 extern Interpreter *lisp_new(size_t, char**, char*, FILE*, FILE*, FILE*);
@@ -140,9 +132,9 @@ extern void lisp_eval_string2(Interpreter *, char *);
 
 #ifdef FLISP_FILE_EXTENSION
 #define FLISP_REGISTER_FILE_EXTENSION \
-    {"fflush", 1, 1, primitiveFflush}, \
-    {"ftell", 1, 1, primitiveFtell},   \
-    {"fgetc", 1, 1, primitiveFgetc},
+    {"fflush", 1, 1, TYPE_STREAM, primitiveFflush},     \
+    {"ftell",  1, 1, TYPE_STREAM, primitiveFtell},   \
+    {"fgetc",  1, 1, TYPE_STREAM, primitiveFgetc},
 #else
 #define FLISP_REGISTER_FILE_EXTENSION
 #endif

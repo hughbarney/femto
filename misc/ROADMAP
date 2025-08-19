@@ -1,0 +1,19 @@
++ Bump fLisp version: reason: error type symbols instead of result codes
++ Add error type symbols to the top level environment
+- Change to 64 bit integers
+- Showcase lisp_eval2 with (catch (fread)) mechanism
+- Implement fstat and improve femto.rc
+- Implement mkdir and fix file save bug
+- Implement type-of, curry and move all type predicates except null from C to Lisp.
+- Fix reduce, maybe implement fold, map, consider simplifying core functions and make them n-ary in Lisp.
+- Fix string library, add search
+- Unify stdlib into flisp.lsp
+- Implement simple repl in Lisp
+  - needs getline
+  - isatty() can set an 'interactive' flag
+- rename global argv to command-line-args, argv0 to invocation-name
+- rename os.env to getenv
+- improve/support batch mode, start a test library
+- make extensions plugable
+- test more then one interpreter
+- ? CSP between interpreters?

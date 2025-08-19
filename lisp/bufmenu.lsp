@@ -207,7 +207,7 @@
 
 (defun bufm-debug(msg)
   (cond (bufm-debugging
-	 (log-debug (string.append msg "\n"))
+	 (log-debug (concat msg "\n"))
 	 (log-var bufm-line)
 	 (log-var bufm-start-line)
 	 (log-var bufm-last-line)

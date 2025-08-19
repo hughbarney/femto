@@ -4,7 +4,7 @@
 
 export FLISPRC=
 
-tap 112
+tap 171
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -243,37 +243,83 @@ flisp_expr; ok null-7 null macro is  nil
 
 # consp
 IN='(consp nil)' OUT='nil'
-flisp_expr; ok consp-1_1  consp nil is nil
+flisp_expr; ok consp-1  consp nil is nil
 
 IN='(consp 1)' OUT='nil'
-flisp_expr; ok consp-1_2  consp number is nil
+flisp_expr; ok consp-2  consp number is nil
 
 IN="(consp 'a)" OUT='nil'
-flisp_expr; ok consp-1_3  consp string is nil
+flisp_expr; ok consp-3  consp string is nil
 
 IN="(consp '(t . t))" OUT='t'
-flisp_expr; ok consp-1_4  consp cons is t
+flisp_expr; ok consp-4  consp cons is t
 
 IN="(consp '(1  2))" OUT='t'
-flisp_expr; ok consp-1_5  consp list is t
+flisp_expr; ok consp-5  consp list is t
 
-IN="(consp +)" OUT='nil'
-flisp_expr; ok consp-1_5  consp lambda is nil
+IN="(consp consp)" OUT='nil'
+flisp_expr; ok consp-5  consp lambda is nil
 
-false; ok  numberp \# TODO
-false; ok  stringp \# TODO
-false; ok  symbolp \# TODO
-false; ok  symbol-name \# TODO
-false; ok  eq \# TODO
+IN="(numberp 42)" OUT='t'
+flisp_expr; ok numberp-1  numberp number is t
+
+IN="(numberp numberp)" OUT='nil'
+flisp_expr; ok numberp-2  numberp lambda is nil
+
+IN='(stringp "answer")' OUT='t'
+flisp_expr; ok stringp-1  stringp string is t
+
+IN="(stringp stringp)" OUT='nil'
+flisp_expr; ok stringp-2  stringp lambda is nil
+
+IN="(symbolp 'a)" OUT='t'
+flisp_expr; ok symbolp-1  symbolp symbol is t
+
+IN="(symbolp symbolp)" OUT='nil'
+flisp_expr; ok symbolp-2  symbolp lambda is nil
+
+IN="(symbol-name 'a)" OUT='"a"'
+flisp_expr; ok symbol-name-1  symbolname is symbol as string
+
+IN="(eq 1 1)" OUT='t'
+flisp_expr; ok eq-1_1  eq same num is t
+
+IN="(eq 1 2)" OUT='nil'
+flisp_expr; ok eq-1_2  eq different num is nil
+
+IN="(eq 1 'a)" OUT='nil'
+flisp_expr; ok eq-1_3  eq num other is nil
+
+IN='(eq "answer" "answer")' OUT='t'
+flisp_expr; ok eq-2_1  eq same string is t
+
+IN='(eq "answer" "everything")' OUT='nil'
+flisp_expr; ok eq-2_2  eq different string is nil
+
+IN='(eq "answer" 42)' OUT='nil'
+flisp_expr; ok eq-2_3  eq string other is nil
+
+IN="(eq 'a 'a)" OUT='t'
+flisp_expr; ok eq-3_1  eq same symbol is t
+
+IN="(eq 'a eq)" OUT='nil'
+flisp_expr; ok eq-3_2  eq symbol lambda is nil
 
 ## Cons'es
-false; ok  car \# TODO
-false; ok  cdr \# TODO
-false; ok  cons \# TODO
+IN="(car '(1 2))" OUT='1'
+flisp_expr; ok car-1  car returns first element
 
+# Intermezzo
+IN="(car 1)" OBJ= ERR='(car args) - arg 1 expected type-cons, got: type-number'
+flisp_err; ok arg_check-1  argument checking '(car 1)' fails
+
+IN="(cdr '(1 2))" OUT='(2)'
+flisp_expr; ok cdr-1  cdr returns rest
+
+IN="(cons 1 'a)" OUT="(1 . a)"
+flisp_expr; ok cons-1  cons returns dottet pair
 
 # I/O
-false; ok open \# TODO
 rm -f _file_
 IN='(open "_file_" "w")' OUT=""
 flisp_expr
@@ -295,11 +341,33 @@ ok open-5 open memory input stream
 echo '(open "" ">")' | $FLISP | grep -q "#<Stream 0x............, >STRING>"
 ok open-6 open memory output stream
 
+IN='(close (open "empty.lsp"))' OUT="0"
+flisp_expr; ok close-1 close file
 
-false; ok close \# TODO
-false; ok fread \# TODO
-false; ok eval \# TODO
-false; ok write \# TODO
+IN='(close (open ">2"))' OUT="0"
+flisp_expr; ok close-2 close file descriptor
+
+IN='(close (open "any text" "<"))' OUT="0"
+flisp_expr; ok close-3 close memory input stream
+
+IN='(close (open "" ">"))' OUT="0"
+flisp_expr; ok close-4 close memory output stream
+
+IN='(read (open "1" "<"))' OUT="1"
+flisp_expr; ok read-1 read memory input stream
+
+IN='(read *INPUT* end-of-file)' OUT="end-of-file"
+flisp_expr; ok read-2 read with eof marker
+
+IN='(eval 1)' OUT='1'
+flisp_expr; ok eval-1 eval number is number
+
+
+IN='(write "ans\\wer")' OUT='ans\wer"ans\\wer"'
+flisp_expr; ok write-1 write string
+
+IN='(write "ans\\wer" :readably t)' OUT='"ans\\wer""ans\\wer"'
+flisp_expr; ok write-1 write string
 
 # throw
 IN="(throw 'fourty-two \"answer\")" ERR='answer' OBJ=
@@ -309,12 +377,105 @@ IN="(throw 'fourty-three \"answer\" 1)" ERR='answer' OBJ=1
 flisp_err; ok throw-1_2  throw with object
 
 ## Math
-false; ok  math "+ - \* / % = <= > >=" \# TODO
+
+IN='(+)' OUT='0' flisp_expr; ok add-1 add nothing is 0
+IN='(+ 42)' OUT='42' flisp_expr; ok add-2 add 42  is 42
+IN='(+ 42 7)' OUT='49' flisp_expr; ok add-3 add 42 7 is 49
+IN='(+ 1 2 3)' OUT='6' flisp_expr; ok add-4 add 1 2 3 is 6
+
+IN='(-)' OUT='0' flisp_expr; ok minus-1 minus nothing is 0
+IN='(- 42)' OUT='-42' flisp_expr; ok minus-2 minus 42  is -42
+IN='(- 42 7)' OUT='35' flisp_expr; ok minus-3 minus 42 7 is 35
+IN='(- 1 2 3)' OUT='-4' flisp_expr; ok minus-4 minus 1 2 3 is -4
+
+IN='(*)' OUT='1' flisp_expr; ok times-1 times nothing is 1
+IN='(* 42)' OUT='42' flisp_expr; ok times-2 times 42  is 42
+IN='(* 42 7)' OUT='294' flisp_expr; ok times-3 times 42 7 is 294
+IN='(* 1 2 3)' OUT='6' flisp_expr; ok times-4 times 1 2 3 is 6
+
+IN='(/ 42)' OUT='0.0238095' flisp_expr; ok divide-1 divide 42  is 1/42
+IN='(/ 42 7)' OUT='6' flisp_expr; ok divide-2 divide 42 7 is 6
+IN='(/ 42 7 6)' OUT='1' flisp_expr; ok divide-3 divide 42 7 6 is 1
+
+IN='(% 42)' OUT='1' flisp_expr; ok mod-1 mod 42  is 1
+IN='(% 42 5)' OUT='2' flisp_expr; ok mod-2 mod 42 5 is 2
+IN='(% 11 6 3)' OUT='2' flisp_expr; ok mod-3 mod 11 6 3 is 2
+
+IN='(= 42)' OUT='t' flisp_expr; ok arith-equal-1 arith-equal 42  is t
+IN='(= 42 7)' OUT='nil' flisp_expr; ok arith-equal-2 arith-equal 42 7 is nil
+IN='(= 7 7 7)' OUT='t' flisp_expr; ok arith-equal-3 arith-equal 7 7 7 is t
+IN='(= 7 7 8)' OUT='nil' flisp_expr; ok arith-equal-4 arith-equal 7 7 8 is nil
+
+IN='(< 42)' OUT='t' flisp_expr; ok less-1 less 42  is t
+IN='(< 7 42)' OUT='t' flisp_expr; ok less-2 less 7 42 is t
+IN='(< 7 7 7)' OUT='nil' flisp_expr; ok less-3 less 7 7 7 is nil
+IN='(< 1 2 3)' OUT='t' flisp_expr; ok less-4 less 1 2 3 is t
+
+IN='(<= 42)' OUT='t' flisp_expr; ok less-equal-1 less-equal 42  is t
+IN='(<= 42 7)' OUT='nil' flisp_expr; ok less-equal-2 less-equal 42 7 is nil
+IN='(<= 7 7 7)' OUT='t' flisp_expr; ok less-equal-3 less-equal 7 7 7 is t
+IN='(<= 7 7 6)' OUT='nil' flisp_expr; ok less-equal-4 less-equal 7 7 6 is nil
+
+IN='(> 42)' OUT='t' flisp_expr; ok greater-1 greater 42  is t
+IN='(> 42 7)' OUT='t' flisp_expr; ok greater-2 greater 42 7 is t
+IN='(> 7 7 7)' OUT='nil' flisp_expr; ok greater-3 greater 7 7 7 is nil
+IN='(> 7 7 6)' OUT='nil' flisp_expr; ok greater-4 greater 7 7 6 is nil
+
+IN='(>= 42)' OUT='t' flisp_expr; ok greater-equal-1 greater-equal 42  is t
+IN='(>= 7 42)' OUT='nil' flisp_expr; ok greater-equal-2 greater-equal 7 42 is t
+IN='(>= 7 7 7)' OUT='t' flisp_expr; ok greater-equal-3 greater-equal 7 7 7 is t
+IN='(>= 7 7 6)' OUT='t' flisp_expr; ok greater-equal-4 greater-equal 7 7 6 is t
 
 ## Strings
-false; ok  string.length \# TODO
-false; ok  string.append \# TODO
-false; ok  string.substring \# TODO
+
+IN='(string-length "")' OUT="0" flisp_expr; ok string-length-1 length of emtpy string is 0
+IN='(string-length "answer")' OUT="6" flisp_expr; ok string-length-2  length of answer string is 6
+
+IN='(string-append "ans" "wer")' OUT='"answer"'
+flisp_expr; ok string-append-1 string append of ans wer is answer
+IN='(string-append "answer" "")' OUT='"answer"'
+flisp_expr; ok string-append-2  append answer emtpy is anser
+
+IN='(string-append "" "answer")' OUT='"answer"'
+flisp_expr; ok string-append-3  append emtpy answer is anser
+
+IN='(substring "")' OUT='""'
+flisp_expr; ok substring-1 substring empty is empty
+
+IN='(substring "answer")' OUT='"answer"'
+flisp_expr; ok substring-2 substring answer is answer
+
+IN='(substring "answer" 3)' OUT='"wer"'
+flisp_expr; ok substring-3 substring answer 3 wer
+
+IN='(substring "answer" -2)' OUT='"er"'
+flisp_expr; ok substring-4 substring answer -2 er
+
+IN='(substring "answer" 1 3)' OUT='"ns"'
+flisp_expr; ok substring-5 substring answer 1 3 ns
+
+IN='(substring "answer" 1 -3)' OUT='"ns"'
+flisp_expr; ok substring-6 substring answer 1 -3 ns
+
+IN='(substring "answer" -3 -1)' OUT='"we"'
+flisp_expr; ok substring-6 substring answer -3 -1 we
+
+IN='(substring "answer" 7)' ERR='(substring str [start [end]]) - start out of range' OBJ=
+flisp_err; ok substring-7 substring answer 7 range-error
+
+IN='(substring "answer" -7)' ERR='(substring str [start [end]]) - start out of range' OBJ=
+flisp_err; ok substring-8 substring answer -7 range-error
+
+IN='(substring "answer" 1 7)' ERR='(substring str [start [end]]) - end out of range' OBJ=
+flisp_err; ok substring-9 substring answer 1 7 range-error
+
+IN='(substring "answer" 1 -7)' ERR='(substring str [start [end]]) - end out of range' OBJ=
+flisp_err; ok substring-10 substring answer 1 7 range-error
+
+IN='(substring "answer" 2 1)' ERR='(substring str [start [end]]) - end > start' OBJ=
+flisp_err; ok substring-11 substring answer 2 1 range-error
+
+return
 false; ok  string-to-number \# TODO
 false; ok  number-to-string \# TODO
 false; ok  ascii \# TODO

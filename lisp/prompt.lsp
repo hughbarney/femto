@@ -37,7 +37,7 @@ nil
     ((is_ctl_g key) "")
     ((is_backspace key) (cmd_prompt q (shrink response)))
     ((is_control_char key) (cmd_prompt q response))
-    (t (cmd_prompt q (string.append response key)))) )
+    (t (cmd_prompt q (concat response key)))) )
 
 
 ;;

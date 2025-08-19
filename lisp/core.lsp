@@ -20,8 +20,8 @@
     ((numberp s) (number-to-string s))
     ((stringp s) s)
     ((symbolp s) (symbol-name s))
-    ((consp s) (string.append (string (car s)) (string (cdr s))))
-    (t (throw 'wrong-type-argument "cannot convert to string" s))))
+    ((consp s) (string-append (string (car s)) (string (cdr s))))
+    (t (throw wrong-type-argument "cannot convert to string" s))))
 
 (defun concat args
   ;; Concatenate all arguments to a string.
@@ -29,7 +29,7 @@
   (cond
     ((eq nil args) "")
     ((eq nil (cdr args)) (string (car args)))
-    (t (string.append (string (car args)) (concat (cdr args)))) ))
+    (t (string-append (string (car args)) (concat (cdr args)))) ))
 
 (defun memq (o l)
   ;; If object o in list l return sublist of l starting with o, else nil.
@@ -63,14 +63,25 @@
 	    (list 'define (car args)
 		  (cons 'lambda (cons (map1 car (cadr args)) (cddr args))))
 	    (cons (car args) (map1 cadr (cadr args))))))
-    (t (throw 'wrong-type-argument "let: first argument neither label nor binding" (car args)))))
+    (t (throw wrong-type-argument "let: first argument neither label nor binding" (car args)))))
+
+(defun length (o)
+  (cond
+    ((null o) 0)
+    ((stringp o) (string-length o))
+    ((consp o)
+     (let count ((o o) (len 1))
+	  (cond
+	    ((null (cdr o)) len)
+	    (t (count (cdr o) (+ len 1))))))
+    (t (throw wrong-type-argument "(length object) - expected type-cons or type-string" o))))
 
 (defun prog1 (arg . args) arg)
 
 ;; load
 (defun fload (f)
   (let loop ((o  nil) (r nil))
-       (setq o (fread f :eof))
+       (setq o (read f :eof))
        (cond ((eq o :eof)  r)
 	     (t (setq r (eval o))
 		(loop nil r)))))

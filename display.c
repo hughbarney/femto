@@ -100,7 +100,7 @@ void display_char(buffer_t *bp, char_t *p)
     addch(*p);
 }
 
-void dispmsg()
+void dispmsg(void)
 {
     move(MSGLINE, 0);
     if (msgflag) {
@@ -235,7 +235,7 @@ void modeline(window_t *wp)
     attron(COLOR_PAIR(ID_SYMBOL));
 }
 
-void clear_message_line()
+void clear_message_line(void)
 {
     ZERO_STRING(msgline);
     msgflag = FALSE;
@@ -252,7 +252,7 @@ void display_prompt_and_response(char *prompt, char *response)
     clrtoeol();
 }
 
-void update_display()
+void update_display(void)
 {
     window_t *wp;
     buffer_t *bp;

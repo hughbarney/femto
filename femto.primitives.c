@@ -5,7 +5,7 @@
 #define F_CLEAR         1
 
 #define DEFINE_EDITOR_FUNC(name)					\
-  extern void name();							\
+  extern void name(void);							\
     Object *e_##name(Interpreter *interp, Object ** args, Object **env)	\
     {									\
       name();								\
@@ -91,40 +91,33 @@ Object *e_refresh(Interpreter *interp, Object ** args, Object **env)
 
 Object *e_set_key(Interpreter *interp, Object **args, Object **env)
 {
-    TWO_STRING_ARGS(set-key);
-    return (1 == set_key(first->string, second->string) ? t : nil);
+    return (1 == set_key(FLISP_ARG_ONE->string, FLISP_ARG_TWO->string) ? t : nil);
 }
 
 Object *e_add_mode_global(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(add-mode-global);
-    return (1 == add_mode_global(arg->string) ? t : nil);
+    return (1 == add_mode_global(FLISP_ARG_ONE->string) ? t : nil);
 }
 
 Object *e_add_mode(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(add-mode);
-    return (1 == add_mode_current_buffer(arg->string) ? t : nil);
+    return (1 == add_mode_current_buffer(FLISP_ARG_ONE->string) ? t : nil);
 }
 
 Object *e_delete_mode(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(delete-mode);
-    return (1 == delete_mode_current_buffer(arg->string) ? t : nil);
+    return (1 == delete_mode_current_buffer(FLISP_ARG_ONE->string) ? t : nil);
 }
 
 Object *e_get_mode(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(get-mode);
-    return (1 == get_mode_current_buffer(arg->string) ? t : nil);
+    return (1 == get_mode_current_buffer(FLISP_ARG_ONE->string) ? t : nil);
 }
 
 Object *e_set_clipboard(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(set-clipboard);
-
     /* gets freed by next call to set_clipboard */
-    char *sub = strdup(arg->string);
+    char *sub = strdup(FLISP_ARG_ONE->string);
     set_scrap((unsigned char *)sub);
     return t;
 }
@@ -140,19 +133,15 @@ Object *e_insert_file(Interpreter *interp, Object **args, Object **env) {
     // Note: want to give an optional modify flag, but then it segfaults
     int mflag;
 
-    ONE_STRING_ARG(insert-file);
-
-//    mflag = (arg->cdr != nil && arg->cdr->car != nil);
+//    mflag = (FLISP_ARG_ONE->cdr != nil && arg->cdr->car != nil);
     mflag = FALSE;
 
-    return ((insert_file(arg->string, mflag) == TRUE) ? t : nil);
+    return ((insert_file(FLISP_ARG_ONE->string, mflag) == TRUE) ? t : nil);
 }
 
 Object *e_getfilename(Interpreter *interp, Object **args, Object **env) {
 
-    ONE_STRING_ARG(prompt-filename);
-
-    if (FALSE == getfilename(arg->string, (char*) response_buf, NAME_MAX))
+    if (FALSE == getfilename(FLISP_ARG_ONE->string, (char*) response_buf, NAME_MAX))
 	return nil;
 
     return newString(interp, response_buf);
@@ -160,20 +149,17 @@ Object *e_getfilename(Interpreter *interp, Object **args, Object **env) {
 
 Object *e_show_prompt(Interpreter *interp, Object **args, Object **env)
 {
-    TWO_STRING_ARGS(show-prompt);
-    display_prompt_and_response(first->string, second->string);
+    display_prompt_and_response(FLISP_ARG_ONE->string, FLISP_ARG_TWO->string);
     return t;
 }
 
 Object *e_prompt(Interpreter *interp, Object **args, Object **env)
 {
-    TWO_STRING_ARGS(prompt);
-
     char response[81];
-    strncpy(response, second->string, 80);
+    strncpy(response, FLISP_ARG_TWO->string, 80);
     response[80] = '\0';
 
-    (void) ! getinput(first->string, response, 80, F_NONE);
+    (void) ! getinput(FLISP_ARG_ONE->string, response, 80, F_NONE);
     return newStringWithLength(interp, response, strlen(response));
 }
 
@@ -185,42 +171,34 @@ Object *e_get_version_string(Interpreter *interp, Object **args, Object **env)
 
 Object *e_goto_line(Interpreter *interp, Object **args, Object **env)
 {
-    Object *arg = (*args)->car;
-
-    ONE_NUMBER_ARG(goto-line);
-
-    int result = goto_line(arg->number);
+    int result = goto_line(FLISP_ARG_ONE->number);
     return (result == 1 ? t : nil);
 }
 
 Object *e_select_buffer(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(select-buffer);
     // Note: select buffer always returns TRUE
     //  so it seems to be superfluous to test for the return value
-    int result = select_buffer(arg->string);
+    int result = select_buffer(FLISP_ARG_ONE->string);
     return (result ? t : nil);
 }
 
 Object *e_rename_buffer(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(rename-buffer);
-    rename_current_buffer(arg->string);
+    rename_current_buffer(FLISP_ARG_ONE->string);
     char *bname = get_current_bufname();
     return newStringWithLength(interp, bname, strlen(bname));
 }
 
 Object *e_save_buffer(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(save-buffer);
-    int result = save_buffer_byname(arg->string);
+    int result = save_buffer_byname(FLISP_ARG_ONE->string);
     return (result ? t : nil);
 }
 
 Object *e_kill_buffer(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(kill-buffer);
-    int result = delete_buffer_byname(arg->string);
+    int result = delete_buffer_byname(FLISP_ARG_ONE->string);
     return (result ? t : nil);
 }
 
@@ -233,23 +211,20 @@ Object *e_zero_buffer(Interpreter *interp, Object **args, Object **env)
 
 Object *e_find_file(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(find-file);
-    readfile(arg->string);
+    readfile(FLISP_ARG_ONE->string);
     return t;
 }
 
 Object *e_search_forward(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(search-forward);
-    point_t founded = search_forward(arg->string);
+    point_t founded = search_forward(FLISP_ARG_ONE->string);
     move_to_search_result(founded);
     return (founded == -1 ? nil : t);
 }
 
 Object *e_search_backward(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(search-backward);
-    point_t founded = search_backwards(arg->string);
+    point_t founded = search_backwards(FLISP_ARG_ONE->string);
     move_to_search_result(founded);
     return (founded == -1 ? nil : t);
 }
@@ -285,29 +260,25 @@ Object *e_get_buffer_file_extension(Interpreter *interp, Object **args, Object *
 
 Object *e_message(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(message);
-    msg(arg->string);
+    msg(FLISP_ARG_ONE->string);
     return t;
 }
 
 Object *e_log_message(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(log-message);
-    log_message(arg->string);
+    log_message(FLISP_ARG_ONE->string);
     return t;
 }
 
 Object *e_log_debug(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(log-debug);
-    fl_debug(interp, "%s", arg->string);
+    fl_debug(interp, "%s", FLISP_ARG_ONE->string);
     return t;
 }
 
 Object *e_insert_string(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_STRING_ARG(insert-string);
-    insert_string(arg->string);
+    insert_string(FLISP_ARG_ONE->string);
     return t;
 }
 
@@ -318,8 +289,7 @@ extern point_t get_point_max(void);
 
 Object *e_set_point(Interpreter *interp, Object **args, Object **env)
 {
-    ONE_NUMBER_ARG(set-point)
-    set_point(num->number);
+    set_point(FLISP_ARG_ONE->number);
     return t;
 }
 

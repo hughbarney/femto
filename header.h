@@ -280,97 +280,97 @@ extern char* get_buffer_filename(buffer_t *);
 extern char* get_buffer_file_extension(buffer_t *);
 extern char* get_buffer_modeline_name(buffer_t *);
 extern char* get_buffer_name(buffer_t *);
-extern char *get_current_bufname();
-extern char *get_current_filename();
-extern char *get_current_file_extension();
+extern char *get_current_bufname(void);
+extern char *get_current_filename(void);
+extern char *get_current_file_extension(void);
 
 extern int buffer_is_empty(buffer_t *);
-extern int count_buffers();
+extern int count_buffers(void);
 extern int delete_buffer(buffer_t *);
 extern int delete_buffer_byname(char *);
-extern int modified_buffers();
+extern int modified_buffers(void);
 extern int save_buffer_byname(char *);
 extern int select_buffer(char *);
 extern point_t document_size(buffer_t *);
 extern void add_mode(buffer_t *, buffer_flags_t);
 extern void delete_mode(buffer_t *, buffer_flags_t);
-extern void list_buffers();
-extern void next_buffer();
+extern void list_buffers(void);
+extern void next_buffer(void);
 extern void zero_buffer(buffer_t *);
 
 /* functions in command.c */
-extern char *get_char();
-extern char *get_clipboard();
-extern char* get_temp_file();
-extern char *get_version_string();
+extern char *get_char(void);
+extern char *get_clipboard(void);
+extern char* get_temp_file(void);
+extern char *get_version_string(void);
 extern char *rename_current_buffer(char *);
 extern int add_mode_global(char *);
 extern int add_mode_current_buffer(char *);
 extern int delete_mode_current_buffer(char *);
 extern int get_mode_current_buffer(char *);
 extern int goto_line(int);
-extern int i_check_region();
-extern int prev_utf8_char_size();
+extern int i_check_region(void);
+extern int prev_utf8_char_size(void);
 extern int utf8_size(char_t c);
 extern int yesno(int flag);
-extern point_t get_mark();
-extern point_t get_point();
-extern point_t get_point_max();
-extern unsigned char *get_scrap();
+extern point_t get_mark(void);
+extern point_t get_point(void);
+extern point_t get_point_max(void);
+extern unsigned char *get_scrap(void);
 extern void append_string(buffer_t *, char *);
-extern void backspace();
-extern void backward_page();
-extern void backward_word();
-extern void beginning_of_buffer();
+extern void backspace(void);
+extern void backward_page(void);
+extern void backward_word(void);
+extern void beginning_of_buffer(void);
 extern void copy_cut(int cut);
-extern void copy_region();
-extern void delete();
-extern void down();
-extern void end_of_buffer();
-extern void eval_block();
-extern void forward_page();
-extern void forward_word();
-extern void i_gotoline();
-extern void insert();
-extern void insert_at();
-extern void insertfile();
+extern void copy_region(void);
+extern void delete(void);
+extern void down(void);
+extern void end_of_buffer(void);
+extern void eval_block(void);
+extern void forward_page(void);
+extern void forward_word(void);
+extern void i_gotoline(void);
+extern void insert(void);
+extern void insert_at(void);
+extern void insertfile(void);
 extern void insert_string(char *);
-extern void i_readfile();
-extern void i_set_mark();
-extern void i_shell_command();
-extern void kill_buffer();
-extern void kill_region();
-extern void left();
-extern void lnbegin();
-extern void lnend();
+extern void i_readfile(void);
+extern void i_set_mark(void);
+extern void i_shell_command(void);
+extern void kill_buffer(void);
+extern void kill_region(void);
+extern void left(void);
+extern void lnbegin(void);
+extern void lnend(void);
 extern void log_debug(char *);
 extern void log_debug_message(char *format, ...);
 extern void log_message(char *);
 extern void match_paren_backwards(buffer_t *, char, char);
 extern void match_paren_forwards(buffer_t *, char, char);
-extern void match_parens();
-extern void suspend();
-extern void quit();
-extern void quit_ask();
+extern void match_parens(void);
+extern void suspend(void);
+extern void quit(void);
+extern void quit_ask(void);
 extern void readfile(char *);
 extern void readhook(buffer_t *);
-extern void redraw();
-extern void repl();
-extern void resize_terminal();
-extern void right();
-extern void savebuffer();
-extern void set_mark();
+extern void redraw(void);
+extern void repl(void);
+extern void resize_terminal(void);
+extern void right(void);
+extern void savebuffer(void);
+extern void set_mark(void);
 extern void set_point(point_t);
 extern void set_scrap(unsigned char *);
 extern void shell_command(char *);
-extern void cursor_position();
-extern void toggle_overwrite_mode();
-extern void unmark();
-extern void up();
-extern void user_func();
-extern void version();
-extern void writefile();
-extern void yank();
+extern void cursor_position(void);
+extern void toggle_overwrite_mode(void);
+extern void unmark(void);
+extern void up(void);
+extern void user_func(void);
+extern void version(void);
+extern void writefile(void);
+extern void yank(void);
 
 /* functions in complete.c */
 extern int getfilename(char *, char *, int);
@@ -384,14 +384,14 @@ extern point_t segstart(buffer_t *, point_t, point_t);
 extern point_t upup(buffer_t *, point_t);
 extern void b2w_all_windows(buffer_t *);
 extern void b2w(window_t *w);
-extern void clear_message_line();
+extern void clear_message_line(void);
 extern void display_char(buffer_t *, char_t *);
 extern void display_prompt_and_response(char *, char *);
 extern void display_utf8(buffer_t *, int);
 extern void display(window_t *, int);
-extern void dispmsg();
+extern void dispmsg(void);
 extern void modeline(window_t *);
-extern void update_display();
+extern void update_display(void);
 extern void w2b(window_t *);
 
 /* functions in funcmap.c */
@@ -401,12 +401,12 @@ extern int count_string_list(string_list_t *);
 extern int match_string_position(string_list_t *, int);
 extern int shortest_string_len(string_list_t *);
 extern string_list_t *match_functions(const char *);
-extern void apropos();
-extern void execute_command();
+extern void apropos(void);
+extern void execute_command(void);
 extern void free_string_list(string_list_t *);
 extern void_func name_to_function(const char *);
-extern void describe_bindings();
-extern void describe_functions();
+extern void describe_bindings(void);
+extern void describe_functions(void);
 
 /* functions in gap.c */
 extern char_t * ptr(buffer_t *, register point_t);
@@ -418,7 +418,7 @@ extern int save_buffer(buffer_t *, char *);
 extern point_t line_to_point(int);
 extern point_t movegap(buffer_t *, point_t);
 extern point_t pos(buffer_t *, register char_t *);
-extern void clear_buffer();
+extern void clear_buffer(void);
 extern void get_line_stats(int *, int *);
 
 /* functions in hilite.c */
@@ -428,18 +428,18 @@ extern int parse_text(buffer_t *, point_t);
 extern void set_parse_state(buffer_t *, point_t);
 
 /* functions in key.c */
-extern char *get_input_key();
-extern char *get_key_funcname();
-extern char *get_key_name();
+extern char *get_input_key(void);
+extern char *get_key_funcname(void);
+extern char *get_key_name(void);
 extern char_t *get_key(keymap_t *, keymap_t **);
 extern int getinput(char *, char *, int, int);
 extern int set_key(char *, char *);
 extern int set_key_internal(char *, char *, char *, void (*)(void));
 extern keymap_t *new_key(char *, char *);
-extern void create_keys();
-extern void execute_key();
+extern void create_keys(void);
+extern void execute_key(void);
 extern void make_key(char *, char *);
-extern void setup_keys();
+extern void setup_keys(void);
 
 /* functions in main.c */
 extern int main(int argc, char **);
@@ -447,7 +447,7 @@ extern void debug(char *format, ...);
 extern void debug_stats(char *s);
 extern void fatal(char *msg);
 extern void msg(char *m, ...);
-extern void gui();              /* The GUI loop used in interactive mode */
+extern void gui(void);              /* The GUI loop used in interactive mode */
 
 
 /* functions in replace.c */
@@ -459,27 +459,27 @@ extern point_t search_backwards(char *);
 extern point_t search_forward(char *);
 extern void display_search_result(point_t found, int, char *, char *);
 extern void move_to_search_result(point_t);
-extern void search();
+extern void search(void);
 
 /* functions in undo.c */
 extern char *get_undo_type_name(undo_tt *);
 extern int count_undos(buffer_t *);
 extern int get_buf_utf8_size(char_t *, int);
 extern int get_total_undo_size(buffer_t *);
-extern int get_undo_again();
+extern int get_undo_again(void);
 extern int get_undo_size(undo_tt *);
 extern undo_tt *execute_undo(undo_tt *);
-extern undo_tt *new_undo();
+extern undo_tt *new_undo(void);
 extern void add_undo(buffer_t *, char, point_t, char_t *, char_t *);
 extern void append_undo_string(undo_tt *, char_t *);
 extern void debug_undo(char *, undo_tt *, buffer_t *);
 extern void discard_buffer_undo_history(buffer_t *);
-extern void discard_undo_history();
+extern void discard_undo_history(void);
 extern void dump_undos(buffer_t *);
 extern void free_undos(undo_tt *);
-extern void list_undos();
-extern void list_undo_stats();
-extern void undo_command();
+extern void list_undos(void);
+extern void list_undo_stats(void);
+extern void undo_command(void);
 
 /* functions in utils.c */
 extern void make_buffer_name(char *, char *);
@@ -489,21 +489,21 @@ extern void safe_strncpy(char *, char *, int);
 extern char* get_file_extension(char *);
 
 /* functions in window.c */
-extern int count_windows();
+extern int count_windows(void);
 extern void associate_b2w(buffer_t *, window_t *);
-extern void delete_other_windows();
+extern void delete_other_windows(void);
 extern void disassociate_b(window_t *);
 extern void free_other_windows(window_t *);
 extern void hijack_window(window_t *, buffer_t *);
-extern void mark_all_windows();
+extern void mark_all_windows(void);
 extern void one_window(window_t *);
-extern void other_window();
+extern void other_window(void);
 extern void restore_hijacked_window(window_t *);
-extern void split_window();
+extern void split_window(void);
 extern window_t *find_window(char *);
-extern window_t* new_window();
+extern window_t* new_window(void);
 extern window_t *popup_window(char *);
-extern window_t *split_current_window();
+extern window_t *split_current_window(void);
 
 /* fLisp interpreter used for femto */
 //#define FLISP_MEMORY_SIZE          131072UL  // 128k
@@ -519,7 +519,7 @@ extern window_t *split_current_window();
 //#define FLISP_MEMORY_SIZE        33554432UL  //  32M
 
 extern char *eval_string(bool, char *, ...);
-extern void free_lisp_output();
+extern void free_lisp_output(void);
 
 /*
  * Local Variables:
