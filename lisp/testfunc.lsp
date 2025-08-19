@@ -108,10 +108,10 @@
 ;- shell-command
 ;split-window
 ;string-to-number
-;string.append
-;string.length
+;string-append
+;string-length
 ;string.ref
-;string.substring
+;substring
 ;string.trim
 ;stringp
 ;update-display

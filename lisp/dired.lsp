@@ -170,10 +170,10 @@
 ;;
 (defun de-up-dir(d)
   (cond
-    ((eq 1 (string.length d)) d)
-    ((eq "/" (string.substring d (- (string.length d) 1) (- (string.length d) 1)))
-     (string.substring d 0 (- (string.length d) 2)))
-    (t (de-up-dir (string.substring d 0 (- (string.length d) 2))))))
+    ((eq 1 (length d)) d)
+    ((eq "/" (substring d (- (length d) 1) (- (length d) 1)))
+     (substring d 0 (- (length d) 2)))
+    (t (de-up-dir (substring d 0 (- (length d) 2))))))
 
 
 ;;

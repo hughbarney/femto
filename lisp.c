@@ -2144,29 +2144,47 @@ Object *stringAppend(Interpreter *interp, Object ** args, Object **env)
 
 Object *stringSubstring(Interpreter *interp, Object ** args, Object **env)
 {
+    int start = 0, end, len;
+
     if (FLISP_ARG_ONE->type != type_string)
-        exceptionWithObject(interp, FLISP_ARG_ONE, wrong_type_argument, "(string.substring str start end) str is not a string (string.substring)");
-    if (FLISP_ARG_TWO->type != type_number)
-        exceptionWithObject(interp, FLISP_ARG_TWO, wrong_type_argument, "is not a number");
-    if (FLISP_ARG_THREE->type != type_number)
-        exceptionWithObject(interp, FLISP_ARG_THREE, wrong_type_argument, "is not a number");
+        exceptionWithObject(interp, FLISP_ARG_ONE, wrong_type_argument, "(substring str [start [end]]) - arg 1 expected %s, got: %s", type_string->string, FLISP_ARG_ONE->type->string);
+    len = strlen(FLISP_ARG_ONE->string);
 
-    int s = (int)(FLISP_ARG_TWO->number);
-    int e = (int)(FLISP_ARG_THREE->number);
-    int len = strlen(FLISP_ARG_ONE->string);
+    if (len == 0)
+        return empty;
 
-    if (s < 0 || s > len -1)
-        exceptionWithObject(interp, FLISP_ARG_TWO, invalid_value, "is out of bounds");
-    if (e < 0 || e > len -1)
-        exceptionWithObject(interp, FLISP_ARG_THREE, invalid_value, "is out of bounds");
-    if (s > e)
-        exceptionWithObject(interp, FLISP_ARG_TWO, invalid_value, "start index greater than end index");
+    end = start + len;
+
+    if ((*args)->cdr != nil) {
+        if (FLISP_ARG_TWO->type != type_number)
+            exceptionWithObject(interp, FLISP_ARG_TWO, wrong_type_argument, "is not a number");
+        start = (int)(FLISP_ARG_TWO->number);
+        if (start < 0)
+            start = end + start;
+        if ((*args)->cdr->cdr != nil) {
+            if (FLISP_ARG_THREE->type != type_number)
+                exceptionWithObject(interp, FLISP_ARG_THREE, wrong_type_argument, "is not a number");
+            if (FLISP_ARG_THREE->number < 0)
+                end = end + (int)FLISP_ARG_THREE->number;
+            else
+                end = (int)FLISP_ARG_THREE->number;
+        }
+    }
+
+    if (start < 0 || start > len)
+        exceptionWithObject(interp, FLISP_ARG_TWO, range_error, "(substring str [start [end]]) - start out of range");
+    if (end < 0 || end > len)
+        exceptionWithObject(interp, FLISP_ARG_THREE, range_error, "(substring str [start [end]]) - end out of range");
+    if (start > end)
+        exceptionWithObject(interp, FLISP_ARG_TWO, range_error, "(substring str [start [end]]) - end > start");
+    if (start == end)
+        return empty;
 
     char *sub = strdup(FLISP_ARG_ONE->string);
-    int newlen = e - s + 1;
+    int newlen = end - start;
 
-    memcpy(sub, (FLISP_ARG_ONE->string + s), newlen);
-    *(sub + newlen) = '\0';
+    memcpy(sub, (FLISP_ARG_ONE->string + start), newlen+1);
+    *(sub + newlen + 1) = '\0';
     Object * new = newStringWithLength(interp, sub, newlen);
     free(sub);
 
@@ -2269,9 +2287,9 @@ Primitive primitives[] = {
     {"<=",            1, -1, TYPE_NUMBER, primitiveLessEqual},
     {">",             1, -1, TYPE_NUMBER, primitiveGreater},
     {">=",            1, -1, TYPE_NUMBER, primitiveGreaterEqual},
-    {"string.length", 1,  1, TYPE_STRING, stringLength},
-    {"string.append", 2,  2, TYPE_STRING, stringAppend},
-    {"string.substring", 3, 3, 0,       stringSubstring},
+    {"string-length", 1,  1, TYPE_STRING, stringLength},
+    {"string-append", 2,  2, TYPE_STRING, stringAppend},
+    {"substring",     1,  3, 0,           stringSubstring},
     {"string-to-number", 1, 1, TYPE_STRING, stringToNumber},
     {"number-to-string", 1, 1, TYPE_NUMBER, numberToString},
     {"ascii",         1,  1, TYPE_NUMBER, asciiToString},
