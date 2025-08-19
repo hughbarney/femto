@@ -1189,7 +1189,7 @@ Object *readExpr(Interpreter *interp, FILE *fd)
     }
 }
 
-/** (fread [stream [eofv]]) - read one object from input stream
+/** (read [stream [eofv]]) - read one object from input stream
  *
  * @param interp  fLisp interpreter.
  * @param stream  input stream to read, if nil, use interp input stream.
@@ -1199,7 +1199,7 @@ Object *readExpr(Interpreter *interp, FILE *fd)
  *
  * throws: invalid-value, io-error, end-of-file
  */
-Object *primitiveFread(Interpreter *interp, Object **args, Object **env)
+Object *primitiveRead(Interpreter *interp, Object **args, Object **env)
 {
     Object *eofv = nil;
     Object *stream = nil;
@@ -1209,7 +1209,7 @@ Object *primitiveFread(Interpreter *interp, Object **args, Object **env)
     if (*args != nil) {
         stream = (*args)->car;
         if (stream->type != type_stream)
-            exceptionWithObject(interp, stream, invalid_value, "(fread [fd ..]) - fd is not a stream: %s", stream->type->string);
+            exceptionWithObject(interp, stream, invalid_value, "(read [fd ..]) - arg 1 expected %s, got: %s", type_stream->string, stream->type->string);
         fd = stream->fd;
 
         if ((*args)->cdr != nil)
@@ -1222,7 +1222,7 @@ Object *primitiveFread(Interpreter *interp, Object **args, Object **env)
 
     if (result == NULL) {
         if (*gcEofv == nil)
-            exceptionWithObject(interp, *gcStream, end_of_file , "(fread [..]) input exhausted");
+            exceptionWithObject(interp, *gcStream, end_of_file , "(read [..]) input exhausted");
         else
             result = *gcEofv;
     }

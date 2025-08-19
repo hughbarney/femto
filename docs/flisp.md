@@ -393,7 +393,7 @@ the opened file is set to `>STRING`.
 
 Close *stream* object
 
-`(fread` *stream*`[ eof-value])` <u>S: read</u>
+`(read` *stream*`[ eof-value])` <u>S: read</u>
 
 Reads the next complete Lisp expression from *stream*. The read in
 object is returned. If end of file is reached, an exception is raised,
