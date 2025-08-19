@@ -2248,7 +2248,7 @@ Primitive primitives[] = {
     {"cons",          2,  2, 0,         primitiveCons},
     {"open",          1,  2, TYPE_STRING, primitiveFopen},
     {"close",         1,  1, TYPE_STREAM, primitiveFclose},
-    {"fread",         0,  2, 0,         primitiveRead},
+    {"read",          0,  2, 0,         primitiveRead},
     {"eval",          1,  1, 0,         primitiveEval},
     {"write",         1, -1, 0,         primitiveWrite},
 #if DEBUG_GC
@@ -2535,7 +2535,7 @@ void lisp_eval2(Interpreter *interp)
     interp->gcTop = nil;
     GC_CHECKPOINT;
     GC_TRACE(gcObject, nil);
-    Object read = { type_primitive, .name = "fread" };
+    Object read = { type_primitive, .name = "read" };
     Object *doRead = &(Object) { type_cons, .car = &read, .cdr = nil };
 
     for (;;) {
