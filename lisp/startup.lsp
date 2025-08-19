@@ -24,17 +24,19 @@
 	 (end-of-buffer))))
 
 (defun getopts (opts pos)
-  (setq o (car opts))
   (cond
-    ((null o))
-    ((eq "+" o) (getopts (cdr opts) 0))
-    ((eq "+" (string.substring o 0 0))
-     (getopts (cdr opts) (string-to-number (string.substring o 1 (- (string.length o) 1)))))
-    (t
-     (find-file o)
-     (goto-line pos)
-     (getopts (cdr opts) 0))))
-
+    ((null opts))
+    ((consp opts)
+     (cond
+       ((eq "+" (car opts)) (getopts (cdr opts) 0))
+       ((eq "+" (substring (car opts) 0 1))
+	(getopts (cdr opts) (string-to-number (substring (car opts) 1))))
+       (t
+	(find-file (car opts))
+	(cond ((> pos 0) (goto-line pos)))
+	(getopts (cdr opts) 0))))
+    (t (throw wrong-type-argument "(getopts opts pos) - opts must be list"))))
+  
 (defun confn(fn)
   (concat ~ "/" config_dir "/" fn))
 
@@ -105,4 +107,7 @@
 (add-mode "lispmode")
 (delete-mode "modified")
 
-(getopts argv 0)
+;;(getopts argv 0)
+(log-debug (concat "getopts: " (catch (getopts argv 0))))
+
+
