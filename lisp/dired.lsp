@@ -45,7 +45,7 @@
   (delete-other-windows)
   (setq de-obuf (get-buffer-name))
   (kill-buffer dired-buffer)
-  (shell-command (string.append dired-ls-cmd dired-dir))
+  (shell-command (concat dired-ls-cmd dired-dir))
   (rename-buffer dired-buffer)
   (beginning-of-buffer)
   (set-mark)

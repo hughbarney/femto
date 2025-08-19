@@ -75,7 +75,7 @@
     ((is_ctl_g key) "")
     ((is_backspace key) (inputat ln q (shrink response)))
     ((is_control_char key) (inputat ln q response))
-    (t (inputat ln q (string.append response key)))  ))
+    (t (inputat ln q (concat response key)))  ))
 
 (defun draw()
   (oxo-debug "draw\n")
