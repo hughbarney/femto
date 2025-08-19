@@ -4,7 +4,7 @@
 
 export FLISPRC=
 
-tap 75
+tap 112
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -203,23 +203,44 @@ IN='(macroexpand-1 (macro a a) b)' OUT='(b)'
 flisp_expr; ok macroexpand-1_2  apply return b list b
 
 # catch
-IN='(catch nil)' OUT='(0 "" nil)'
+IN='(catch nil)' OUT='(nil "" nil)'
 flisp_expr; ok catch-1_1  catch nil
 
-IN='(catch t)' OUT='(0 "" t)'
+IN='(catch t)' OUT='(nil "" t)'
 flisp_expr; ok catch-1_2  catch t
 
-IN='(catch (+ 3 4))' OUT='(0 "" 7)'
+IN='(catch (+ 3 4))' OUT='(nil "" 7)'
 flisp_expr; ok catch-1_3  catch expr
 
-IN='(catch (/))' OUT='(11 "expects at least 1 arguments" #<Primitive />)'
+IN='(catch (/))' OUT='(wrong-num-of-arguments "expects at least 1 arguments" #<Primitive />)'
 flisp_expr; ok catch-1_4  catch error
 
 # Primitives
-## Write
-# write
 
 ## Objects
+
+IN="(null nil)" OUT="t"
+flisp_expr; ok null-1 null nil is t
+
+IN="(null t)" OUT="nil"
+flisp_expr; ok null-2 null t is nil
+
+IN="(null 1)" OUT="nil"
+flisp_expr; ok null-3 null number is nil
+
+IN="(null 'a)" OUT="nil"
+flisp_expr; ok null-4 null symbol is nil
+
+IN='(null "a")' OUT="nil"
+flisp_expr; ok null-5 null string is nil
+
+IN="(null lambda)" OUT="nil"
+flisp_expr; ok null-6 null lambda is  nil
+
+IN="(null macro)" OUT="nil"
+flisp_expr; ok null-7 null macro is  nil
+
+
 # consp
 IN='(consp nil)' OUT='nil'
 flisp_expr; ok consp-1_1  consp nil is nil
@@ -239,45 +260,75 @@ flisp_expr; ok consp-1_5  consp list is t
 IN="(consp +)" OUT='nil'
 flisp_expr; ok consp-1_5  consp lambda is nil
 
-# numberp
-# stringp
-# symbolp
-# symbol-name
-# eq
+false; ok  numberp \# TODO
+false; ok  stringp \# TODO
+false; ok  symbolp \# TODO
+false; ok  symbol-name \# TODO
+false; ok  eq \# TODO
+
 ## Cons'es
-# car
-# cdr
-# cons
-
-## Arithmetic
-# + - * / %
-# = <= > >=
-
-## Strings
-# string.length
-# string.append
-# string.substring
-# string-to-number
-# number-to-string
-# ascii
-# ascii->number
+false; ok  car \# TODO
+false; ok  cdr \# TODO
+false; ok  cons \# TODO
 
 
-## I/O
-# signal
+# I/O
+false; ok open \# TODO
+rm -f _file_
+IN='(open "_file_" "w")' OUT=""
+flisp_expr
+[ -e _file_ ]; ok open-1 create file
+rm -f _file_
+
+echo '(open "empty.lsp")' | $FLISP | grep -q "#<Stream 0x............, empty.lsp>"
+ok open-2 open file readonly
+
+echo '(open "<0")' | $FLISP | grep -q "#<Stream 0x............, <0>"
+ok open-3 open readable file descriptor
+
+echo '(open ">1")' | $FLISP | grep -q "#<Stream 0x............, >1>"
+ok open-4 open writeable file descriptor
+
+echo '(open "any text" "<")' | $FLISP | grep -q "#<Stream 0x............, <STRING>"
+ok open-5 open memory input stream
+
+echo '(open "" ">")' | $FLISP | grep -q "#<Stream 0x............, >STRING>"
+ok open-6 open memory output stream
+
+
+false; ok close \# TODO
+false; ok fread \# TODO
+false; ok eval \# TODO
+false; ok write \# TODO
+
 # throw
-IN='(throw 42 "answer")' ERR='answer' OBJ=
+IN="(throw 'fourty-two \"answer\")" ERR='answer' OBJ=
 flisp_err; ok throw-1_1  throw w/o object
 
-IN='(throw 43 "answer" 1)' ERR='answer' OBJ=1
+IN="(throw 'fourty-three \"answer\" 1)" ERR='answer' OBJ=1
 flisp_err; ok throw-1_2  throw with object
 
-# exit
-# os.getenv
-# get-temp-file
+## Math
+false; ok  math "+ - \* / % = <= > >=" \# TODO
 
-# Text buffers
-# ...
+## Strings
+false; ok  string.length \# TODO
+false; ok  string.append \# TODO
+false; ok  string.substring \# TODO
+false; ok  string-to-number \# TODO
+false; ok  number-to-string \# TODO
+false; ok  ascii \# TODO
+false; ok  ascii->number \# TODO
+
+# OS
+false; ok os.getenv \# TODO
+
+# File extension
+false; ok file extension \# TODO
+
+# Femto editor extension
+
+false; ok femto editor extension \# TODO
 
 
 # Local Variables:

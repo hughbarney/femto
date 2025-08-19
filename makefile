@@ -176,6 +176,11 @@ splint: FORCE
 test: flisp femto FORCE
 	(cd test && SUMMARY=1 ./run)
 
+ftest: femto FORCE
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto _no_file_
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +3 test/five_lines.txt
+
 test_core: test/core.lsp flisp
 	<$< FLISPRC= FLISPLIB= ./flisp > test/core.now &&  sed 's/Stream 0x\(.\+\),/Stream /' test/core.now | diff -q - test/core.out
 test/core.out: test/core.lsp flisp

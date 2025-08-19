@@ -833,18 +833,14 @@ void user_func()
 
 void readhook(buffer_t *bp)
 {
-    char *output;
-
-    // setup the command to be called into the lisp interpreter
-    sprintf(response_buf, "(read-hook \"%s\")", bp->b_fname);
 
     // we dont want any output from the read-hook, leaving message line available
     // the only thing that could go wrong are errors in the lisp code or 
     // a missing read-hook function in startup.lsp
 
-    if ((output = eval_string(false, response_buf)) == NULL)
+    if (eval_string(true, "(read-hook \"%s\")", bp->b_fname) == NULL)
         return;
-
+    
     free_lisp_output();
 }
 

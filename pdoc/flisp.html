@@ -142,7 +142,7 @@
     </dl>
     <p>
       By default compatibility with Common Lisp is annotated. The suffix <u>e</u> is used to indicate reference to Emacs
-      Lisp, <u>s</u> for Scheme.
+      Lisp, <u>s</u> for Scheme.  <var>fLisp</var> specific function are annotated with <u>f</u>.
     </p>
     <nav><a href="#toc">^</a></nav>
 
@@ -273,7 +273,7 @@
     </p>
     <h4 id="exceptions">Error handling</h4>
     <p>
-      Whenever fLisp encounters an error an exception is thrown. Exceptions have a non-zero result code and a human
+      Whenever fLisp encounters an error an exception is thrown. Exceptions have an error type symbol and a human
       readable error message. fLisp does not implement stack backtracking. Exceptions are either caught on the top level
       of an evaluation or by a <code>catch</code> statement.
     </p>
@@ -285,24 +285,30 @@
     </p>
     <p>
       When an exception occurs while calling <code>lisp_eval()</code> or <code>lisp_eval_string()</code> from C-code,
-      the <code>object</code> field of the interpreter is set to the object causing the error, and
-      the <code>result</code> field is set to the error code.
+      the <code>object</code> field of the interpreter is set to the object causing the error, the <code>result</code>
+      field is set to the error type symbol and the <code>msg_buf</code> field is set to the error message.
     </p>
     <p>
       Exceptions can be thrown from within in Lisp code via the <a href="#interp_ops"><code>throw</code></a>
       function.
     </p>
     <p>
-      The internally used result codes are defined in the <code>ResultCode</code> enum in <code>lisp.h</code> and
-      reverse defined as Lisp symbols in the fLisp core library in <code>core.lsp</code>.  Notable result codes:
+      The following error type symbols are defined and used internally:
     </p>
-    <dl>
-      <dt><code>flisp-ok</code></dt><dd><code>0</code>: no error.</dd>
-      <dt><code>flisp-error</code></dt><dd><code>1</code>: generic error.</dd>
-      <dt><code>flisp-break</code></dt><dd><code>3</code>: non local exit.</dd>
-      <dt><code>flisp-user</code></dt><dd><code>5</code>: generic error for user code.</dd>
-    </dl>
+    <ul>
+      <li><code>end-of-file</code></li>
+      <li><code>read-incomplete</code></li>
+      <li><code>invalid-read-syntax</code></li>
+      <li><code>range-error</code></li>
+      <li><code>wrong-type-argument</code></li>
+      <li><code>invalid-value</code></li>
+      <li><code>wrong-num-of-arguments</code></li>
+      <li><code>io-error</code></li>
+      <li><code>out-of-memory</code></li>
+      <li><code>gc-error</code></li>
+    </ul>
 
+    <nav><a href="#toc">^</a></nav>
     
     <h3 id="primitives"><i>fLisp</i> Primitives</h3>
     <p>
@@ -376,16 +382,44 @@
       <dt><code>(throw <var>result</var> <var>message</var>[ <var>object</var>])</code> <u>D</u></dt>
       <dd>
 	Throws an exception, stopping any further evaluation.  <var>result</var> is the error type
-	number, <var>message</var> is a human readable error string and <var>object</var> is the object in error, if
+	symbol, <var>message</var> is a human readable error string and <var>object</var> is the object in error, if
 	any.
       </dd>
     </dl>
 
     <h4 id="in_out">Input / Output and Others</h4>
     <dl>
-      <dt><code>(fopen <var>path</var> <var>mode</var>)</code> <u>S: open</u></dt>
-      <dd>Open file at <var>path</var> with <var>mode</var> and return a stream object</dd>
-      <dt><code>(fclose <var>stream</var>)</code> <u>S: close</u></dt>
+      <dt><code>(open <var>path</var>[ <var>mode</var>])</code> <u>S: open</u></dt>
+      <dd>
+	Open file at <var>path</var> with <var>mode</var> and return a stream
+	object. <var>mode</var> is <code>"r"</code>ead only by default.
+      </dd>
+      <dd>
+	<p><code>open</code> can open or create files, file descriptors and memory based streams.</p>
+	<dl>
+	  <dt>Files:</dt>
+	  <dd>
+	    <var>path</var>: path to file, <var>mode</var>: one
+	    of <code>r</code>, <code>w</code>, <code>a</code>, <code>r+</code>, <code>w+</code>, <code>a+</code> plus an
+	    optional <code>b</code> modifier.
+	  </dd>
+	  <dt>File descriptors:</dt>
+	  <dd>
+	    <var>path</var>: <code>&lt;<var>n</var></code> for reading, <code>&gt;<var>n</var></code> for
+	    writing. <var>n</var> is the number of the file descriptor. Omit <var>mode</var>.
+	  </dd>
+	  <dt>Memory streams:</dt>
+	  <dd>
+	    For reading <var>path</var> is the string to read, <var>mode</var> must be set to: <code>&lt;</code>. The
+	    name of the opened file is set to <code>&lt;STRING</code>.
+	  </dd>
+	  <dd>
+	    For writing <var>path</var> is ignored, <var>mode</var> must be set to: <code>&gt;</code>. The
+	    name of the opened file is set to <code>&gt;STRING</code>.
+	  </dd>
+	</dl>
+      </dd>
+      <dt><code>(close <var>stream</var>)</code> <u>S: close</u></dt>
       <dd>Close <var>stream</var> object</dd>
       <dt><code>(fread</code> <code><var>stream</var>[ eof-value])</code> <u>S: read</u></dt>
       <dd>
@@ -513,8 +547,6 @@
     </dl>
 
     <nav><a href="#toc">^</a></nav>
-    
-    <nav><a href="#toc">^</a></nav>
     <h3 id="libraries">Lisp Libraries</h3>
 
     <h4 id="startup">Library Loading</h4>
@@ -553,14 +585,30 @@
       <dd>Defines and returns a macro or function, respectively.</dd>
       <dt><code>(string <var>arg</var>)</code></dt>
       <dd>Returns the string conversion of argument.</dd>
-      <dt><code>(concat </code>[<code><var>arg</var></code> ..]<code>)</code></dt>
+      <dt><code>(concat </code>[<code><var>arg</var></code>..]<code>)</code></dt>
       <dd>Returns concatenation of all arguments converted to strings.</dd>
       <dt><code>(memq <var>arg</var> <var>list</var>)</code></dt>
       <dd>
 	If <var>arg</var> is contained in <var>list</var>, returns the sub list of <var>list</var> starting with the
 	first occurrence of <var>arg</var>, otherwise returns <code>nil</code>.
       </dd>
-      <dt><code>(fload </code> <code><var>stream</var>)</code></dt>
+      <dt><code>(map1 <var>func</var> <var>list</var>)</code> <u>S: mapcar</u></dt>
+      <dd>Apply func to each element in list and return a list of the results.</dd>
+      <dd><code>map1</code> is a specialized form of <code>mapcar</code> restricted to one list only.</dd>
+      <dt><code>(cadr <var>list</var>)</code></dt>
+      <dt>Return the second element in the list, <code>(car (cdr <var>list</var>))</code>.</dt>
+      <dt><code>(cddr <var>list</var>)</code></dt>
+      <dt>Return all elements after the second one in list, <code>(cdr (cdr <var>list</var>))</code>.</dt>
+      <dt><code>(let ((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code></dt>
+      <dd>Bind all <var>name</var>s to the respective <var>value</var>s then evaluate body.</dd>
+      <dt><code>(let <var>label</var>((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code> <u>Cs</u></dt>
+      <dd>
+	Labelled or <q>named</q> <code>let</code>: define a local function <var>label</var> with <var>body</var> and
+	all <var>name</var>s as parameters bound to the <var>values</var>.
+      </dd>
+      <dt><code>(prog1 <var>sexp</var>[<var>sexp</var>..])</code></dt>
+      <dd>Evaluate all <var>sexp</var> in turn and return the value of the first.</dd>
+      <dt><code>(fload </code> <code><var>stream</var>)</code> <u>f</u></dt>
       <dd>Reads and evaluates all Lisp objects in <var>stream</var>.</dd>
       <dt><code>(load </code> <code><var>path</var>)</code></dt>
       <dd>Reads and evaluates all Lisp objects in file at <var>path</var>.</dd>
@@ -579,15 +627,24 @@
 
     <h4 id="flisp_lib">fLisp Library</h4>
     <p>
-      This library implements commonly excpected Lisp idioms, which are used in the editor libraries.
+      This library implements commonly excpected Lisp idioms. <i>fLisp</i> implements a carefully selected minimum set
+      of commonly used functions.
     </p>
     <dl>
-      <dt>not</dt>
+      <dt><code>(not <var>object</var>)</code></dt><dd>Logical inverse. In Lisp a synonym for <code>null</code></dd>
       <dt>listp</dt>
       <dt>and</dt>
-      <dt>map1</dt>
       <dt>or</dt>
-      <dt>reduce</dt>
+      <dt><code>(reduce <var>func</var> <var>list</var> <var>start</var>)</code> <u>D</u></dt>
+      <dd>
+	<code>reduce</code> applies the binary <var>func</var> to the first element of <var>list</var>
+	and <var>start</var> and then recursively to the first element of the rest of the <var>list</var> and the result
+	of the previous invocation: it is <q>right binding</q>.
+      </dd>
+      <dd>
+	Since <code>reduce</code> is right associative and <var>start</var> is not optional, it differs significantly
+	both from Common Lisp and Scheme.
+      </dd>
       <dt>max</dt>
       <dt>min</dt>
       <dt>nthcdr</dt>
@@ -972,31 +1029,16 @@
     <p>
       After processing the given input, the interpreter puts a pointer to the object which is the result of the last
       evaluation into the <code>object</code> field of the interpreter structure.  The <code>result</code> field is set
-      to <code>FLISP_OK</code>, which has the integer value <code>0</code>.  The <code>message</code> field is set to
-      the empty string.
+      to the <code>nil</code> and the <code>msg_buf</code> field is set to  the empty string.
     </p>
     <p>
       fLisp sends all output to the default output stream. If <code>NULL</code> is given on initialization, output is
       suppressed altogether.
     <p>
       If an exception is thrown inside the Lisp interpreter an error message is formatted and copied to
-      the <code>message</code> buffer of the interpreter, A pointer to the object causing the error is set to
-      the <code>object</code> field. The <code>result</code> field is set to an error specific code:
+      the <code>msg_buf</code> buffer of the interpreter, A pointer to the object causing the error is set to
+      the <code>object</code> field. The <code>result</code> field is set to the respective error type symbol.
     </p>
-    <dl>
-      <dt><code>FLISP_ERROR</code></dt><dd>Generic error code.</dd>
-      <dt><code>FLISP_USER</code></dt><dd>User generated exception.</dd>
-      <dt><code>FLISP_READ_INCOMPLETE</code></dt><dd>End of file before valid Lisp expression was read in.</dd>
-      <dt><code>FLISP_READ_INVALID</code></dt><dd>Lisp expression is invalid.</dd>
-      <dt><code>FLISP_READ_RANGE</code></dt><dd>Integer or float under or overrflow.</dd>
-      <dt><code>FLISP_WRONG_TYPE</code></dt><dd>A Lisp function received an argument of wrong type.</dd>
-      <dt><code>FLISP_INVALID_VALUE</code></dt><dd>A Lisp function received an argument with invalid value.</dd>
-      <dt><code>FLISP_PARAMETER_ERROR</code></dt>
-      <dd>A macro or function invocation received an incorrect number of arguments.</dd>
-      <dt><code>FLISP_IO_ERROR</code></dt><dd>An operation on a stream failed.</dd>
-      <dt><code>FLISP_OOM</code></dt><dd>fLisp ran out of memory.</dd>
-      <dt><code>FLISP_GC</code></dt><dd>The garbage collector encountered an error.</dd>
-    </dl>
     <p>
       In this <dfn>error state</dfn> of the interpreter, the function <code>lisp_write_error()</code> can be used to
       write a standardized error message including the error object to a file descriptor of choice
@@ -1041,11 +1083,11 @@
 	</p>
       </dd>
 
-      <dt><code>(void) lisp_destroy(Interpreter *<var>interp</var>)</code></dt>
+      <dt><code>void lisp_destroy(Interpreter *<var>interp</var>)</code></dt>
       <dd>Frees all resources used by the interpreter.</dd>
       
       <dt>
-	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>)</code>
+	<code>void lisp_eval(Interpreter *<var>interp</var>)</code>
       </dt>
       <dd>
 	<p>
@@ -1054,7 +1096,7 @@
 	</p>
       </dd>
       <dt>
-	<code>ResultCode lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>)</code>
+	<code>void lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>)</code>
       </dt>
       <dd>
 	Evaluates all Lisp expressions in <var>string</var>.</dd>
@@ -1066,7 +1108,7 @@
 	Format <var>object</var> into a string and write it to <var>stream</var>.  If <var>readably</var> is true, the
 	string can be read in by the interpreter and results in the same object.
       </dd>
-      <dt><code>void lisp_write_error(Interpreter *<var>interp</var>, FILE <var>*fd</var></code></dt>
+      <dt><code>void lisp_write_error(Interpreter *<var>interp</var>, FILE <var>*fd</var>)</code></dt>
       <dd>
 	Format the error <var>object</var> and the error message of the interpreter into a string and write it
 	to <var>fd</var>. The <var>object</var> is written with <var>readably</var> <code>true</code>.
@@ -1216,19 +1258,13 @@
       checking predicates in Lisp.
     </p>
     <p>
-      Make loop programming easier, by any combination of:
+      loop programming is availble via the labelled let macro. It could made easier, by any combination of:
     </p>
     <ul>
       <li>iota</li>
-      <li>apply/funcall</li>
-      <li>labelled let</li>
       <li>loop/while/for macro</li>
       <li>Demoing hand crafted loops including breaking with throw.</li>
     </ul>
-    <p>
-      apply/funcall should be implemented anyway, probably only one of them as special form. identity/always/ignore
-      should be added to one of the libraries.
-    </p>
   </body>
 </html>
 <!--

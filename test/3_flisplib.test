@@ -1,7 +1,7 @@
 #!./run
 # test the fLisp library
 # leg20231129: Femto
-tap 52
+tap 51
 
 export FLISPRC=../lisp/core.lsp
 flisplib() { IN="(require 'flisp) $IN" flisp_expr "$@"; }
@@ -86,10 +86,6 @@ flisplib 1; ok and-10 triple t is true
 
 IN='(defun aa (p) (and p p)) (aa nil)' OUT=nil
 flisplib 1; ok and-11 macro env not working
-
-
-false; ok map1 \# TODO
-
 
 IN='(or)' OUT=nil
 flisplib 1; ok or-1 empty or is false
