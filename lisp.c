@@ -1827,7 +1827,7 @@ Object *primitiveCar(Interpreter *interp, Object ** args, Object **env)
         return nil;
     if (FLISP_ARG_ONE->type == type_cons)
         return FLISP_ARG_ONE->car;
-    exceptionWithObject(interp, FLISP_ARG_ONE, wrong_type_argument, "(cdr args) - arg 1 expected %s, got: %s", type_cons->string, FLISP_ARG_ONE->type->string);                        
+    exceptionWithObject(interp, FLISP_ARG_ONE, wrong_type_argument, "(car args) - arg 1 expected %s, got: %s", type_cons->string, FLISP_ARG_ONE->type->string);
 }
 Object *primitiveCdr(Interpreter *interp, Object ** args, Object **env)
 {
