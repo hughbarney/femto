@@ -58,34 +58,8 @@ extern Object *wrong_num_of_arguments;
 extern Object *io_error;
 extern Object *out_of_memory;
 
-
-/** Type codes:
- *
- * The public type of an object is a Lisp object type.  Internally an
- * enum is used in three places:
- * - Object creation
- * - Garbage collection
- * - Printing
- *
- * The following list must be kept in sync with flisp_object_type in lisp.c
- */
-typedef enum ObjectType {
-    TYPE_MOVED,
-    TYPE_INTEGER,
-    TYPE_NUMBER,
-    TYPE_STRING,
-    TYPE_SYMBOL,
-    TYPE_CONS,
-    TYPE_LAMBDA,
-    TYPE_MACRO,
-    TYPE_PRIMITIVE,
-    TYPE_ENV,
-    TYPE_STREAM
-} ObjectType;
-
 struct Object {
     Object *type;
-    ObjectType type_code;
     size_t size;
     union {
         struct { int64_t integer; };                               // integer
@@ -140,29 +114,6 @@ typedef struct Interpreter {
 /*@null@*/extern Interpreter *lisp_interpreters;
 
 // PROGRAMMING INTERFACE ////////////////////////////////////////////////
-
-#define TWO_STRING_ARGS(func)                                   \
-    Object *first = (*args)->car;                               \
-    Object *second = (*args)->cdr->car;                         \
-    if (first->type != type_string)                             \
-        exceptionWithObject(interp, first, wrong_type_argument, "(" CPP_XSTR(func) "  first second) - first is not a string"); \
-    if (second->type != type_string)                            \
-        exceptionWithObject(interp, second, wrong_type_argument, "(" CPP_XSTR(func) " first second) - second is not a string");
-
-#define ONE_STRING_ARG(func)                                  \
-    Object *arg = (*args)->car;                               \
-    if (arg->type != type_string)                             \
-        exceptionWithObject(interp, arg, wrong_type_argument, "(" CPP_XSTR(func) " arg) - arg is not a string");
-
-#define ONE_NUMBER_ARG(func)                                  \
-    Object *num = (*args)->car;                               \
-    if (num->type != type_number)                             \
-        exceptionWithObject(interp, num, wrong_type_argument, "(" CPP_XSTR(func) " num) - num is not a number");
-
-#define ONE_STREAM_ARG(func)                                  \
-    Object *stream = (*args)->car;                            \
-    if (stream->type != type_stream)                          \
-        exceptionWithObject(interp, stream, wrong_type_argument, "(" CPP_XSTR(func) " fd) - fd is not a stream");
 
 #define FLISP_ARG_ONE (*args)->car
 #define FLISP_ARG_TWO (*args)->cdr->car
