@@ -2191,14 +2191,27 @@ Object *stringSubstring(Interpreter *interp, Object **args, Object **env)
     return new;
 }
 
-Object *stringLength(Interpreter *interp, Object ** args, Object **env)
+Object *stringLength(Interpreter *interp, Object **args, Object **env)
 {
     return newNumber(interp, strlen(FLISP_ARG_ONE->string));
 }
 
+/** (string-contains needle haystack)
+ *
+ */
+Object *stringSearch(Interpreter *interp, Object **args, Object **env)
+{
+    char *pos;
+    
+    pos = strstr(FLISP_ARG_TWO->string, FLISP_ARG_ONE->string);
+    if (pos)
+        return newNumber(interp, (double)(pos - FLISP_ARG_TWO->string));
+    return nil;
+}
+
 /* String/Number conversion */
 
-Object *stringToNumber(Interpreter *interp, Object ** args, Object **env)
+Object *stringToNumber(Interpreter *interp, Object **args, Object **env)
 {
     return newNumber(interp, strtod(FLISP_ARG_ONE->string, NULL));
 }
@@ -2207,7 +2220,7 @@ Object *stringToNumber(Interpreter *interp, Object ** args, Object **env)
  * XXX could be improved to handle integers and decimals better
  * for example 121323.000000 (%f) is ugly but so is 1.213230e+05 (%g)
  */
-Object *numberToString(Interpreter *interp, Object ** args, Object **env)
+Object *numberToString(Interpreter *interp, Object **args, Object **env)
 {
     char buf[40];
 
@@ -2290,6 +2303,7 @@ Primitive primitives[] = {
     {"string-length", 1,  1, TYPE_STRING, stringLength},
     {"string-append", 2,  2, TYPE_STRING, stringAppend},
     {"substring",     1,  3, 0,           stringSubstring},
+    {"string-contains", 2, 2, TYPE_STRING, stringSearch}, 
     {"string-to-number", 1, 1, TYPE_STRING, stringToNumber},
     {"number-to-string", 1, 1, TYPE_NUMBER, numberToString},
     {"ascii",         1,  1, TYPE_NUMBER, asciiToString},
