@@ -4,7 +4,7 @@
 
 export FLISPRC=
 
-tap 171
+tap 164
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -259,27 +259,6 @@ flisp_expr; ok consp-5  consp list is t
 
 IN="(consp consp)" OUT='nil'
 flisp_expr; ok consp-5  consp lambda is nil
-
-IN="(numberp 42)" OUT='t'
-flisp_expr; ok numberp-1  numberp number is t
-
-IN="(numberp numberp)" OUT='nil'
-flisp_expr; ok numberp-2  numberp lambda is nil
-
-IN='(stringp "answer")' OUT='t'
-flisp_expr; ok stringp-1  stringp string is t
-
-IN="(stringp stringp)" OUT='nil'
-flisp_expr; ok stringp-2  stringp lambda is nil
-
-IN="(symbolp 'a)" OUT='t'
-flisp_expr; ok symbolp-1  symbolp symbol is t
-
-IN="(symbolp symbolp)" OUT='nil'
-flisp_expr; ok symbolp-2  symbolp lambda is nil
-
-IN="(symbol-name 'a)" OUT='"a"'
-flisp_expr; ok symbol-name-1  symbolname is symbol as string
 
 IN="(eq 1 1)" OUT='t'
 flisp_expr; ok eq-1_1  eq same num is t

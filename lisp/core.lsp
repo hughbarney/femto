@@ -12,6 +12,20 @@
 (defmacro defun (name params . body)
   (list (quote setq) name (list (quote lambda) params . body)))
 
+(defun curry (func arg1)
+  (lambda (arg2) (func arg1 arg2)))
+
+(defun typep (type object)  (eq type (type-of object)))
+
+(setq intergerp (curry typep type-integer))
+(setq numberp (curry typep type-number))
+(setq stringp (curry typep type-string))
+(setq symbolp (curry typep type-symbol))
+;;; consp is a primitive
+(setq lambdap (curry typep type-lambda))
+(setq macrop (curry typep type-macro))
+(setq streamp (curry typep type-stream))
+
 (defun string (s)
   ;; Convert argument to string.
   ;; Common Lisp

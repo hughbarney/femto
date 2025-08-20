@@ -4,7 +4,7 @@
 
 export FLISPRC=../lisp/core.lsp
 
-tap 27
+tap 34
 
 # list
 IN='(list)' OUT=nil
@@ -23,6 +23,28 @@ flisp_expr 1; ok defmacro-1  simple macroexpansion
 # defun
 IN="(defun f (a b) (list a b)) (f 1 2)" OUT='(1 2)'
 flisp_expr 1; ok defun-1  simple function invocation
+
+IN="(numberp 42)" OUT='t'
+flisp_expr 1; ok numberp-1  numberp number is t
+
+IN="(numberp numberp)" OUT='nil'
+flisp_expr 1; ok numberp-2  numberp lambda is nil
+
+IN='(stringp "answer")' OUT='t'
+flisp_expr 1; ok stringp-1  stringp string is t
+
+IN="(stringp stringp)" OUT='nil'
+flisp_expr 1; ok stringp-2  stringp lambda is nil
+
+IN="(symbolp 'a)" OUT='t'
+flisp_expr 1; ok symbolp-1  symbolp symbol is t
+
+IN="(symbolp symbolp)" OUT='nil'
+flisp_expr 1; ok symbolp-2  symbolp lambda is nil
+
+IN="(symbol-name 'a)" OUT='"a"'
+flisp_expr 1; ok symbol-name-1  symbolname is symbol as string
+
 
 # string
 IN="(string nil)" OUT='""'

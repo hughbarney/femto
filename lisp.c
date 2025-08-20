@@ -1780,27 +1780,17 @@ Object *primitiveNullP(Interpreter *interp, Object **args, Object **env)
     return (FLISP_ARG_ONE == nil) ? t : nil;
 }
 
-Object *primitiveConsP(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveTypeOf(Interpreter *interp, Object **args, Object **env)
+{
+    return (FLISP_ARG_ONE->type);
+}
+
+Object *primitiveConsP(Interpreter *interp, Object **args, Object **env)
 {
     return (FLISP_ARG_ONE->type == type_cons) ? t : nil;
 }
 
-Object *primitiveNumberP(Interpreter *interp, Object ** args, Object **env)
-{
-    return (FLISP_ARG_ONE != nil && FLISP_ARG_ONE->type == type_number) ? t : nil;
-}
-
-Object *primitiveStringP(Interpreter *interp, Object ** args, Object **env)
-{
-    return (FLISP_ARG_ONE != nil && FLISP_ARG_ONE->type == type_string) ? t : nil;
-}
-
-Object *primitiveSymbolP(Interpreter *interp, Object ** args, Object **env)
-{
-    return (FLISP_ARG_ONE->type == type_symbol) ? t : nil;
-}
-
-Object *primitiveSymbolName(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveSymbolName(Interpreter *interp, Object **args, Object **env)
 {
     size_t len = strlen(FLISP_ARG_ONE->string);
     GC_CHECKPOINT;
@@ -1811,7 +1801,7 @@ Object *primitiveSymbolName(Interpreter *interp, Object ** args, Object **env)
     return string;
 }
 
-Object *primitiveEq(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveEq(Interpreter *interp, Object **args, Object **env)
 {
 
     if (FLISP_ARG_ONE->type == type_number && FLISP_ARG_TWO->type == type_number)
@@ -1821,7 +1811,7 @@ Object *primitiveEq(Interpreter *interp, Object ** args, Object **env)
     else
         return (FLISP_ARG_ONE == FLISP_ARG_TWO) ? t : nil;
 }
-Object *primitiveCar(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveCar(Interpreter *interp, Object **args, Object **env)
 {
     if (FLISP_ARG_ONE == nil)
         return nil;
@@ -1829,7 +1819,7 @@ Object *primitiveCar(Interpreter *interp, Object ** args, Object **env)
         return FLISP_ARG_ONE->car;
     exceptionWithObject(interp, FLISP_ARG_ONE, wrong_type_argument, "(car args) - arg 1 expected %s, got: %s", type_cons->string, FLISP_ARG_ONE->type->string);
 }
-Object *primitiveCdr(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveCdr(Interpreter *interp, Object **args, Object **env)
 {
     if (FLISP_ARG_ONE == nil)
         return nil;
@@ -1838,37 +1828,37 @@ Object *primitiveCdr(Interpreter *interp, Object ** args, Object **env)
     exceptionWithObject(interp, FLISP_ARG_ONE, wrong_type_argument, "(cdr args) - arg 1 expected %s, got: %s", type_cons->string, FLISP_ARG_ONE->type->string);
 
 }
-Object *primitiveCons(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveCons(Interpreter *interp, Object **args, Object **env)
 {
     return newCons(interp, &(*args)->car, &(*args)->cdr->car);
 }
 
 #if DEBUG_GC
 // Introspection ///////
-Object *primitiveGc(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveGc(Interpreter *interp, Object **args, Object **env)
 {
     // Note:
     gc(interp);
     return t;
 }
-Object *primitiveGcTrace(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveGcTrace(Interpreter *interp, Object **args, Object **env)
 {
     return interp->gcTop;
 }
-Object *primitiveSymbols(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveSymbols(Interpreter *interp, Object **args, Object **env)
 {
     return interp->symbols;
 }
-Object *primitiveGlobal(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveGlobal(Interpreter *interp, Object **args, Object **env)
 {
     return interp->global;
 }
-Object *primitiveEnv(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveEnv(Interpreter *interp, Object **args, Object **env)
 {
     return *env;
 }
 #endif
-Object *primitiveThrow(Interpreter *interp, Object ** args, Object **env)
+Object *primitiveThrow(Interpreter *interp, Object **args, Object **env)
 {
     Object *result = (*args)->car;
     Object *message = (*args)->cdr->car;
@@ -2268,10 +2258,8 @@ Primitive primitives[] = {
     {"macroexpand-1", 1,  2, 0 /* special form */ },
     {"catch",         1,  1, 0 /*special form */ },
     {"null",          1,  1, 0,         primitiveNullP},
+    {"type-of",       1,  1, 0,         primitiveTypeOf},
     {"consp",         1,  1, 0,         primitiveConsP},
-    {"numberp",       1,  1, 0,         primitiveNumberP},
-    {"stringp",       1,  1, 0,         primitiveStringP},
-    {"symbolp",       1,  1, 0,         primitiveSymbolP},
     {"symbol-name",   1,  1, TYPE_SYMBOL, primitiveSymbolName},
     {"eq",            2,  2, 0,         primitiveEq},
     {"car",           1,  1, 0,         primitiveCar}, /* Note: nil|cons */

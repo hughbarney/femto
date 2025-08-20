@@ -4,9 +4,11 @@
 - Showcase lisp_eval2 with (catch (fread)) mechanism
 - Implement fstat and improve femto.rc
 - Implement mkdir and fix file save bug
-- Implement type-of, curry and move all type predicates except null from C to Lisp.
++ Implement type-of, curry and move all type predicates except null and consp from C to Lisp.
+- Implement backquote and friends
 - Fix reduce, maybe implement fold, map, consider simplifying core functions and make them n-ary in Lisp.
-- Fix string library, add search
+- Fix string library,
++ Add search to string library
 - Unify stdlib into flisp.lsp
 - Implement simple repl in Lisp
   - needs getline
