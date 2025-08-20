@@ -37,7 +37,6 @@ Object *nil =                    &(Object) { NULL, .string = "nil" };
 Object *t =                      &(Object) { NULL, .string = "t" };
 /* Types */
 Object *type_integer =           &(Object) { NULL, .string  = "type-integer" };
-Object *type_number =            &(Object) { NULL, .string  = "type-number" };
 Object *type_string =            &(Object) { NULL, .string  = "type-string" };
 Object *type_symbol =            &(Object) { NULL, .string  = "type-symbol" };
 Object *type_cons =              &(Object) { NULL, .string  = "type-cons" };
@@ -60,7 +59,7 @@ Object *gc_error =               &(Object) { NULL, .string = "gc-error" };
 Object *type_env =               &(Object) { NULL, .string  = "type-env" };
 Object *type_moved =             &(Object) { NULL, .string  = "type-moved" };
 Object *empty =                  &(Object) { NULL, .string = "\0" };
-Object *one =                    &(Object) { NULL, .number = 1 };
+Object *one =                    &(Object) { NULL, .integer = 1 };
 
 Constant flisp_constants[] = {
     /* Fundamentals */
@@ -68,7 +67,6 @@ Constant flisp_constants[] = {
     { &t, &t, },
     /* Types */
     { &type_integer,   &type_integer  },
-    { &type_number,    &type_number   },
     { &type_string,    &type_string   },
     { &type_symbol,    &type_symbol   },
     { &type_cons,      &type_cons     },
@@ -98,7 +96,6 @@ Constant flisp_constants[] = {
 typedef enum ObjectType {
     TYPE_MOVED,
     TYPE_INTEGER,
-    TYPE_NUMBER,
     TYPE_STRING,
     TYPE_SYMBOL,
     TYPE_CONS,
@@ -112,7 +109,6 @@ typedef enum ObjectType {
 Object **flisp_object_type[] = {
     &type_moved,
     &type_integer,
-    &type_number,
     &type_string,
     &type_symbol,
     &type_cons,
@@ -390,7 +386,7 @@ void gc(Interpreter *interp)
             object->parent = gcMoveObject(interp, object->parent, &stats);
             object->vars = gcMoveObject(interp, object->vars, &stats);
             object->vals = gcMoveObject(interp, object->vals, &stats);
-        } else if (object->type == type_integer || object->type == type_number
+        } else if (object->type == type_integer
                    || object->type == type_string || object->type == type_symbol
                    || object->type == type_primitive) {
         } else if (object->type == type_moved)
@@ -471,10 +467,10 @@ Object *newObjectFrom(Interpreter *interp, Object ** from)
     return object;
 }
 
-Object *newNumber(Interpreter *interp, double number)
+Object *newInteger(Interpreter *interp, int64_t number)
 {
-    Object *object = newObject(interp, type_number);
-    object->number = number;
+    Object *object = newObject(interp, type_integer);
+    object->integer = number;
     return object;
 }
 
@@ -878,7 +874,7 @@ size_t addCharToBuf(Interpreter *interp, int c)
     return interp->len;
 }
 
-/** newInteger - add an integer from the read buffer to the
+/** readInteger - add an integer from the read buffer to the
  *     interpreter
  *
  * @param interp  fLisp interpreter
@@ -887,42 +883,19 @@ size_t addCharToBuf(Interpreter *interp, int c)
  *
  * throws: range-error
  */
-Object *newInteger(Interpreter *interp)
+Object *readInteger(Interpreter *interp)
 {
-    long l;
+    int64_t n;
 
     Object *number;
 
     addCharToBuf(interp, '\0');
     errno = 0;
-    l = strtol(interp->buf, NULL, 10);
+    /* Note: we allow hex and octal scanning, but the reader does not support it */
+    n = strtoimax(interp->buf, NULL, 0);
     if (errno == ERANGE)
-        exception(interp, range_error, "integer out of range,: %ld", l);
-    number = newNumber(interp, l);
-    resetBuf(interp);
-    return number;
-}
-
-/** newDouble - add a float from the read buffer to the interpreter
- *
- * @param interp  fLisp interpreter
- *
- * returns: number object
- *
- * throws: range-error
- */
-Object *newDouble(Interpreter *interp)
-{
-    double d;
-    Object *number;
-
-    addCharToBuf(interp, '\0');
-    errno = 0;
-    d = strtod(interp->buf, NULL);
-    if (errno == ERANGE)
-        exception(interp, range_error, "integer out of range,: %f", d);
-    // Note: purposely not dealing with NaN
-    number = newNumber(interp, d);
+        exception(interp, range_error, "integer out of range,: %"PRId64, n);
+    number = newInteger(interp, n);
     resetBuf(interp);
     return number;
 }
@@ -1057,20 +1030,13 @@ Object *readNumberOrSymbol(Interpreter *interp, FILE *fd)
         (void)addCharToBuf(interp, streamGetc(interp, fd));
         ch = streamPeek(interp, fd);
     }
-    // try to read a number in integer or decimal format
-    if (ch == '.' || isdigit(ch)) {
+    // read a number in integer or decimal format
+    // Note: readInteger support hex and octal, but we do not support it here.
+    if (isdigit(ch)) {
         if (isdigit(ch))
             ch = readWhile(interp, fd, isdigit);
         if (!isSymbolChar(ch))
-            return newInteger(interp);
-        if (ch == '.') {
-            ch = streamGetc(interp, fd);
-            if (isdigit(streamPeek(interp, fd))) {
-                ch = readWhile(interp, fd, isdigit);
-                if (!isSymbolChar(ch))
-                    return newDouble(interp);
-            }
-        }
+            return readInteger(interp);
     }
     // non-numeric character encountered, read a symbol
     readWhile(interp, fd, isSymbolChar);
@@ -1642,9 +1608,7 @@ void lisp_write_object(Interpreter *interp, FILE *fd, Object *object, bool reada
     if (fd == NULL) return;
 
     if (object->type == type_integer)
-        writeFmt(interp, fd, PRId64, object->integer);
-    else if (object->type == type_number)
-        writeFmt(interp, fd, "%g", object->number);
+        writeFmt(interp, fd, "%"PRId64, object->integer);
     else if (object->type == type_symbol)
         writeFmt(interp, fd, "%s", object->string);
     else if (object->type == type_primitive)
@@ -1803,9 +1767,9 @@ Object *primitiveSymbolName(Interpreter *interp, Object **args, Object **env)
 
 Object *primitiveEq(Interpreter *interp, Object **args, Object **env)
 {
-
-    if (FLISP_ARG_ONE->type == type_number && FLISP_ARG_TWO->type == type_number)
-        return (FLISP_ARG_ONE->number == FLISP_ARG_TWO->number) ? t : nil;
+    /* Note: Make an object equality primitive, then add number comparision in Lisp  */
+    if (FLISP_ARG_ONE->type == type_integer && FLISP_ARG_TWO->type == type_integer)
+        return (FLISP_ARG_ONE->integer == FLISP_ARG_TWO->integer) ? t : nil;
     else if (FLISP_ARG_ONE->type == type_string && FLISP_ARG_TWO->type == type_string)
         return !strcmp(FLISP_ARG_ONE->string, FLISP_ARG_TWO->string) ? t : nil;
     else
@@ -1875,67 +1839,57 @@ Object *primitiveThrow(Interpreter *interp, Object **args, Object **env)
     exceptionWithObject(interp, object, result, "%s", message->string);
 }
 
+// Integer Math //////
 
-// Math ///////
-
-#define DEFINE_PRIMITIVE_ARITHMETIC(name, op, init)                     \
-    Object *name(Interpreter *interp, Object **args, Object **env) {    \
-        if (*args == nil)                                               \
-            return newNumber(interp, init);                             \
-        Object *object;                                                 \
-        GC_CHECKPOINT;                                                  \
-        GC_TRACE(gcRest, *args);                                        \
-        if ((*gcRest)->cdr == nil) {                                    \
-            object = newNumber(interp, init);                           \
-        } else {                                                        \
-            object = newObjectFrom(interp, &(*gcRest)->car);              \
-            *gcRest = (*gcRest)->cdr;                                   \
-        }                                                               \
-        GC_RELEASE;                                                     \
-        for (; *gcRest != nil; *gcRest = (*gcRest)->cdr)                \
-            object->number = object->number op (*gcRest)->car->number;  \
-        return object;                                                  \
-    }
-
-DEFINE_PRIMITIVE_ARITHMETIC(primitiveAdd, +, 0)
-DEFINE_PRIMITIVE_ARITHMETIC(primitiveSubtract, -, 0)
-DEFINE_PRIMITIVE_ARITHMETIC(primitiveMultiply, *, 1)
-DEFINE_PRIMITIVE_ARITHMETIC(primitiveDivide, /, 1)
-
-Object *primitiveMod(Interpreter *interp, Object **args, Object **env) {
-    if (*args == nil)
-        return one;
-
-    Object *object;
-    GC_CHECKPOINT;
-    GC_TRACE(gcRest, *args);
-    if ((*gcRest)->cdr == nil) {
-        object = one;
-    } else {
-        object = newObjectFrom(interp, &(*gcRest)->car);
-        *gcRest = (*args)->cdr;
-    }
-    GC_RELEASE;
-    for (; *gcRest != nil; *gcRest = (*gcRest)->cdr)
-        object->number = (int)object->number % (int)(*gcRest)->car->number;
-
-    return object;
+Object *integerAdd(Interpreter *interp, Object **args, Object **env)
+{
+    return newInteger(interp, FLISP_ARG_ONE->integer + FLISP_ARG_TWO->integer);
+}
+Object *integerSubtract(Interpreter *interp, Object **args, Object **env)
+{
+    return newInteger(interp, FLISP_ARG_ONE->integer - FLISP_ARG_TWO->integer);
 }
 
-#define DEFINE_PRIMITIVE_RELATIONAL(name, op)                           \
-    Object *name(Interpreter *interp, Object **args, Object **env) {    \
-        Object *rest = *args;                                           \
-        bool result = true;                                             \
-        for (; result && rest->cdr != nil; rest = rest->cdr)            \
-            result &= rest->car->number op rest->cdr->car->number;      \
-        return result ? t : nil;                                        \
-    }
+Object *integerMultiply(Interpreter *interp, Object **args, Object **env)
+{
+    return newInteger(interp, FLISP_ARG_ONE->integer * FLISP_ARG_TWO->integer);
+}
 
-DEFINE_PRIMITIVE_RELATIONAL(primitiveEqual, ==)
-DEFINE_PRIMITIVE_RELATIONAL(primitiveLess, <)
-DEFINE_PRIMITIVE_RELATIONAL(primitiveLessEqual, <=)
-DEFINE_PRIMITIVE_RELATIONAL(primitiveGreater, >)
-DEFINE_PRIMITIVE_RELATIONAL(primitiveGreaterEqual, >=)
+Object *integerDivide(Interpreter *interp, Object **args, Object **env)
+{
+    return newInteger(interp, FLISP_ARG_ONE->integer / FLISP_ARG_TWO->integer);
+}
+
+Object *integerMod(Interpreter *interp, Object **args, Object **env)
+{
+    return newInteger(interp, FLISP_ARG_ONE->integer % FLISP_ARG_TWO->integer);
+}
+
+Object *integerEqual(Interpreter *interp, Object **args, Object **env)
+{
+    return (FLISP_ARG_ONE->integer == FLISP_ARG_TWO->integer) ? t : nil;
+}
+
+Object *integerLess(Interpreter *interp, Object **args, Object **env)
+{
+    return (FLISP_ARG_ONE->integer < FLISP_ARG_TWO->integer) ? t : nil;
+}
+
+Object *integerLessEqual(Interpreter *interp, Object **args, Object **env)
+{
+    return (FLISP_ARG_ONE->integer <= FLISP_ARG_TWO->integer) ? t : nil;
+}
+
+Object *integerGreater(Interpreter *interp, Object **args, Object **env)
+{
+    return (FLISP_ARG_ONE->integer > FLISP_ARG_TWO->integer) ? t : nil;
+}
+
+Object *integerGreaterEqual(Interpreter *interp, Object **args, Object **env)
+{
+    return (FLISP_ARG_ONE->integer >= FLISP_ARG_TWO->integer) ? t : nil;
+}
+
 
 
 // STREAMS //////////////////////////////////////////////////
@@ -2093,7 +2047,7 @@ Object *primitiveFclose(Interpreter *interp, Object**args, Object **env)
         exceptionWithObject(interp, FLISP_ARG_ONE, invalid_value, "(fclose stream) - stream already closed");
     if ((result = file_fclose(interp, FLISP_ARG_ONE)))
         exceptionWithObject(interp, FLISP_ARG_ONE, io_error, "(fclose stream) - failed to close: %s", strerror(result));
-    return newNumber(interp, result);
+    return newInteger(interp, result);
 }
 
 #ifdef FLISP_FILE_EXTENSION
@@ -2104,7 +2058,7 @@ Object *primitiveFclose(Interpreter *interp, Object**args, Object **env)
 
 Object *fl_system(Interpreter *interp, Object **args, Object **env)
 {
-    return newNumber(interp, (double) system(FLISP_ARG_ONE->string));
+    return newInteger(interp, system(FLISP_ARG_ONE->string));
 }
 
 Object *os_getenv(Interpreter *interp, Object **args, Object **env)
@@ -2134,7 +2088,7 @@ Object *stringAppend(Interpreter *interp, Object **args, Object **env)
 
 Object *stringSubstring(Interpreter *interp, Object **args, Object **env)
 {
-    int start = 0, end, len;
+    int64_t start = 0, end, len;
 
     if (FLISP_ARG_ONE->type != type_string)
         exceptionWithObject(interp, FLISP_ARG_ONE, wrong_type_argument, "(substring str [start [end]]) - arg 1 expected %s, got: %s", type_string->string, FLISP_ARG_ONE->type->string);
@@ -2146,18 +2100,16 @@ Object *stringSubstring(Interpreter *interp, Object **args, Object **env)
     end = start + len;
 
     if ((*args)->cdr != nil) {
-        if (FLISP_ARG_TWO->type != type_number)
-            exceptionWithObject(interp, FLISP_ARG_TWO, wrong_type_argument, "is not a number");
-        start = (int)(FLISP_ARG_TWO->number);
+        CHECK_TYPE(FLISP_ARG_TWO, type_integer, "(substring str [start [end]]) - start");
+        start = (FLISP_ARG_TWO->integer);
         if (start < 0)
             start = end + start;
         if ((*args)->cdr->cdr != nil) {
-            if (FLISP_ARG_THREE->type != type_number)
-                exceptionWithObject(interp, FLISP_ARG_THREE, wrong_type_argument, "is not a number");
-            if (FLISP_ARG_THREE->number < 0)
-                end = end + (int)FLISP_ARG_THREE->number;
+            CHECK_TYPE(FLISP_ARG_THREE, type_integer, "(substring str [start [end]]) - end");
+            if (FLISP_ARG_THREE->integer < 0)
+                end = end + FLISP_ARG_THREE->integer;
             else
-                end = (int)FLISP_ARG_THREE->number;
+                end = FLISP_ARG_THREE->integer;
         }
     }
 
@@ -2183,7 +2135,7 @@ Object *stringSubstring(Interpreter *interp, Object **args, Object **env)
 
 Object *stringLength(Interpreter *interp, Object **args, Object **env)
 {
-    return newNumber(interp, strlen(FLISP_ARG_ONE->string));
+    return newInteger(interp, strlen(FLISP_ARG_ONE->string));
 }
 
 /** (string-contains needle haystack)
@@ -2195,15 +2147,15 @@ Object *stringSearch(Interpreter *interp, Object **args, Object **env)
     
     pos = strstr(FLISP_ARG_TWO->string, FLISP_ARG_ONE->string);
     if (pos)
-        return newNumber(interp, (double)(pos - FLISP_ARG_TWO->string));
+        return newInteger(interp, pos - FLISP_ARG_TWO->string);
     return nil;
 }
 
-/* String/Number conversion */
+/* String/Integer conversion */
 
-Object *stringToNumber(Interpreter *interp, Object **args, Object **env)
-{
-    return newNumber(interp, strtod(FLISP_ARG_ONE->string, NULL));
+Object *stringToInteger(Interpreter *interp, Object **args, Object **env)
+{    
+    return newInteger(interp, strtoimax(FLISP_ARG_ONE->string, NULL, 0));
 }
 
 /*
@@ -2214,11 +2166,15 @@ Object *numberToString(Interpreter *interp, Object **args, Object **env)
 {
     char buf[40];
 
-    if (FLISP_ARG_ONE->number == (long)FLISP_ARG_ONE->number)
-        sprintf(buf, "%ld", (long)FLISP_ARG_ONE->number);
-    else
-        sprintf(buf, "%lf", FLISP_ARG_ONE->number);
-
+/* Note: this should be implemented in Lisp with memory streams and write.
+ *   Specifically we should not have type aware primitives in the fLisp core.
+ */
+    
+    if (FLISP_ARG_ONE->type == type_integer) {
+        sprintf(buf, "%"PRId64, FLISP_ARG_ONE->integer);
+    } else {
+        CHECK_TYPE(FLISP_ARG_TWO, type_integer, "(number-to-string number - number");
+    }
     return newStringWithLength(interp, buf, strlen(buf));
 }
 
@@ -2226,20 +2182,20 @@ Object *numberToString(Interpreter *interp, Object **args, Object **env)
 Object *asciiToString(Interpreter *interp, Object **args, Object **env)
 {
     char ch[2];
-    if (FLISP_ARG_ONE->number < 0 || FLISP_ARG_ONE->number > 255)
+    if (FLISP_ARG_ONE->integer < 0 || FLISP_ARG_ONE->integer > 255)
         exceptionWithObject(interp, FLISP_ARG_ONE, range_error, "(ascii num) - num is not in range 0-255");
 
-    ch[0] = (unsigned char)FLISP_ARG_ONE->number;
+    ch[0] = (unsigned char)FLISP_ARG_ONE->integer;
     ch[1] = '\0';
     return newStringWithLength(interp, ch, 1);
 }
 
-Object *asciiToNumber(Interpreter *interp, Object **args, Object **env)
+Object *asciiToInteger(Interpreter *interp, Object **args, Object **env)
 {
     if (strlen(FLISP_ARG_ONE->string) < 1)
         exceptionWithObject(interp, FLISP_ARG_ONE, invalid_value, "(ascii->number string) - string is empty");
 
-    return newNumber(interp, (double)*FLISP_ARG_ONE->string);
+    return newInteger(interp, (int64_t)*FLISP_ARG_ONE->string);
 }
 
 
@@ -2278,24 +2234,24 @@ Primitive primitives[] = {
     {"env",           0,  0, 0,         primitiveEnv},
 #endif
     {"throw",         2,  3, 0,         primitiveThrow},
-    {"+",             0, -1, TYPE_NUMBER, primitiveAdd},
-    {"-",             0, -1, TYPE_NUMBER, primitiveSubtract},
-    {"*",             0, -1, TYPE_NUMBER, primitiveMultiply},
-    {"/",             1, -1, TYPE_NUMBER, primitiveDivide},
-    {"%",             1, -1, TYPE_NUMBER, primitiveMod},
-    {"=",             1, -1, TYPE_NUMBER, primitiveEqual},
-    {"<",             1, -1, TYPE_NUMBER, primitiveLess},
-    {"<=",            1, -1, TYPE_NUMBER, primitiveLessEqual},
-    {">",             1, -1, TYPE_NUMBER, primitiveGreater},
-    {">=",            1, -1, TYPE_NUMBER, primitiveGreaterEqual},
+    {"i+",            2,  2, TYPE_INTEGER, integerAdd},
+    {"i-",            2,  2, TYPE_INTEGER, integerSubtract},
+    {"i*",            2,  2, TYPE_INTEGER, integerMultiply},
+    {"i/",            2,  2, TYPE_INTEGER, integerDivide},
+    {"i%",            2,  2, TYPE_INTEGER, integerMod},
+    {"i=",            2,  2, TYPE_INTEGER, integerEqual},
+    {"i<",            2,  2, TYPE_INTEGER, integerLess},
+    {"i<=",           2,  2, TYPE_INTEGER, integerLessEqual},
+    {"i>",            2,  2, TYPE_INTEGER, integerGreater},
+    {"i>=",           2,  2, TYPE_INTEGER, integerGreaterEqual},
     {"string-length", 1,  1, TYPE_STRING, stringLength},
     {"string-append", 2,  2, TYPE_STRING, stringAppend},
     {"substring",     1,  3, 0,           stringSubstring},
     {"string-contains", 2, 2, TYPE_STRING, stringSearch}, 
-    {"string-to-number", 1, 1, TYPE_STRING, stringToNumber},
-    {"number-to-string", 1, 1, TYPE_NUMBER, numberToString},
-    {"ascii",         1,  1, TYPE_NUMBER, asciiToString},
-    {"ascii->number", 1,  1, TYPE_STRING, asciiToNumber},
+    {"string-to-number", 1, 1, TYPE_STRING, stringToInteger},
+    {"number-to-string", 1, 1, 0,         numberToString},
+    {"ascii",         1,  1, TYPE_INTEGER, asciiToString},
+    {"ascii->number", 1,  1, TYPE_STRING, asciiToInteger},
     {"os.getenv",     1,  1, TYPE_STRING, os_getenv},
     {"system",        1,  1, TYPE_STRING, fl_system},
     FLISP_REGISTER_FILE_EXTENSION
@@ -2326,7 +2282,7 @@ void initRootEnv(Interpreter *interp)
     type_env->type = type_symbol;
     type_moved->type = type_symbol;
     empty->type = type_string;
-    one->type = type_number;
+    one->type = type_integer;
     // add primitives
     int nPrimitives = sizeof(primitives) / sizeof(primitives[0]);
 

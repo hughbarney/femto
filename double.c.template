@@ -1,0 +1,220 @@
+This file collects all code related to double numbers in fLisp.
+
+With some effort it could be made into an extension.
+
+/* Constants */
+/* Fundamentals */
+...
+/* Types */
+Object *type_integer =           &(Object) { NULL, .string  = "type-integer" };
+Object *type_double =            &(Object) { NULL, .string  = "type-double" };
+
+Constant flisp_constants[] = {
+  ...
+    /* Types */
+    { &type_integer,   &type_integer  },
+    { &type_double,    &type_double   },
+  ...
+};
+
+typedef enum ObjectType {
+  ...
+    TYPE_INTEGER,
+    TYPE_DOUBLE,
+  ...
+} ObjectType;
+
+Object **flisp_object_type[] = {
+  ...
+    &type_integer,
+    &type_double,
+  ...
+};
+
+void gc(Interpreter *interp)
+{
+  ...
+        } else if (object->type == type_integer || object->type == type_double
+                   || object->type == type_string || object->type == type_symbol
+                   || object->type == type_primitive) {
+  ...
+}
+
+Object *newDouble(Interpreter *interp, double number)
+{
+    Object *object = newObject(interp, type_double);
+    object->number = number;
+    return object;
+}
+
+/** readDouble - add a float from the read buffer to the interpreter
+ *
+ * @param interp  fLisp interpreter
+ *
+ * returns: double object
+ *
+ * throws: range-error
+ */
+Object *readDouble(Interpreter *interp)
+{
+    double d;
+    Object *number;
+
+    addCharToBuf(interp, '\0');
+    errno = 0;
+    d = strtod(interp->buf, NULL);
+    if (errno == ERANGE)
+        exception(interp, range_error, "integer out of range,: %f", d);
+    // Note: purposely not dealing with NaN
+    number = newDouble(interp, d);
+    resetBuf(interp);
+    return number;
+}
+
+Object *readNumberOrSymbol(Interpreter *interp, FILE *fd)
+{
+ ...
+    // try to read a number in integer or decimal format
+    if (ch == '.' || isdigit(ch)) {
+        if (isdigit(ch))
+            ch = readWhile(interp, fd, isdigit);
+        if (!isSymbolChar(ch))
+            return readInteger(interp);
+        if (ch == '.') {
+            ch = streamGetc(interp, fd);
+            if (isdigit(streamPeek(interp, fd))) {
+                ch = readWhile(interp, fd, isdigit);
+                if (!isSymbolChar(ch))
+                    return readDouble(interp);
+...
+}
+
+void lisp_write_object(Interpreter *interp, FILE *fd, Object *object, bool readably)
+{
+  ...
+    if (object->type == type_integer)
+        writeFmt(interp, fd, "%"PRId64, object->integer);
+    else if (object->type == type_double)
+        writeFmt(interp, fd, "%g", object->number);
+  ...
+}
+
+Object *primitiveEq(Interpreter *interp, Object **args, Object **env)
+{
+  ...
+#ifdef FLISP_DOUBLE_EXTENSION
+    if (FLISP_ARG_ONE->type == type_double && FLISP_ARG_TWO->type == type_double)
+        return (FLISP_ARG_ONE->number == FLISP_ARG_TWO->number) ? t : nil;
+#endif
+
+// Number Type Conversion /////
+
+Object *integerFromDouble(Interpreter *interp, Object **args, Object **env)
+{
+    return newInteger(interp, (int64_t) FLISP_ARG_ONE->number);
+}
+
+Object *doubleFromInteger(Interpreter *interp, Object **args, Object **env)
+{
+    return newDouble(interp, (double) FLISP_ARG_ONE->integer);
+}
+
+// Double Math ///////
+
+#define DEFINE_PRIMITIVE_ARITHMETIC(name, op, init)                     \
+    Object *name(Interpreter *interp, Object **args, Object **env) {    \
+        if (*args == nil)                                               \
+            return newDouble(interp, init);                             \
+        Object *object;                                                 \
+        GC_CHECKPOINT;                                                  \
+        GC_TRACE(gcRest, *args);                                        \
+        if ((*gcRest)->cdr == nil) {                                    \
+            object = newDouble(interp, init);                           \
+        } else {                                                        \
+            object = newObjectFrom(interp, &(*gcRest)->car);              \
+            *gcRest = (*gcRest)->cdr;                                   \
+        }                                                               \
+        GC_RELEASE;                                                     \
+        for (; *gcRest != nil; *gcRest = (*gcRest)->cdr)                \
+            object->number = object->number op (*gcRest)->car->number;  \
+        return object;                                                  \
+    }
+
+DEFINE_PRIMITIVE_ARITHMETIC(doubleAdd, +, 0)
+DEFINE_PRIMITIVE_ARITHMETIC(doubleSubtract, -, 0)
+DEFINE_PRIMITIVE_ARITHMETIC(doubleMultiply, *, 1)
+DEFINE_PRIMITIVE_ARITHMETIC(doubleDivide, /, 1)
+
+Object *doubleMod(Interpreter *interp, Object **args, Object **env) {
+    if (*args == nil)
+        return one;
+
+    Object *object;
+    GC_CHECKPOINT;
+    GC_TRACE(gcRest, *args);
+    if ((*gcRest)->cdr == nil) {
+        object = one;
+    } else {
+        object = newObjectFrom(interp, &(*gcRest)->car);
+        *gcRest = (*args)->cdr;
+    }
+    GC_RELEASE;
+    for (; *gcRest != nil; *gcRest = (*gcRest)->cdr)
+        object->number = (int)object->number % (int)(*gcRest)->car->number;
+
+    return object;
+}
+
+#define DEFINE_PRIMITIVE_RELATIONAL(name, op)                           \
+    Object *name(Interpreter *interp, Object **args, Object **env) {    \
+        Object *rest = *args;                                           \
+        bool result = true;                                             \
+        for (; result && rest->cdr != nil; rest = rest->cdr)            \
+            result &= rest->car->number op rest->cdr->car->number;      \
+        return result ? t : nil;                                        \
+    }
+
+DEFINE_PRIMITIVE_RELATIONAL(doubleEqual, ==)
+DEFINE_PRIMITIVE_RELATIONAL(doubleLess, <)
+DEFINE_PRIMITIVE_RELATIONAL(doubleLessEqual, <=)
+DEFINE_PRIMITIVE_RELATIONAL(doubleGreater, >)
+DEFINE_PRIMITIVE_RELATIONAL(doubleGreaterEqual, >=)
+
+Object *stringToDouble(Interpreter *interp, Object **args, Object **env)
+{
+    return newDouble(interp, strtod(FLISP_ARG_ONE->string, NULL));
+}
+
+Object *numberToString(Interpreter *interp, Object **args, Object **env)
+{
+    char buf[40];
+
+/* Note: this should be implemented in Lisp with memory streams and write.
+ *   Specifically we should not have type aware primitives in the fLisp core.
+ */
+    
+#ifdef FLISP_DOUBLE_EXTENSION
+    if (FLISP_ARG_ONE->type == type_double) {
+    if (FLISP_ARG_ONE->number == (long)FLISP_ARG_ONE->number)
+        sprintf(buf, "%lf", (long)FLISP_ARG_ONE->number);
+    } else
+#endif
+
+Primitive primitives[] = {
+  ...
+    {"throw",         2,  3, 0,         primitiveThrow},
+    {"integer",       1,  1, TYPE_DOUBLE,  integerFromDouble},
+    {"double",       1,  1, TYPE_INTEGER, doubleFromInteger},
+  ...
+    {"d+",            0, -1, TYPE_DOUBLE, doubleAdd},
+    {"d-",            0, -1, TYPE_DOUBLE, doubleSubtract},
+    {"d*",            0, -1, TYPE_DOUBLE, doubleMultiply},
+    {"d/",            1, -1, TYPE_DOUBLE, doubleDivide},
+    {"d%",            1, -1, TYPE_DOUBLE, doubleMod},
+    {"d=",            1, -1, TYPE_DOUBLE, doubleEqual},
+    {"d<",            1, -1, TYPE_DOUBLE, doubleLess},
+    {"d<=",           1, -1, TYPE_DOUBLE, doubleLessEqual},
+    {"d>",            1, -1, TYPE_DOUBLE, doubleGreater},
+    {"d>=",           1, -1, TYPE_DOUBLE, doubleGreaterEqual},
+ ...
+};

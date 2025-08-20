@@ -11,7 +11,7 @@
 #include <inttypes.h>
 
 #define FL_NAME     "fLisp"
-#define FL_VERSION  "0.8"
+#define FL_VERSION  "0.9"
 
 #define FL_INITFILE "flisp.rc"
 #define FL_LIBDIR "/usr/local/share/flisp"
@@ -38,7 +38,7 @@ extern Object *nil;
 extern Object *t;
 /* Types */
 extern Object *type_integer;
-extern Object *type_number;
+extern Object *type_double;
 extern Object *type_string;
 extern Object *type_symbol;
 extern Object *type_cons;
@@ -63,7 +63,7 @@ struct Object {
     size_t size;
     union {
         struct { int64_t integer; };                               // integer
-        struct { double number; };                                 // number
+        struct { double number; };                                 // double
         struct { char string[sizeof (Object *[3])]; };             // string, symbol
         struct { Object *car, *cdr; };                             // cons
         struct { Object *params, *body, *env; };                   // lambda, macro

@@ -113,6 +113,8 @@ flisplib 1; ok or-8 nil with not nil is first itself
 
 false; ok reduce-1 \# TODO
 
+# Math
+
 IN='(max)'
 ERR="(env) expects at least 1 arguments"
 OBJ='#<Lambda (n . args)>'

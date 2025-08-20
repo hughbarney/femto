@@ -17,14 +17,19 @@
 
 (defun typep (type object)  (eq type (type-of object)))
 
-(setq intergerp (curry typep type-integer))
-(setq numberp (curry typep type-number))
+(setq integerp (curry typep type-integer))
 (setq stringp (curry typep type-string))
 (setq symbolp (curry typep type-symbol))
 ;;; consp is a primitive
 (setq lambdap (curry typep type-lambda))
 (setq macrop (curry typep type-macro))
 (setq streamp (curry typep type-stream))
+
+(defun numberp (o) (cond  ((integerp o) t)))
+
+
+;;; Wrap all math to Integer operations
+(setq + i+  - i-  * i*  / i/  % i%  = i=  < i<  <= i<=  > i>  >= i>=)
 
 (defun string (s)
   ;; Convert argument to string.

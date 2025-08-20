@@ -4,7 +4,7 @@
 
 export FLISPRC=
 
-tap 164
+tap 143
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -209,10 +209,10 @@ flisp_expr; ok catch-1_1  catch nil
 IN='(catch t)' OUT='(nil "" t)'
 flisp_expr; ok catch-1_2  catch t
 
-IN='(catch (+ 3 4))' OUT='(nil "" 7)'
+IN='(catch (i+ 3 4))' OUT='(nil "" 7)'
 flisp_expr; ok catch-1_3  catch expr
 
-IN='(catch (/))' OUT='(wrong-num-of-arguments "expects at least 1 arguments" #<Primitive />)'
+IN='(catch (i/))' OUT='(wrong-num-of-arguments "expects at least 2 arguments" #<Primitive i/>)'
 flisp_expr; ok catch-1_4  catch error
 
 # Primitives
@@ -289,7 +289,7 @@ IN="(car '(1 2))" OUT='1'
 flisp_expr; ok car-1  car returns first element
 
 # Intermezzo
-IN="(car 1)" OBJ= ERR='(car args) - arg 1 expected type-cons, got: type-number'
+IN="(car 1)" OBJ= ERR='(car args) - arg 1 expected type-cons, got: type-integer'
 flisp_err; ok arg_check-1  argument checking '(car 1)' fails
 
 IN="(cdr '(1 2))" OUT='(2)'
@@ -357,53 +357,16 @@ flisp_err; ok throw-1_2  throw with object
 
 ## Math
 
-IN='(+)' OUT='0' flisp_expr; ok add-1 add nothing is 0
-IN='(+ 42)' OUT='42' flisp_expr; ok add-2 add 42  is 42
-IN='(+ 42 7)' OUT='49' flisp_expr; ok add-3 add 42 7 is 49
-IN='(+ 1 2 3)' OUT='6' flisp_expr; ok add-4 add 1 2 3 is 6
-
-IN='(-)' OUT='0' flisp_expr; ok minus-1 minus nothing is 0
-IN='(- 42)' OUT='-42' flisp_expr; ok minus-2 minus 42  is -42
-IN='(- 42 7)' OUT='35' flisp_expr; ok minus-3 minus 42 7 is 35
-IN='(- 1 2 3)' OUT='-4' flisp_expr; ok minus-4 minus 1 2 3 is -4
-
-IN='(*)' OUT='1' flisp_expr; ok times-1 times nothing is 1
-IN='(* 42)' OUT='42' flisp_expr; ok times-2 times 42  is 42
-IN='(* 42 7)' OUT='294' flisp_expr; ok times-3 times 42 7 is 294
-IN='(* 1 2 3)' OUT='6' flisp_expr; ok times-4 times 1 2 3 is 6
-
-IN='(/ 42)' OUT='0.0238095' flisp_expr; ok divide-1 divide 42  is 1/42
-IN='(/ 42 7)' OUT='6' flisp_expr; ok divide-2 divide 42 7 is 6
-IN='(/ 42 7 6)' OUT='1' flisp_expr; ok divide-3 divide 42 7 6 is 1
-
-IN='(% 42)' OUT='1' flisp_expr; ok mod-1 mod 42  is 1
-IN='(% 42 5)' OUT='2' flisp_expr; ok mod-2 mod 42 5 is 2
-IN='(% 11 6 3)' OUT='2' flisp_expr; ok mod-3 mod 11 6 3 is 2
-
-IN='(= 42)' OUT='t' flisp_expr; ok arith-equal-1 arith-equal 42  is t
-IN='(= 42 7)' OUT='nil' flisp_expr; ok arith-equal-2 arith-equal 42 7 is nil
-IN='(= 7 7 7)' OUT='t' flisp_expr; ok arith-equal-3 arith-equal 7 7 7 is t
-IN='(= 7 7 8)' OUT='nil' flisp_expr; ok arith-equal-4 arith-equal 7 7 8 is nil
-
-IN='(< 42)' OUT='t' flisp_expr; ok less-1 less 42  is t
-IN='(< 7 42)' OUT='t' flisp_expr; ok less-2 less 7 42 is t
-IN='(< 7 7 7)' OUT='nil' flisp_expr; ok less-3 less 7 7 7 is nil
-IN='(< 1 2 3)' OUT='t' flisp_expr; ok less-4 less 1 2 3 is t
-
-IN='(<= 42)' OUT='t' flisp_expr; ok less-equal-1 less-equal 42  is t
-IN='(<= 42 7)' OUT='nil' flisp_expr; ok less-equal-2 less-equal 42 7 is nil
-IN='(<= 7 7 7)' OUT='t' flisp_expr; ok less-equal-3 less-equal 7 7 7 is t
-IN='(<= 7 7 6)' OUT='nil' flisp_expr; ok less-equal-4 less-equal 7 7 6 is nil
-
-IN='(> 42)' OUT='t' flisp_expr; ok greater-1 greater 42  is t
-IN='(> 42 7)' OUT='t' flisp_expr; ok greater-2 greater 42 7 is t
-IN='(> 7 7 7)' OUT='nil' flisp_expr; ok greater-3 greater 7 7 7 is nil
-IN='(> 7 7 6)' OUT='nil' flisp_expr; ok greater-4 greater 7 7 6 is nil
-
-IN='(>= 42)' OUT='t' flisp_expr; ok greater-equal-1 greater-equal 42  is t
-IN='(>= 7 42)' OUT='nil' flisp_expr; ok greater-equal-2 greater-equal 7 42 is t
-IN='(>= 7 7 7)' OUT='t' flisp_expr; ok greater-equal-3 greater-equal 7 7 7 is t
-IN='(>= 7 7 6)' OUT='t' flisp_expr; ok greater-equal-4 greater-equal 7 7 6 is t
+IN='(i+ 42 7)' OUT='49' flisp_expr; ok add-3 add 42 7 is 49
+IN='(i- 42 7)' OUT='35' flisp_expr; ok minus-3 minus 42 7 is 35
+IN='(i* 42 7)' OUT='294' flisp_expr; ok times-3 times 42 7 is 294
+IN='(i/ 42 7)' OUT='6' flisp_expr; ok divide-2 divide 42 7 is 6
+IN='(i% 42 5)' OUT='2' flisp_expr; ok mod-2 mod 42 5 is 2
+IN='(i= 42 7)' OUT='nil' flisp_expr; ok arith-equal-2 arith-equal 42 7 is nil
+IN='(i< 7 42)' OUT='t' flisp_expr; ok less-2 less 7 42 is t
+IN='(i<= 42 7)' OUT='nil' flisp_expr; ok less-equal-2 less-equal 42 7 is nil
+IN='(i> 42 7)' OUT='t' flisp_expr; ok greater-2 greater 42 7 is t
+IN='(i>= 7 42)' OUT='nil' flisp_expr; ok greater-equal-2 greater-equal 7 42 is t
 
 ## Strings
 
@@ -454,7 +417,7 @@ flisp_err; ok substring-10 substring answer 1 7 range-error
 IN='(substring "answer" 2 1)' ERR='(substring str [start [end]]) - end > start' OBJ=
 flisp_err; ok substring-11 substring answer 2 1 range-error
 
-return
+
 false; ok  string-to-number \# TODO
 false; ok  number-to-string \# TODO
 false; ok  ascii \# TODO

@@ -18,7 +18,7 @@ Object *primitiveFflush(Interpreter *interp, Object** args, Object **env)
 {
     if (FLISP_ARG_ONE->fd == NULL)
         exception(interp, invalid_value, "(fflush stream) - stream already closed");
-    return newNumber(interp, file_fflush(interp, FLISP_ARG_ONE));
+    return newInteger(interp, file_fflush(interp, FLISP_ARG_ONE));
 }
 
 off_t file_ftell(Interpreter *interp, Object *stream)
@@ -29,7 +29,7 @@ Object *primitiveFtell(Interpreter *interp, Object** args, Object **env)
 {
     if (FLISP_ARG_ONE->fd == NULL)
         exception(interp, invalid_value, "(ftell stream) - stream already closed");
-    return newNumber(interp, file_ftell(interp, FLISP_ARG_ONE));
+    return newInteger(interp, file_ftell(interp, FLISP_ARG_ONE));
 }
 
 Object *primitiveFgetc(Interpreter *interp, Object** args, Object **env)

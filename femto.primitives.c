@@ -81,7 +81,7 @@ Object *e_get_key(Interpreter *interp, Object **args, Object **env) { return new
 Object *e_get_key_name(Interpreter *interp, Object **args, Object **env) { return newString(interp, get_key_name()); }
 Object *e_get_key_funcname(Interpreter *interp, Object **args, Object **env) { return newString(interp, get_key_funcname()); }
 Object *e_get_clipboard(Interpreter *interp, Object **args, Object **env) { return newString(interp, get_clipboard()); }
-Object *e_get_buffer_count(Interpreter *interp, Object **args, Object **env) { return newNumber(interp, count_buffers()); }
+Object *e_get_buffer_count(Interpreter *interp, Object **args, Object **env) { return newInteger(interp, count_buffers()); }
 
 Object *e_refresh(Interpreter *interp, Object ** args, Object **env)
 {
@@ -171,7 +171,7 @@ Object *e_get_version_string(Interpreter *interp, Object **args, Object **env)
 
 Object *e_goto_line(Interpreter *interp, Object **args, Object **env)
 {
-    int result = goto_line(FLISP_ARG_ONE->number);
+    int result = goto_line(FLISP_ARG_ONE->integer);
     return (result == 1 ? t : nil);
 }
 
@@ -289,21 +289,21 @@ extern point_t get_point_max(void);
 
 Object *e_set_point(Interpreter *interp, Object **args, Object **env)
 {
-    set_point(FLISP_ARG_ONE->number);
+    set_point(FLISP_ARG_ONE->integer);
     return t;
 }
 
 Object *e_get_mark(Interpreter *interp, Object **args, Object **env)
 {
-    return newNumber(interp, get_mark());
+    return newInteger(interp, get_mark());
 }
 
 Object *e_get_point(Interpreter *interp, Object **args, Object **env)
 {
-    return newNumber(interp, get_point());
+    return newInteger(interp, get_point());
 }
 
 Object *e_get_point_max(Interpreter *interp, Object **args, Object **env)
 {
-    return newNumber(interp, get_point_max());
+    return newInteger(interp, get_point_max());
 }
