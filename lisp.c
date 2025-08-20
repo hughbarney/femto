@@ -584,7 +584,7 @@ Object *newSymbol(Interpreter *interp, char *string)
     return newSymbolWithLength(interp, string, strlen(string));
 }
 
-Object *newObjectWithClosure(Interpreter *interp, Object *type, Object ** params, Object ** body, Object ** env)
+Object *newObjectWithClosure(Interpreter *interp, Object *type, Object ** params, Object ** body, Object **env)
 {
     Object *list;
 
@@ -610,12 +610,12 @@ Object *newObjectWithClosure(Interpreter *interp, Object *type, Object ** params
     return object;
 }
 
-Object *newLambda(Interpreter *interp, Object ** params, Object ** body, Object ** env)
+Object *newLambda(Interpreter *interp, Object ** params, Object ** body, Object **env)
 {
     return newObjectWithClosure(interp, type_lambda, params, body, env);
 }
 
-Object *newMacro(Interpreter *interp, Object ** params, Object ** body, Object ** env)
+Object *newMacro(Interpreter *interp, Object ** params, Object ** body, Object **env)
 {
     return newObjectWithClosure(interp, type_macro, params, body, env);
 }
@@ -727,7 +727,7 @@ Object *envLookup(Interpreter *interp, Object *var, Object *env)
     exceptionWithObject(interp, var, invalid_value, "has no value");
 }
 
-Object *envAdd(Interpreter *interp, Object ** var, Object ** val, Object ** env)
+Object *envAdd(Interpreter *interp, Object ** var, Object ** val, Object **env)
 {
     GC_CHECKPOINT;
     GC_TRACE(gcEnv, *env);
@@ -753,7 +753,7 @@ Object *envAdd(Interpreter *interp, Object ** var, Object ** val, Object ** env)
  *
  * returns: the last assigned value.
  */
-Object *envSet(Interpreter *interp, Object ** var, Object ** val, Object ** env, bool top)
+Object *envSet(Interpreter *interp, Object ** var, Object ** val, Object **env, bool top)
 {
 
     for (;;) {
@@ -1236,7 +1236,7 @@ typedef struct Primitive {
     char *name;
     int nMinArgs, nMaxArgs;
     ObjectType type_check;
-    Object *(*eval) (Interpreter *, Object ** args, Object **env);
+    Object *(*eval) (Interpreter *, Object **args, Object **env);
 } Primitive;
 
 // Special forms handled by evalExpr. Must be in the same order as above.
@@ -1272,7 +1272,7 @@ enum {
  *
  * throws: wrong-type-argument
  */
-Object *evalSetVar(Interpreter *interp, Object ** args, Object ** env, bool top)
+Object *evalSetVar(Interpreter *interp, Object **args, Object **env, bool top)
 {
     if (*args == nil)
         return nil;
@@ -1300,7 +1300,7 @@ Object *evalSetVar(Interpreter *interp, Object ** args, Object ** env, bool top)
         return evalSetVar(interp, &(*gcRest)->cdr, gcEnv, top);
 }
 
-Object *evalProgn(Interpreter *interp, Object ** args, Object ** env)
+Object *evalProgn(Interpreter *interp, Object **args, Object **env)
 {
     if (*args == nil)
         return nil;
@@ -1327,7 +1327,7 @@ Object *evalProgn(Interpreter *interp, Object ** args, Object ** env)
  * (pred) => pred
  * (pred action) => nil|* .. nil|(progn action)
  */
-Object *evalCond(Interpreter *interp, Object ** args, Object ** env)
+Object *evalCond(Interpreter *interp, Object **args, Object **env)
 {
     if (*args == nil)
         return nil;
@@ -1373,17 +1373,17 @@ next_clause:
     return evalCond(interp, &next_clause, env);
 }
 
-Object *evalLambda(Interpreter *interp, Object ** args, Object ** env)
+Object *evalLambda(Interpreter *interp, Object **args, Object **env)
 {
     return newLambda(interp, &(*args)->car, &(*args)->cdr, env);
 }
 
-Object *evalMacro(Interpreter *interp, Object ** args, Object ** env)
+Object *evalMacro(Interpreter *interp, Object **args, Object **env)
 {
     return newMacro(interp, &(*args)->car, &(*args)->cdr, env);
 }
 
-Object *expandMacro(Interpreter *interp, Object ** macro, Object ** args)
+Object *expandMacro(Interpreter *interp, Object ** macro, Object **args)
 {
     GC_CHECKPOINT;
     GC_TRACE(gcBody, (*macro)->body);
@@ -1393,7 +1393,7 @@ Object *expandMacro(Interpreter *interp, Object ** macro, Object ** args)
     GC_RETURN(evalExpr(interp, gcObject, gcEnv));
 }
 
-Object *expandMacroTo(Interpreter *interp, Object ** macro, Object ** args)
+Object *expandMacroTo(Interpreter *interp, Object ** macro, Object **args)
 {
     Object *object = expandMacro(interp, macro, args);
 
@@ -1407,7 +1407,7 @@ Object *expandMacroTo(Interpreter *interp, Object ** macro, Object ** args)
     GC_RETURN(newCons(interp, gcProg, gcCons));
 }
 
-Object *evalMacroExpand(Interpreter *interp, Object **args, Object ** env)
+Object *evalMacroExpand(Interpreter *interp, Object **args, Object **env)
 {
     if ((*args)->type != type_cons)
         return evalExpr(interp, args, env);
@@ -1421,7 +1421,7 @@ Object *evalMacroExpand(Interpreter *interp, Object **args, Object ** env)
     GC_RETURN(expandMacro(interp, gcMacro, gcArgs));
 }
 
-Object *evalList(Interpreter *interp, Object ** args, Object ** env)
+Object *evalList(Interpreter *interp, Object **args, Object **env)
 {
     if ((*args)->type != type_cons)
         return evalExpr(interp, args, env);
@@ -2061,7 +2061,7 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
  *
  * throws: io-error, invalid-value, out-of-memory
  */
- Object *primitiveFopen(Interpreter *interp, Object ** args, Object **env)
+ Object *primitiveFopen(Interpreter *interp, Object **args, Object **env)
 {
     char *mode = "r";
 
@@ -2095,7 +2095,7 @@ int file_fclose(Interpreter *interp, Object *stream)
  *
  * throws: FILSP_INVALID_VALUE, io-error
  */
-Object *primitiveFclose(Interpreter *interp, Object** args, Object **env)
+Object *primitiveFclose(Interpreter *interp, Object**args, Object **env)
 {
     int result;
 
@@ -2112,12 +2112,12 @@ Object *primitiveFclose(Interpreter *interp, Object** args, Object **env)
 
 /* OS interface */
 
-Object *fl_system(Interpreter *interp, Object ** args, Object **env)
+Object *fl_system(Interpreter *interp, Object **args, Object **env)
 {
     return newNumber(interp, (double) system(FLISP_ARG_ONE->string));
 }
 
-Object *os_getenv(Interpreter *interp, Object ** args, Object **env)
+Object *os_getenv(Interpreter *interp, Object **args, Object **env)
 {
     char *e = getenv(FLISP_ARG_ONE->string);
     if (e == NULL) return nil;
@@ -2126,7 +2126,7 @@ Object *os_getenv(Interpreter *interp, Object ** args, Object **env)
 
 /* Strings */
 
-Object *stringAppend(Interpreter *interp, Object ** args, Object **env)
+Object *stringAppend(Interpreter *interp, Object **args, Object **env)
 {
     int len1 = strlen(FLISP_ARG_ONE->string);
     int len2 = strlen(FLISP_ARG_TWO->string);
@@ -2142,7 +2142,7 @@ Object *stringAppend(Interpreter *interp, Object ** args, Object **env)
     return str;
 }
 
-Object *stringSubstring(Interpreter *interp, Object ** args, Object **env)
+Object *stringSubstring(Interpreter *interp, Object **args, Object **env)
 {
     int start = 0, end, len;
 
@@ -2220,7 +2220,7 @@ Object *numberToString(Interpreter *interp, Object ** args, Object **env)
 }
 
 
-Object *asciiToString(Interpreter *interp, Object ** args, Object **env)
+Object *asciiToString(Interpreter *interp, Object **args, Object **env)
 {
     char ch[2];
     if (FLISP_ARG_ONE->number < 0 || FLISP_ARG_ONE->number > 255)
@@ -2231,7 +2231,7 @@ Object *asciiToString(Interpreter *interp, Object ** args, Object **env)
     return newStringWithLength(interp, ch, 1);
 }
 
-Object *asciiToNumber(Interpreter *interp, Object ** args, Object **env)
+Object *asciiToNumber(Interpreter *interp, Object **args, Object **env)
 {
     if (strlen(FLISP_ARG_ONE->string) < 1)
         exceptionWithObject(interp, FLISP_ARG_ONE, invalid_value, "(ascii->number string) - string is empty");
