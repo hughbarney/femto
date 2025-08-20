@@ -119,6 +119,14 @@ typedef struct Interpreter {
 #define FLISP_ARG_TWO (*args)->cdr->car
 #define FLISP_ARG_THREE (*args)->cdr->cdr->car
 
+#define FLISP_HAS_ARG_TWO ((*args)->cdr != nil)
+#define FLISP_HAS_ARG_THREE ((*args)->cdr->cdr != nil)
+
+#define CHECK_TYPE(PARAM, TYPE, SIGNATURE) \
+    if (PARAM->type != TYPE)               \
+        exceptionWithObject(interp, PARAM, wrong_type_argument, \
+                            SIGNATURE " expected %s, got: %s", TYPE->string, PARAM->type->string)
+
 // PUBLIC INTERFACE ///////////////////////////////////////////////////////
 extern Interpreter *lisp_new(size_t, char**, char*, FILE*, FILE*, FILE*);
 extern void lisp_destroy(Interpreter *);
