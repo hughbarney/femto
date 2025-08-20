@@ -121,7 +121,7 @@ for a codebase about 15% of the size.
     atto           atto       33002     1.9k      10
     pEmacs         pe         59465     5.7K      16
     Esatz-Emacs    ee         59050     5.7K      14
-    femto          femto     141456  9.3k/6.6k 22/33 **
+    femto          femto     143280  8.2k/5.9k 22/34 **
     GNOME          GNOME      55922     9.8k      13
     Zile           zile      257360    11.7k      48
     Mg             mg        585313    16.5K      50

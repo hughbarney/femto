@@ -55,9 +55,9 @@ refactoring both C and Lisp code of the Femto project.
 The amount of deviation gave merit to renaming the Lisp interpreter
 from Tiny-Lisp to fLisp.
 
-In 2024 Georg Lehner decided to improve error and input stream
-handling in order to diagnose further known bugs. This lead again to a
-rewrite of a great part of the code base:
+In 2024 error and input stream handling was improved in order to
+diagnose further known bugs. This lead again to a rewrite of a great
+part of the code base:
 
 - A stream object type is added to the Lisp core, together with the  
   minimum primitives needed for the Lisp reader and writer.
@@ -77,6 +77,18 @@ rewrite of a great part of the code base:
 - A command line wrapper `flisp` is added, which implements a simple
   repl using only the Lisp core plus the file extension.
 
+In 2025 another set of changes were introduced:
+
+- Garbage collecting of stack items was changed, the garbage  
+  collector was tested extensively and surfaced bugs fixed.  
+- Exceptions can be catched in Lisp and exception codes are Lisp  
+  symbols instead of numbers.
+- Lisp Object types are stored as Lisp symbols instead of C  
+  constants. This allows for type testing in Lisp.
+- Numbers are represented by 64 bit integers instead of double floats.
+- The Lisp libraries have been extended and functions have been
+  improved for compatibilty.
+
 ## Building
 
 fLisp should be buildable with only the standard C libraries.
@@ -85,17 +97,22 @@ fLisp should be buildable with only the standard C libraries.
 
 # TODO
 
-## Immediate
-
-- Document interpreter input/output streams and file extension
-- check batch mode, maybe remove it
-
 ## Future
 
 - Expand Lisp garbage collected memory as needed.
+- Implement the backtick and comma reader macros. See [
 - Adapt build system to be able to un/install `flisp` binary. Includes  
   preparing a Lisp library and a startup file.
-- Adapt test suite to current interpreter and extend coverage.
 - Extend file extension to be usable for Lisp programs.
 - Refactor complete core to be able to run any number of interpreters.
 - Tap the potential of the in code documentation via Doxygen.
+
+
+# References
+
+- [1] Common Lisp https://www.lispworks.com/documentation/HyperSpec/Front/
+- [2] let https://blog.veitheller.de/Scheme_Macros_III:_Defining_let.html
+- [3] curry  https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours/Towards_a_Standard_Library
+- [4] mal - quasiquote https://github.com/kanaka/mal
+- [5] Scheme  https://www.scheme.org/
+- [6] Scheme v7 Standard https://standards.scheme.org/official/r7rs.pdf

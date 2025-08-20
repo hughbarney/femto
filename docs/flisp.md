@@ -198,9 +198,8 @@ value in logical operations.
 
 *fLisp* objects have one of the following data types:
 
-<span class="dfn">number</span>  
-[double precision floating point
-number.](https://en.wikipedia.org/wiki/Double-precision_floating-point_format)
+<span class="dfn">integer</span>  
+64 bit singed integer
 
 <span class="dfn">string</span>  
 character array.
@@ -431,19 +430,15 @@ Returns the value of the environment variable named *string*.
 `(null «object»)`  
 Returns `t` if *object* is `nil`, otherwise `nil`.
 
-`(symbolp «object»)`  
-Returns `t` if *object* is of type symbol, otherwise `nil`.
+`(type-of «object»)`  
+Returns the type symbol of *object*.
+
+`(consp «object»)`  
+Returns `t` if *object* is of type cons, otherwise `nil`.
 
 `(symbol-name «object»)`  
 If *object* is of type symbol return its value as string.
 
-`(numberp «object»)`  
-Returns `t` if *object* is of type number, otherwise `nil`.
-
-`(stringp «object»)`  
-Returns `t` if *object* is of type string, otherwise `nil`.
-
-`(consp «object»)`  
 Returns `t` if *object* is of type cons, otherwise `nil`.
 
 `(cons «car» «cdr»)`  
@@ -461,61 +456,62 @@ Returns `t` if *a* and *b* evaluate to the same object, `nil` otherwise.
 
 #### Arithmetic Operations
 
-`(+[ «arg»..])`  
-Returns the sum of all *arg*s or `0` if none is given.
+`(i+ «arg1» «arg2»)`  
+Returns the sum of *arg1* *arg2*.
 
-`(*[ «arg»..])`  
-Returns the product of all *arg*s or `1` if none given.
+`(i* «arg1» «arg2»)`  
+Returns the product of *arg1* *arg2*.
 
-`(-[ «arg»..])`  
-Returns 0 if no *arg* is given, -*arg* if only one is given, *arg* minus
-the sum of all others otherwise.
+`(i- «arg1» «arg2»)`  
+Returns *arg1* minus *arg2*.
 
-`(/ «arg»[ «div»..])`  
-Returns 1/*arg* if no *div* is given, *arg*/*div*\[/*div*..\] if one or
-more *div*s are given, `inf` if one of the *div*s is `0` and the sum of
-the signs of all operands is even, `-inf` if it is odd.
+`(i/ «arg»[ «div»..])`  
+Returns *arg1* divided by *arg2*
 
-`(% «arg»[ «div»..])`  
-Returns `1` if no *div* is given, *arg*%*div*\[%*div*..\] if one or more
-*div*s are given. If one of the *div*s is `0`, the program exits with an
-arithmetic exception.
+`(i% «arg»[ «div»..])`  
+Returns the rest (modulo) of the integer division of *arg1* by *arg2*.
 
-`(= «arg»[ «arg»..])`  
-`(< «arg»[ «arg»..])`  
-`(> «arg»[ «arg»..])`  
-`(<= «arg»[ «arg»..])`  
-`(>= «arg»[ «arg»..])`  
+`(i= «arg1» «arg2»)`  
+`(i< «arg1» «arg2»)`  
+`(i> «arg1» «arg2»)`  
+`(i<= «arg1» «arg2»)`  
+`(i>= «arg1» «arg2»)`  
 These predicate functions apply the respective comparison operator
-between all *arg*s and return the respective result as `t` or `nil`. If
-only one *arg* is given they all return `t`.
+between *arg1* *arg2*.
 
 #### String Operations
 
-`(string.length «string»)`  
+`(string-length «string»)`  
 Returns the length of *string* as a *number*.
 
-`(string.substring «string» «start» «end»)`  
-Returns the sub string from *string* which starts with the character at
-index *start* and ends with index *end*. String indexes are zero based.
-
-`(string.append «string1» «string2»)`  
+`(string-append «string1» «string2»)`  
 Returns a new string consisting of the concatenation of *string1* with
 *string2*.
 
+`(substring «string»[ «start» [«end»]])`  
+Returns the sub string from *string* which starts with the character at
+index *start* and before index *end*. String indexes are zero based,
+negative indexes count from the end of *string*. If *end* is not given
+it defaults to the end of *string*. If *start* is not given, it defaults
+to the start of *string*.
+
+`(string-contains «needle» «haystack»)`  
+Returns the position of *needle* if it is contained in *haystack*,
+otherwise `nil`.
+
 `(string-to-number «string»)`  
-Converts *string* into a corresponding *number* object. String is
+Converts *string* into a corresponding *integer* object. String is
 interpreted as decimal based integer.
 
-`(number-to-string «number»)`  
-Converts *number* into a *string* object.
+`(number-to-string «integer»)`  
+Converts *integer* into a *string* object.
 
-`(ascii «number»)`  
-Converts *number* into a *string* with one character, which corresponds
-to the ASCII representation of *number*.
+`(ascii «integer»)`  
+Converts *integer* into a *string* with one character, which corresponds
+to the ASCII representation of *integer*.
 
 `(ascii->number «string»)`  
-Converts the first character of *string* into a *number* which
+Converts the first character of *string* into an *integer* which
 corresponds to its ASCII value.
 
 [^](#toc)
@@ -561,6 +557,21 @@ Returns the list of all provided elements.
 `(defun «name» «params» «body»)`  
 Defines and returns a macro or function, respectively.
 
+`(curry («func» «arg1»))`  
+Returns a lambda with one parameter which returns
+`(«func» «arg1» «arg2»)`.
+
+`(typep («type» «object»))`  
+Returns true if *object* has *type*.
+
+`(integerp «object»)`  
+`(stringp «object»)`  
+`(symbolp «object»)`  
+`(lamdap «object»)`  
+`(macrop «object»)`  
+`(streamp «object»)`  
+Return `t` if *object* is of the respective type, otherwise `nil`.
+
 `(string «arg»)`  
 Returns the string conversion of argument.
 
@@ -587,6 +598,10 @@ Bind all *name*s to the respective *value*s then evaluate body.
 Labelled or “named” `let`: define a local function *label* with *body*
 and all *name*s as parameters bound to the *values*.
 
+`(length «obj»)`  
+Returns the length of *obj* if it is a string or a list, otherwise
+throws a type exception.
+
 `(prog1 «sexp»[«sexp»..])`  
 Evaluate all *sexp* in turn and return the value of the first.
 
@@ -604,6 +619,39 @@ as loaded into the interpreter.
 If the *feature* is not alreaded loaded, the file *feature*`.lsp` is
 loaded from the library path and registers the *feature* if loading was
 successful. The register is the variable *features*.
+
+<span class="mark"> Arithmethic functions currently are aliased to the
+binary integer operators. n-ary operation is yet to be implemented in
+Lisp. The following documents the expected behavior. </span>
+
+`(+[ «arg»..])`  
+Returns the sum of all *arg*s or `0` if none is given.
+
+`(*[ «arg»..])`  
+Returns the product of all *arg*s or `1` if none given.
+
+`(-[ «arg»..])`  
+Returns 0 if no *arg* is given, -*arg* if only one is given, *arg* minus
+the sum of all others otherwise.
+
+`(/ «arg»[ «div»..])`  
+Returns 1/*arg* if no *div* is given, *arg*/*div*\[/*div*..\] if one or
+more *div*s are given, `inf` if one of the *div*s is `0` and the sum of
+the signs of all operands is even, `-inf` if it is odd.
+
+`(% «arg»[ «div»..])`  
+Returns `1` if no *div* is given, *arg*%*div*\[%*div*..\] if one or more
+*div*s are given. If one of the *div*s is `0`, the program exits with an
+arithmetic exception.
+
+`(= «arg»[ «arg»..])`  
+`(< «arg»[ «arg»..])`  
+`(> «arg»[ «arg»..])`  
+`(<= «arg»[ «arg»..])`  
+`(>= «arg»[ «arg»..])`  
+These predicate functions apply the respective comparison operator
+between all *arg*s and return the respective result as `t` or `nil`. If
+only one *arg* is given they all return `t`.
 
 #### fLisp Library
 

@@ -224,23 +224,14 @@
 
     <p><i>fLisp</i> objects have one of the following data types:</p>
     <dl>
-      <dt><dfn>number</dfn></dt>
-      <dd>
-	<a href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format">double precision floating point
-	  number.</a>
-      </dd>
-      <dt><dfn>string</dfn></dt>
-      <dd>character array.</dd>
-      <dt><dfn>cons</dfn></dt>
-      <dd>object holding two pointers to objects.</dd>
+      <dt><dfn>integer</dfn></dt><dd>64 bit singed integer</dd>
+      <dt><dfn>string</dfn></dt><dd>character array.</dd>
+      <dt><dfn>cons</dfn></dt><dd>object holding two pointers to objects.</dd>
       <dt><dfn>symbol</dfn></dt>
       <dd>string with restricted character set: <code>[A-Z][0-9][a-z]!#$%&amp;*+-./:&lt;=&gt;?@^_~</code></dd>
-      <dt><dfn>lambda</dfn></dt>
-      <dd>anonymous function with parameter evaluation</dd>
-      <dt><dfn>macro</dfn></dt>
-      <dd>anonymous function without parameter evaluation</dd>
-      <dt><dfn>stream</dfn></dt>
-      <dd>An input/output stream</dd>
+      <dt><dfn>lambda</dfn></dt><dd>anonymous function with parameter evaluation</dd>
+      <dt><dfn>macro</dfn></dt><dd>anonymous function without parameter evaluation</dd>
+      <dt><dfn>stream</dfn></dt><dd>An input/output stream</dd>
     </dl>
     <p>
       Objects are immutable, functions either create new objects or return existing ones.
@@ -458,15 +449,12 @@
     <dl>
       <dt><code>(null <var>object</var>)</code></dt>
       <dd>Returns <code>t</code> if <var>object</var> is <code>nil</code>, otherwise <code>nil</code>.</dd>
-      <dt><code>(symbolp <var>object</var>)</code></dt>
-      <dd>Returns <code>t</code> if <var>object</var> is of type symbol, otherwise <code>nil</code>.</dd>
+      <dt><code>(type-of <var>object</var>)</code></dt>
+      <dd>Returns the type symbol of <var>object</var>.</dd>
+      <dt><code>(consp <var>object</var>)</code></dt>
+      <dd>Returns <code>t</code> if <var>object</var> is of type cons, otherwise <code>nil</code>.</dd>
       <dt><code>(symbol-name <var>object</var>)</code></dt>
       <dd>If <var>object</var> is of type symbol return its value as string.</dd>
-      <dt><code>(numberp <var>object</var>)</code></dt>
-      <dd>Returns <code>t</code> if <var>object</var> is of type number, otherwise <code>nil</code>.</dd>
-      <dt><code>(stringp <var>object</var>)</code></dt>
-      <dd>Returns <code>t</code> if <var>object</var> is of type string, otherwise <code>nil</code>.</dd>
-      <dt><code>(consp <var>object</var>)</code></dt>
       <dd>Returns <code>t</code> if <var>object</var> is of type cons, otherwise <code>nil</code>.</dd>
       <dt><code>(cons <var>car</var> <var>cdr</var>)</code></dt>
       <dd>Returns a new cons with the first object set to the value of <var>car</var> and the second to the value of <var>cdr</var>.</dd>
@@ -481,67 +469,61 @@
     <h4 id="arithmetic_ops">Arithmetic Operations</h4>
 
     <dl>
-      <dt><code>(+[ <var>arg</var>..])</code></dt>
-      <dd>Returns the sum of all <var>arg</var>s or <code>0</code> if none is given.</dd>
-      <dt><code>(*[ <var>arg</var>..])</code></dt>
-      <dd>Returns the product of all <var>arg</var>s or <code>1</code> if none given.</dd>
-      <dt><code>(-[ <var>arg</var>..])</code></dt>
+      <dt><code>(i+ <var>arg1</var> <var>arg2</var>)</code></dt>
+      <dd>Returns the sum of <var>arg1</var> <var>arg2</var>.</dd>
+      <dt><code>(i* <var>arg1</var> <var>arg2</var>)</code></dt>
+      <dd>Returns the product of <var>arg1</var> <var>arg2</var>.</dd>
+      <dt><code>(i- <var>arg1</var> <var>arg2</var>)</code></dt>
+      <dd>Returns <var>arg1</var> minus <var>arg2</var>.</dd>
+      <dt><code>(i/ <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dd>Returns <var>arg1</var> divided by <var>arg2</var></dd>
+      <dt><code>(i% <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dd>Returns the rest (modulo) of the integer division of <var>arg1</var> by <var>arg2</var>.</dd>
+      <dt><code>(i= <var>arg1</var> <var>arg2</var>)</code></dt>
+      <dt><code>(i&lt; <var>arg1</var> <var>arg2</var>)</code></dt>
+      <dt><code>(i&gt; <var>arg1</var> <var>arg2</var>)</code></dt>
+      <dt><code>(i&lt;= <var>arg1</var> <var>arg2</var>)</code></dt>
+      <dt><code>(i&gt;= <var>arg1</var> <var>arg2</var>)</code></dt>
       <dd>
-	Returns 0 if no <var>arg</var> is given, -<var>arg</var> if only one is given, <var>arg</var> minus the sum of
-	all others otherwise.
-      </dd>
-      <dt><code>(/ <var>arg</var>[ <var>div</var>..])</code></dt>
-      <dd>
-	Returns 1/<var>arg</var> if no <var>div</var> is given, <var>arg</var>/<var>div</var>[/<var>div</var>..] if one
-	or more <var>div</var>s are given, <code>inf</code> if one of the <var>div</var>s is <code>0</code> and the sum
-	of the signs of all operands is even, <code>-inf</code> if it is odd.
-      </dd>
-      <dt><code>(% <var>arg</var>[ <var>div</var>..])</code></dt>
-      <dd>
-	Returns <code>1</code> if no <var>div</var> is given, <var>arg</var>%<var>div</var>[%<var>div</var>..] if one or
-	more <var>div</var>s are given. If one of the <var>div</var>s is <code>0</code>, the program exits with an
-	arithmetic exception.
-      </dd>
-      <dt><code>(= <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&lt; <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&gt; <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&lt;= <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&gt;= <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dd>
-	These predicate functions apply the respective comparison operator between all <var>arg</var>s and return the
-	respective result as <code>t</code> or <code>nil</code>.  If only one <var>arg</var> is given they all
-	return <code>t</code>.
+	These predicate functions apply the respective comparison operator between <var>arg1</var> <var>arg2</var>.
       </dd>
     </dl>
 
     <h4 id="string_ops">String Operations</h4>
 
     <dl>
-      <dt><code>(string.length <var>string</var>)</code></dt>
+      <dt><code>(string-length <var>string</var>)</code></dt>
       <dd>Returns the length of <var>string</var> as a <i>number</i>.</dd>
-      <dt><code>(string.substring <var>string</var> <var>start</var> <var>end</var>)</code></dt>
-      <dd>
-	Returns the sub string from <var>string</var> which starts with the character at index <var>start</var> and ends
-	with index <var>end</var>. String indexes are zero based.
-      </dd>
-      <dt><code>(string.append <var>string1</var> <var>string2</var>)</code></dt>
+      <dt><code>(string-append <var>string1</var> <var>string2</var>)</code></dt>
       <dd>Returns a new string consisting of the concatenation of <var>string1</var> with <var>string2</var>.</dd>
+      <dt><code>(substring <var>string</var>[ <var>start</var> [<var>end</var>]])</code></dt>
+      <dd>
+	Returns the sub string from <var>string</var> which starts with the character at index <var>start</var> and
+	before index <var>end</var>. String indexes are zero based, negative indexes count from the end
+	of <var>string</var>.  If <var>end</var> is not given it defaults to the end of <var>string</var>.
+	If <var>start</var> is not given, it defaults to the start of <var>string</var>.
+      </dd>
+      <dt><code>(string-contains <var>needle</var> <var>haystack</var>)</code></dt>
+      <dd>
+	Returns the position of <var>needle</var> if it is contained in <var>haystack</var>,
+	otherwise <code>nil</code>.
+      </dd>
       <dt><code>(string-to-number <var>string</var>)</code></dt>
       <dd>
-	Converts <var>string</var> into a corresponding <i>number</i> object. String is interpreted as decimal based
+	Converts <var>string</var> into a corresponding <i>integer</i> object. String is interpreted as decimal based
 	integer.
       </dd>
-      <dt><code>(number-to-string <var>number</var>)</code></dt>
-      <dd>Converts <var>number</var> into a <i>string</i> object.
+      <dt><code>(number-to-string <var>integer</var>)</code></dt>
+      <dd>Converts <var>integer</var> into a <i>string</i> object.
       </dd>
-      <dt><code>(ascii <var>number</var>)</code></dt>
+      <dt><code>(ascii <var>integer</var>)</code></dt>
       <dd>
-	Converts <var>number</var> into a <i>string</i> with one character, which corresponds to the ASCII
-	representation of <var>number</var>.
+	Converts <var>integer</var> into a <i>string</i> with one character, which corresponds to the ASCII
+	representation of <var>integer</var>.
       </dd>
       <dt><code>(ascii-&gt;number <var>string</var>)</code></dt>
       <dd>
-	Converts the first character of <var>string</var> into a <i>number</i> which corresponds to its ASCII
+	Converts the first character of <var>string</var> into an <i>integer</i> which corresponds to its ASCII
 	value.
       </dd>
     </dl>
@@ -583,6 +565,19 @@
       <dt><code>(defmacro <var>name</var> <var>params</var> <var>body</var>)</code></dt>
       <dt><code>(defun <var>name</var> <var>params</var> <var>body</var>)</code></dt>
       <dd>Defines and returns a macro or function, respectively.</dd>
+      <dt><code>(curry (<var>func</var> <var>arg1</var>))</code></dt>
+      <dd>
+	Returns a lambda with one parameter which returns <code>(<var>func</var> <var>arg1</var> <var>arg2</var>)</code>.
+      </dd>
+      <dt><code>(typep (<var>type</var> <var>object</var>))</code></dt>
+      <dd>Returns true if <var>object</var> has <var>type</var>.</dd>
+      <dt><code>(integerp <var>object</var>)</code></dt>
+      <dt><code>(stringp <var>object</var>)</code></dt>
+      <dt><code>(symbolp <var>object</var>)</code></dt>
+      <dt><code>(lamdap <var>object</var>)</code></dt>
+      <dt><code>(macrop <var>object</var>)</code></dt>
+      <dt><code>(streamp <var>object</var>)</code></dt>
+      <dd>Return <code>t</code> if <var>object</var> is of the respective type, otherwise <code>nil</code>.</dd>
       <dt><code>(string <var>arg</var>)</code></dt>
       <dd>Returns the string conversion of argument.</dd>
       <dt><code>(concat </code>[<code><var>arg</var></code>..]<code>)</code></dt>
@@ -606,6 +601,8 @@
 	Labelled or <q>named</q> <code>let</code>: define a local function <var>label</var> with <var>body</var> and
 	all <var>name</var>s as parameters bound to the <var>values</var>.
       </dd>
+      <dt><code>(length <var>obj</var>)</code></dt>
+      <dd>Returns the length of <var>obj</var> if it is a string or a list, otherwise throws a type exception.</dd>
       <dt><code>(prog1 <var>sexp</var>[<var>sexp</var>..])</code></dt>
       <dd>Evaluate all <var>sexp</var> in turn and return the value of the first.</dd>
       <dt><code>(fload </code> <code><var>stream</var>)</code> <u>f</u></dt>
@@ -624,6 +621,48 @@
 	variable <code><var>features</var></code>.
       </dd>
     </dl>
+
+    <p>
+      <mark>
+	Arithmethic functions currently are aliased to the binary integer operators.  n-ary operation is yet to be
+	implemented in Lisp. The following documents the expected behavior.
+      </mark>
+    </p>
+    
+    <dl>
+      <dt><code>(+[ <var>arg</var>..])</code></dt>
+      <dd>Returns the sum of all <var>arg</var>s or <code>0</code> if none is given.</dd>
+      <dt><code>(*[ <var>arg</var>..])</code></dt>
+      <dd>Returns the product of all <var>arg</var>s or <code>1</code> if none given.</dd>
+      <dt><code>(-[ <var>arg</var>..])</code></dt>
+      <dd>
+	Returns 0 if no <var>arg</var> is given, -<var>arg</var> if only one is given, <var>arg</var> minus the sum of
+	all others otherwise.
+      </dd>
+      <dt><code>(/ <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dd>
+	Returns 1/<var>arg</var> if no <var>div</var> is given, <var>arg</var>/<var>div</var>[/<var>div</var>..] if one
+	or more <var>div</var>s are given, <code>inf</code> if one of the <var>div</var>s is <code>0</code> and the sum
+	of the signs of all operands is even, <code>-inf</code> if it is odd.
+      </dd>
+      <dt><code>(% <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dd>
+	Returns <code>1</code> if no <var>div</var> is given, <var>arg</var>%<var>div</var>[%<var>div</var>..] if one or
+	more <var>div</var>s are given. If one of the <var>div</var>s is <code>0</code>, the program exits with an
+	arithmetic exception.
+      </dd>
+      <dt><code>(= <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dt><code>(&lt; <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dt><code>(&gt; <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dt><code>(&lt;= <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dt><code>(&gt;= <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dd>
+	These predicate functions apply the respective comparison operator between all <var>arg</var>s and return the
+	respective result as <code>t</code> or <code>nil</code>.  If only one <var>arg</var> is given they all
+	return <code>t</code>.
+      </dd>
+    </dl>
+
 
     <h4 id="flisp_lib">fLisp Library</h4>
     <p>
