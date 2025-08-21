@@ -392,6 +392,13 @@ the opened file is set to `>STRING`.
 
 Close *stream* object
 
+`(file-info «stream»)` <u>f</u>
+
+Returns `(«path» «buf» «fd»)` for *stream*. *buf* is either `nil` or the
+text buffer of a memory stream. *fd* is either the integer
+representation of the file descriptor or `nil` when *stream* is already
+closed.
+
 `(read` *stream*`[ eof-value])` <u>S: read</u>
 
 Reads the next complete Lisp expression from *stream*. The read in

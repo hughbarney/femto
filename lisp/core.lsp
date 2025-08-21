@@ -95,7 +95,19 @@
 	    (t (count (cdr o) (+ len 1))))))
     (t (throw wrong-type-argument "(length object) - expected type-cons or type-string" o))))
 
+
 (defun prog1 (arg . args) arg)
+
+(defun number-to-string (i)
+  (cond
+    ((integerp i)
+     (let ((f (open "" ">")))
+       (write i :stream f)
+       (prog1
+	   (cadr (file-info f))
+	 (close f))))
+    (t 	(throw wrong-type-argument
+	  (concat "(number-to-string number) - number expected " type-integer " got: " (type-of i))))))
 
 ;; load
 (defun fload (f)

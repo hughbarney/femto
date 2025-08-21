@@ -412,6 +412,10 @@
       </dd>
       <dt><code>(close <var>stream</var>)</code> <u>S: close</u></dt>
       <dd>Close <var>stream</var> object</dd>
+      <dt><code>(file-info <var>stream</var>)</code> <u>f</u></dt>
+      <dd>Returns <code>(<var>path</var> <var>buf</var> <var>fd</var>)</code> for <var>stream</var>. <var>buf</var> is
+	either <code>nil</code> or the text buffer of a memory stream. <var>fd</var> is either the integer
+	representation of the file descriptor or <code>nil</code> when <var>stream</var> is already closed.</dd>
       <dt><code>(read</code> <code><var>stream</var>[ eof-value])</code> <u>S: read</u></dt>
       <dd>
 	Reads the next complete Lisp expression from <var>stream</var>.  The

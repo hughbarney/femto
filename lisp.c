@@ -2013,6 +2013,7 @@ Object *file_fopen(Interpreter *interp, char *path, char* mode) {
         mode = FLISP_ARG_TWO->string;
     return file_fopen(interp, FLISP_ARG_ONE->string, mode);
 }
+
 /** file_fclose() - closes stream object
  *
  * @param interp  fLisp interpreter
@@ -2048,6 +2049,17 @@ Object *primitiveFclose(Interpreter *interp, Object**args, Object **env)
     if ((result = file_fclose(interp, FLISP_ARG_ONE)))
         exceptionWithObject(interp, FLISP_ARG_ONE, io_error, "(fclose stream) - failed to close: %s", strerror(result));
     return newInteger(interp, result);
+}
+
+ Object *primitiveFinfo(Interpreter *interp, Object **args, Object **env)
+{
+    GC_CHECKPOINT;
+    GC_TRACE(gcObject, (FLISP_ARG_ONE->fd == NULL) ?
+             nil : newInteger(interp, (int64_t)FLISP_ARG_ONE->fd));
+    *gcObject = newCons(interp, gcObject, &nil);
+    GC_TRACE(gcBuffer, (FLISP_ARG_ONE->buf == NULL) ? nil : newString(interp, FLISP_ARG_ONE->buf));
+    *gcObject = newCons(interp, gcBuffer, gcObject);
+    GC_RETURN(newCons(interp, &(FLISP_ARG_ONE->path), gcObject));
 }
 
 #ifdef FLISP_FILE_EXTENSION
@@ -2223,6 +2235,7 @@ Primitive primitives[] = {
     {"cons",          2,  2, 0,         primitiveCons},
     {"open",          1,  2, TYPE_STRING, primitiveFopen},
     {"close",         1,  1, TYPE_STREAM, primitiveFclose},
+    {"file-info",     1,  1, TYPE_STREAM, primitiveFinfo},
     {"read",          0,  2, 0,         primitiveRead},
     {"eval",          1,  1, 0,         primitiveEval},
     {"write",         1, -1, 0,         primitiveWrite},
@@ -2249,7 +2262,6 @@ Primitive primitives[] = {
     {"substring",     1,  3, 0,           stringSubstring},
     {"string-contains", 2, 2, TYPE_STRING, stringSearch}, 
     {"string-to-number", 1, 1, TYPE_STRING, stringToInteger},
-    {"number-to-string", 1, 1, 0,         numberToString},
     {"ascii",         1,  1, TYPE_INTEGER, asciiToString},
     {"ascii->number", 1,  1, TYPE_STRING, asciiToInteger},
     {"os.getenv",     1,  1, TYPE_STRING, os_getenv},
