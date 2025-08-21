@@ -27,6 +27,7 @@
 
 (defun numberp (o) (cond  ((integerp o) t)))
 
+(setq not null)
 
 ;;; Wrap all math to Integer operations
 (setq + i+  - i-  * i*  / i/  % i%  = i=  < i<  <= i<=  > i>  >= i>=)
