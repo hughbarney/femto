@@ -163,7 +163,7 @@
   (cond (de-is-link (search-forward " ")) (t (end-of-line)))
   (copy-region)
   (set-point p)
-  (setq de-name (string.trim (get-clipboard))))
+  (setq de-name (string-trim (get-clipboard))))
 
 ;;
 ;; reduces a directory path by one sub-directory
@@ -188,7 +188,7 @@
    (set-mark)
    (end-of-line)
    (copy-region)
-   (setq current_working_directory (string.trim (get-clipboard)))    
+   (setq current_working_directory (string-trim (get-clipboard)))    
    (select-buffer obuf)
    (kill-buffer "*output*")
    current_working_directory))
