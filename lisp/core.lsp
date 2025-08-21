@@ -68,11 +68,14 @@
 (defmacro let args
   (cond
     ((consp (car args))
+     (cond
+       ((consp (cadr args))
 ;;; bindings: (car args)
 ;;; body:     (cdr args)
-     (cons ; apply
-      (cons 'lambda (cons (map1 car (car args)) (cdr args))) ; (lambda (names) body)
-      (map1 cadr (car args)))) ; (values)
+	(cons ; apply
+	 (cons 'lambda (cons (map1 car (car args)) (cdr args))) ; (lambda (names) body)
+	 (map1 cadr (car args)))) ; (values)
+       (t (throw wrong-type-argument "let: first argument neither label nor binding" (car args)))))
     ((symbolp (car args))
 ;;; label:    (car args)
 ;;; bindings: (cadr args)
