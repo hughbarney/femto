@@ -89,9 +89,9 @@
 ;;
 (defun read-hook (s)
   (cond
-    ((string.contains "|c|h|cpp|" (get-buffer-file-extension)) (add-mode "cmode"))
-    ((string.contains "|rc|lsp|" (get-buffer-file-extension)) (add-mode "lispmode"))
-    ((string.contains "|py|" (get-buffer-file-extension)) (add-mode "python"))))
+    ((string-contains "|c|h|cpp|" (get-buffer-file-extension)) (add-mode "cmode"))
+    ((string-contains "|rc|lsp|" (get-buffer-file-extension)) (add-mode "lispmode"))
+    ((string-contains "|py|" (get-buffer-file-extension)) (add-mode "python"))))
 
 
 ;; Load and edit user specific config

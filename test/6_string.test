@@ -83,17 +83,17 @@ stringlib 1; ok string-shrink-1 shrink from empty string is empty string
 IN='(shrink "abcde")' OUT='"abcd"'
 stringlib 1; ok string-shrink-2 shrink from string is on char less
 
-IN='(string.contains "" "")' OUT='nil'
+IN='(string-contains "" "")' OUT='nil'
 stringlib 1; ok string-contains-1 emtpy string is not  contained in empty string
 
-IN='(string.contains "abcde" "")' OUT='nil'
-stringlib 1; ok string.contains-2 emtpy string is not contained in string
+IN='(string-contains "abcde" "")' OUT='nil'
+stringlib 1; ok string-contains-2 emtpy string is not contained in string
 
-IN='(string.contains "abcde" "ab")' OUT='t'
-stringlib 1; ok string.contains-3 start string is contained in string
+IN='(string-contains "abcde" "ab")' OUT='t'
+stringlib 1; ok string-contains-3 start string is contained in string
 
-IN='(string.contains "abcde" "bc")' OUT='t'
-stringlib 1; ok string.contains-4 not start string is contained in string
+IN='(string-contains "abcde" "bc")' OUT='t'
+stringlib 1; ok string-contains-4 not start string is contained in string
 
-IN='(string.contains "abcde" "x")' OUT='nil'
-stringlib 1; ok string.contains-5 not contained string is nil
+IN='(string-contains "abcde" "x")' OUT='nil'
+stringlib 1; ok string-contains-5 not contained string is nil

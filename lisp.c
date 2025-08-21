@@ -2150,7 +2150,7 @@ Object *stringLength(Interpreter *interp, Object **args, Object **env)
     return newInteger(interp, strlen(FLISP_ARG_ONE->string));
 }
 
-/** (string-contains needle haystack)
+/** (string-search needle haystack)
  *
  */
 Object *stringSearch(Interpreter *interp, Object **args, Object **env)
@@ -2260,7 +2260,7 @@ Primitive primitives[] = {
     {"string-length", 1,  1, TYPE_STRING, stringLength},
     {"string-append", 2,  2, TYPE_STRING, stringAppend},
     {"substring",     1,  3, 0,           stringSubstring},
-    {"string-contains", 2, 2, TYPE_STRING, stringSearch}, 
+    {"string-search", 2,  2, TYPE_STRING, stringSearch}, 
     {"string-to-number", 1, 1, TYPE_STRING, stringToInteger},
     {"ascii",         1,  1, TYPE_INTEGER, asciiToString},
     {"ascii->number", 1,  1, TYPE_STRING, asciiToInteger},

@@ -30,7 +30,7 @@
 ;; string-startswith - return t if string starts with search
 ;;
 (defun string-startswith (str search)
-  (eq 0 (string-contains search str)))
+  (eq 0 (string-search search str)))
 
 
 ;;
@@ -51,16 +51,16 @@
 
 
 ;;
-;; string.contains - return t if search is contained in str
+;; string-contains - return t if search is contained in str
 ;;
-(defun string.contains (str search)
+(defun string-contains (str search)
    (cond
      ((< (length str) (length search)) nil)  
      ((eq str "") nil)
      ((eq search "") nil)
      ((string-startswith str search) t)
      ((eq (string-drop_first str) "") nil)
-     (t (string.contains (string-drop_first str) search))))
+     (t (string-contains (string-drop_first str) search))))
 
 
 (provide 'string)
