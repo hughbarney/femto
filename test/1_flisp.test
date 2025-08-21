@@ -417,6 +417,21 @@ flisp_err; ok substring-10 substring answer 1 7 range-error
 IN='(substring "answer" 2 1)' ERR='(substring str [start [end]]) - end > start' OBJ=
 flisp_err; ok substring-11 substring answer 2 1 range-error
 
+IN='(string-contains "" "")' OUT='0'
+flisp_expr; ok string-contains-1 emtpy string is contained in empty string at 0
+
+IN='(string-contains "" "abcde")' OUT='0'
+flisp_expr; ok string-contains-2 emtpy string is contained in string at 0
+
+IN='(string-contains "ab" "abcde")' OUT='0'
+flisp_expr; ok string-contains-3 start string is contained in string at 0
+
+IN='(string-contains "bc" "abcde")' OUT='1'
+flisp_expr; ok string-contains-4 not start string is contained in string at 1
+
+IN='(string-contains "x" "abcde")' OUT='nil'
+flisp_expr; ok string-contains-5 not contained string is nil
+
 
 false; ok  string-to-number \# TODO
 false; ok  number-to-string \# TODO

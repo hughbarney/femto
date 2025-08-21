@@ -1,0 +1,96 @@
+#!./run
+# test executable and fLisp functionality
+# leg20231128: Femto
+
+export FLISPRC=../lisp/core.lsp
+stringlib() { IN="(require 'string) $IN" flisp_expr "$@"; }
+stringlib_err() { IN="(require 'string) $IN" flisp_err "$@"; }
+
+IN='(string-trim-front "")' OUT='""'
+stringlib 1; ok string-trim-front-1 emtpy string is itself
+
+IN='(string-trim-front "abc ")' OUT='"abc "'
+stringlib 1; ok string-trim-front-2 string is itself
+
+IN='(string-trim-front " abc ")' OUT='"abc "'
+stringlib 1; ok string-trim-front-3  single space prefixed string is trimmed
+
+IN='(string-trim-front "   abc ")' OUT='"abc "'
+stringlib 1; ok string-trim-front-4  triple space prefixed string is trimmed
+
+
+IN='(string-trim-back "")' OUT='""'
+stringlib 1; ok string-trim-back-1 emtpy string is itself
+
+IN='(string-trim-back " abc")' OUT='" abc"'
+stringlib 1; ok string-trim-back-2 string is itself
+
+IN='(string-trim-back " abc ")' OUT='" abc"'
+stringlib 1; ok string-trim-back-3  single space postfixed string is trimmed
+
+IN='(string-trim-back " abc   ")' OUT='" abc"'
+stringlib 1; ok string-trim-back-4  triple space postfixed string is trimmed
+
+
+IN='(string-trim "")' OUT='""'
+stringlib 1; ok string-trim-1 emtpy string is itself
+
+IN='(string-trim "abc")' OUT='"abc"'
+stringlib 1; ok string-trim-2 string is itself
+
+IN='(string-trim "  abc  ")' OUT='"abc"'
+stringlib 1; ok string-trim-3 string with spaces is trimmed
+
+IN='(string-ref "abcde" 0)' OUT='"a"'
+stringlib 1; ok string-ref-1 index 0 is a
+
+IN='(string-ref "abcde" 2)' OUT='"c"'
+stringlib 1; ok string-ref-2 index 2 is c
+
+IN='(string-ref "abcde" 4)' OUT='"e"'
+stringlib 1; ok string-ref-3 index 4 is e
+
+IN='(string-ref "" 0)' OUT='""'
+stringlib 1; ok string-ref-4 emtpy string 0 is empty string
+
+
+IN='(string-startswith "" "abcde")' OUT='nil'
+stringlib 1; ok string-startswith-1 emtpy string starts with string is nil
+
+IN='(string-startswith "abcde" "")' OUT='t'
+stringlib 1; ok string-startswith-2 string starts with empty string is t
+
+IN='(string-startswith "abcde" "ab")' OUT='t'
+stringlib 1; ok string-startswith-3 string starts with start string is t
+
+IN='(string-startswith "abcde" "cd")' OUT='nil'
+stringlib 1; ok string-startswith-4 string starts not with start string is nil
+
+
+IN='(string-drop_first "")' OUT='""'
+stringlib 1; ok string-drop_first-1 drop from empty string is empty string
+
+IN='(string-drop_first "abcde")' OUT='"bcde"'
+stringlib 1; ok string-drop_first-2 drop from string is on char less
+
+IN='(shrink "")' OUT='""'
+stringlib 1; ok string-shrink-1 shrink from empty string is empty string
+
+IN='(shrink "abcde")' OUT='"abcd"'
+stringlib 1; ok string-shrink-2 shrink from string is on char less
+
+IN='(string.contains "" "")' OUT='nil'
+stringlib 1; ok string-contains-1 emtpy string is not  contained in empty string
+
+IN='(string.contains "abcde" "")' OUT='nil'
+stringlib 1; ok string.contains-2 emtpy string is not contained in string
+
+IN='(string.contains "abcde" "ab")' OUT='t'
+stringlib 1; ok string.contains-3 start string is contained in string
+
+IN='(string.contains "abcde" "bc")' OUT='t'
+stringlib 1; ok string.contains-4 not start string is contained in string
+
+IN='(string.contains "abcde" "x")' OUT='nil'
+stringlib 1; ok string.contains-5 not contained string is nil
+
