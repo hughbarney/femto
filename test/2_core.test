@@ -4,7 +4,7 @@
 
 export FLISPRC=../lisp/core.lsp
 
-tap 34
+tap 53
 
 # list
 IN='(list)' OUT=nil
@@ -24,11 +24,15 @@ flisp_expr 1; ok defmacro-1  simple macroexpansion
 IN="(defun f (a b) (list a b)) (f 1 2)" OUT='(1 2)'
 flisp_expr 1; ok defun-1  simple function invocation
 
-IN="(numberp 42)" OUT='t'
-flisp_expr 1; ok numberp-1  numberp number is t
+false; ok curry-1 \# TODO
 
-IN="(numberp numberp)" OUT='nil'
-flisp_expr 1; ok numberp-2  numberp lambda is nil
+false; ok typep-1 \# TODO
+
+IN="(integerp 42)" OUT='t'
+flisp_expr 1; ok integerp-1  integerp integer is t
+
+IN="(integerp integerp)" OUT='nil'
+flisp_expr 1; ok integerp-2  integerp lambda is nil
 
 IN='(stringp "answer")' OUT='t'
 flisp_expr 1; ok stringp-1  stringp string is t
@@ -42,9 +46,24 @@ flisp_expr 1; ok symbolp-1  symbolp symbol is t
 IN="(symbolp symbolp)" OUT='nil'
 flisp_expr 1; ok symbolp-2  symbolp lambda is nil
 
-IN="(symbol-name 'a)" OUT='"a"'
-flisp_expr 1; ok symbol-name-1  symbolname is symbol as string
+false; ok lambdap-1 \# TODO
+false; ok macrop-1 \# TODO
+false; ok streamp-1 \# TODO
 
+IN="(numberp 42)" OUT='t'
+flisp_expr 1; ok numberp-1  numberp number is t
+
+IN="(numberp numberp)" OUT='nil'
+flisp_expr 1; ok numberp-2  numberp lambda is nil
+
+IN="(not nil)" OUT="t"
+flisp_expr 1;  ok not-1 not t is nil
+
+IN="(not t)" OUT="nil"
+flisp_expr 1;  ok not-2 not nil is t
+
+IN="(not 1)" OUT="nil"
+flisp_expr 1;  ok not-3 not number is nil
 
 # string
 IN="(string nil)" OUT='""'
@@ -64,7 +83,8 @@ flisp_expr 1; ok string-5 cons converts to concatenated strings of elements
 
 IN="(string car)" OBJ='#<Primitive car>'  ERR="cannot convert to string"
 flisp_err 1; ok string-6 lambda err\'s
-
+false; ok string-7 macro errs \# TODO
+false; ok string-8 stream errs \# TODO
 # concat
 IN="(concat 1 'a \"?\")" OUT='"1a?"'
 flisp_expr 1; ok concat-1 simple string concatenation
@@ -82,6 +102,23 @@ flisp_expr 1; ok map1-1 map1 incr elements in list
 
 IN="(map1 / '())" OUT="nil"
 flisp_expr 1; ok map1-2 map1 does nothing on empty list
+
+false; ok cadr-1 \# TODO
+false; ok cddr-1 \# TODO
+false; ok let-1 \# TODO
+false; ok length-1 \# TODO
+
+IN="(prog1 'answer)" OUT="answer"
+flisp_expr 1; ok prog1-1 prog1 single arg is arg
+
+IN="(prog1 'answer 42)" OUT="answer"
+flisp_expr 1; ok prog1-2 prog1 two args is arg
+
+IN="(number-to-string 42)" OUT='"42"'
+flisp_expr 1; ok number-to-string-1 42 is string 42
+
+IN='(number-to-string "a")' ERR='(number-to-string number) - number expected type-integer got: type-string' OBJ=
+flisp_err 1; ok number-to-string-2 not a number fails
 
 # fload
 IN='(setq f (open "empty.lsp" "r")) (fload f)' OUT=nil

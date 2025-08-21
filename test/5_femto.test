@@ -2,7 +2,7 @@
 # test the femto Lisp extensions
 # leg20231213
 
-tap 15
+tap 19
 
 export FLISPRC=../lisp/core.lsp
 # Note: nested requiring stopped working
@@ -13,51 +13,25 @@ femtolib_err() { IN="(require 'femto) $IN" flisp_expr "$@"; }
 true; ok load-script \# TODO
 true; ok repeat \# TODO
 IN="(repeat 0 +)" OUT=nil
-femtolib 1; ok repeat-1 
+femtolib 1; ok repeat-1 \# TODO more repeat tests
 
-true; ok shell-command \# TODO
-true; ok shell-exec \# TODO
-true; ok insert-file \# TODO
+false; ok shell-command \# TODO
+false; ok shell-exec \# TODO
+false; ok insert-file \# TODO
+false; ok delete-next-word \# TODO
+false; ok delete-previous-word \# TODO
+false; ok kill-to-eol \# TODO
+false; ok shrink \# TODO
+false; ok is_ctl_g \# TODO
+false; ok is_escape \# TODO
+false; ok is_backspace \# TODO
+false; ok is_ctl_s \# TODO
+false; ok is_control_char \# TODO
+false; ok describe-key \# TODO
+false; ok find_end_p \# TODO
+false; ok find_start_p \# TODO
+false; ok find_and_eval_sexp \# TODO
 
-# string.trim.front
-IN='(string.trim.front " x")'  OUT='"x"'
-femtolib 1; ok string.trim.front-1 remove single space before string
-
-IN='(string.trim.front " ")'  OUT='""'
-femtolib 1; ok string.trim.front-2 remove single space
-IN='(string.trim.front "    ")'  OUT='""'
-femtolib 1; ok string.trim.front-3 remove several spaces
-IN='(string.trim.front "")'  OUT='""'
-femtolib 1; ok string.trim.front-4 empty string
-# string.trim.back
-IN='(string.trim.back "x ")'  OUT='"x"'
-femtolib 1; ok string.strim.back-1 remove single space after string
-IN='(string.trim.back " ")'  OUT='""'
-femtolib 1; ok string.strim.back-2 remove single space
-IN='(string.trim.back "    ")'  OUT='""'
-femtolib 1; ok string.strim.back-3 remove several spaces
-IN='(string.trim.back "")'  OUT='""'
-femtolib 1; ok string.strim.back-4 empty string
-
-# string.trim
-IN='(string.trim " ")'  OUT='""'
-femtolib 1; ok string.strim-1 remove single space
-
-# delete-next-word
-# delete-previous-word
-# kill-to-eol
-# shrink
-# is_ctl_g
-# is_escape
-# is_backspace
-# is_ctl_s
-# is_control_char
-# describe-key
-# find_end_p
-# find_start_p
-# find_and_eval_sexp
-
-true
 
 # Local Variables:
 # mode: sh

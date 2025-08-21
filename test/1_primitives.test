@@ -4,7 +4,7 @@
 
 export FLISPRC=
 
-tap 143
+tap 149
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -260,6 +260,9 @@ flisp_expr; ok consp-5  consp list is t
 IN="(consp consp)" OUT='nil'
 flisp_expr; ok consp-5  consp lambda is nil
 
+IN="(symbol-name 'a)" OUT='"a"'
+flisp_expr; ok symbol-name-1  symbolname is symbol as string
+
 IN="(eq 1 1)" OUT='t'
 flisp_expr; ok eq-1_1  eq same num is t
 
@@ -331,6 +334,12 @@ flisp_expr; ok close-3 close memory input stream
 
 IN='(close (open "" ">"))' OUT="0"
 flisp_expr; ok close-4 close memory output stream
+
+IN='(setq f (open "abc" "<")) (cons (car (file-info f)) (car (cdr (file-info f))))' OUT='("<STRING" . "abc")'
+flisp_expr 1; ok file-info-1 file-info of memory stream contains string
+
+IN='(setq f (open "" ">")) (close f) (file-info f)' OUT='(">STRING" nil nil)'
+flisp_expr 1; ok file-info-2 file-info of closed memory stream contains nil
 
 IN='(read (open "1" "<"))' OUT="1"
 flisp_expr; ok read-1 read memory input stream
@@ -433,10 +442,9 @@ IN='(string-contains "x" "abcde")' OUT='nil'
 flisp_expr; ok string-contains-5 not contained string is nil
 
 
-false; ok  string-to-number \# TODO
-false; ok  number-to-string \# TODO
 false; ok  ascii \# TODO
-false; ok  ascii->number \# TODO
+
+false; ok  'ascii->number' \# TODO
 
 # OS
 false; ok os.getenv \# TODO
