@@ -2584,8 +2584,10 @@ void lisp_eval_string(Interpreter *interp, char * input)
     lisp_eval(interp);
     interp->input = prev;
     (void)fclose(fd);
-    if (interp->result == nil)
+    if (interp->result == nil) {
         fl_debug(interp, "lisp_eval_string() result: nil");
+        lisp_write_object(interp, interp->debug, interp->object, true);
+    }
     else
         fl_debug(interp, "lisp_eval_string() result: error: %s", interp->msg_buf);
     return;

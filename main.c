@@ -115,6 +115,18 @@ void msg_lisp_err(Interpreter *interp)
     free(buf);
 }
 
+/** eval_string - Invoke fLisp interpreter and return result as string
+ *
+ * @param do_format  If true, the input string is passed through
+ *                   printf style formatting, otherwise it is used directly.
+ * @param format     Input string for the interpreter.
+ *
+ * @returns
+ * - NULL  if an error occured formatting the input string or
+ *         evaluating it.
+ * - A pointer to a string buffer with the fLisp interpreter output.
+ *   After use this buffer has to be freed with free_lisp_output().
+ */
 char *eval_string(bool do_format, char *format, ...)
 {
     char buf[INPUT_FMT_BUFSIZ], *input;
@@ -137,10 +149,8 @@ char *eval_string(bool do_format, char *format, ...)
     prev = interp->output;  // Note: save for double invocation with user defined functions.
     interp->output = open_memstream(&output, &len);
     lisp_eval_string(interp, input);
-    if (interp->result == nil) {
-        free_lisp_output();
-        return NULL;
-    }
+    if (interp->result == nil)
+        return output;
     if (interp->output)
         fflush(interp->output);
     msg_lisp_err(interp);
@@ -148,7 +158,8 @@ char *eval_string(bool do_format, char *format, ...)
         lisp_write_error(interp, debug_fp);
         debug("=> %s\n", output);
     }
-    return output;
+    free_lisp_output();
+    return NULL;
 }
 void free_lisp_output(void)
 {
