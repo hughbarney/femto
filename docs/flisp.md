@@ -502,16 +502,13 @@ negative indexes count from the end of *string*. If *end* is not given
 it defaults to the end of *string*. If *start* is not given, it defaults
 to the start of *string*.
 
-`(string-contains «needle» «haystack»)`  
+`(string-search «needle» «haystack»)` <u>C</u>  
 Returns the position of *needle* if it is contained in *haystack*,
 otherwise `nil`.
 
 `(string-to-number «string»)`  
 Converts *string* into a corresponding *integer* object. String is
 interpreted as decimal based integer.
-
-`(number-to-string «integer»)`  
-Converts *integer* into a *string* object.
 
 `(ascii «integer»)`  
 Converts *integer* into a *string* with one character, which corresponds
@@ -557,32 +554,38 @@ editor
 
 This library is built into the startup file.
 
-`(list` \[*element* ..\]`)`  
+`(list` \[*element* ..\]`)` <u>C</u>  
 Returns the list of all provided elements.
 
-`(defmacro «name» «params» «body»)`  
-`(defun «name» «params» «body»)`  
+`(defmacro «name» «params» «body»)` <u>C</u>  
+`(defun «name» «params» «body»)` <u>C</u>  
 Defines and returns a macro or function, respectively.
 
 `(curry («func» «arg1»))`  
 Returns a lambda with one parameter which returns
 `(«func» «arg1» «arg2»)`.
 
-`(typep («type» «object»))`  
+`(typep («type» «object»))` <u>C</u>  
 Returns true if *object* has *type*.
 
-`(integerp «object»)`  
-`(stringp «object»)`  
-`(symbolp «object»)`  
-`(lamdap «object»)`  
-`(macrop «object»)`  
-`(streamp «object»)`  
+`(integerp «object»)` <u>C</u>  
+`(stringp «object»)` <u>C</u>  
+`(symbolp «object»)` <u>C</u>  
+`(lamdap «object»)` <u>C</u>  
+`(macrop «object»)` <u>C</u>  
+`(streamp «object»)` <u>C</u>  
 Return `t` if *object* is of the respective type, otherwise `nil`.
 
-`(string «arg»)`  
+`(numberp «object»)` <u>C</u>  
+Synonym for `integerp`.
+
+`(not «object»)` <u>C</u>  
+Logical inverse. In Lisp a synonym for `null`
+
+`(string «arg»)` <u>C</u>  
 Returns the string conversion of argument.
 
-`(concat `\[*arg*..\]`)`  
+`(concat `\[*arg*..\]`)` <u>Ce</u>  
 Returns concatenation of all arguments converted to strings.
 
 `(memq «arg» «list»)`  
@@ -594,28 +597,31 @@ Apply func to each element in list and return a list of the results.
 
 `map1` is a specialized form of `mapcar` restricted to one list only.
 
-`(cadr «list»)`  
+`(cadr «list»)` <u>C</u>  
 Return the second element in the list, `(car (cdr «list»))`.  
-`(cddr «list»)`  
+`(cddr «list»)` <u>C</u>  
 Return all elements after the second one in list, `(cdr (cdr «list»))`.  
-`(let ((«name» «value»)[ («name» «value»)..]) «body»)`  
+`(let ((«name» «value»)[ («name» «value»)..]) «body»)` <u>C</u>  
 Bind all *name*s to the respective *value*s then evaluate body.
 
 `(let «label»((«name» «value»)[ («name» «value»)..]) «body»)` <u>Cs</u>  
 Labelled or “named” `let`: define a local function *label* with *body*
 and all *name*s as parameters bound to the *values*.
 
-`(length «obj»)`  
+`(length «obj»)` <u>C</u>  
 Returns the length of *obj* if it is a string or a list, otherwise
 throws a type exception.
 
-`(prog1 «sexp»[«sexp»..])`  
+`(prog1 «sexp»[«sexp»..])` <u>C</u>  
 Evaluate all *sexp* in turn and return the value of the first.
+
+`(number-to-string «integer»)` <u>C</u>  
+Converts *integer* into a *string* object.
 
 `(fload ` *stream*`)` <u>f</u>  
 Reads and evaluates all Lisp objects in *stream*.
 
-`(load ` *path*`)`  
+`(load ` *path*`)` <u>C</u>  
 Reads and evaluates all Lisp objects in file at *path*.
 
 `(provide «feature»)`  
@@ -664,10 +670,6 @@ only one *arg* is given they all return `t`.
 
 This library implements commonly excpected Lisp idioms. *fLisp*
 implements a carefully selected minimum set of commonly used functions.
-
-`(not «object»)`
-
-Logical inverse. In Lisp a synonym for `null`
 
 listp
 

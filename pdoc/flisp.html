@@ -507,7 +507,7 @@
 	of <var>string</var>.  If <var>end</var> is not given it defaults to the end of <var>string</var>.
 	If <var>start</var> is not given, it defaults to the start of <var>string</var>.
       </dd>
-      <dt><code>(string-contains <var>needle</var> <var>haystack</var>)</code></dt>
+      <dt><code>(string-search <var>needle</var> <var>haystack</var>)</code> <u>C</u></dt>
       <dd>
 	Returns the position of <var>needle</var> if it is contained in <var>haystack</var>,
 	otherwise <code>nil</code>.
@@ -516,9 +516,6 @@
       <dd>
 	Converts <var>string</var> into a corresponding <i>integer</i> object. String is interpreted as decimal based
 	integer.
-      </dd>
-      <dt><code>(number-to-string <var>integer</var>)</code></dt>
-      <dd>Converts <var>integer</var> into a <i>string</i> object.
       </dd>
       <dt><code>(ascii <var>integer</var>)</code></dt>
       <dd>
@@ -564,27 +561,31 @@
       This library is built into the startup file.
     </p>
     <dl>
-      <dt><code>(list</code> [<code><var>element</var></code> ..]<code>)</code></dt>
+      <dt><code>(list</code> [<code><var>element</var></code> ..]<code>)</code> <u>C</u></dt>
       <dd>Returns the list of all provided elements.</dd>
-      <dt><code>(defmacro <var>name</var> <var>params</var> <var>body</var>)</code></dt>
-      <dt><code>(defun <var>name</var> <var>params</var> <var>body</var>)</code></dt>
+      <dt><code>(defmacro <var>name</var> <var>params</var> <var>body</var>)</code> <u>C</u></dt>
+      <dt><code>(defun <var>name</var> <var>params</var> <var>body</var>)</code> <u>C</u></dt>
       <dd>Defines and returns a macro or function, respectively.</dd>
       <dt><code>(curry (<var>func</var> <var>arg1</var>))</code></dt>
       <dd>
 	Returns a lambda with one parameter which returns <code>(<var>func</var> <var>arg1</var> <var>arg2</var>)</code>.
       </dd>
-      <dt><code>(typep (<var>type</var> <var>object</var>))</code></dt>
+      <dt><code>(typep (<var>type</var> <var>object</var>))</code> <u>C</u></dt>
       <dd>Returns true if <var>object</var> has <var>type</var>.</dd>
-      <dt><code>(integerp <var>object</var>)</code></dt>
-      <dt><code>(stringp <var>object</var>)</code></dt>
-      <dt><code>(symbolp <var>object</var>)</code></dt>
-      <dt><code>(lamdap <var>object</var>)</code></dt>
-      <dt><code>(macrop <var>object</var>)</code></dt>
-      <dt><code>(streamp <var>object</var>)</code></dt>
+      <dt><code>(integerp <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(stringp <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(symbolp <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(lamdap <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(macrop <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(streamp <var>object</var>)</code> <u>C</u></dt>
       <dd>Return <code>t</code> if <var>object</var> is of the respective type, otherwise <code>nil</code>.</dd>
-      <dt><code>(string <var>arg</var>)</code></dt>
+      <dt><code>(numberp <var>object</var>)</code> <u>C</u></dt>
+      <dd>Synonym for <code>integerp</code>.</dd>
+      <dt><code>(not <var>object</var>)</code> <u>C</u></dt>
+      <dd>Logical inverse. In Lisp a synonym for <code>null</code></dd>
+      <dt><code>(string <var>arg</var>)</code> <u>C</u></dt>
       <dd>Returns the string conversion of argument.</dd>
-      <dt><code>(concat </code>[<code><var>arg</var></code>..]<code>)</code></dt>
+      <dt><code>(concat </code>[<code><var>arg</var></code>..]<code>)</code> <u>Ce</u></dt>
       <dd>Returns concatenation of all arguments converted to strings.</dd>
       <dt><code>(memq <var>arg</var> <var>list</var>)</code></dt>
       <dd>
@@ -594,24 +595,27 @@
       <dt><code>(map1 <var>func</var> <var>list</var>)</code> <u>S: mapcar</u></dt>
       <dd>Apply func to each element in list and return a list of the results.</dd>
       <dd><code>map1</code> is a specialized form of <code>mapcar</code> restricted to one list only.</dd>
-      <dt><code>(cadr <var>list</var>)</code></dt>
+      <dt><code>(cadr <var>list</var>)</code> <u>C</u></dt>
       <dt>Return the second element in the list, <code>(car (cdr <var>list</var>))</code>.</dt>
-      <dt><code>(cddr <var>list</var>)</code></dt>
+      <dt><code>(cddr <var>list</var>)</code> <u>C</u></dt>
       <dt>Return all elements after the second one in list, <code>(cdr (cdr <var>list</var>))</code>.</dt>
-      <dt><code>(let ((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code></dt>
+      <dt><code>(let ((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code> <u>C</u></dt>
       <dd>Bind all <var>name</var>s to the respective <var>value</var>s then evaluate body.</dd>
       <dt><code>(let <var>label</var>((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code> <u>Cs</u></dt>
       <dd>
 	Labelled or <q>named</q> <code>let</code>: define a local function <var>label</var> with <var>body</var> and
 	all <var>name</var>s as parameters bound to the <var>values</var>.
       </dd>
-      <dt><code>(length <var>obj</var>)</code></dt>
+      <dt><code>(length <var>obj</var>)</code> <u>C</u></dt>
       <dd>Returns the length of <var>obj</var> if it is a string or a list, otherwise throws a type exception.</dd>
-      <dt><code>(prog1 <var>sexp</var>[<var>sexp</var>..])</code></dt>
+      <dt><code>(prog1 <var>sexp</var>[<var>sexp</var>..])</code> <u>C</u></dt>
       <dd>Evaluate all <var>sexp</var> in turn and return the value of the first.</dd>
+      <dt><code>(number-to-string <var>integer</var>)</code> <u>C</u></dt>
+      <dd>Converts <var>integer</var> into a <i>string</i> object.
+      </dd>
       <dt><code>(fload </code> <code><var>stream</var>)</code> <u>f</u></dt>
       <dd>Reads and evaluates all Lisp objects in <var>stream</var>.</dd>
-      <dt><code>(load </code> <code><var>path</var>)</code></dt>
+      <dt><code>(load </code> <code><var>path</var>)</code> <u>C</u></dt>
       <dd>Reads and evaluates all Lisp objects in file at <var>path</var>.</dd>
       <dt><code>(provide <var>feature</var>)</code></dt>
       <dd>
@@ -674,7 +678,6 @@
       of commonly used functions.
     </p>
     <dl>
-      <dt><code>(not <var>object</var>)</code></dt><dd>Logical inverse. In Lisp a synonym for <code>null</code></dd>
       <dt>listp</dt>
       <dt>and</dt>
       <dt>or</dt>
