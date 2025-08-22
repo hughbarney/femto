@@ -112,7 +112,7 @@
 ;string-length
 ;string.ref
 ;substring
-;string.trim
+;string-trim
 ;stringp
 ;update-display
 ;yank
