@@ -94,10 +94,12 @@ int main(int argc, char **argv)
             interp->input = fd;
             lisp_eval(interp);
             if (interp->result != nil)
-                fprintf(stderr, "failed to load inifile %s:%s: %s\n", init_file, interp->result->name, interp->msg_buf);
+                // Note: the error object can be printed with lisp_write_object
+                fprintf(stderr, "failed to load inifile %s: %s\n", init_file, interp->msg_buf);
             // Note: if we could implement the repl in fLisp itself we'd bail out here.
             if (fclose(fd))
-                fprintf(stderr, "failed to close inifile %s:%s %s\n", init_file, interp->result->name, interp->msg_buf);
+                // Note: the error object can be printed with lisp_write_object
+                fprintf(stderr, "failed to close inifile %s %s\n", init_file, interp->msg_buf);
         }
     }
     // Start repl

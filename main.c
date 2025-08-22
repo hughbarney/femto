@@ -40,7 +40,8 @@ void load_file(char *file)
     interp->output = debug_fp;
     lisp_eval(interp);
     if (interp->result != nil) {
-        debug("failed to load file %s: %s - %s\n", file, interp->result->name, interp->msg_buf);
+        // Note: the error object can be printed with lisp_write_object
+        debug("failed to load file %s: %s\n", file, interp->msg_buf);
         lisp_write_error(interp, debug_fp);
     }
     if (fclose(fd))

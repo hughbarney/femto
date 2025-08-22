@@ -11,7 +11,7 @@
 #include <inttypes.h>
 
 #define FL_NAME     "fLisp"
-#define FL_VERSION  "0.9"
+#define FL_VERSION  "0.10"
 
 #define FL_INITFILE "flisp.rc"
 #define FL_LIBDIR "/usr/local/share/flisp"
@@ -31,7 +31,8 @@
 /* Lisp objects */
 
 typedef struct Object Object;
-
+typedef struct Interpreter Interpreter;
+typedef Object *(*LispEval) (Interpreter *, Object **, Object **);
 /* Constants */
 /* Fundamentals */
 extern Object *nil;
@@ -58,6 +59,30 @@ extern Object *wrong_num_of_arguments;
 extern Object *io_error;
 extern Object *out_of_memory;
 
+typedef enum ObjectType {
+    TYPE_MOVED,
+    TYPE_INTEGER,
+#ifdef FLISP_DOUBLE_EXTENSION
+    TYPE_DOUBLE,
+#endif
+    TYPE_STRING,
+    TYPE_SYMBOL,
+    TYPE_CONS,
+    TYPE_LAMBDA,
+    TYPE_MACRO,
+    TYPE_PRIMITIVE,
+    TYPE_ENV,
+    TYPE_STREAM,
+} ObjectType;
+
+typedef struct Primitive {
+    char *name;
+    int nMinArgs, nMaxArgs;
+    ObjectType type_check;
+    LispEval eval;
+} Primitive;
+
+
 struct Object {
     Object *type;
     size_t size;
@@ -67,7 +92,7 @@ struct Object {
         struct { char string[sizeof (Object *[3])]; };             // string, symbol
         struct { Object *car, *cdr; };                             // cons
         struct { Object *params, *body, *env; };                   // lambda, macro
-        struct { int primitive; char *name; Object *type_check; }; // primitive
+        struct { Primitive *primitive; Object *type_check; };      // primitive
         struct { Object *parent, *vars, *vals; };                  // env
         struct { Object *path; FILE *fd; char *buf; size_t len; }; // file descriptor/stream
         struct { Object *forward; };                               // forwarding pointer
@@ -79,6 +104,7 @@ typedef struct Constant {
     Object **value;
 } Constant;
 
+/* Internal */
 typedef struct Memory {
     size_t capacity, fromOffset, toOffset;
     void *fromSpace, *toSpace;
@@ -114,6 +140,30 @@ typedef struct Interpreter {
 /*@null@*/extern Interpreter *lisp_interpreters;
 
 // PROGRAMMING INTERFACE ////////////////////////////////////////////////
+
+extern Object * newObject(Interpreter *, Object *);
+extern Object *newObjectFrom(Interpreter *, Object **);
+extern Object *newInteger(Interpreter *, int64_t);
+extern size_t addCharToBuf(Interpreter *, int);
+extern void resetBuf(Interpreter *);
+extern void exceptionWithObject(Interpreter *, Object *, Object *, char *, ...);
+#define exception(interp, result, ...)       exceptionWithObject(interp, nil, result, __VA_ARGS__)
+#define GC_PASTE1(name, id)  name ## id
+#define GC_PASTE2(name, id)  GC_PASTE1(name, id)
+#define GC_UNIQUE(name)      GC_PASTE2(name, __LINE__)
+
+#define GC_CHECKPOINT Object *gcTop = interp->gcTop
+#define GC_RELEASE interp->gcTop = gcTop
+extern Object *gcReturn(Interpreter *, Object *, Object *);
+#define GC_RETURN(expr)  return gcReturn(interp, gcTop, expr)
+
+#define GC_TRACE(name, init)                                            \
+    Object GC_UNIQUE(gcTrace) = { type_cons, .car = init, .cdr = interp->gcTop }; \
+    interp->gcTop = &GC_UNIQUE(gcTrace);                                \
+    Object **name = &GC_UNIQUE(gcTrace).car;
+
+void fl_debug(Interpreter *, char *, ...);
+
 
 #define FLISP_ARG_ONE (*args)->car
 #define FLISP_ARG_TWO (*args)->cdr->car

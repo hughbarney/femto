@@ -20,8 +20,11 @@
 #ifdef FLISP_FEMTO_EXTENSION
 #include "header.h"
 #endif
-
 #include "lisp.h"
+
+#ifdef FLISP_DOUBLE_EXTENSION
+#include "double.h"
+#endif
 
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
 #define MAP_ANONYMOUS        MAP_ANON
@@ -68,6 +71,9 @@ Constant flisp_constants[] = {
     { &t, &t, },
     /* Types */
     { &type_integer,   &type_integer  },
+#ifdef FLISP_DOUBLE_EXTENSION
+    { &type_double,    &type_double   },
+#endif
     { &type_string,    &type_string   },
     { &type_symbol,    &type_symbol   },
     { &type_cons,      &type_cons     },
@@ -92,25 +98,16 @@ Constant flisp_constants[] = {
 /** Type codes:
  *
  * The public type of an object is a Lisp object type.  This cannot be
- * initialized statically so a map to an enum is maintained for type
- * checking of arguments.
+ * initialized statically so a map to the ObjectType enum is
+ * maintained for type checking of arguments.
  */
-typedef enum ObjectType {
-    TYPE_MOVED,
-    TYPE_INTEGER,
-    TYPE_STRING,
-    TYPE_SYMBOL,
-    TYPE_CONS,
-    TYPE_LAMBDA,
-    TYPE_MACRO,
-    TYPE_PRIMITIVE,
-    TYPE_ENV,
-    TYPE_STREAM
-} ObjectType;
 
 Object **flisp_object_type[] = {
     &type_moved,
     &type_integer,
+#ifdef FLISP_DOUBLE_EXTENSION
+    &type_double,
+#endif
     &type_string,
     &type_symbol,
     &type_cons,
@@ -220,7 +217,7 @@ void exceptionWithObject(Interpreter *interp, Object *object, Object *result, ch
  * The error message is formatted into the message buffer of the interpreter. If it has to
  * be truncated the last three characters are overwritten with "..."
  */
-#define exception(interp, result, ...)       exceptionWithObject(interp, nil, result, __VA_ARGS__)
+// #define exception(interp, result, ...)       exceptionWithObject(interp, nil, result, __VA_ARGS__)
 
 
 // GARBAGE COLLECTION /////////////////////////////////////////////////////////
@@ -268,24 +265,11 @@ void exceptionWithObject(Interpreter *interp, Object *object, Object *result, ch
  *                      to point to the pointer to X inside the list.
  */
 
-#define GC_PASTE1(name, id)  name ## id
-#define GC_PASTE2(name, id)  GC_PASTE1(name, id)
-#define GC_UNIQUE(name)      GC_PASTE2(name, __LINE__)
-
-#define GC_CHECKPOINT Object *gcTop = interp->gcTop
-#define GC_RELEASE interp->gcTop = gcTop
 Object *gcReturn(Interpreter *interp, Object *gcTop, Object *result)
 {
     GC_RELEASE;
     return result;
 }
-#define GC_RETURN(expr)  return gcReturn(interp, gcTop, expr)
-
-#define GC_TRACE(name, init)                                            \
-    Object GC_UNIQUE(gcTrace) = { type_cons, .car = init, .cdr = interp->gcTop }; \
-    interp->gcTop = &GC_UNIQUE(gcTrace);                                \
-    Object **name = &GC_UNIQUE(gcTrace).car;
-
 
 /** gcCollectableObject - check if object is on heap
  *
@@ -388,12 +372,15 @@ void gc(Interpreter *interp)
             object->parent = gcMoveObject(interp, object->parent, &stats);
             object->vars = gcMoveObject(interp, object->vars, &stats);
             object->vals = gcMoveObject(interp, object->vals, &stats);
+        } else if (object->type == type_moved) {
+            exceptionWithObject(interp, object, gc_error, "object already moved");
         } else if (object->type == type_integer
+#ifdef FLISP_DOUBLE_EXTENSION
+                   || object->type == type_double
+#endif
                    || object->type == type_string || object->type == type_symbol
                    || object->type == type_primitive) {
-        } else if (object->type == type_moved)
-            exceptionWithObject(interp, object, gc_error, "object already moved");
-        else
+        } else
             exception(interp, gc_error, "unidentified object: %s", object->type->string);
     }
     // swap from- and to-space
@@ -618,11 +605,10 @@ Object *newMacro(Interpreter *interp, Object ** params, Object ** body, Object *
     return newObjectWithClosure(interp, type_macro, params, body, env);
 }
 
-Object *newPrimitive(Interpreter *interp, int primitive, char *name)
+Object *newPrimitive(Interpreter *interp, Primitive* primitive)
 {
     Object *object = newObject(interp, type_primitive);
     object->primitive = primitive;
-    object->name = name;
     return object;
 }
 
@@ -1032,13 +1018,22 @@ Object *readNumberOrSymbol(Interpreter *interp, FILE *fd)
         (void)addCharToBuf(interp, streamGetc(interp, fd));
         ch = streamPeek(interp, fd);
     }
-    // read a number in integer or decimal format
+    // try to read a number in integer or decimal format
     // Note: readInteger support hex and octal, but we do not support it here.
-    if (isdigit(ch)) {
+    if (ch == '.' || isdigit(ch)) {
         if (isdigit(ch))
             ch = readWhile(interp, fd, isdigit);
         if (!isSymbolChar(ch))
             return readInteger(interp);
+        if (ch == '.') {
+            addCharToBuf(interp, ch);
+            ch = streamGetc(interp, fd);
+            if (isdigit(streamPeek(interp, fd))) {
+                ch = readWhile(interp, fd, isdigit);
+                if (!isSymbolChar(ch))
+                    return readDouble(interp);
+            }
+        }
     }
     // non-numeric character encountered, read a symbol
     readWhile(interp, fd, isSymbolChar);
@@ -1199,13 +1194,6 @@ Object *primitiveRead(Interpreter *interp, Object **args, Object **env)
 
 
 // EVALUATION /////////////////////////////////////////////////////////////////
-
-typedef struct Primitive {
-    char *name;
-    int nMinArgs, nMaxArgs;
-    ObjectType type_check;
-    Object *(*eval) (Interpreter *, Object **args, Object **env);
-} Primitive;
 
 // Special forms handled by evalExpr. Must be in the same order as above.
 enum {
@@ -1467,7 +1455,8 @@ Object *evalExpr(Interpreter *interp, Object ** object, Object **env)
         } else if ((*gcFunc)->type == type_macro) {
             *gcObject = expandMacroTo(interp, gcFunc, gcArgs);
         } else if ((*gcFunc)->type == type_primitive) {
-            Primitive *primitive = &primitives[(*gcFunc)->primitive];
+            //Primitive *primitive = &primitives[(*gcFunc)->primitive];
+            Primitive *primitive = (*gcFunc)->primitive;
             int nArgs = 0;
             Object *args;
 
@@ -1484,7 +1473,7 @@ Object *evalExpr(Interpreter *interp, Object ** object, Object **env)
             if (primitive->nMaxArgs < 0 && nArgs % -primitive->nMaxArgs)
                 exceptionWithObject(interp, *gcFunc, wrong_num_of_arguments, "expects a multiple of %d arguments", -primitive->nMaxArgs);
 
-            switch ((*gcFunc)->primitive) {
+            switch ((uintptr_t)primitive->eval) {
             case PRIMITIVE_QUOTE:
                 GC_RETURN((*gcArgs)->car);
             case PRIMITIVE_SETQ:
@@ -1611,10 +1600,14 @@ void lisp_write_object(Interpreter *interp, FILE *fd, Object *object, bool reada
 
     if (object->type == type_integer)
         writeFmt(interp, fd, "%"PRId64, object->integer);
+#ifdef FLISP_DOUBLE_EXTENSION
+    else if (object->type == type_double)
+        writeFmt(interp, fd, "%g", object->number);
+#endif
     else if (object->type == type_symbol)
         writeFmt(interp, fd, "%s", object->string);
     else if (object->type == type_primitive)
-        writeFmt(interp, fd, "#<Primitive %s>", object->name);
+        writeFmt(interp, fd, "#<Primitive %s>", object->primitive->name);
     else if (object->type == type_stream)
         writeFmt(interp, fd, "#<Stream %p, %s>", (void *) object->fd, object->path->string);
     else if (object->type == type_string)
@@ -1769,9 +1762,15 @@ Object *primitiveSymbolName(Interpreter *interp, Object **args, Object **env)
 
 Object *primitiveEq(Interpreter *interp, Object **args, Object **env)
 {
-    /* Note: Make an object equality primitive, then add number comparision in Lisp  */
+    /* Note: Make an object equality primitive, then add number and
+     * string comparision in Lisp */
+    
     if (FLISP_ARG_ONE->type == type_integer && FLISP_ARG_TWO->type == type_integer)
         return (FLISP_ARG_ONE->integer == FLISP_ARG_TWO->integer) ? t : nil;
+#ifdef FLISP_DOUBLE_EXTENSION
+    if (FLISP_ARG_ONE->type == type_double && FLISP_ARG_TWO->type == type_double)
+        return (FLISP_ARG_ONE->number == FLISP_ARG_TWO->number) ? t : nil;
+#endif
     else if (FLISP_ARG_ONE->type == type_string && FLISP_ARG_TWO->type == type_string)
         return !strcmp(FLISP_ARG_ONE->string, FLISP_ARG_TWO->string) ? t : nil;
     else
@@ -2222,15 +2221,15 @@ Object *asciiToInteger(Interpreter *interp, Object **args, Object **env)
 #endif
 
 Primitive primitives[] = {
-    {"quote",         1,  1, 0 /* special form */ },
-    {"setq",          0, -2, 0 /* special form */ },
-    {"define",        0, -2, 0 /* special form */ },
-    {"progn",         0, -1, 0 /* special form */ },
-    {"cond",          0, -1, 0 /* special form */ },
-    {"lambda",        1, -1, 0 /* special form */ },
-    {"macro",         1, -1, 0 /* special form */ },
-    {"macroexpand-1", 1,  2, 0 /* special form */ },
-    {"catch",         1,  1, 0 /*special form */ },
+    {"quote",         1,  1, 0, (LispEval) PRIMITIVE_QUOTE /* special form */ },
+    {"setq",          0, -2, 0, (LispEval) PRIMITIVE_SETQ  /* special form */ },
+    {"define",        0, -2, 0, (LispEval) PRIMITIVE_DEFINE /* special form */ },
+    {"progn",         0, -1, 0, (LispEval) PRIMITIVE_PROGN /* special form */ },
+    {"cond",          0, -1, 0, (LispEval) PRIMITIVE_COND  /* special form */ },
+    {"lambda",        1, -1, 0, (LispEval) PRIMITIVE_LAMBDA /* special form */ },
+    {"macro",         1, -1, 0, (LispEval) PRIMITIVE_MACRO  /* special form */ },
+    {"macroexpand-1", 1,  2, 0, (LispEval) PRIMITIVE_MACROEXPAND /* special form */ },
+    {"catch",         1,  1, 0, (LispEval) PRIMITIVE_CATCH  /*special form */ },
     {"null",          1,  1, 0,         primitiveNullP},
     {"type-of",       1,  1, 0,         primitiveTypeOf},
     {"consp",         1,  1, 0,         primitiveConsP},
@@ -2297,21 +2296,34 @@ void initRootEnv(Interpreter *interp)
         envSet(interp, flisp_constants[i].symbol, flisp_constants[i].value, &interp->global, true);
         interp->symbols = newCons(interp, flisp_constants[i].symbol, &interp->symbols);
     }
+
+    /* Add internal objects */
     type_env->type = type_symbol;
     type_moved->type = type_symbol;
     empty->type = type_string;
     one->type = type_integer;
+#ifdef FLISP_DOUBLE_EXTENSION
+    double_one->type = type_double;
+#endif
+    
     // add primitives
-    int nPrimitives = sizeof(primitives) / sizeof(primitives[0]);
-
     GC_TRACE(gcVar, nil);
     GC_TRACE(gcVal, nil);
+    int nPrimitives = sizeof(primitives) / sizeof(primitives[0]);
     for (i = 0; i < nPrimitives; ++i) {
         *gcVar = newSymbol(interp, primitives[i].name);
-        *gcVal = newPrimitive(interp, i, primitives[i].name);
+        *gcVal = newPrimitive(interp, &primitives[i]);
 
         envSet(interp, gcVar, gcVal, &interp->global, true);
     }
+
+    for (Primitive *entry = flisp_double_primitives; entry->name != NULL; entry++) {
+        *gcVar = newSymbol(interp, entry->name);
+        *gcVal = newPrimitive(interp, entry);
+
+        envSet(interp, gcVar, gcVal, &interp->global, true);
+    }
+    
     GC_RELEASE;
 }
 
@@ -2397,9 +2409,11 @@ Interpreter *lisp_new(
     object = newCons(interp, &nil, &nil);
     object = newCons(interp, &t, &object);
     interp->symbols = object;
+    fl_debug(interp, "lisp_init: %lu/%lu bytes allocated before gc", interp->memory->fromOffset, interp->memory->capacity);
+    /* gc region start */
+
     /* global environment */
     initRootEnv(interp);
-    /* gc can start from here */
 
     interp->catch = &interp->exceptionEnv;
 
@@ -2529,7 +2543,7 @@ void lisp_eval2(Interpreter *interp)
     interp->gcTop = nil;
     GC_CHECKPOINT;
     GC_TRACE(gcObject, nil);
-    Object read = { type_primitive, .name = "read" };
+    Object read = { type_primitive, };
     Object *doRead = &(Object) { type_cons, .car = &read, .cdr = nil };
 
     for (;;) {

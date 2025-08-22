@@ -28,9 +28,9 @@ INITFILE = $(SCRIPTDIR)/femto.rc
 
 OBJ = command.o display.o complete.o data.o gap.o key.o search.o	\
 	buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o	\
-	femto_lisp.o main.o
+	femto_lisp.o double.o main.o
 
-FLISP_OBJ = flisp.o lisp.o
+FLISP_OBJ = flisp.o lisp.o double.o
 BINARIES = femto flisp
 RC_FILES = femto.rc flisp.rc
 
@@ -72,19 +72,25 @@ debug: femto flisp
 display.o: display.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c display.c
 
+double.o: double.c double.h lisp.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_DOUBLE_EXTENSION -c $<
+
 femto: $(OBJ) femto.rc
 	$(LD) $(LDFLAGS) -o femto $(OBJ) $(LIBS)
 
 femto.rc: femto.sht lisp/core.lsp
 
 femto_lisp.o: lisp.c femto.register.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -c lisp.c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -D FLISP_DOUBLE_EXTENSION -c lisp.c -o $@
 
 flisp: $(FLISP_OBJ) flisp.rc
 	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ)
 
+#flisp.o: flisp.c lisp.h
+#	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+
 flisp.o: flisp.c lisp.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_DOUBLE_EXTENSION -c $<
 
 flisp.rc: flisp.sht lisp/core.lsp
 
@@ -101,7 +107,7 @@ key.o: key.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c key.c
 
 lisp.o: lisp.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FILE_EXTENSION -c lisp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FILE_EXTENSION  -D FLISP_DOUBLE_EXTENSION -c lisp.c
 
 main.o: main.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
