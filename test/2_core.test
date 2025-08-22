@@ -4,7 +4,7 @@
 
 export FLISPRC=../lisp/core.lsp
 
-tap 68
+tap 75
 
 # list
 IN='(list)' OUT=nil
@@ -96,35 +96,35 @@ flisp_expr 1; ok length-1 length of nil is zero
 IN="(length '(a b c))" OUT="3"
 flisp_expr 1; ok length-2 length of triple list is three
 
-
+false; ok arith \# TODO  test all of integer, double and misc arith.
 IN='(+)' OUT='0' flisp_expr 1; ok add-1 add nothing is 0
 IN='(+ 42)' OUT='42' flisp_expr 1; ok add-2 add 42  is 42
 IN='(+ 1 2 3)' OUT='6' flisp_expr 1; ok add-4 add 1 2 3 is 6
-#IN='(-)' OUT='0' flisp_expr 1; ok minus-1 minus nothing is 0
-#IN='(- 42)' OUT='-42' flisp_expr 1; ok minus-2 minus 42  is -42
-#IN='(- 1 2 3)' OUT='-4' flisp_expr 1; ok minus-4 minus 1 2 3 is -4
+IN='(-)' OUT='0' flisp_expr 1; ok minus-1 minus nothing is 0
+IN='(- 42)' OUT='-42' flisp_expr 1; ok minus-2 minus 42  is -42
+IN='(- 1 2 3)' OUT='-4' flisp_expr 1; ok minus-4 minus 1 2 3 is -4
 IN='(*)' OUT='1' flisp_expr 1; ok times-1 times nothing is 1
 IN='(* 42)' OUT='42' flisp_expr 1; ok times-2 times 42  is 42
 IN='(* 1 2 3)' OUT='6' flisp_expr 1; ok times-4 times 1 2 3 is 6
-#IN='(n/ 42)' OUT='0.0238095' flisp_expr 1; ok divide-1 divide 42  is 1/42
-#IN='(n/ 42 7 6)' OUT='1' flisp_expr 1; ok divide-3 divide 42 7 6 is 1
-#IN='(n% 42)' OUT='1' flisp_expr 1; ok mod-1 mod 42  is 1
-#IN='(n% 11 6 3)' OUT='2' flisp_expr 1; ok mod-3 mod 11 6 3 is 2
-#IN='(n= 42)' OUT='t' flisp_expr 1; ok arith-equal-1 arith-equal 42  is t
-#IN='(n= 7 7 7)' OUT='t' flisp_expr 1; ok arith-equal-3 arith-equal 7 7 7 is t
-#IN='(n= 7 7 8)' OUT='nil' flisp_expr 1; ok arith-equal-4 arith-equal 7 7 8 is nil
-#IN='(n< 42)' OUT='t' flisp_expr 1; ok less-1 less 42  is t
-#IN='(n< 7 7 7)' OUT='nil' flisp_expr 1; ok less-3 less 7 7 7 is nil
-#IN='(n< 1 2 3)' OUT='t' flisp_expr 1; ok less-4 less 1 2 3 is t
-#IN='(n<= 42)' OUT='t' flisp_expr 1; ok less-equal-1 less-equal 42  is t
-#IN='(n<= 7 7 7)' OUT='t' flisp_expr 1; ok less-equal-3 less-equal 7 7 7 is t
-#IN='(n<= 7 7 6)' OUT='nil' flisp_expr 1; ok less-equal-4 less-equal 7 7 6 is nil
-#IN='(n> 42)' OUT='t' flisp_expr 1; ok greater-1 greater 42  is t
-#IN='(n> 7 7 7)' OUT='nil' flisp_expr 1; ok greater-3 greater 7 7 7 is nil
-#IN='(n> 7 7 6)' OUT='nil' flisp_expr 1; ok greater-4 greater 7 7 6 is nil
-#IN='(n>= 42)' OUT='t' flisp_expr 1; ok greater-equal-1 greater-equal 42  is t
-#IN='(n>= 7 7 7)' OUT='t' flisp_expr 1; ok greater-equal-3 greater-equal 7 7 7 is t
-#IN='(n>= 7 7 6)' OUT='t' flisp_expr 1; ok greater-equal-4 greater-equal 7 7 6 is t
+IN='(/ 42.0)' OUT='0.0238095' flisp_expr 1; ok divide-1 divide 42  is 1/42
+IN='(/ 42 7 6)' OUT='1' flisp_expr 1; ok divide-3 divide 42 7 6 is 1
+IN='(% 42)' OUT='1' flisp_expr 1; ok mod-1 mod 42  is 1
+IN='(% 11 6 3)' OUT='2' flisp_expr 1; ok mod-3 mod 11 6 3 is 2
+# IN='(= 42)' OUT='t' flisp_expr 1; ok arith-equal-1 arith-equal 42  is t
+# IN='(= 7 7 7)' OUT='t' flisp_expr 1; ok arith-equal-3 arith-equal 7 7 7 is t
+# IN='(= 7 7 8)' OUT='nil' flisp_expr 1; ok arith-equal-4 arith-equal 7 7 8 is nil
+# IN='(< 42)' OUT='t' flisp_expr 1; ok less-1 less 42  is t
+# IN='(< 7 7 7)' OUT='nil' flisp_expr 1; ok less-3 less 7 7 7 is nil
+# IN='(< 1 2 3)' OUT='t' flisp_expr 1; ok less-4 less 1 2 3 is t
+# IN='(<= 42)' OUT='t' flisp_expr 1; ok less-equal-1 less-equal 42  is t
+# IN='(<= 7 7 7)' OUT='t' flisp_expr 1; ok less-equal-3 less-equal 7 7 7 is t
+# IN='(<= 7 7 6)' OUT='nil' flisp_expr 1; ok less-equal-4 less-equal 7 7 6 is nil
+# IN='(> 42)' OUT='t' flisp_expr 1; ok greater-1 greater 42  is t
+# IN='(> 7 7 7)' OUT='nil' flisp_expr 1; ok greater-3 greater 7 7 7 is nil
+# IN='(> 7 7 6)' OUT='nil' flisp_expr 1; ok greater-4 greater 7 7 6 is nil
+# IN='(>= 42)' OUT='t' flisp_expr 1; ok greater-equal-1 greater-equal 42  is t
+# IN='(>= 7 7 7)' OUT='t' flisp_expr 1; ok greater-equal-3 greater-equal 7 7 7 is t
+# IN='(>= 7 7 6)' OUT='t' flisp_expr 1; ok greater-equal-4 greater-equal 7 7 6 is t
 
 # string
 IN="(string nil)" OUT='""'

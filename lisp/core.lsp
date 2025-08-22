@@ -3,6 +3,8 @@
 ;; Core fLisp extensions
 ;;
 
+;(setq extensions '(flisp double))
+
 (setq list (lambda args args))
 
 (setq defmacro
@@ -17,15 +19,17 @@
 
 (defun typep (type object)  (eq type (type-of object)))
 
-(setq integerp (curry typep type-integer))
-(setq stringp (curry typep type-string))
-(setq symbolp (curry typep type-symbol))
+(setq
+ integerp (curry typep type-integer)
+ doublep (curry typep type-double)
+ stringp (curry typep type-string)
+ symbolp (curry typep type-symbol)
 ;;; consp is a primitive
-(setq lambdap (curry typep type-lambda))
-(setq macrop (curry typep type-macro))
-(setq streamp (curry typep type-stream))
+ lambdap (curry typep type-lambda)
+ macrop (curry typep type-macro)
+ streamp (curry typep type-stream))
 
-(defun numberp (o) (cond  ((integerp o) t)))
+(defun numberp (o) (cond  ((integerp o)) ((doublep o))))
 
 (setq not null)
 
@@ -41,10 +45,6 @@
      (fold-left (lambda (x y) (+ x 1)) 0 o))
     (t (throw wrong-type-argument "(length object) - expected type-cons or type-string" o))))
 
-;;; Wrap all math to Integer operations
-(defun +  args (fold-left i+   0 args))
-(defun *  args (fold-left i*   1 args))
-(setq  - i-  / i/  % i%  = i=  < i<  <= i<=  > i>  >= i>=)
 
 (defun string (s)
   ;; Convert argument to string.
@@ -79,6 +79,39 @@
 
 (defun cadr (l) (car (cdr l)))
 (defun cddr (l) (cdr (cdr l)))
+
+;;; Wrap all math to Integer operations
+(defun nfold (f i l);  (3)  (1 2 3)
+  (cond
+    ((null l) i)
+    ((null (cdr l)) (f i (car l)))
+    ( t (fold-left f (f (car l) (cadr l)) (cddr l)))))
+
+(defun coerce (ifunc dfunc x y)
+  (cond  ((doublep x) (cond ((integerp y) (dfunc x (double y))) (t (dfunc x y))))
+         ((doublep y) (cond ((integerp x) (dfunc (double x) y)) (t (dfunc x y))))
+         (t (ifunc x y))))
+
+(defun coercec (ifunc dfunc) ; coerce "curry"
+  (lambda (x y) (coerce ifunc dfunc x y)))
+
+(defun +  args (fold-left (coercec i+ d+)  0 args))
+(defun -  args (nfold     (coercec i- d-)  0 args))
+(defun *  args (fold-left (coercec i* d*)  1 args))
+(defun /  args (nfold     (coercec i/ d/)  1 args))
+(defun %  args (nfold     (coercec i% d%)  1 args))
+
+
+(setq
+; - i-
+; / i/
+; % i%
+ = i=
+ < i<
+ <= i<=
+ > i>
+ >= i>=
+ )
 
 (defmacro let args
   (cond
