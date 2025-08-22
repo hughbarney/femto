@@ -1455,7 +1455,6 @@ Object *evalExpr(Interpreter *interp, Object ** object, Object **env)
         } else if ((*gcFunc)->type == type_macro) {
             *gcObject = expandMacroTo(interp, gcFunc, gcArgs);
         } else if ((*gcFunc)->type == type_primitive) {
-            //Primitive *primitive = &primitives[(*gcFunc)->primitive];
             Primitive *primitive = (*gcFunc)->primitive;
             int nArgs = 0;
             Object *args;
@@ -1500,7 +1499,7 @@ Object *evalExpr(Interpreter *interp, Object ** object, Object **env)
                     for (args = *gcArgs; args != nil; args = args->cdr, nArgs++)
                         if (args->car->type != *flisp_object_type[primitive->type_check])
                             exceptionWithObject(interp, args->car, wrong_type_argument, "(%s args) - arg %d expected %s, got: %s",
-                                                primitive->name, nArgs,
+                                                primitive->name, nArgs-1,
                                                 (*flisp_object_type[primitive->type_check])->string,
                                                 args->car->type->string
                                 );
