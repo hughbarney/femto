@@ -294,6 +294,7 @@
       <li><code>wrong-type-argument</code></li>
       <li><code>invalid-value</code></li>
       <li><code>wrong-num-of-arguments</code></li>
+      <li><code>arith-error</code></li>
       <li><code>io-error</code></li>
       <li><code>out-of-memory</code></li>
       <li><code>gc-error</code></li>
@@ -480,9 +481,14 @@
       <dt><code>(i- <var>arg1</var> <var>arg2</var>)</code></dt>
       <dd>Returns <var>arg1</var> minus <var>arg2</var>.</dd>
       <dt><code>(i/ <var>arg</var>[ <var>div</var>..])</code></dt>
-      <dd>Returns <var>arg1</var> divided by <var>arg2</var></dd>
+      <dd>
+	Returns <var>arg1</var> divided by <var>arg2</var>. Throws <code>arith-error</code> if <var>arg2</var> is zero.
+      </dd>
       <dt><code>(i% <var>arg</var>[ <var>div</var>..])</code></dt>
-      <dd>Returns the rest (modulo) of the integer division of <var>arg1</var> by <var>arg2</var>.</dd>
+      <dd>
+	Returns the rest (modulo) of the integer division of <var>arg1</var>
+	by <var>arg2</var>. Throws <code>arith-error</code> if <var>arg2</var> is zero.
+      </dd>
       <dt><code>(i= <var>arg1</var> <var>arg2</var>)</code></dt>
       <dt><code>(i&lt; <var>arg1</var> <var>arg2</var>)</code></dt>
       <dt><code>(i&gt; <var>arg1</var> <var>arg2</var>)</code></dt>
@@ -583,6 +589,17 @@
       <dd>Synonym for <code>integerp</code>.</dd>
       <dt><code>(not <var>object</var>)</code> <u>C</u></dt>
       <dd>Logical inverse. In Lisp a synonym for <code>null</code></dd>
+      <dt><code>(fold-left <var>func</var> <var>init</var> <var>list</var>)</code> <u>Ss: fold-left</u></dt>
+      <dd>
+	Apply the binary <var>func</var>tion to <var>start</var> and the first element of <var>list</var> and then
+	recursively to the result of the previous invocation and the first element of the rest of <var>list</var>. If <var>list</var> is empty return <var>start</var>.
+      </dd>
+      <dt><code>(length <var>obj</var>)</code> <u>C</u></dt>
+      <dd>Returns the length of <var>obj</var> if it is a string or a list, otherwise throws a type exception.</dd>
+      <dt><code>(+[ <var>arg</var>..])</code></dt>
+      <dd>Returns the sum of all <var>arg</var>s or <code>0</code> if none is given.</dd>
+      <dt><code>(*[ <var>arg</var>..])</code></dt>
+      <dd>Returns the product of all <var>arg</var>s or <code>1</code> if none given.</dd>
       <dt><code>(string <var>arg</var>)</code> <u>C</u></dt>
       <dd>Returns the string conversion of argument.</dd>
       <dt><code>(concat </code>[<code><var>arg</var></code>..]<code>)</code> <u>Ce</u></dt>
@@ -606,8 +623,6 @@
 	Labelled or <q>named</q> <code>let</code>: define a local function <var>label</var> with <var>body</var> and
 	all <var>name</var>s as parameters bound to the <var>values</var>.
       </dd>
-      <dt><code>(length <var>obj</var>)</code> <u>C</u></dt>
-      <dd>Returns the length of <var>obj</var> if it is a string or a list, otherwise throws a type exception.</dd>
       <dt><code>(prog1 <var>sexp</var>[<var>sexp</var>..])</code> <u>C</u></dt>
       <dd>Evaluate all <var>sexp</var> in turn and return the value of the first.</dd>
       <dt><code>(number-to-string <var>integer</var>)</code> <u>C</u></dt>
@@ -632,16 +647,12 @@
 
     <p>
       <mark>
-	Arithmethic functions currently are aliased to the binary integer operators.  n-ary operation is yet to be
-	implemented in Lisp. The following documents the expected behavior.
+	The following arithmethic functions are currently aliased to the binary integer operators.  n-ary operation is
+	yet to be implemented in Lisp. The expected behavior:.
       </mark>
     </p>
     
     <dl>
-      <dt><code>(+[ <var>arg</var>..])</code></dt>
-      <dd>Returns the sum of all <var>arg</var>s or <code>0</code> if none is given.</dd>
-      <dt><code>(*[ <var>arg</var>..])</code></dt>
-      <dd>Returns the product of all <var>arg</var>s or <code>1</code> if none given.</dd>
       <dt><code>(-[ <var>arg</var>..])</code></dt>
       <dd>
 	Returns 0 if no <var>arg</var> is given, -<var>arg</var> if only one is given, <var>arg</var> minus the sum of
@@ -695,6 +706,9 @@
       <dt>min</dt>
       <dt>nthcdr</dt>
       <dt>nth</dt>
+      <dt><code>(fold-right <var>func</var> <var>end</var> <var>list</var>)</code> <u>Cs</u></dt>
+      <dt><code>(unfold <var>func</var> <var>init</var> <var>pred</var>)</code> <u>Cs</u></dt>
+      <dt><code>(iota <var>count</var>[ <var>start</var>[ <var>step</var>]])</code> <u>Cs</u></dt>
     </dl>
 
     <h4 id="std_lib">Standard Library</h4>

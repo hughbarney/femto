@@ -283,6 +283,7 @@ The following error type symbols are defined and used internally:
 - `wrong-type-argument`
 - `invalid-value`
 - `wrong-num-of-arguments`
+- `arith-error`
 - `io-error`
 - `out-of-memory`
 - `gc-error`
@@ -473,10 +474,12 @@ Returns the product of *arg1* *arg2*.
 Returns *arg1* minus *arg2*.
 
 `(i/ «arg»[ «div»..])`  
-Returns *arg1* divided by *arg2*
+Returns *arg1* divided by *arg2*. Throws `arith-error` if *arg2* is
+zero.
 
 `(i% «arg»[ «div»..])`  
 Returns the rest (modulo) of the integer division of *arg1* by *arg2*.
+Throws `arith-error` if *arg2* is zero.
 
 `(i= «arg1» «arg2»)`  
 `(i< «arg1» «arg2»)`  
@@ -582,6 +585,21 @@ Synonym for `integerp`.
 `(not «object»)` <u>C</u>  
 Logical inverse. In Lisp a synonym for `null`
 
+`(fold-left «func» «init» «list»)` <u>Ss: fold-left</u>  
+Apply the binary *func*tion to *start* and the first element of *list*
+and then recursively to the result of the previous invocation and the
+first element of the rest of *list*. If *list* is empty return *start*.
+
+`(length «obj»)` <u>C</u>  
+Returns the length of *obj* if it is a string or a list, otherwise
+throws a type exception.
+
+`(+[ «arg»..])`  
+Returns the sum of all *arg*s or `0` if none is given.
+
+`(*[ «arg»..])`  
+Returns the product of all *arg*s or `1` if none given.
+
 `(string «arg»)` <u>C</u>  
 Returns the string conversion of argument.
 
@@ -608,10 +626,6 @@ Bind all *name*s to the respective *value*s then evaluate body.
 Labelled or “named” `let`: define a local function *label* with *body*
 and all *name*s as parameters bound to the *values*.
 
-`(length «obj»)` <u>C</u>  
-Returns the length of *obj* if it is a string or a list, otherwise
-throws a type exception.
-
 `(prog1 «sexp»[«sexp»..])` <u>C</u>  
 Evaluate all *sexp* in turn and return the value of the first.
 
@@ -633,15 +647,9 @@ If the *feature* is not alreaded loaded, the file *feature*`.lsp` is
 loaded from the library path and registers the *feature* if loading was
 successful. The register is the variable *features*.
 
-<span class="mark"> Arithmethic functions currently are aliased to the
-binary integer operators. n-ary operation is yet to be implemented in
-Lisp. The following documents the expected behavior. </span>
-
-`(+[ «arg»..])`  
-Returns the sum of all *arg*s or `0` if none is given.
-
-`(*[ «arg»..])`  
-Returns the product of all *arg*s or `1` if none given.
+<span class="mark"> The following arithmethic functions are currently
+aliased to the binary integer operators. n-ary operation is yet to be
+implemented in Lisp. The expected behavior:. </span>
 
 `(-[ «arg»..])`  
 Returns 0 if no *arg* is given, -*arg* if only one is given, *arg* minus
@@ -693,6 +701,12 @@ min
 nthcdr
 
 nth
+
+`(fold-right «func» «end» «list»)` <u>Cs</u>
+
+`(unfold «func» «init» «pred»)` <u>Cs</u>
+
+`(iota «count»[ «start»[ «step»]])` <u>Cs</u>
 
 #### Standard Library
 

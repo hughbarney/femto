@@ -1,7 +1,7 @@
 #!./run
 # test the fLisp library
 # leg20231129: Femto
-tap 51
+tap 56
 
 export FLISPRC=../lisp/core.lsp
 flisplib() { IN="(require 'flisp) $IN" flisp_expr "$@"; }
@@ -175,6 +175,19 @@ flisplib 1; ok nthcdr-4 index over length yields nil
 
 IN="(nth 1 '(a b c))" OUT=b
 flisplib 1; ok nth-1 yields element
+
+false; ok foldr-1 \# TODO
+
+false; ok unfold-1 \# TODO
+
+IN="(iota 5)" OUT="(0 1 2 3 4)"
+flisplib 1; ok iota-1 iota count gives count
+
+IN="(iota 5 10)" OUT="(10 11 12 13 14)"
+flisplib 1; ok iota-1 iota count start gives count from start
+
+IN="(iota 5 10 2)" OUT="(10 12 14 16 18)"
+flisplib 1; ok iota-1 iota count step gives count from start by step
 
 
 # Local Variables:

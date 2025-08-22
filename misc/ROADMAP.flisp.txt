@@ -1,14 +1,16 @@
 + Bump fLisp version: reason: error type symbols instead of result codes
 + Add error type symbols to the top level environment
 + Change to 64 bit integers
++ Implement type-of, curry and move all type predicates except null and consp from C to Lisp.
++ Add search to string library
++ implement fold
 - Showcase lisp_eval2 with (catch (fread)) mechanism
 - Implement fstat and improve femto.rc
 - Implement mkdir and fix file save bug
-+ Implement type-of, curry and move all type predicates except null and consp from C to Lisp.
+- Move string-to-number to Lisp by using (read f) from a memory stream.
 - Implement backquote and friends
-- Fix reduce, maybe implement fold, map, consider simplifying core functions and make them n-ary in Lisp.
+- Fix reduce, implement map, consider simplifying core functions and make them n-ary in Lisp.
 - Fix string library,
-+ Add search to string library
 - Unify stdlib into flisp.lsp
 - Implement simple repl in Lisp
   - needs getline
