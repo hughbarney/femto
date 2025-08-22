@@ -45,4 +45,23 @@
 (defun nth (n list)
   (car (nthcdr n list)))
 
+(defun fold-right (f e l)
+  (cond
+    ((null l) e)
+    (t (f (car l) (fold-right f e (cdr l))))))
+
+(defun unfold (func init pred)
+  (cond ((pred init) (cons init nil))
+	(t (cons init (unfold func (func init) pred)))))
+
+(defun iota (count . args)
+  (let (
+	(count (- count 1))
+	(start (cond ((car args)) (t 0)))
+	(step (cond ((cadr args)) (t 1))))
+    (let (
+	  (func (lambda (n) (setq count (- count 1)) (+ n step)))
+	  (pred (lambda (n) (= 0 count))))
+      (unfold func start pred))))
+
 (provide 'flisp)
