@@ -52,6 +52,7 @@ Object *range_error =            &(Object) { NULL, .string = "range-error" };
 Object *wrong_type_argument =    &(Object) { NULL, .string = "wrong-type-argument" };
 Object *invalid_value =          &(Object) { NULL, .string = "invalid-value" };
 Object *wrong_num_of_arguments = &(Object) { NULL, .string = "wrong-num-of-arguments" }; /* 'number' is two characters to long */
+Object *arith_error =            &(Object) { NULL, .string = "arith-error"};
 Object *io_error =               &(Object) { NULL, .string = "io-error" };
 Object *out_of_memory =          &(Object) { NULL, .string = "out-of-memory" };
 Object *gc_error =               &(Object) { NULL, .string = "gc-error" };
@@ -82,6 +83,7 @@ Constant flisp_constants[] = {
     { &wrong_type_argument, &wrong_type_argument },
     { &invalid_value, &invalid_value },
     { &wrong_num_of_arguments, &wrong_num_of_arguments },
+    { &arith_error, &arith_error },
     { &io_error, &io_error },
     { &out_of_memory, &out_of_memory },
     { &gc_error, &gc_error }
@@ -1857,12 +1859,16 @@ Object *integerMultiply(Interpreter *interp, Object **args, Object **env)
 
 Object *integerDivide(Interpreter *interp, Object **args, Object **env)
 {
-    return newInteger(interp, FLISP_ARG_ONE->integer / FLISP_ARG_TWO->integer);
+    if (FLISP_ARG_TWO->integer)
+        return newInteger(interp, FLISP_ARG_ONE->integer / FLISP_ARG_TWO->integer);
+    exceptionWithObject(interp, FLISP_ARG_TWO, arith_error, "(i/ q d) - d: division by zero");
 }
 
 Object *integerMod(Interpreter *interp, Object **args, Object **env)
 {
-    return newInteger(interp, FLISP_ARG_ONE->integer % FLISP_ARG_TWO->integer);
+    if (FLISP_ARG_TWO->integer)
+        return newInteger(interp, FLISP_ARG_ONE->integer % FLISP_ARG_TWO->integer);
+    exceptionWithObject(interp, FLISP_ARG_TWO, arith_error, "(i%% q d) - d: division by zero");
 }
 
 Object *integerEqual(Interpreter *interp, Object **args, Object **env)
