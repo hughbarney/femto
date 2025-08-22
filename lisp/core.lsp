@@ -101,17 +101,16 @@
 (defun /  args (nfold     (coercec i/ d/)  1 args))
 (defun %  args (nfold     (coercec i% d%)  1 args))
 
+(defun fold-leftp (predicate start list)
+  (cond ((null list))
+	((predicate start (car list)) (fold-leftp predicate (car list) (cdr list)))))
 
-(setq
-; - i-
-; / i/
-; % i%
- = i=
- < i<
- <= i<=
- > i>
- >= i>=
- )
+(defun =  (x . args) (fold-leftp (coercec i=  d=)  x args))
+(defun <  (x . args) (fold-leftp (coercec i<  d<)  x args))
+(defun <= (x . args) (fold-leftp (coercec i<= d<=)  x args))
+(defun >  (x . args) (fold-leftp (coercec i>  d>)  x args))
+(defun >= (x . args) (fold-leftp (coercec i>= d>=)  x args))
+
 
 (defmacro let args
   (cond
