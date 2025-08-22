@@ -29,8 +29,22 @@
 
 (setq not null)
 
+(defun fold-left (f i l)
+  (cond ((null l) i)
+	(t (fold-left f (f i (car l)) (cdr l))) ))
+
+(defun length (o)
+  (cond
+    ((null o) 0)
+    ((stringp o) (string-length o))
+    ((consp o)
+     (fold-left (lambda (x y) (+ x 1)) 0 o))
+    (t (throw wrong-type-argument "(length object) - expected type-cons or type-string" o))))
+
 ;;; Wrap all math to Integer operations
-(setq + i+  - i-  * i*  / i/  % i%  = i=  < i<  <= i<=  > i>  >= i>=)
+(defun +  args (fold-left i+   0 args))
+(defun *  args (fold-left i*   1 args))
+(setq  - i-  / i/  % i%  = i=  < i<  <= i<=  > i>  >= i>=)
 
 (defun string (s)
   ;; Convert argument to string.
@@ -87,18 +101,6 @@
 		  (cons 'lambda (cons (map1 car (cadr args)) (cddr args))))
 	    (cons (car args) (map1 cadr (cadr args))))))
     (t (throw wrong-type-argument "let: first argument neither label nor binding" (car args)))))
-
-(defun length (o)
-  (cond
-    ((null o) 0)
-    ((stringp o) (string-length o))
-    ((consp o)
-     (let count ((o o) (len 1))
-	  (cond
-	    ((null (cdr o)) len)
-	    (t (count (cdr o) (+ len 1))))))
-    (t (throw wrong-type-argument "(length object) - expected type-cons or type-string" o))))
-
 
 (defun prog1 (arg . args) arg)
 
