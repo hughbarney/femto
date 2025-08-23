@@ -185,7 +185,9 @@ extern void lisp_eval_string(Interpreter *, char *);
 extern void lisp_write_object(Interpreter *, FILE *, Object *, bool);
 extern void lisp_write_error(Interpreter *, FILE *);
 
+extern void lisp_write_error2(Interpreter *, FILE *);
 extern void lisp_eval2(Interpreter *);
+extern void lisp_eval3(Interpreter *, char *);
 extern void lisp_eval_string2(Interpreter *, char *);
 
 #ifdef FLISP_FILE_EXTENSION

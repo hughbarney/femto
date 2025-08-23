@@ -64,6 +64,9 @@ Object *type_env =               &(Object) { NULL, .string  = "type-env" };
 Object *type_moved =             &(Object) { NULL, .string  = "type-moved" };
 Object *empty =                  &(Object) { NULL, .string = "\0" };
 Object *one =                    &(Object) { NULL, .integer = 1 };
+Object *okObject =               &(Object) { NULL };
+Object *okMessage =              &(Object) { NULL };
+Object *ok =                     &(Object) { NULL };
 
 Constant flisp_constants[] = {
     /* Fundamentals */
@@ -2277,6 +2280,14 @@ void initRootEnv(Interpreter *interp)
 #ifdef FLISP_DOUBLE_EXTENSION
     double_one->type = type_double;
 #endif
+    okObject->type = type_cons;
+    okObject->car = okObject->cdr = nil;
+    okMessage->type = type_cons;
+    okMessage->car = empty;
+    okMessage->cdr = okObject;
+    ok->type = type_cons;
+    ok->car = nil;
+    ok->cdr = okMessage;
     
     // add primitives
     GC_TRACE(gcVar, nil);
@@ -2363,7 +2374,7 @@ Interpreter *lisp_new(
     }
     interp->memory = memory;
 
-    interp->object = nil;
+    interp->object = ok;
     interp->msg_buf[0] = '\0';
     interp->result = nil;
 
@@ -2453,6 +2464,9 @@ void lisp_destroy(Interpreter *interp)
             (void)munmap(interp->memory->toSpace, interp->memory->capacity * 2);
     }
 #endif
+
+    if (interp->debug)
+        fclose(interp->debug);
     free(interp->memory);
     free(interp);
 }
@@ -2508,32 +2522,6 @@ void lisp_eval(Interpreter *interp)
     longjmp(*interp->catch, FLISP_RETURN);
     GC_RELEASE; // make the compiler happy
 }
-
-void lisp_eval2(Interpreter *interp)
-{
-    // start the garbage collector
-    interp->gcTop = nil;
-    GC_CHECKPOINT;
-    GC_TRACE(gcObject, nil);
-    Object read = { type_primitive, };
-    Object *doRead = &(Object) { type_cons, .car = &read, .cdr = nil };
-
-    for (;;) {
-        /* read */
-        *gcObject = evalCatch(interp, &doRead, &interp->global);
-        lisp_write_object(interp, interp->debug, interp->object, true);
-        if (interp->object->car != nil) break;
-        /* eval */
-        *gcObject = interp->object->cdr->cdr->car;
-        *gcObject = evalCatch(interp, gcObject, &interp->global);
-        if (interp->object->car != nil) break;
-        lisp_write_object(interp, interp->output, interp->object, true);
-        writeChar(interp, interp->output, '\n');
-        if (interp->output) fflush(interp->output);
-    }
-    GC_RELEASE;
-}
-
 
 /** lisp_write_error - format error message and write to file
  *
@@ -2602,11 +2590,56 @@ io_error:
     return;
 }
 
+
+void lisp_write_error2(Interpreter *interp, FILE *fd)
+{
+    fprintf(fd, "error: '");
+    lisp_write_object(interp, fd, interp->object->cdr->cdr->car, true);
+    fprintf(fd, "', %s\n", interp->object->cdr->car->string);
+    fflush(fd);
+}
+
+void lisp_eval2(Interpreter *interp)
+{
+    // reset the garbage collector
+    interp->gcTop = nil;
+    GC_CHECKPOINT;
+    GC_TRACE(gcObject, nil);
+    Primitive readPrimitive = { "read", 0, 2, 0, primitiveRead };
+    Object *readObject =     &(Object) { type_primitive, .primitive = &readPrimitive, .type_check = nil };
+    Object *readInvocation = &(Object) { type_cons, .car = readObject, .cdr = nil };
+    Object *readApply =      &(Object) { type_cons, .car = readInvocation, .cdr = nil };
+
+    Object *okObject = &(Object) { type_cons, .car = nil, .cdr = nil };
+    Object *okString = &(Object) { type_cons, .car = empty, .cdr = okObject };
+    Object *result = &(Object) { type_cons, .car = nil, .cdr = okString };
+
+    for (;;) {
+        /* read */
+        *gcObject = evalCatch(interp, &readApply, &interp->global);
+        if (interp->object->car == end_of_file) {
+            interp->object = result;
+            break;
+        }
+        if (interp->object->car != nil)
+            break;
+        /* eval */
+        *gcObject = newCons(interp, &interp->object->cdr->cdr->car, &nil);
+        *gcObject = evalCatch(interp, gcObject, &interp->global);
+        if ((*gcObject)->car != nil)
+            break;
+        lisp_write_object(interp, interp->output, (*gcObject)->cdr->cdr->car, true);
+        writeChar(interp, interp->output, '\n');
+        if (interp->output) fflush(interp->output);
+        result = *gcObject;
+    }
+    GC_RELEASE;
+}
 void lisp_eval_string2(Interpreter *interp, char *input)
 {
 
     FILE *fd, *prev;
-    fl_debug(interp, "lisp_eval_string(\"%s\")", input);
+    fl_debug(interp, "lisp_eval_string2(\"%s\")", input);
 
     if (NULL == (fd = fmemopen(input, strlen(input), "r")))  {
         strncpy(interp->msg_buf, "failed to allocate input stream", sizeof(interp->msg_buf));
@@ -2616,10 +2649,73 @@ void lisp_eval_string2(Interpreter *interp, char *input)
     }
     prev = interp->input;
     interp->input = fd;
+
     lisp_eval2(interp);
     interp->input = prev;
     (void)fclose(fd);
 }
+
+
+/** (catch (eval (read f)))
+ */
+void cerf(Interpreter *interp, FILE *fd)
+{
+    Primitive readPrimitive =  { "read",  0, 2, 0, primitiveRead };
+    Primitive evalPrimitive =  { "eval",  1, 1, 0, primitiveEval };
+
+    Object f =         (Object) { type_stream, .path = nil, .fd = fd };
+    Object fCons =     (Object) { type_cons, .car = &f, .cdr = nil };
+    Object read =      (Object) { type_primitive, .primitive = &readPrimitive, .type_check = nil };
+    Object readCons =  (Object) { type_cons, .car = &read, .cdr = &fCons };
+    if (fd == NULL)
+        readCons.cdr = nil;
+    Object readApply =  (Object) { type_cons, .car = &readCons, .cdr = nil };
+    
+    Object eval =      (Object) { type_primitive, .primitive = &evalPrimitive, .type_check = nil };
+    Object evalCons =  (Object) { type_cons, .car = &eval, .cdr = &readApply };
+    Object *evalApply = &(Object) { type_cons, .car = &evalCons, .cdr = nil };
+    
+    (void) evalCatch(interp, &evalApply, &interp->global);
+}
+
+Object *openInputStreamError(void)
+{
+    Object *m = &(Object) { type_string, .string = "alloc stream failed" };
+    Object *o = &(Object) { type_cons, .car = nil, .cdr = nil };
+    o =         &(Object) { type_cons, .car = m, .cdr = o };
+    return      &(Object) { type_cons, .car = io_error, .cdr = o };
+}
+
+void lisp_eval3(Interpreter *interp, char *input)
+{
+    FILE *fd = NULL;
+    Object *result;
+
+    if (input != NULL) {
+        fl_debug(interp, "lisp_eval3(\"%s\")", input);
+        if (NULL == (fd = fmemopen(input, strlen(input), "r")))  {
+            interp->object = openInputStreamError();
+            return;
+        }
+    }
+    interp->gcTop = nil;
+    interp->object = result = ok;
+    for (;;) {
+        cerf(interp, fd);
+        if (interp->object->car == end_of_file) {
+            interp->object = result;
+            break;
+        }
+        if (interp->object->car != nil)
+            break;
+        result = interp->object;
+        lisp_write_object(interp, interp->output, result->cdr->cdr->car, true);
+        writeChar(interp, interp->output, '\n');
+    }
+    if (interp->output) fflush(interp->output);
+    if (fd) fclose(fd);
+}
+
 
 /*
  * Local Variables:
