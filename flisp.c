@@ -10,7 +10,7 @@
 #include "lisp.h"
 
 // Specify in kByte.
-#define FLISP_MEMORY_SIZE   300
+#define FLISP_MEMORY_SIZE   400
 // less then this is too small for femto.lsp
 
 
@@ -33,7 +33,7 @@ void fatal(char *msg)
 // - isatty()
 // - exception handling in fLisp
 // - file output for error messages
-int repl(Interpreter *interp)
+void repl(Interpreter *interp)
 {
     size_t i;
 
@@ -45,6 +45,7 @@ int repl(Interpreter *interp)
 
         if (!fgets(input, sizeof(input), stdin)) break;
         i=strlen(input);
+        //if (!i) continue;
         if (input[i-1] == '\n')
             input[i-1] = '\0';
         else {
@@ -53,15 +54,16 @@ int repl(Interpreter *interp)
             continue;
         }
 
-        lisp_eval_string(interp, input);
-        if (interp->result != nil)
-            lisp_write_error(interp, stderr);
+        lisp_eval_string2(interp, input);
+        if (interp->object->car != nil)
+            lisp_write_error2(interp, stderr);
     }
     // Note: close output, error?
-    if (interp->result != nil)
+    if (interp->object->car != nil) {
+        lisp_write_error2(interp, stderr);
         exit_code = 1;
-    lisp_destroy(interp);
-    return exit_code;
+    }
+    return;
 }
 
 int main(int argc, char **argv)
@@ -92,11 +94,12 @@ int main(int argc, char **argv)
         else {
             // load inifile
             interp->input = fd;
-            lisp_eval(interp);
-            if (interp->result != nil)
-                // Note: the error object can be printed with lisp_write_object
+            lisp_eval2(interp);
+            if (interp->object->car != nil) {
+                lisp_write_error2(interp, stderr);
                 fprintf(stderr, "failed to load inifile %s: %s\n", init_file, interp->msg_buf);
             // Note: if we could implement the repl in fLisp itself we'd bail out here.
+            }
             if (fclose(fd))
                 // Note: the error object can be printed with lisp_write_object
                 fprintf(stderr, "failed to close inifile %s %s\n", init_file, interp->msg_buf);
@@ -104,15 +107,17 @@ int main(int argc, char **argv)
     }
     // Start repl
     //Note: could be omitted if we could implement the repl in fLisp itself.
-    if (isatty(0))
-        return repl(interp);
+    if (isatty(0)) {
+        repl(interp);
+    } else {
 
-    // Just eval the standard input
-    interp->input = stdin;
-    lisp_eval(interp);
-    if (interp->result != nil) {
-        exit_code = 1;
-        lisp_write_error(interp, stderr);
+        // Just eval the standard input
+        interp->input = stdin;
+        lisp_eval2(interp);
+        if (interp->object->car != nil) {
+            lisp_write_error2(interp, stderr);
+            exit_code = 1;
+        }
     }
     lisp_destroy(interp);
     return exit_code;

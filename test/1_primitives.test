@@ -28,7 +28,7 @@ flisp_err; ok reader-1 incomplete sexp error msg
 IN='"' ERR='unexpected end of stream in string literal'
 flisp_err; ok reader-2 incomplete string error msg
 
-IN='\\' ERR="\`'" OBJ="unexpected character, \`'"
+IN='\\' OBJ="nil" ERR="unexpected character, \`'"
 flisp_err; ok reader-3 unexpected character error msg
 
 IN="0" OUT='0'
