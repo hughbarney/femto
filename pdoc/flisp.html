@@ -69,6 +69,7 @@
 	<li><a href="#arithmetic_ops">Arithmetic Operations</a></li>
 	<li><a href="#string_ops">String Operations</a></li>
       </ol>
+      <li><a href="#double">Double Extension</a></li>
       <li><a href="#libraries">Lisp Libraries</a></li>
       <ol>
 	<li><a href="#startup">Library Loading</a></li>
@@ -126,6 +127,29 @@
       <i>fLisp</i> does not use <code>[</code>square brackets<code>]</code> and double-dots <code>..</code> as
       syntactical elements.
     </p>
+    <p>
+      Variables names convey the following context:
+    </p>
+    <dl>
+      <dt>Lisp object of any type:</dt>
+      <dd><var>object</var> <var>value</var> <var>o</var> <var>a</var> <var>b</var> <var>c</var></dd>
+      <dt>Program elements:</dt>
+      <dd><var>params</var> <var>opt</var> <var>body</var> <var>expr</var> <var>pred</var></dd>
+      <dt>Integer:</dt>
+      <dd><var>i</var> <var>j</var> <var>k</var></dd>
+      <dt>Double:</dt>
+      <dd><var>x</var> <var>y</var> <var>z</var></dd>
+      <dt>Any numeric type:</dt>
+      <dd><var>num</var> <var>num1</var> <var>num2</var></dd>
+      <dt>Symbol:</dt>
+      <dd><var>symbol</var></dd>
+      <dt>String:</dt>
+      <dd><var>string</var> <var>s</var> <var>s1</var> <var>s2</var> …</dd>
+      <dt>List/Cons:</dt>
+      <dd><var>cons</var> <var>l</var> <var>l1</var> <var>l2</var> …</dd>
+      <dt>Stream:</dt>
+      <dd><var>stream</var> <var>f</var></dd>
+    </dl>
     <p>
       <i>fLisp</i> fancies to converge towards Emacs and Common Lisp, but includes also Scheme functions.  Function
       descriptions are annotated according to their compatibility:
@@ -361,9 +385,9 @@
       <dd> These forms return a macro function. Parameter handling is the same as with lambda.</dd>
       <dt><code>(quote <var>expr</var>)</code></dt>
       <dd>Returns <var>expr</var> without evaluating it.</dd>
-      <dt><code>(catch <var>expression</var>)</code> <u>D</u></dt>
+      <dt><code>(catch <var>expr</var>)</code> <u>D</u></dt>
       <dd>
-	<p>Evaluates <var>expression</var> and returns a list with three elements:</p>
+	<p>Evaluates <var>expr</var> and returns a list with three elements:</p>
 	<dl>
 	  <dt><var>result</var></dt>
 	  <dd><code>0</code> on success or any other number indicating an error.</dd>
@@ -383,7 +407,7 @@
     <dl>
       <dt><code>(open <var>path</var>[ <var>mode</var>])</code> <u>S: open</u></dt>
       <dd>
-	Open file at <var>path</var> with <var>mode</var> and return a stream
+	Open file at string <var>path</var> with string <var>mode</var> and return a stream
 	object. <var>mode</var> is <code>"r"</code>ead only by default.
       </dd>
       <dd>
@@ -474,28 +498,28 @@
     <h4 id="arithmetic_ops">Arithmetic Operations</h4>
 
     <dl>
-      <dt><code>(i+ <var>arg1</var> <var>arg2</var>)</code></dt>
-      <dd>Returns the sum of <var>arg1</var> <var>arg2</var>.</dd>
-      <dt><code>(i* <var>arg1</var> <var>arg2</var>)</code></dt>
-      <dd>Returns the product of <var>arg1</var> <var>arg2</var>.</dd>
-      <dt><code>(i- <var>arg1</var> <var>arg2</var>)</code></dt>
-      <dd>Returns <var>arg1</var> minus <var>arg2</var>.</dd>
-      <dt><code>(i/ <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dt><code>(i+ <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns the sum of <var>i</var> <var>j</var>.</dd>
+      <dt><code>(i* <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns the product of <var>i</var> <var>j</var>.</dd>
+      <dt><code>(i- <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns <var>i</var> minus <var>j</var>.</dd>
+      <dt><code>(i/ <var>i</var> <var>j</var>)</code></dt>
       <dd>
-	Returns <var>arg1</var> divided by <var>arg2</var>. Throws <code>arith-error</code> if <var>arg2</var> is zero.
+	Returns <var>i</var> divided by <var>j</var>. Throws <code>arith-error</code> if <var>j</var> is zero.
       </dd>
-      <dt><code>(i% <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dt><code>(i% <var>i</var> <var>j</var>)</code></dt>
       <dd>
-	Returns the rest (modulo) of the integer division of <var>arg1</var>
-	by <var>arg2</var>. Throws <code>arith-error</code> if <var>arg2</var> is zero.
+	Returns the rest (modulo) of the integer division of <var>i</var>
+	by <var>j</var>. Throws <code>arith-error</code> if <var>j</var> is zero.
       </dd>
-      <dt><code>(i= <var>arg1</var> <var>arg2</var>)</code></dt>
-      <dt><code>(i&lt; <var>arg1</var> <var>arg2</var>)</code></dt>
-      <dt><code>(i&gt; <var>arg1</var> <var>arg2</var>)</code></dt>
-      <dt><code>(i&lt;= <var>arg1</var> <var>arg2</var>)</code></dt>
-      <dt><code>(i&gt;= <var>arg1</var> <var>arg2</var>)</code></dt>
+      <dt><code>(i= <var>i</var> <var>j</var>)</code></dt>
+      <dt><code>(i&lt; <var>i</var> <var>j</var>)</code></dt>
+      <dt><code>(i&gt; <var>i</var> <var>j</var>)</code></dt>
+      <dt><code>(i&lt;= <var>i</var> <var>j</var>)</code></dt>
+      <dt><code>(i&gt;= <var>i</var> <var>j</var>)</code></dt>
       <dd>
-	These predicate functions apply the respective comparison operator between <var>arg1</var> <var>arg2</var>.
+	These predicate functions apply the respective comparison operator between <var>i</var> <var>j</var>.
       </dd>
     </dl>
 
@@ -504,7 +528,7 @@
     <dl>
       <dt><code>(string-length <var>string</var>)</code></dt>
       <dd>Returns the length of <var>string</var> as a <i>number</i>.</dd>
-      <dt><code>(string-append <var>string1</var> <var>string2</var>)</code></dt>
+      <dt><code>(string-append <var>s1</var> <var>s2</var>)</code></dt>
       <dd>Returns a new string consisting of the concatenation of <var>string1</var> with <var>string2</var>.</dd>
       <dt><code>(substring <var>string</var>[ <var>start</var> [<var>end</var>]])</code></dt>
       <dd>
@@ -532,6 +556,35 @@
       <dd>
 	Converts the first character of <var>string</var> into an <i>integer</i> which corresponds to its ASCII
 	value.
+      </dd>
+    </dl>
+
+    <nav><a href="#toc">^</a></nav>
+    <h3 id="double">Double Extension</h3>
+
+    <dl>
+      <dt><code>(d+ <var>x</var> <var>y</var>)</code></dt>
+      <dd>Returns the sum of <var>x</var> <var>y</var>.</dd>
+      <dt><code>(d* <var>x</var> <var>y</var>)</code></dt>
+      <dd>Returns the product of <var>x</var> <var>y</var>.</dd>
+      <dt><code>(d- <var>x</var> <var>y</var>)</code></dt>
+      <dd>Returns <var>x</var> minus <var>y</var>.</dd>
+      <dt><code>(d/ <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dd>
+	Returns <var>x</var> divided by <var>y</var>, or <code>inf</code> if <var>y</var> is zero.
+      </dd>
+      <dt><code>(d% <var>x</var> <var>y</var>)</code></dt>
+      <dd>
+	Returns the rest (modulo) of the integer division of <var>x</var>
+	by <var>y</var> or <code>-nan</code> if <var>y</var> is zero.
+      </dd>
+      <dt><code>(d= <var>x</var> <var>y</var>)</code></dt>
+      <dt><code>(d&lt; <var>x</var> <var>y</var>)</code></dt>
+      <dt><code>(d&gt; <var>x</var> <var>y</var>)</code></dt>
+      <dt><code>(d&lt;= <var>x</var> <var>y</var>)</code></dt>
+      <dt><code>(d&gt;= <var>x</var> <var>y</var>)</code></dt>
+      <dd>
+	These predicate functions apply the respective comparison operator between <var>x</var> <var>y</var>.
       </dd>
     </dl>
 
@@ -572,9 +625,9 @@
       <dt><code>(defmacro <var>name</var> <var>params</var> <var>body</var>)</code> <u>C</u></dt>
       <dt><code>(defun <var>name</var> <var>params</var> <var>body</var>)</code> <u>C</u></dt>
       <dd>Defines and returns a macro or function, respectively.</dd>
-      <dt><code>(curry (<var>func</var> <var>arg1</var>))</code></dt>
+      <dt><code>(curry (<var>func</var> <var>a</var>))</code></dt>
       <dd>
-	Returns a lambda with one parameter which returns <code>(<var>func</var> <var>arg1</var> <var>arg2</var>)</code>.
+	Returns a lambda with one parameter which returns <code>(<var>func</var> <var>a</var> <var>b</var>)</code>.
       </dd>
       <dt><code>(typep (<var>type</var> <var>object</var>))</code> <u>C</u></dt>
       <dd>Returns true if <var>object</var> has <var>type</var>.</dd>
@@ -586,6 +639,8 @@
       <dt><code>(streamp <var>object</var>)</code> <u>C</u></dt>
       <dd>Return <code>t</code> if <var>object</var> is of the respective type, otherwise <code>nil</code>.</dd>
       <dt><code>(numberp <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(number-to-string <var>integer</var>)</code> <u>C</u></dt>
+      <dd>Converts <var>integer</var> into a <i>string</i> object.</dd>
       <dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
       <dd>
 	Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, number or
@@ -602,10 +657,6 @@
       </dd>
       <dt><code>(length <var>obj</var>)</code> <u>C</u></dt>
       <dd>Returns the length of <var>obj</var> if it is a string or a list, otherwise throws a type exception.</dd>
-      <dt><code>(+[ <var>arg</var>..])</code></dt>
-      <dd>Returns the sum of all <var>arg</var>s or <code>0</code> if none is given.</dd>
-      <dt><code>(*[ <var>arg</var>..])</code></dt>
-      <dd>Returns the product of all <var>arg</var>s or <code>1</code> if none given.</dd>
       <dt><code>(string <var>arg</var>)</code> <u>C</u></dt>
       <dd>Returns the string conversion of argument.</dd>
       <dt><code>(concat </code>[<code><var>arg</var></code>..]<code>)</code> <u>Ce</u></dt>
@@ -622,6 +673,11 @@
       <dt>Return the second element in the list, <code>(car (cdr <var>list</var>))</code>.</dt>
       <dt><code>(cddr <var>list</var>)</code> <u>C</u></dt>
       <dt>Return all elements after the second one in list, <code>(cdr (cdr <var>list</var>))</code>.</dt>
+      <dt><code>nfold</code></dt>
+      <dt><code>coerce</code></dt>
+      <dt><code>coercec</code></dt>
+      <dt><code>fold-leftp</code></dt>
+      <dd>Helper functions for n-ary generic number type arithmetic. See below.</dd>
       <dt><code>(let ((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code> <u>C</u></dt>
       <dd>Bind all <var>name</var>s to the respective <var>value</var>s then evaluate body.</dd>
       <dt><code>(let <var>label</var>((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code> <u>Cs</u></dt>
@@ -631,9 +687,6 @@
       </dd>
       <dt><code>(prog1 <var>sexp</var>[<var>sexp</var>..])</code> <u>C</u></dt>
       <dd>Evaluate all <var>sexp</var> in turn and return the value of the first.</dd>
-      <dt><code>(number-to-string <var>integer</var>)</code> <u>C</u></dt>
-      <dd>Converts <var>integer</var> into a <i>string</i> object.
-      </dd>
       <dt><code>(fload </code> <code><var>stream</var>)</code> <u>f</u></dt>
       <dd>Reads and evaluates all Lisp objects in <var>stream</var>.</dd>
       <dt><code>(load </code> <code><var>path</var>)</code> <u>C</u></dt>
@@ -652,38 +705,40 @@
     </dl>
 
     <p>
-      <mark>
-	The following arithmethic functions are currently aliased to the binary integer operators.  n-ary operation is
-	yet to be implemented in Lisp. The expected behavior:.
-      </mark>
+      The following arithmethic functions coerce their arguments to double if any of them is double, then they use
+      double arithmetic operators. If all arguments are integer they use integer arthmetic.
     </p>
     
     <dl>
-      <dt><code>(-[ <var>arg</var>..])</code></dt>
+      <dt><code>(+[ <var>num</var>..])</code></dt>
+      <dd>Returns the sum of all <var>num</var>s or <code>0</code> if none is given.</dd>
+      <dt><code>(*[ <var>num</var>..])</code></dt>
+      <dd>Returns the product of all <var>num</var>s or <code>1</code> if none given.</dd>
+      <dt><code>(-[ <var>num</var>..])</code></dt>
       <dd>
-	Returns 0 if no <var>arg</var> is given, -<var>arg</var> if only one is given, <var>arg</var> minus the sum of
+	Returns 0 if no <var>num</var> is given, -<var>num</var> if only one is given, <var>num</var> minus the sum of
 	all others otherwise.
       </dd>
-      <dt><code>(/ <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dt><code>(/ <var>num</var>[ <var>div</var>..])</code></dt>
       <dd>
-	Returns 1/<var>arg</var> if no <var>div</var> is given, <var>arg</var>/<var>div</var>[/<var>div</var>..] if one
+	Returns 1/<var>num</var> if no <var>div</var> is given, <var>num</var>/<var>div</var>[/<var>div</var>..] if one
 	or more <var>div</var>s are given, <code>inf</code> if one of the <var>div</var>s is <code>0</code> and the sum
 	of the signs of all operands is even, <code>-inf</code> if it is odd.
       </dd>
-      <dt><code>(% <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dt><code>(% <var>num</var>[ <var>div</var>..])</code></dt>
       <dd>
-	Returns <code>1</code> if no <var>div</var> is given, <var>arg</var>%<var>div</var>[%<var>div</var>..] if one or
+	Returns <code>1</code> if no <var>div</var> is given, <var>num</var>%<var>div</var>[%<var>div</var>..] if one or
 	more <var>div</var>s are given. If one of the <var>div</var>s is <code>0</code>, the program exits with an
 	arithmetic exception.
       </dd>
-      <dt><code>(= <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&lt; <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&gt; <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&lt;= <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&gt;= <var>arg</var>[ <var>arg</var>..])</code></dt>
+      <dt><code>(= <var>num</var>[ <var>num</var>..])</code></dt>
+      <dt><code>(&lt; <var>num</var>[ <var>num</var>..])</code></dt>
+      <dt><code>(&gt; <var>num</var>[ <var>num</var>..])</code></dt>
+      <dt><code>(&lt;= <var>num</var>[ <var>num</var>..])</code></dt>
+      <dt><code>(&gt;= <var>num</var>[ <var>num</var>..])</code></dt>
       <dd>
-	These predicate functions apply the respective comparison operator between all <var>arg</var>s and return the
-	respective result as <code>t</code> or <code>nil</code>.  If only one <var>arg</var> is given they all
+	These predicate functions apply the respective comparison operator between all <var>num</var>s and return the
+	respective result as <code>t</code> or <code>nil</code>.  If only one <var>num</var> is given they all
 	return <code>t</code>.
       </dd>
     </dl>

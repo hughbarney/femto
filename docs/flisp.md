@@ -51,13 +51,14 @@ This manual refers to version 0.6 or later of fLisp.
     3.  [Object Operations](#object_ops)
     4.  [Arithmetic Operations](#arithmetic_ops)
     5.  [String Operations](#string_ops)
-6.  [Lisp Libraries](#libraries)
+6.  [Double Extension](#double)
+7.  [Lisp Libraries](#libraries)
     1.  [Library Loading](#startup)
     2.  [Core Library](#core_lib)
     3.  [fLlisp Library](#flisp_lib)
     4.  [Standard Library](#std_lib)
     5.  [Femto Library](#femto_lib)
-7.  [Editor Extension](#editor)
+8.  [Editor Extension](#editor)
     1.  [Buffers](#buffers)
         1.  [Text manipulation](#text)
         2.  [Selection](#selection)
@@ -68,11 +69,11 @@ This manual refers to version 0.6 or later of fLisp.
         2.  [Message Line](#message_line)
         3.  [Keyboard Handling](#keyboard)
         4.  [Programming and System Interaction](#programming_system)
-8.  [Embedding fLisp](#embedding)
+9.  [Embedding fLisp](#embedding)
     1.  [Embedding Overview](#embedding)
     2.  [fLisp C Interface](#c_api)
     3.  [Building Extensions](#extensions)
-9.  [Implementation Details](#implementation)
+10. [Implementation Details](#implementation)
     1.  [Garbage Collection](#gc)
     2.  [Memory Usage](#memory)
     3.  [Future Directions](#future)
@@ -96,6 +97,35 @@ A single space is used to denote an arbitrary sequence of whitespace.
 
 *fLisp* does not use `[`square brackets`]` and double-dots `..` as
 syntactical elements.
+
+Variables names convey the following context:
+
+Lisp object of any type:  
+*object* *value* *o* *a* *b* *c*
+
+Program elements:  
+*params* *opt* *body* *expr* *pred*
+
+Integer:  
+*i* *j* *k*
+
+Double:  
+*x* *y* *z*
+
+Any numeric type:  
+*num* *num1* *num2*
+
+Symbol:  
+*symbol*
+
+String:  
+*string* *s* *s1* *s2* …
+
+List/Cons:  
+*cons* *l* *l1* *l2* …
+
+Stream:  
+*stream* *f*
 
 *fLisp* fancies to converge towards Emacs and Common Lisp, but includes
 also Scheme functions. Function descriptions are annotated according to
@@ -347,8 +377,8 @@ with lambda.
 `(quote «expr»)`  
 Returns *expr* without evaluating it.
 
-`(catch «expression»)` <u>D</u>  
-Evaluates *expression* and returns a list with three elements:
+`(catch «expr»)` <u>D</u>  
+Evaluates *expr* and returns a list with three elements:
 
 *result*  
 `0` on success or any other number indicating an error.
@@ -368,8 +398,8 @@ error type symbol, *message* is a human readable error string and
 
 `(open «path»[ «mode»])` <u>S: open</u>
 
-Open file at *path* with *mode* and return a stream object. *mode* is
-`"r"`ead only by default.
+Open file at string *path* with string *mode* and return a stream
+object. *mode* is `"r"`ead only by default.
 
 `open` can open or create files, file descriptors and memory based
 streams.
@@ -464,37 +494,36 @@ Returns `t` if *a* and *b* are the same object, `nil` otherwise.
 
 #### Arithmetic Operations
 
-`(i+ «arg1» «arg2»)`  
-Returns the sum of *arg1* *arg2*.
+`(i+ «i» «j»)`  
+Returns the sum of *i* *j*.
 
-`(i* «arg1» «arg2»)`  
-Returns the product of *arg1* *arg2*.
+`(i* «i» «j»)`  
+Returns the product of *i* *j*.
 
-`(i- «arg1» «arg2»)`  
-Returns *arg1* minus *arg2*.
+`(i- «i» «j»)`  
+Returns *i* minus *j*.
 
-`(i/ «arg»[ «div»..])`  
-Returns *arg1* divided by *arg2*. Throws `arith-error` if *arg2* is
-zero.
+`(i/ «i» «j»)`  
+Returns *i* divided by *j*. Throws `arith-error` if *j* is zero.
 
-`(i% «arg»[ «div»..])`  
-Returns the rest (modulo) of the integer division of *arg1* by *arg2*.
-Throws `arith-error` if *arg2* is zero.
+`(i% «i» «j»)`  
+Returns the rest (modulo) of the integer division of *i* by *j*. Throws
+`arith-error` if *j* is zero.
 
-`(i= «arg1» «arg2»)`  
-`(i< «arg1» «arg2»)`  
-`(i> «arg1» «arg2»)`  
-`(i<= «arg1» «arg2»)`  
-`(i>= «arg1» «arg2»)`  
+`(i= «i» «j»)`  
+`(i< «i» «j»)`  
+`(i> «i» «j»)`  
+`(i<= «i» «j»)`  
+`(i>= «i» «j»)`  
 These predicate functions apply the respective comparison operator
-between *arg1* *arg2*.
+between *i* *j*.
 
 #### String Operations
 
 `(string-length «string»)`  
 Returns the length of *string* as a *number*.
 
-`(string-append «string1» «string2»)`  
+`(string-append «s1» «s2»)`  
 Returns a new string consisting of the concatenation of *string1* with
 *string2*.
 
@@ -520,6 +549,34 @@ to the ASCII representation of *integer*.
 `(ascii->number «string»)`  
 Converts the first character of *string* into an *integer* which
 corresponds to its ASCII value.
+
+[^](#toc)
+
+### Double Extension
+
+`(d+ «x» «y»)`  
+Returns the sum of *x* *y*.
+
+`(d* «x» «y»)`  
+Returns the product of *x* *y*.
+
+`(d- «x» «y»)`  
+Returns *x* minus *y*.
+
+`(d/ «arg»[ «div»..])`  
+Returns *x* divided by *y*, or `inf` if *y* is zero.
+
+`(d% «x» «y»)`  
+Returns the rest (modulo) of the integer division of *x* by *y* or
+`-nan` if *y* is zero.
+
+`(d= «x» «y»)`  
+`(d< «x» «y»)`  
+`(d> «x» «y»)`  
+`(d<= «x» «y»)`  
+`(d>= «x» «y»)`  
+These predicate functions apply the respective comparison operator
+between *x* *y*.
 
 [^](#toc)
 
@@ -564,9 +621,8 @@ Returns the list of all provided elements.
 `(defun «name» «params» «body»)` <u>C</u>  
 Defines and returns a macro or function, respectively.
 
-`(curry («func» «arg1»))`  
-Returns a lambda with one parameter which returns
-`(«func» «arg1» «arg2»)`.
+`(curry («func» «a»))`  
+Returns a lambda with one parameter which returns `(«func» «a» «b»)`.
 
 `(typep («type» «object»))` <u>C</u>  
 Returns true if *object* has *type*.
@@ -580,6 +636,9 @@ Returns true if *object* has *type*.
 Return `t` if *object* is of the respective type, otherwise `nil`.
 
 `(numberp «object»)` <u>C</u>  
+`(number-to-string «integer»)` <u>C</u>  
+Converts *integer* into a *string* object.
+
 `(eq «a» «b»)`  
 Returns `t` if *a* and *b* evaluate to the same object, number or
 string, `nil` otherwise.
@@ -597,12 +656,6 @@ first element of the rest of *list*. If *list* is empty return *start*.
 `(length «obj»)` <u>C</u>  
 Returns the length of *obj* if it is a string or a list, otherwise
 throws a type exception.
-
-`(+[ «arg»..])`  
-Returns the sum of all *arg*s or `0` if none is given.
-
-`(*[ «arg»..])`  
-Returns the product of all *arg*s or `1` if none given.
 
 `(string «arg»)` <u>C</u>  
 Returns the string conversion of argument.
@@ -623,6 +676,12 @@ Apply func to each element in list and return a list of the results.
 Return the second element in the list, `(car (cdr «list»))`.  
 `(cddr «list»)` <u>C</u>  
 Return all elements after the second one in list, `(cdr (cdr «list»))`.  
+`nfold`  
+`coerce`  
+`coercec`  
+`fold-leftp`  
+Helper functions for n-ary generic number type arithmetic. See below.
+
 `(let ((«name» «value»)[ («name» «value»)..]) «body»)` <u>C</u>  
 Bind all *name*s to the respective *value*s then evaluate body.
 
@@ -632,9 +691,6 @@ and all *name*s as parameters bound to the *values*.
 
 `(prog1 «sexp»[«sexp»..])` <u>C</u>  
 Evaluate all *sexp* in turn and return the value of the first.
-
-`(number-to-string «integer»)` <u>C</u>  
-Converts *integer* into a *string* object.
 
 `(fload ` *stream*`)` <u>f</u>  
 Reads and evaluates all Lisp objects in *stream*.
@@ -651,32 +707,38 @@ If the *feature* is not alreaded loaded, the file *feature*`.lsp` is
 loaded from the library path and registers the *feature* if loading was
 successful. The register is the variable *features*.
 
-<span class="mark"> The following arithmethic functions are currently
-aliased to the binary integer operators. n-ary operation is yet to be
-implemented in Lisp. The expected behavior:. </span>
+The following arithmethic functions coerce their arguments to double if
+any of them is double, then they use double arithmetic operators. If all
+arguments are integer they use integer arthmetic.
 
-`(-[ «arg»..])`  
-Returns 0 if no *arg* is given, -*arg* if only one is given, *arg* minus
+`(+[ «num»..])`  
+Returns the sum of all *num*s or `0` if none is given.
+
+`(*[ «num»..])`  
+Returns the product of all *num*s or `1` if none given.
+
+`(-[ «num»..])`  
+Returns 0 if no *num* is given, -*num* if only one is given, *num* minus
 the sum of all others otherwise.
 
-`(/ «arg»[ «div»..])`  
-Returns 1/*arg* if no *div* is given, *arg*/*div*\[/*div*..\] if one or
+`(/ «num»[ «div»..])`  
+Returns 1/*num* if no *div* is given, *num*/*div*\[/*div*..\] if one or
 more *div*s are given, `inf` if one of the *div*s is `0` and the sum of
 the signs of all operands is even, `-inf` if it is odd.
 
-`(% «arg»[ «div»..])`  
-Returns `1` if no *div* is given, *arg*%*div*\[%*div*..\] if one or more
+`(% «num»[ «div»..])`  
+Returns `1` if no *div* is given, *num*%*div*\[%*div*..\] if one or more
 *div*s are given. If one of the *div*s is `0`, the program exits with an
 arithmetic exception.
 
-`(= «arg»[ «arg»..])`  
-`(< «arg»[ «arg»..])`  
-`(> «arg»[ «arg»..])`  
-`(<= «arg»[ «arg»..])`  
-`(>= «arg»[ «arg»..])`  
+`(= «num»[ «num»..])`  
+`(< «num»[ «num»..])`  
+`(> «num»[ «num»..])`  
+`(<= «num»[ «num»..])`  
+`(>= «num»[ «num»..])`  
 These predicate functions apply the respective comparison operator
-between all *arg*s and return the respective result as `t` or `nil`. If
-only one *arg* is given they all return `t`.
+between all *num*s and return the respective result as `t` or `nil`. If
+only one *num* is given they all return `t`.
 
 #### fLisp Library
 

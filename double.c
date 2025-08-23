@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "lisp.h"
 #include "double.h"
@@ -14,19 +15,19 @@ Object *type_double =            &(Object) { NULL, .string  = "type-double" };
 Object *double_one =            &(Object) { NULL, .number  = 1.0 };
 
 Primitive flisp_double_primitives[] = {
-    {"integer",       1,  1, TYPE_DOUBLE,  integerFromDouble},
-    {"double",       1,  1, TYPE_INTEGER, doubleFromInteger},
-    {"d+",            0, -1, TYPE_DOUBLE, doubleAdd},
-    {"d-",            0, -1, TYPE_DOUBLE, doubleSubtract},
-    {"d*",            0, -1, TYPE_DOUBLE, doubleMultiply},
-    {"d/",            1, -1, TYPE_DOUBLE, doubleDivide},
-    {"d%",            1, -1, TYPE_DOUBLE, doubleMod},
-    {"d=",            1, -1, TYPE_DOUBLE, doubleEqual},
-    {"d<",            1, -1, TYPE_DOUBLE, doubleLess},
-    {"d<=",           1, -1, TYPE_DOUBLE, doubleLessEqual},
-    {"d>",            1, -1, TYPE_DOUBLE, doubleGreater},
-    {"d>=",           1, -1, TYPE_DOUBLE, doubleGreaterEqual},
-    {NULL,            0,  0, 0,           NULL}
+    {"integer", 1,  1, TYPE_DOUBLE,  integerFromDouble},
+    {"double",  1,  1, TYPE_INTEGER, doubleFromInteger},
+    {"d+",      2,  2, TYPE_DOUBLE, doubleAdd},
+    {"d-",      2,  2, TYPE_DOUBLE, doubleSubtract},
+    {"d*",      2,  2, TYPE_DOUBLE, doubleMultiply},
+    {"d/",      2,  2, TYPE_DOUBLE, doubleDivide},
+    {"d%",      2,  2, TYPE_DOUBLE, doubleMod},
+    {"d=",      2,  2, TYPE_DOUBLE, doubleEqual},
+    {"d<",      2,  2, TYPE_DOUBLE, doubleLess},
+    {"d<=",     2,  2, TYPE_DOUBLE, doubleLessEqual},
+    {"d>",      2,  2, TYPE_DOUBLE, doubleGreater},
+    {"d>=",     2,  2, TYPE_DOUBLE, doubleGreaterEqual},
+    {NULL,      0,  0, 0,           NULL}
 };
 
 Object *newDouble(Interpreter *interp, double number)
@@ -61,7 +62,6 @@ Object *readDouble(Interpreter *interp)
 }
 
 // Number Type Conversion /////
-
 Object *integerFromDouble(Interpreter *interp, Object **args, Object **env)
 {
     return newInteger(interp, (int64_t) FLISP_ARG_ONE->number);
@@ -72,65 +72,25 @@ Object *doubleFromInteger(Interpreter *interp, Object **args, Object **env)
     return newDouble(interp, (double) FLISP_ARG_ONE->integer);
 }
 // Double Math ///////
-
-#define DEFINE_PRIMITIVE_ARITHMETIC(name, op, init)                     \
-    Object *name(Interpreter *interp, Object **args, Object **env) {    \
-        if (*args == nil)                                               \
-            return newDouble(interp, init);                             \
-        Object *object;                                                 \
-        GC_CHECKPOINT;                                                  \
-        GC_TRACE(gcRest, *args);                                        \
-        if ((*gcRest)->cdr == nil) {                                    \
-            object = newDouble(interp, init);                           \
-        } else {                                                        \
-            object = newObjectFrom(interp, &(*gcRest)->car);              \
-            *gcRest = (*gcRest)->cdr;                                   \
-        }                                                               \
-        GC_RELEASE;                                                     \
-        for (; *gcRest != nil; *gcRest = (*gcRest)->cdr)                \
-            object->number = object->number op (*gcRest)->car->number;  \
-        return object;                                                  \
-    }
-
-DEFINE_PRIMITIVE_ARITHMETIC(doubleAdd, +, 0)
-DEFINE_PRIMITIVE_ARITHMETIC(doubleSubtract, -, 0)
-DEFINE_PRIMITIVE_ARITHMETIC(doubleMultiply, *, 1)
-DEFINE_PRIMITIVE_ARITHMETIC(doubleDivide, /, 1)
-
-Object *doubleMod(Interpreter *interp, Object **args, Object **env) {
-    if (*args == nil)
-        return double_one;
-
-    Object *object;
-    GC_CHECKPOINT;
-    GC_TRACE(gcRest, *args);
-    if ((*gcRest)->cdr == nil) {
-        object = double_one;
-    } else {
-        object = newObjectFrom(interp, &(*gcRest)->car);
-        *gcRest = (*args)->cdr;
-    }
-    GC_RELEASE;
-    for (; *gcRest != nil; *gcRest = (*gcRest)->cdr)
-        object->number = (int)object->number % (int)(*gcRest)->car->number;
-
-    return object;
+#define FLISP_DOUBLE_MATHOP(name, op)                                         \
+Object *name(Interpreter *interp, Object **args, Object **env)                \
+{                                                                             \
+    return newDouble(interp, FLISP_ARG_ONE->number op FLISP_ARG_TWO->number); \
 }
+FLISP_DOUBLE_MATHOP(doubleAdd, +)
+FLISP_DOUBLE_MATHOP(doubleSubtract, -)
+FLISP_DOUBLE_MATHOP(doubleMultiply, *)
+FLISP_DOUBLE_MATHOP(doubleDivide, /)
+FLISP_DOUBLE_MATHOP(doubleEqual, ==)
+FLISP_DOUBLE_MATHOP(doubleLess, <)
+FLISP_DOUBLE_MATHOP(doubleLessEqual, <=)
+FLISP_DOUBLE_MATHOP(doubleGreater, >)
+FLISP_DOUBLE_MATHOP(doubleGreaterEqual, >=)
 
-#define DEFINE_PRIMITIVE_RELATIONAL(name, op)                           \
-    Object *name(Interpreter *interp, Object **args, Object **env) {    \
-        Object *rest = *args;                                           \
-        bool result = true;                                             \
-        for (; result && rest->cdr != nil; rest = rest->cdr)            \
-            result &= rest->car->number op rest->cdr->car->number;      \
-        return result ? t : nil;                                        \
-    }
-
-DEFINE_PRIMITIVE_RELATIONAL(doubleEqual, ==)
-DEFINE_PRIMITIVE_RELATIONAL(doubleLess, <)
-DEFINE_PRIMITIVE_RELATIONAL(doubleLessEqual, <=)
-DEFINE_PRIMITIVE_RELATIONAL(doubleGreater, >)
-DEFINE_PRIMITIVE_RELATIONAL(doubleGreaterEqual, >=)
+Object *doubleMod(Interpreter *interp, Object **args, Object **env)
+{
+    return newDouble(interp, fmod(FLISP_ARG_ONE->number, FLISP_ARG_TWO->number));
+}
 
 #endif
 

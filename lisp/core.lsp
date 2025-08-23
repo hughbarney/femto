@@ -29,6 +29,17 @@
 
 (defun numberp (o) (cond  ((integerp o)) ((doublep o))))
 
+(defun number-to-string (num)
+  (cond
+    ((numberp num)
+     (let ((f (open "" ">")))
+       (write num :stream f)
+       (prog1
+	   (cadr (file-info f))
+	 (close f))))
+    (t 	(throw wrong-type-argument
+	  (concat "(number-to-string number) - number expected " type-integer " got: " (type-of i))))))
+
 (defun eq (o1 o2)
   (cond
     ((same o1 o2))
@@ -142,17 +153,6 @@
     (t (throw wrong-type-argument "let: first argument neither label nor binding" (car args)))))
 
 (defun prog1 (arg . args) arg)
-
-(defun number-to-string (i)
-  (cond
-    ((integerp i)
-     (let ((f (open "" ">")))
-       (write i :stream f)
-       (prog1
-	   (cadr (file-info f))
-	 (close f))))
-    (t 	(throw wrong-type-argument
-	  (concat "(number-to-string number) - number expected " type-integer " got: " (type-of i))))))
 
 ;; load
 (defun fload (f)

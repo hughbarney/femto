@@ -110,9 +110,10 @@ fLisp should be buildable with only the standard C libraries.
 
 # References
 
-- [1] Common Lisp https://www.lispworks.com/documentation/HyperSpec/Front/
-- [2] let https://blog.veitheller.de/Scheme_Macros_III:_Defining_let.html
-- [3] curry  https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours/Towards_a_Standard_Library
-- [4] mal - quasiquote https://github.com/kanaka/mal
-- [5] Scheme  https://www.scheme.org/
-- [6] Scheme v7 Standard https://standards.scheme.org/official/r7rs.pdf
+- [1] Emacs Lisp - https://www.gnu.org/software/emacs/manual/html_mono/elisp.html
+- [2] Common Lisp - https://www.lispworks.com/documentation/HyperSpec/Front/
+- [32] let - https://blog.veitheller.de/Scheme_Macros_III:_Defining_let.html
+- [4] curry - https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours/Towards_a_Standard_Library
+- [5] mal - quasiquote https://github.com/kanaka/mal
+- [6] Scheme  https://www.scheme.org/
+- [7] Scheme v7 Standard https://standards.scheme.org/official/r7rs.pdf
