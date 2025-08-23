@@ -4,7 +4,7 @@
 
 export FLISPRC=../lisp/core.lsp
 
-tap 75
+tap 84
 
 # list
 IN='(list)' OUT=nil
@@ -74,6 +74,31 @@ flisp_expr 1; ok numberp-1  numberp number is t
 
 IN="(numberp numberp)" OUT='nil'
 flisp_expr 1; ok numberp-2  numberp lambda is nil
+
+IN="(eq 1 1)" OUT='t'
+flisp_expr 1; ok eq-1_1  eq same num is t
+
+IN="(eq 1 2)" OUT='nil'
+flisp_expr 1; ok eq-1_2  eq different num is nil
+
+IN="(eq 1 'a)" OUT='nil'
+flisp_expr 1; ok eq-1_3  eq num other is nil
+
+IN='(eq "answer" "answer")' OUT='t'
+flisp_expr 1; ok eq-2_1  eq same string is t
+
+IN='(eq "answer" "everything")' OUT='nil'
+flisp_expr 1; ok eq-2_2  eq different string is nil
+
+IN='(eq "answer" 42)' OUT='nil'
+flisp_expr 1; ok eq-2_3  eq string other is nil
+
+IN="(eq 'a 'a)" OUT='t'
+flisp_expr 1; ok eq-3_1  eq same symbol is t
+
+IN="(eq 'a eq)" OUT='nil'
+flisp_expr 1; ok eq-3_2  eq symbol lambda is nil
+
 
 IN="(not nil)" OUT="t"
 flisp_expr 1;  ok not-1 not t is nil

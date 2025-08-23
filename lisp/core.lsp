@@ -3,8 +3,6 @@
 ;; Core fLisp extensions
 ;;
 
-;(setq extensions '(flisp double))
-
 (setq list (lambda args args))
 
 (setq defmacro
@@ -17,7 +15,7 @@
 (defun curry (func arg1)
   (lambda (arg2) (func arg1 arg2)))
 
-(defun typep (type object)  (eq type (type-of object)))
+(defun typep (type object)  (same type (type-of object)))
 
 (setq
  integerp (curry typep type-integer)
@@ -30,6 +28,15 @@
  streamp (curry typep type-stream))
 
 (defun numberp (o) (cond  ((integerp o)) ((doublep o))))
+
+(defun eq (o1 o2)
+  (cond
+    ((same o1 o2))
+    ((same (type-of o1) (type-of o2))
+     (cond
+       ((stringp o1) (string-equal o1 o2))
+       ((integerp o1) (i= o1 o2))
+       ((doublep o1) (d= o1 o2))))))
 
 (setq not null)
 

@@ -1759,22 +1759,18 @@ Object *primitiveSymbolName(Interpreter *interp, Object **args, Object **env)
     return string;
 }
 
-Object *primitiveEq(Interpreter *interp, Object **args, Object **env)
+/** (same o1 o2) - object comparison
+ *
+ * @param o1  object
+ * @param o2  object
+ *
+ * @returns t if o1 is the same object as o2, nil otherwise.
+ */
+Object *primitiveSame(Interpreter *interp, Object **args, Object **env)
 {
-    /* Note: Make an object equality primitive, then add number and
-     * string comparision in Lisp */
-    
-    if (FLISP_ARG_ONE->type == type_integer && FLISP_ARG_TWO->type == type_integer)
-        return (FLISP_ARG_ONE->integer == FLISP_ARG_TWO->integer) ? t : nil;
-#ifdef FLISP_DOUBLE_EXTENSION
-    if (FLISP_ARG_ONE->type == type_double && FLISP_ARG_TWO->type == type_double)
-        return (FLISP_ARG_ONE->number == FLISP_ARG_TWO->number) ? t : nil;
-#endif
-    else if (FLISP_ARG_ONE->type == type_string && FLISP_ARG_TWO->type == type_string)
-        return !strcmp(FLISP_ARG_ONE->string, FLISP_ARG_TWO->string) ? t : nil;
-    else
-        return (FLISP_ARG_ONE == FLISP_ARG_TWO) ? t : nil;
+    return (FLISP_ARG_ONE == FLISP_ARG_TWO) ? t : nil;
 }
+
 Object *primitiveCar(Interpreter *interp, Object **args, Object **env)
 {
     if (FLISP_ARG_ONE == nil)
@@ -2149,6 +2145,11 @@ Object *stringSubstring(Interpreter *interp, Object **args, Object **env)
     return new;
 }
 
+Object *stringEqual(Interpreter *interp, Object **args, Object **env)
+{
+    return !strcmp(FLISP_ARG_ONE->string, FLISP_ARG_TWO->string) ? t : nil;
+}
+
 Object *stringLength(Interpreter *interp, Object **args, Object **env)
 {
     return newInteger(interp, strlen(FLISP_ARG_ONE->string));
@@ -2233,7 +2234,7 @@ Primitive primitives[] = {
     {"type-of",       1,  1, 0,         primitiveTypeOf},
     {"consp",         1,  1, 0,         primitiveConsP},
     {"symbol-name",   1,  1, TYPE_SYMBOL, primitiveSymbolName},
-    {"eq",            2,  2, 0,         primitiveEq},
+    {"same",          2,  2, 0,         primitiveSame},
     {"car",           1,  1, 0,         primitiveCar}, /* Note: nil|cons */
     {"cdr",           1,  1, 0,         primitiveCdr}, /* Note: nil|cons */
     {"cons",          2,  2, 0,         primitiveCons},
@@ -2261,6 +2262,7 @@ Primitive primitives[] = {
     {"i<=",           2,  2, TYPE_INTEGER, integerLessEqual},
     {"i>",            2,  2, TYPE_INTEGER, integerGreater},
     {"i>=",           2,  2, TYPE_INTEGER, integerGreaterEqual},
+    {"string-equal",  2,  2, TYPE_STRING, stringEqual},
     {"string-length", 1,  1, TYPE_STRING, stringLength},
     {"string-append", 2,  2, TYPE_STRING, stringAppend},
     {"substring",     1,  3, 0,           stringSubstring},

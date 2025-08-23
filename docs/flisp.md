@@ -459,8 +459,8 @@ Returns the first object of *cons*.
 `(cdr «cons»)`  
 Returns the second object of *cons*.
 
-`(eq «a» «b»)`  
-Returns `t` if *a* and *b* evaluate to the same object, `nil` otherwise.
+`(same «a» «b»)`  
+Returns `t` if *a* and *b* are the same object, `nil` otherwise.
 
 #### Arithmetic Operations
 
@@ -580,6 +580,10 @@ Returns true if *object* has *type*.
 Return `t` if *object* is of the respective type, otherwise `nil`.
 
 `(numberp «object»)` <u>C</u>  
+`(eq «a» «b»)`  
+Returns `t` if *a* and *b* evaluate to the same object, number or
+string, `nil` otherwise.
+
 Synonym for `integerp`.
 
 `(not «object»)` <u>C</u>  

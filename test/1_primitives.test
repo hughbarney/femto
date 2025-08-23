@@ -4,7 +4,7 @@
 
 export FLISPRC=
 
-tap 149
+tap 150
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -263,29 +263,32 @@ flisp_expr; ok consp-5  consp lambda is nil
 IN="(symbol-name 'a)" OUT='"a"'
 flisp_expr; ok symbol-name-1  symbolname is symbol as string
 
-IN="(eq 1 1)" OUT='t'
-flisp_expr; ok eq-1_1  eq same num is t
+IN="(same 1 1)" OUT='nil'
+flisp_expr; ok same-1_1  same number is false
 
-IN="(eq 1 2)" OUT='nil'
-flisp_expr; ok eq-1_2  eq different num is nil
+IN="(same 1 2)" OUT='nil'
+flisp_expr; ok same-1_2  different num is nil
 
-IN="(eq 1 'a)" OUT='nil'
-flisp_expr; ok eq-1_3  eq num other is nil
+IN="(same 1 'a)" OUT='nil'
+flisp_expr; ok same-1_3  num other is nil
 
-IN='(eq "answer" "answer")' OUT='t'
-flisp_expr; ok eq-2_1  eq same string is t
+IN='(same "answer" "answer")' OUT='nil'
+flisp_expr; ok same-2_1  same string is nil
 
-IN='(eq "answer" "everything")' OUT='nil'
-flisp_expr; ok eq-2_2  eq different string is nil
+IN='(same "answer" "everything")' OUT='nil'
+flisp_expr; ok same-2_2  different string is nil
 
-IN='(eq "answer" 42)' OUT='nil'
-flisp_expr; ok eq-2_3  eq string other is nil
+IN='(same "answer" 42)' OUT='nil'
+flisp_expr; ok same-2_3  string other is nil
 
-IN="(eq 'a 'a)" OUT='t'
-flisp_expr; ok eq-3_1  eq same symbol is t
+IN="(same 'a 'a)" OUT='t'
+flisp_expr; ok same-3_1  same symbol is t
 
-IN="(eq 'a eq)" OUT='nil'
-flisp_expr; ok eq-3_2  eq symbol lambda is nil
+IN="(same 'a same)" OUT='nil'
+flisp_expr; ok same-3_2  symbol lambda is nil
+
+IN="(same same same)" OUT='t'
+flisp_expr; ok same-3_3  same lambda is t
 
 ## Cons'es
 IN="(car '(1 2))" OUT='1'

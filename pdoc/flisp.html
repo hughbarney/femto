@@ -467,8 +467,8 @@
       <dd>Returns the first object of <var>cons</var>.</dd>
       <dt><code>(cdr <var>cons</var>)</code></dt>
       <dd>Returns the second object of <var>cons</var>.</dd>
-      <dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
-      <dd>Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, <code>nil</code> otherwise.</dd>
+      <dt><code>(same <var>a</var> <var>b</var>)</code></dt>
+      <dd>Returns <code>t</code> if <var>a</var> and <var>b</var> are the same object, <code>nil</code> otherwise.</dd>
     </dl>
 
     <h4 id="arithmetic_ops">Arithmetic Operations</h4>
@@ -586,6 +586,12 @@
       <dt><code>(streamp <var>object</var>)</code> <u>C</u></dt>
       <dd>Return <code>t</code> if <var>object</var> is of the respective type, otherwise <code>nil</code>.</dd>
       <dt><code>(numberp <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
+      <dd>
+	Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, number or
+	string, <code>nil</code> otherwise.
+      </dd>
+
       <dd>Synonym for <code>integerp</code>.</dd>
       <dt><code>(not <var>object</var>)</code> <u>C</u></dt>
       <dd>Logical inverse. In Lisp a synonym for <code>null</code></dd>
