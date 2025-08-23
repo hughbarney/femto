@@ -2168,34 +2168,6 @@ Object *stringSearch(Interpreter *interp, Object **args, Object **env)
     return nil;
 }
 
-/* String/Integer conversion */
-
-Object *stringToInteger(Interpreter *interp, Object **args, Object **env)
-{    
-    return newInteger(interp, strtoimax(FLISP_ARG_ONE->string, NULL, 0));
-}
-
-/*
- * XXX could be improved to handle integers and decimals better
- * for example 121323.000000 (%f) is ugly but so is 1.213230e+05 (%g)
- */
-Object *numberToString(Interpreter *interp, Object **args, Object **env)
-{
-    char buf[40];
-
-/* Note: this should be implemented in Lisp with memory streams and write.
- *   Specifically we should not have type aware primitives in the fLisp core.
- */
-    
-    if (FLISP_ARG_ONE->type == type_integer) {
-        sprintf(buf, "%"PRId64, FLISP_ARG_ONE->integer);
-    } else {
-        CHECK_TYPE(FLISP_ARG_TWO, type_integer, "(number-to-string number - number");
-    }
-    return newStringWithLength(interp, buf, strlen(buf));
-}
-
-
 Object *asciiToString(Interpreter *interp, Object **args, Object **env)
 {
     char ch[2];
@@ -2267,7 +2239,6 @@ Primitive primitives[] = {
     {"string-append", 2,  2, TYPE_STRING, stringAppend},
     {"substring",     1,  3, 0,           stringSubstring},
     {"string-search", 2,  2, TYPE_STRING, stringSearch}, 
-    {"string-to-number", 1, 1, TYPE_STRING, stringToInteger},
     {"ascii",         1,  1, TYPE_INTEGER, asciiToString},
     {"ascii->number", 1,  1, TYPE_STRING, asciiToInteger},
     {"os.getenv",     1,  1, TYPE_STRING, os_getenv},

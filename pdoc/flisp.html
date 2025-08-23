@@ -639,7 +639,13 @@
       <dt><code>(streamp <var>object</var>)</code> <u>C</u></dt>
       <dd>Return <code>t</code> if <var>object</var> is of the respective type, otherwise <code>nil</code>.</dd>
       <dt><code>(numberp <var>object</var>)</code> <u>C</u></dt>
-      <dt><code>(number-to-string <var>integer</var>)</code> <u>C</u></dt>
+      <dt><code>(cadr <var>list</var>)</code> <u>C</u></dt>
+      <dt>Return the second element in <var>list</var>, <code>(car (cdr <var>list</var>))</code>.</dt>
+      <dt><code>(cddr <var>list</var>)</code> <u>C</u></dt>
+      <dt>Return all elements after the second one in <var>list</var>, <code>(cdr (cdr <var>list</var>))</code>.</dt>
+      <dt><code>(caddr <var>list</var>)</code> <u>C</u></dt>
+      <dt>Return the third element in list, <code>(car (cdr (cdr <var>list</var>)))</code>.</dt>
+      <dt><code>(number-to-string <var>number</var>)</code> <u>C</u></dt>
       <dd>Converts <var>integer</var> into a <i>string</i> object.</dd>
       <dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
       <dd>
@@ -669,10 +675,6 @@
       <dt><code>(map1 <var>func</var> <var>list</var>)</code> <u>S: mapcar</u></dt>
       <dd>Apply func to each element in list and return a list of the results.</dd>
       <dd><code>map1</code> is a specialized form of <code>mapcar</code> restricted to one list only.</dd>
-      <dt><code>(cadr <var>list</var>)</code> <u>C</u></dt>
-      <dt>Return the second element in the list, <code>(car (cdr <var>list</var>))</code>.</dt>
-      <dt><code>(cddr <var>list</var>)</code> <u>C</u></dt>
-      <dt>Return all elements after the second one in list, <code>(cdr (cdr <var>list</var>))</code>.</dt>
       <dt><code>nfold</code></dt>
       <dt><code>coerce</code></dt>
       <dt><code>coercec</code></dt>

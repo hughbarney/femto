@@ -4,7 +4,7 @@
 
 export FLISPRC=../lisp/core.lsp
 
-tap 84
+tap 88
 
 # list
 IN='(list)' OUT=nil
@@ -74,6 +74,30 @@ flisp_expr 1; ok numberp-1  numberp number is t
 
 IN="(numberp numberp)" OUT='nil'
 flisp_expr 1; ok numberp-2  numberp lambda is nil
+
+IN="(cadr '(a b c d))" OUT="b"
+flisp_expr 1; ok cadr1-1 cadr returns second element
+
+IN="(cddr '(a b c d))" OUT="(c d)"
+flisp_expr 1; ok cddr1-1 cddr returns list after second element
+
+IN="(caddr '(a b c d))" OUT="c"
+flisp_expr 1; ok caddr1-1 caddr returns third element
+
+IN="(number-to-string 42)" OUT='"42"'
+flisp_expr 1; ok number-to-string-1 42 is string 42
+
+IN='(number-to-string "a")' ERR='(number-to-string number) - number expected type-integer got: type-string' OBJ=
+flisp_err 1; ok number-to-string-2 not a number fails
+
+IN='(string-to-number "42")' OUT='42'
+flisp_expr 1; ok string-to-number-1 string 42 is 42
+
+IN='(string-to-number "3.14")' OUT='3.14'
+flisp_expr 1; ok string-to-number-2 string 3.14 is 3.14
+
+IN='(string-to-number "answer")' OUT='0'
+flisp_expr 1; ok string-to-number-3 not number string is 0
 
 IN="(eq 1 1)" OUT='t'
 flisp_expr 1; ok eq-1_1  eq same num is t
@@ -189,12 +213,6 @@ flisp_expr 1; ok map1-1 map1 incr elements in list
 IN="(map1 / '())" OUT="nil"
 flisp_expr 1; ok map1-2 map1 does nothing on empty list
 
-IN="(cadr '(a b c d))" OUT="b"
-flisp_expr 1; ok cadr1-1 cadr returns second element
-
-IN="(cddr '(a b c d))" OUT="(c d)"
-flisp_expr 1; ok cddr1-1 cddr returns list after second element
-
 false; ok let-1 \# TODO
 
 IN='(length "")' OUT="0"
@@ -209,12 +227,6 @@ flisp_expr 1; ok prog1-1 prog1 single arg is arg
 
 IN="(prog1 'answer 42)" OUT="answer"
 flisp_expr 1; ok prog1-2 prog1 two args is arg
-
-IN="(number-to-string 42)" OUT='"42"'
-flisp_expr 1; ok number-to-string-1 42 is string 42
-
-IN='(number-to-string "a")' ERR='(number-to-string number) - number expected type-integer got: type-string' OBJ=
-flisp_err 1; ok number-to-string-2 not a number fails
 
 # fload
 IN='(setq f (open "empty.lsp" "r")) (fload f)' OUT=nil

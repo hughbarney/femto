@@ -636,7 +636,13 @@ Returns true if *object* has *type*.
 Return `t` if *object* is of the respective type, otherwise `nil`.
 
 `(numberp «object»)` <u>C</u>  
-`(number-to-string «integer»)` <u>C</u>  
+`(cadr «list»)` <u>C</u>  
+Return the second element in *list*, `(car (cdr «list»))`.  
+`(cddr «list»)` <u>C</u>  
+Return all elements after the second one in *list*, `(cdr (cdr «list»))`.  
+`(caddr «list»)` <u>C</u>  
+Return the third element in list, `(car (cdr (cdr «list»)))`.  
+`(number-to-string «number»)` <u>C</u>  
 Converts *integer* into a *string* object.
 
 `(eq «a» «b»)`  
@@ -672,10 +678,6 @@ Apply func to each element in list and return a list of the results.
 
 `map1` is a specialized form of `mapcar` restricted to one list only.
 
-`(cadr «list»)` <u>C</u>  
-Return the second element in the list, `(car (cdr «list»))`.  
-`(cddr «list»)` <u>C</u>  
-Return all elements after the second one in list, `(cdr (cdr «list»))`.  
 `nfold`  
 `coerce`  
 `coercec`  

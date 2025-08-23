@@ -29,6 +29,10 @@
 
 (defun numberp (o) (cond  ((integerp o)) ((doublep o))))
 
+(defun cadr (l) (car (cdr l)))
+(defun cddr (l) (cdr (cdr l)))
+(defun caddr (l) (car (cdr (cdr l))))
+
 (defun number-to-string (num)
   (cond
     ((numberp num)
@@ -38,8 +42,16 @@
 	   (cadr (file-info f))
 	 (close f))))
     (t 	(throw wrong-type-argument
-	  (concat "(number-to-string number) - number expected " type-integer " got: " (type-of i))))))
+	  (concat "(number-to-string number) - number expected " type-integer " got: " (type-of num))))))
 
+(defun string-to-number (string)
+  (let ((f (open string "<")) (result nil))
+    (setq  result (catch (read f)))
+    (close f)
+    (cond ((car result) 0)
+	  (t (cond ((numberp (caddr result)) (caddr result))
+		   (t 0))))))
+	  
 (defun eq (o1 o2)
   (cond
     ((same o1 o2))
@@ -94,9 +106,6 @@
 
 (defun map1 (func xs)
   (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))
-
-(defun cadr (l) (car (cdr l)))
-(defun cddr (l) (cdr (cdr l)))
 
 ;;; Wrap all math to Integer operations
 (defun nfold (f i l);  (3)  (1 2 3)
