@@ -10,7 +10,7 @@ CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE
 CFLAGS += -O0 -std=c11 -Wall -pedantic -pedantic-errors -g
 LD      = cc
 LDFLAGS =
-LIBS    = -lncursesw
+LIBS    = -lncursesw -lm
 CP      = cp
 MV      = mv
 RM      = rm
@@ -31,6 +31,7 @@ OBJ = command.o display.o complete.o data.o gap.o key.o search.o	\
 	femto_lisp.o double.o main.o
 
 FLISP_OBJ = flisp.o lisp.o double.o
+FLISP_LIBS = -lm
 BINARIES = femto flisp
 RC_FILES = femto.rc flisp.rc
 
@@ -84,7 +85,7 @@ femto_lisp.o: lisp.c femto.register.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -D FLISP_DOUBLE_EXTENSION -c lisp.c -o $@
 
 flisp: $(FLISP_OBJ) flisp.rc
-	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ)
+	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ) $(FLISP_LIBS)
 
 #flisp.o: flisp.c lisp.h
 #	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
