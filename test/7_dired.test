@@ -1,0 +1,22 @@
+#!./run
+# test executable and dired functionality
+
+# what does leg9999 mean ?
+# leg20231128: Femto
+
+# assume this is like require ?
+export FLISPRC=../lisp/dired.lsp
+
+# what tap nn mean ?
+tap 28
+
+# not sure what to put in here for dired ??
+stringlib() { IN="(require 'string) $IN" flisp_expr "$@"; }
+stringlib_err() { IN="(require 'string) $IN" flisp_err "$@"; }
+
+IN='(de-dir-up "/home/hugh")' OUT='"/home"'
+stringlib 1; ok de-dir-up-1 moves up 1 subdir
+
+IN='(de-dir-up "/")' OUT='"/"'
+stringlib 2; ok de-dir-up-2 1 char path returns root
+

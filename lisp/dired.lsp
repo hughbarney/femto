@@ -170,10 +170,12 @@
 ;;
 (defun de-up-dir(d)
   (cond
-    ((eq 1 (length d)) d)
-    ((eq "/" (substring d (- (length d) 1) (- (length d) 1)))
-     (substring d 0 (- (length d) 2)))
-    (t (de-up-dir (substring d 0 (- (length d) 2))))))
+    ;; d is 1 char then we must be at root, return "/"
+    ((eq 1 (length d)) "/")
+    ;; if last char is / then we have reached the next sub-directory up, remove last char and return
+    ((eq "/" (string-last-char d)) (string-shrink-left d))
+    ;; otherwise call again but with last char removed
+    (t (de-up-dir (string-shrink-left d))) ))
 
 
 ;;

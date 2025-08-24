@@ -20,7 +20,8 @@
 
 
 ;;
-;; string-ref 
+;; string-ref , get character at position r
+;;   zero based indexing
 ;;
 (defun string-ref (s r)
    (substring s r (+ r 1)))
@@ -37,6 +38,7 @@
 ;; string-drop_first - return a string with the first char chopped off
 ;;   return "" when we have reached the end
 ;;
+;; - leave for now, to be replaced by string-shrink-right
 (defun string-drop_first(s)
   (substring s 1))
 
@@ -46,8 +48,27 @@
 ;;  
 ;; should rename to string.drop_last
 ;;
+;; - keep for now, replace with string-shrink-left
+;;
 (defun shrink(s)
   (substring s 0 -1))
+
+
+(defun string-shrink-left(s)
+  (substring s 0 -1))
+
+
+;;
+;; return first char of string
+;;
+(defun string-first-char(s)
+  (substring s 0 1))
+
+;;
+;; return last char of string
+;;
+(defun string-last-char(s)
+  (substring s -1))
 
 
 ;;
