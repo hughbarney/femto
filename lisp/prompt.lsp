@@ -35,7 +35,7 @@ nil
   (cond
     ((eq key "\n") (save_response response))
     ((is_ctl_g key) "")
-    ((is_backspace key) (cmd_prompt q (shrink response)))
+    ((is_backspace key) (cmd_prompt q (string-shrink-left response)))
     ((is_control_char key) (cmd_prompt q response))
     (t (cmd_prompt q (concat response key)))) )
 

@@ -2085,6 +2085,7 @@ Object *os_getenv(Interpreter *interp, Object **args, Object **env)
 
 /* Strings */
 
+// (string-append s a) 
 Object *stringAppend(Interpreter *interp, Object **args, Object **env)
 {
     int len1 = strlen(FLISP_ARG_ONE->string);
@@ -2101,6 +2102,7 @@ Object *stringAppend(Interpreter *interp, Object **args, Object **env)
     return str;
 }
 
+// (substring ...)
 Object *stringSubstring(Interpreter *interp, Object **args, Object **env)
 {
     int64_t start = 0, end, len;
@@ -2148,11 +2150,13 @@ Object *stringSubstring(Interpreter *interp, Object **args, Object **env)
     return new;
 }
 
+// (eq s1 s2)
 Object *stringEqual(Interpreter *interp, Object **args, Object **env)
 {
     return !strcmp(FLISP_ARG_ONE->string, FLISP_ARG_TWO->string) ? t : nil;
 }
 
+// (length s)
 Object *stringLength(Interpreter *interp, Object **args, Object **env)
 {
     return newInteger(interp, strlen(FLISP_ARG_ONE->string));

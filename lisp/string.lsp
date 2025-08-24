@@ -2,6 +2,12 @@
 ;;  string function library
 ;;
 ;;
+;;  Built Into fLisp
+;;    (string-append s a)
+;;    (length s)
+;;    (substring s st end)
+;;    (string-search haystack needle)
+;;
 
 
 ;; trim all spaces from front of a string
@@ -35,25 +41,15 @@
 
 
 ;;
-;; string-drop_first - return a string with the first char chopped off
-;;   return "" when we have reached the end
+;; shrink string right by dropping off the first char
 ;;
-;; - leave for now, to be replaced by string-shrink-right
-(defun string-drop_first(s)
+(defun string-shrink-right(s)
   (substring s 1))
 
 
 ;;
-;; shrink string by dropping off last char
+;; shrink string left by dropping off last char
 ;;  
-;; should rename to string.drop_last
-;;
-;; - keep for now, replace with string-shrink-left
-;;
-(defun shrink(s)
-  (substring s 0 -1))
-
-
 (defun string-shrink-left(s)
   (substring s 0 -1))
 
@@ -80,9 +76,8 @@
      ((eq str "") nil)
      ((eq search "") nil)
      ((string-startswith str search) t)
-     ((eq (string-drop_first str) "") nil)
-     (t (string-contains (string-drop_first str) search))))
-
+     ((eq (string-shrink-right str) "") nil)
+     (t (string-contains (string-shrink-right str) search))))
 
 (provide 'string)
 

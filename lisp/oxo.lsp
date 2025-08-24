@@ -73,7 +73,7 @@
   (cond
     ((eq key "\n") response)
     ((is_ctl_g key) "")
-    ((is_backspace key) (inputat ln q (shrink response)))
+    ((is_backspace key) (inputat ln q (string-shrink-left response)))
     ((is_control_char key) (inputat ln q response))
     (t (inputat ln q (concat response key)))  ))
 
