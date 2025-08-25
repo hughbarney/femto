@@ -1,22 +1,22 @@
 #!./run
 # test executable and dired functionality
+# Created By Hugh Barney 24 August 2025
 
-# what does leg9999 mean ?
-# leg20231128: Femto
-
-# assume this is like require ?
+# we set the FLISPRC to dired.lsp, not sure ?
 export FLISPRC=../lisp/dired.lsp
 
-# what tap nn mean ?
-tap 28
+# The tap value should be set to the number of tests in the file
+tap 2
 
-# not sure what to put in here for dired ??
+# define sub functions to be used in this test file
 stringlib() { IN="(require 'string) $IN" flisp_expr "$@"; }
 stringlib_err() { IN="(require 'string) $IN" flisp_err "$@"; }
 
+# test 1
 IN='(de-dir-up "/home/hugh")' OUT='"/home"'
 stringlib 1; ok de-dir-up-1 moves up 1 subdir
 
+# test 2, check that de-dir-up returns / when there is only 1 character in the path
 IN='(de-dir-up "/")' OUT='"/"'
 stringlib 2; ok de-dir-up-2 1 char path returns root
 
