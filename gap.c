@@ -139,7 +139,7 @@ int save_buffer(buffer_t *bp, char *fn)
     return (TRUE);
 }
 
-void clear_buffer()
+void clear_buffer(void)
 {
     zero_buffer(curbp);
     beginning_of_buffer();

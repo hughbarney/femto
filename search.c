@@ -5,7 +5,7 @@
 
 #include "header.h"
 
-void search()
+void search(void)
 {
     int cpos = 0;
     int c;

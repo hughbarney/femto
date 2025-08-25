@@ -4,7 +4,6 @@
 
 (require 'core)
 
-(setq not null)
 (defun listp (x) (cond ((null x)) ((consp x))))
 
 (defmacro and args
@@ -12,9 +11,6 @@
     ((null args))
     ((null (cdr args)) (car args))
     (t (list 'cond (list (car args) (cons 'and (cdr args)))))))
-
-(defun map1 (func xs)
-  (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))
 
 (defmacro or args
   (cond (args (cons (quote cond) (map1 list args)))))
@@ -26,7 +22,7 @@
 (defun max (n . args)
   (cond
     ((null (numberp n))
-     (throw flisp-wrong-type "not a number" n))
+     (throw 'wrong-type-argument "not a number" n))
     ((null args) n)
     (t (reduce
 	(lambda (a b) (cond ((< a b) b) (t a)))
@@ -35,43 +31,37 @@
 (defun min (n . args)
   (cond
     ((null (numberp n))
-     (throw flisp-wrong-type "not a number" n))
+     (throw 'wrong-type-argument "not a number" n))
     ((null args) n)
     (t (reduce (lambda (a b) (cond ((< a b) a) (t b)))
 	args n)) ))
 
 (defun nthcdr (n list)
   (cond 
-    ((> 0 n) (throw flisp-read-range "negativ index" n))
+    ((> 0 n) (throw 'range-error "negativ index" n))
     ((= 0 n) list)
     (t (nthcdr (- n 1) (cdr list)))))
 
 (defun nth (n list)
   (car (nthcdr n list)))
 
-(defun mapcar (func xs)
-  (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))
-
-(defun cadr (l) (car (cdr l)))
-(defun cddr (l) (cdr (cdr l)))
-
-(defmacro let args
+(defun fold-right (f e l)
   (cond
-    ((consp (car args))
-;;; bindings: (car args)
-;;; body:     (cdr args)
-     (cons ; apply
-      (cons 'lambda (cons (mapcar car (car args)) (cdr args))) ; (lambda (names) body)
-      (mapcar cadr (car args)))) ; (values)
-    ((symbolp (car args))
-;;; label:    (car args)
-;;; bindings: (cadr args)
-;;; body:     (cddr args)
-     (list
-      (list 'lambda '()
-	    (list 'define (car args)
-		  (cons 'lambda (cons (mapcar car (cadr args)) (cddr args))))
-	    (cons (car args) (mapcar cadr (cadr args))))))
-    (t (throw flisp-wrong-type "let: first argument neither label nor binding" (car args)))))
+    ((null l) e)
+    (t (f (car l) (fold-right f e (cdr l))))))
+
+(defun unfold (func init pred)
+  (cond ((pred init) (cons init nil))
+	(t (cons init (unfold func (func init) pred)))))
+
+(defun iota (count . args)
+  (let (
+	(count (- count 1))
+	(start (cond ((car args)) (t 0)))
+	(step (cond ((cadr args)) (t 1))))
+    (let (
+	  (func (lambda (n) (setq count (- count 1)) (+ n step)))
+	  (pred (lambda (n) (= 0 count))))
+      (unfold func start pred))))
 
 (provide 'flisp)

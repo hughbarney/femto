@@ -62,7 +62,6 @@
   (de-get-info)
   (de-loop))
 
-
 (defun de-init()
   (setq de-start-line 1)
   (setq de-last-line 1)
@@ -177,17 +176,19 @@
   (cond (de-is-link (search-forward " ")) (t (end-of-line)))
   (copy-region)
   (set-point p)
-  (setq de-name (string.trim (get-clipboard))))
+  (setq de-name (string-trim (get-clipboard))))
 
 ;;
 ;; reduces a directory path by one sub-directory
 ;;
 (defun de-up-dir(d)
   (cond
-    ((eq 1 (string.length d)) d)
-    ((eq "/" (string.substring d (- (string.length d) 1) (- (string.length d) 1)))
-     (string.substring d 0 (- (string.length d) 2)))
-    (t (de-up-dir (string.substring d 0 (- (string.length d) 2))))))
+    ;; d is 1 char then we must be at root, return "/"
+    ((eq 1 (length d)) "/")
+    ;; if last char is / then we have reached the next sub-directory up, remove last char and return
+    ((eq "/" (string-last-char d)) (string-shrink-left d))
+    ;; otherwise call again but with last char removed
+    (t (de-up-dir (string-shrink-left d))) ))
 
 
 ;;
@@ -202,7 +203,7 @@
    (set-mark)
    (end-of-line)
    (copy-region)
-   (setq current_working_directory (string.trim (get-clipboard)))    
+   (setq current_working_directory (string-trim (get-clipboard)))    
    (select-buffer obuf)
    (kill-buffer "*output*")
    current_working_directory))

@@ -28,7 +28,7 @@ void make_key(char *name, char *bytes)
     ktail = kp;
 }
 
-void create_keys()
+void create_keys(void)
 {
     char ch;
     char ctrx_map1[] = "c-x c-|";
@@ -125,7 +125,7 @@ int set_key(char *name, char *funcname)
     return set_key_internal(name, funcname, "", NULL);
 }
 
-void setup_keys()
+void setup_keys(void)
 {
     create_keys();
     set_key_internal("c-a",     "beginning-of-line"     , "\x01", lnbegin);
@@ -280,25 +280,25 @@ char_t *get_key(keymap_t *keys, keymap_t **key_return)
 }
 
 /* wrapper to simplify call and dependancies in the interface code */
-char *get_input_key()
+char *get_input_key(void)
 {
     return (char *)get_key(khead, &key_return);
 }
 
 /* the name of the bound function of this key */
-char *get_key_funcname()
+char *get_key_funcname(void)
 {
     return (key_return != NULL ? key_return->k_funcname : "");
 }
 
 /* the name of the last key */
-char *get_key_name()
+char *get_key_name(void)
 {
     return (key_return != NULL ? key_return->k_name : "");
 }
 
 /* execute the function of the last bound key */
-void execute_key()
+void execute_key(void)
 {
     if (key_return != NULL)
         (key_return->k_func)();

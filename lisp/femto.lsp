@@ -138,7 +138,8 @@
      (set-point start_p)
      (set-mark)
      (set-point end_p)
-     (eval-block))
+     (eval-block)
+     (message ""))
     (t
      (set-point o_point)
      (cond

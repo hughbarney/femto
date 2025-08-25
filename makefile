@@ -10,7 +10,7 @@ CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE
 CFLAGS += -O0 -std=c11 -Wall -pedantic -pedantic-errors -g
 LD      = cc
 LDFLAGS =
-LIBS    = -lncursesw
+LIBS    = -lncursesw -lm
 CP      = cp
 MV      = mv
 RM      = rm
@@ -28,9 +28,10 @@ INITFILE = $(SCRIPTDIR)/femto.rc
 
 OBJ = command.o display.o complete.o data.o gap.o key.o search.o	\
 	buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o	\
-	femto_lisp.o main.o
+	femto_lisp.o double.o main.o
 
-FLISP_OBJ = flisp.o lisp.o
+FLISP_OBJ = flisp.o lisp.o double.o
+FLISP_LIBS = -lm
 BINARIES = femto flisp
 RC_FILES = femto.rc flisp.rc
 
@@ -72,19 +73,25 @@ debug: femto flisp
 display.o: display.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c display.c
 
+double.o: double.c double.h lisp.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_DOUBLE_EXTENSION -c $<
+
 femto: $(OBJ) femto.rc
 	$(LD) $(LDFLAGS) -o femto $(OBJ) $(LIBS)
 
 femto.rc: femto.sht lisp/core.lsp
 
 femto_lisp.o: lisp.c femto.register.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -c lisp.c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -D FLISP_DOUBLE_EXTENSION -c lisp.c -o $@
 
 flisp: $(FLISP_OBJ) flisp.rc
-	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ)
+	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ) $(FLISP_LIBS)
+
+#flisp.o: flisp.c lisp.h
+#	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 flisp.o: flisp.c lisp.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_DOUBLE_EXTENSION -c $<
 
 flisp.rc: flisp.sht lisp/core.lsp
 
@@ -101,7 +108,7 @@ key.o: key.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c key.c
 
 lisp.o: lisp.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FILE_EXTENSION -c lisp.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FILE_EXTENSION  -D FLISP_DOUBLE_EXTENSION -c lisp.c
 
 main.o: main.c header.h lisp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
@@ -175,6 +182,14 @@ splint: FORCE
 
 test: flisp femto FORCE
 	(cd test && SUMMARY=1 ./run)
+
+ftest: femto FORCE
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto _no_file_
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +3 test/five_lines.txt
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +6 test/circle.py
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +8 lisp.c
+	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +6 lisp/core.lsp
 
 test_core: test/core.lsp flisp
 	<$< FLISPRC= FLISPLIB= ./flisp > test/core.now &&  sed 's/Stream 0x\(.\+\),/Stream /' test/core.now | diff -q - test/core.out

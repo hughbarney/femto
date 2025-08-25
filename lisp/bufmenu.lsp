@@ -41,7 +41,7 @@
 ;; (get-buffer-name)
 ;; (search-forward "str")
 ;; (select-buffer "*scratch*"))
-;; (string.trim)
+;; (string-trim)
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -184,7 +184,7 @@
   (repeat 17 forward-char)
   (copy-region)
   (beginning-of-line)
-  (string.trim (get-clipboard)))
+  (string-trim (get-clipboard)))
 
 ;;
 ;; (bufm-move-line)
@@ -207,7 +207,7 @@
 
 (defun bufm-debug(msg)
   (cond (bufm-debugging
-	 (log-debug (string.append msg "\n"))
+	 (log-debug (concat msg "\n"))
 	 (log-var bufm-line)
 	 (log-var bufm-start-line)
 	 (log-var bufm-last-line)

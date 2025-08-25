@@ -8,9 +8,10 @@
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <inttypes.h>
 
 #define FL_NAME     "fLisp"
-#define FL_VERSION  "0.7"
+#define FL_VERSION  "0.10"
 
 #define FL_INITFILE "flisp.rc"
 #define FL_LIBDIR "/usr/local/share/flisp"
@@ -30,9 +31,40 @@
 /* Lisp objects */
 
 typedef struct Object Object;
+typedef struct Interpreter Interpreter;
+typedef Object *(*LispEval) (Interpreter *, Object **, Object **);
+/* Constants */
+/* Fundamentals */
+extern Object *nil;
+extern Object *t;
+/* Types */
+extern Object *type_integer;
+extern Object *type_double;
+extern Object *type_string;
+extern Object *type_symbol;
+extern Object *type_cons;
+extern Object *type_lambda;
+extern Object *type_macro;
+extern Object *type_primitive;
+extern Object *type_stream;
+/* internal */
+extern Object *type_env;
+extern Object *type_moved;
+/* Exceptions */
+extern Object *end_of_file;
+extern Object *range_error;
+extern Object *wrong_type_argument;
+extern Object *invalid_value;
+extern Object *wrong_num_of_arguments;
+extern Object *io_error;
+extern Object *out_of_memory;
 
 typedef enum ObjectType {
-    TYPE_NUMBER,
+    TYPE_MOVED,
+    TYPE_INTEGER,
+#ifdef FLISP_DOUBLE_EXTENSION
+    TYPE_DOUBLE,
+#endif
     TYPE_STRING,
     TYPE_SYMBOL,
     TYPE_CONS,
@@ -41,50 +73,38 @@ typedef enum ObjectType {
     TYPE_PRIMITIVE,
     TYPE_ENV,
     TYPE_STREAM,
-    TYPE_MOVED = -1
 } ObjectType;
 
+typedef struct Primitive {
+    char *name;
+    int nMinArgs, nMaxArgs;
+    ObjectType type_check;
+    LispEval eval;
+} Primitive;
+
+
 struct Object {
-    ObjectType type;
+    Object *type;
     size_t size;
     union {
-        struct { double number; };                      // number
-        struct { char string[sizeof (Object *[3])]; };  // string, symbol
-        struct { Object *car, *cdr; };                  // cons
-        struct { Object *params, *body, *env; };        // lambda, macro
-        struct { int primitive; char *name; };          // primitive
-        struct { Object *parent, *vars, *vals; };       // env
+        struct { int64_t integer; };                               // integer
+        struct { double number; };                                 // double
+        struct { char string[sizeof (Object *[3])]; };             // string, symbol
+        struct { Object *car, *cdr; };                             // cons
+        struct { Object *params, *body, *env; };                   // lambda, macro
+        struct { Primitive *primitive; Object *type_check; };      // primitive
+        struct { Object *parent, *vars, *vals; };                  // env
         struct { Object *path; FILE *fd; char *buf; size_t len; }; // file descriptor/stream
-        struct { Object *forward; };                    // forwarding pointer
+        struct { Object *forward; };                               // forwarding pointer
     };
 };
 
-extern Object *nil;
-extern Object *t;
+typedef struct Constant {
+    Object **symbol;
+    Object **value;
+} Constant;
 
-
-typedef enum ResultCode {
-    FLISP_OK,
-    FLISP_ERROR,
-    FLISP_RETURN,         /* successful return */
-    FLISP_BREAK,          /* non local exit */
-    FLISP_EOF,            /* eof upon read */
-    FLISP_USER,           /* generic user generated exception */
-    /* Parser/reader */
-    FLISP_READ_INCOMPLETE,
-    FLISP_READ_INVALID,
-    FLISP_READ_RANGE,     /* number range over/underflow */
-    /* Parameter */
-    FLISP_WRONG_TYPE,
-    FLISP_INVALID_VALUE,
-    FLISP_PARAMETER_ERROR,
-    /* System */
-    FLISP_IO_ERROR,
-    FLISP_OOM,
-    /* Internal */
-    FLISP_GC_ERROR,
-} ResultCode;
-
+/* Internal */
 typedef struct Memory {
     size_t capacity, fromOffset, toOffset;
     void *fromSpace, *toSpace;
@@ -92,8 +112,9 @@ typedef struct Memory {
 
 typedef struct Interpreter {
     Object *object;                  /* result or error object */
-    char message[WRITE_FMT_BUFSIZ];  /* error string */
-    ResultCode result;               /* result of last evaluation */
+    Object *result;                  /* result symbol */
+    char msg_buf[WRITE_FMT_BUFSIZ];  /* error string */
+
     /* private */
     FILE *input;                     /* default input stream object */
     FILE *output;                    /* default output file descriptor */
@@ -120,43 +141,60 @@ typedef struct Interpreter {
 
 // PROGRAMMING INTERFACE ////////////////////////////////////////////////
 
-#define TWO_STRING_ARGS(func)                                   \
-    Object *first = (*args)->car;                               \
-    Object *second = (*args)->cdr->car;                         \
-    if (first->type != TYPE_STRING)                             \
-        exceptionWithObject(interp, first, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) "  first second) - first is not a string"); \
-    if (second->type != TYPE_STRING)                            \
-        exceptionWithObject(interp, second, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " first second) - second is not a string");
+extern Object * newObject(Interpreter *, Object *);
+extern Object *newObjectFrom(Interpreter *, Object **);
+extern Object *newInteger(Interpreter *, int64_t);
+extern size_t addCharToBuf(Interpreter *, int);
+extern void resetBuf(Interpreter *);
+extern void exceptionWithObject(Interpreter *, Object *, Object *, char *, ...);
+#define exception(interp, result, ...)       exceptionWithObject(interp, nil, result, __VA_ARGS__)
+#define GC_PASTE1(name, id)  name ## id
+#define GC_PASTE2(name, id)  GC_PASTE1(name, id)
+#define GC_UNIQUE(name)      GC_PASTE2(name, __LINE__)
 
-#define ONE_STRING_ARG(func)                                  \
-    Object *arg = (*args)->car;                               \
-    if (arg->type != TYPE_STRING)                             \
-        exceptionWithObject(interp, arg, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " arg) - arg is not a string");
+#define GC_CHECKPOINT Object *gcTop = interp->gcTop
+#define GC_RELEASE interp->gcTop = gcTop
+extern Object *gcReturn(Interpreter *, Object *, Object *);
+#define GC_RETURN(expr)  return gcReturn(interp, gcTop, expr)
 
-#define ONE_NUMBER_ARG(func)                                  \
-    Object *num = (*args)->car;                               \
-    if (num->type != TYPE_NUMBER)                             \
-        exceptionWithObject(interp, num, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " num) - num is not a number");
+#define GC_TRACE(name, init)                                            \
+    Object GC_UNIQUE(gcTrace) = { type_cons, .car = init, .cdr = interp->gcTop }; \
+    interp->gcTop = &GC_UNIQUE(gcTrace);                                \
+    Object **name = &GC_UNIQUE(gcTrace).car;
 
-#define ONE_STREAM_ARG(func)                                  \
-    Object *stream = (*args)->car;                            \
-    if (stream->type != TYPE_STREAM)                          \
-        exceptionWithObject(interp, stream, FLISP_WRONG_TYPE, "(" CPP_XSTR(func) " fd) - fd is not a stream");
+void fl_debug(Interpreter *, char *, ...);
+
+
+#define FLISP_ARG_ONE (*args)->car
+#define FLISP_ARG_TWO (*args)->cdr->car
+#define FLISP_ARG_THREE (*args)->cdr->cdr->car
+
+#define FLISP_HAS_ARG_TWO ((*args)->cdr != nil)
+#define FLISP_HAS_ARG_THREE ((*args)->cdr->cdr != nil)
+
+#define CHECK_TYPE(PARAM, TYPE, SIGNATURE) \
+    if (PARAM->type != TYPE)               \
+        exceptionWithObject(interp, PARAM, wrong_type_argument, \
+                            SIGNATURE " expected %s, got: %s", TYPE->string, PARAM->type->string)
 
 // PUBLIC INTERFACE ///////////////////////////////////////////////////////
 extern Interpreter *lisp_new(size_t, char**, char*, FILE*, FILE*, FILE*);
 extern void lisp_destroy(Interpreter *);
-extern ResultCode lisp_eval(Interpreter *);
-extern ResultCode lisp_eval_string(Interpreter *, char *);
+extern void lisp_eval(Interpreter *);
+extern void lisp_eval_string(Interpreter *, char *);
 extern void lisp_write_object(Interpreter *, FILE *, Object *, bool);
 extern void lisp_write_error(Interpreter *, FILE *);
 
+extern void lisp_write_error2(Interpreter *, FILE *);
+extern void lisp_eval2(Interpreter *);
+extern void lisp_eval3(Interpreter *, char *);
+extern void lisp_eval_string2(Interpreter *, char *);
 
 #ifdef FLISP_FILE_EXTENSION
 #define FLISP_REGISTER_FILE_EXTENSION \
-    {"fflush", 1, 1, primitiveFflush}, \
-    {"ftell", 1, 1, primitiveFtell},   \
-    {"fgetc", 1, 1, primitiveFgetc},
+    {"fflush", 1, 1, TYPE_STREAM, primitiveFflush},     \
+    {"ftell",  1, 1, TYPE_STREAM, primitiveFtell},   \
+    {"fgetc",  1, 1, TYPE_STREAM, primitiveFgetc},
 #else
 #define FLISP_REGISTER_FILE_EXTENSION
 #endif

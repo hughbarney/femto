@@ -1,0 +1,5 @@
+1
+2
+3 The cursor should be here
+4
+5

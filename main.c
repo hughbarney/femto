@@ -8,7 +8,7 @@
 #include <errno.h>
 #include "header.h"
 
-void gui(); /* The GUI loop used in interactive mode */
+void gui(void); /* The GUI loop used in interactive mode */
 
 #define CPP_XSTR(s) CPP_STR(s)
 #define CPP_STR(s) #s
@@ -19,7 +19,17 @@ FILE *prev, *debug_fp = NULL;
 char* output;
 size_t len;
 
-void load_config(char *file)
+/** Lisp eval a file
+ *
+ * @param: file .. path to file.
+ *
+ * Tries to open the file indicated by *path* and feeds it to the Lisp
+ * interpreter.
+ *
+ * Output and Errors are logged to the debug file descriptor.
+ *
+ */
+void load_file(char *file)
 {
     FILE *fd;
     if (!(fd = fopen(file, "r"))) {
@@ -28,12 +38,12 @@ void load_config(char *file)
     }
     interp->input = fd;
     interp->output = debug_fp;
-    if (lisp_eval(interp)) {
-        debug("failed to load file %s: %ul - %s\n", file, interp->result, interp->message);
+    lisp_eval(interp);
+    if (interp->result != nil) {
+        // Note: the error object can be printed with lisp_write_object
+        debug("failed to load file %s: %s\n", file, interp->msg_buf);
         lisp_write_error(interp, debug_fp);
     }
-    interp->input = interp->output = NULL;
-
     if (fclose(fd))
         debug("failed to close file %s\n", file);
 }
@@ -41,7 +51,7 @@ void load_config(char *file)
 int main(int argc, char **argv)
 {
     char *envv, *library_path, *init_file;
-
+    
     batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
     debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
 
@@ -74,7 +84,7 @@ int main(int argc, char **argv)
         fatal("fLisp initialization failed");
 
     if (strlen(init_file))
-        load_config(init_file);
+        load_file(init_file);
 
     /* GUI */
     if (!batch_mode) gui();
@@ -88,11 +98,16 @@ int main(int argc, char **argv)
     return 0;
 }
 
+/** Handle errors from Lisp scripts
+ *
+ * @param interp
+ */
 void msg_lisp_err(Interpreter *interp)
 {
     char *buf;
     size_t len;
     FILE *fd;
+
     if (NULL == (fd = open_memstream(&buf, &len)))
         fatal("failed to allocate error formatting buffer");
     lisp_write_error(interp, fd);
@@ -101,6 +116,18 @@ void msg_lisp_err(Interpreter *interp)
     free(buf);
 }
 
+/** eval_string - Invoke fLisp interpreter and return result as string
+ *
+ * @param do_format  If true, the input string is passed through
+ *                   printf style formatting, otherwise it is used directly.
+ * @param format     Input string for the interpreter.
+ *
+ * @returns
+ * - NULL  if an error occured formatting the input string or
+ *         evaluating it.
+ * - A pointer to a string buffer with the fLisp interpreter output.
+ *   After use this buffer has to be freed with free_lisp_output().
+ */
 char *eval_string(bool do_format, char *format, ...)
 {
     char buf[INPUT_FMT_BUFSIZ], *input;
@@ -122,28 +149,29 @@ char *eval_string(bool do_format, char *format, ...)
 
     prev = interp->output;  // Note: save for double invocation with user defined functions.
     interp->output = open_memstream(&output, &len);
-    if ((lisp_eval_string(interp, input)))
-        msg_lisp_err(interp);
+    lisp_eval_string(interp, input);
+    if (interp->result == nil)
+        return output;
+    if (interp->output)
+        fflush(interp->output);
+    msg_lisp_err(interp);
     if (debug_mode) {
-        if (interp->result)
-            lisp_write_error(interp, debug_fp);
+        lisp_write_error(interp, debug_fp);
         debug("=> %s\n", output);
     }
-    if (interp->result) {
-        free_lisp_output();
-        return NULL;
-    }
-    return output;
+    free_lisp_output();
+    return NULL;
 }
-void free_lisp_output()
+void free_lisp_output(void)
 {
-    fflush(interp->output);
+    if (!interp->output)
+        return;
     fclose(interp->output);
     free(output);
     interp->output = prev;
 }
 
-void gui()
+void gui(void)
 {
     debug("gui(): init\n");
     if (initscr() == NULL) fatal(f_initscr);

@@ -69,6 +69,7 @@
 	<li><a href="#arithmetic_ops">Arithmetic Operations</a></li>
 	<li><a href="#string_ops">String Operations</a></li>
       </ol>
+      <li><a href="#double">Double Extension</a></li>
       <li><a href="#libraries">Lisp Libraries</a></li>
       <ol>
 	<li><a href="#startup">Library Loading</a></li>
@@ -127,6 +128,29 @@
       syntactical elements.
     </p>
     <p>
+      Variables names convey the following context:
+    </p>
+    <dl>
+      <dt>Lisp object of any type:</dt>
+      <dd><var>object</var> <var>value</var> <var>o</var> <var>a</var> <var>b</var> <var>c</var></dd>
+      <dt>Program elements:</dt>
+      <dd><var>params</var> <var>opt</var> <var>body</var> <var>expr</var> <var>pred</var></dd>
+      <dt>Integer:</dt>
+      <dd><var>i</var> <var>j</var> <var>k</var></dd>
+      <dt>Double:</dt>
+      <dd><var>x</var> <var>y</var> <var>z</var></dd>
+      <dt>Any numeric type:</dt>
+      <dd><var>num</var> <var>num1</var> <var>num2</var></dd>
+      <dt>Symbol:</dt>
+      <dd><var>symbol</var></dd>
+      <dt>String:</dt>
+      <dd><var>string</var> <var>s</var> <var>s1</var> <var>s2</var> …</dd>
+      <dt>List/Cons:</dt>
+      <dd><var>cons</var> <var>l</var> <var>l1</var> <var>l2</var> …</dd>
+      <dt>Stream:</dt>
+      <dd><var>stream</var> <var>f</var></dd>
+    </dl>
+    <p>
       <i>fLisp</i> fancies to converge towards Emacs and Common Lisp, but includes also Scheme functions.  Function
       descriptions are annotated according to their compatibility:
     </p>
@@ -142,7 +166,7 @@
     </dl>
     <p>
       By default compatibility with Common Lisp is annotated. The suffix <u>e</u> is used to indicate reference to Emacs
-      Lisp, <u>s</u> for Scheme.
+      Lisp, <u>s</u> for Scheme.  <var>fLisp</var> specific function are annotated with <u>f</u>.
     </p>
     <nav><a href="#toc">^</a></nav>
 
@@ -224,23 +248,14 @@
 
     <p><i>fLisp</i> objects have one of the following data types:</p>
     <dl>
-      <dt><dfn>number</dfn></dt>
-      <dd>
-	<a href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format">double precision floating point
-	  number.</a>
-      </dd>
-      <dt><dfn>string</dfn></dt>
-      <dd>character array.</dd>
-      <dt><dfn>cons</dfn></dt>
-      <dd>object holding two pointers to objects.</dd>
+      <dt><dfn>integer</dfn></dt><dd>64 bit singed integer</dd>
+      <dt><dfn>string</dfn></dt><dd>character array.</dd>
+      <dt><dfn>cons</dfn></dt><dd>object holding two pointers to objects.</dd>
       <dt><dfn>symbol</dfn></dt>
       <dd>string with restricted character set: <code>[A-Z][0-9][a-z]!#$%&amp;*+-./:&lt;=&gt;?@^_~</code></dd>
-      <dt><dfn>lambda</dfn></dt>
-      <dd>anonymous function with parameter evaluation</dd>
-      <dt><dfn>macro</dfn></dt>
-      <dd>anonymous function without parameter evaluation</dd>
-      <dt><dfn>stream</dfn></dt>
-      <dd>An input/output stream</dd>
+      <dt><dfn>lambda</dfn></dt><dd>anonymous function with parameter evaluation</dd>
+      <dt><dfn>macro</dfn></dt><dd>anonymous function without parameter evaluation</dd>
+      <dt><dfn>stream</dfn></dt><dd>An input/output stream</dd>
     </dl>
     <p>
       Objects are immutable, functions either create new objects or return existing ones.
@@ -273,7 +288,7 @@
     </p>
     <h4 id="exceptions">Error handling</h4>
     <p>
-      Whenever fLisp encounters an error an exception is thrown. Exceptions have a non-zero result code and a human
+      Whenever fLisp encounters an error an exception is thrown. Exceptions have an error type symbol and a human
       readable error message. fLisp does not implement stack backtracking. Exceptions are either caught on the top level
       of an evaluation or by a <code>catch</code> statement.
     </p>
@@ -285,24 +300,31 @@
     </p>
     <p>
       When an exception occurs while calling <code>lisp_eval()</code> or <code>lisp_eval_string()</code> from C-code,
-      the <code>object</code> field of the interpreter is set to the object causing the error, and
-      the <code>result</code> field is set to the error code.
+      the <code>object</code> field of the interpreter is set to the object causing the error, the <code>result</code>
+      field is set to the error type symbol and the <code>msg_buf</code> field is set to the error message.
     </p>
     <p>
       Exceptions can be thrown from within in Lisp code via the <a href="#interp_ops"><code>throw</code></a>
       function.
     </p>
     <p>
-      The internally used result codes are defined in the <code>ResultCode</code> enum in <code>lisp.h</code> and
-      reverse defined as Lisp symbols in the fLisp core library in <code>core.lsp</code>.  Notable result codes:
+      The following error type symbols are defined and used internally:
     </p>
-    <dl>
-      <dt><code>flisp-ok</code></dt><dd><code>0</code>: no error.</dd>
-      <dt><code>flisp-error</code></dt><dd><code>1</code>: generic error.</dd>
-      <dt><code>flisp-break</code></dt><dd><code>3</code>: non local exit.</dd>
-      <dt><code>flisp-user</code></dt><dd><code>5</code>: generic error for user code.</dd>
-    </dl>
+    <ul>
+      <li><code>end-of-file</code></li>
+      <li><code>read-incomplete</code></li>
+      <li><code>invalid-read-syntax</code></li>
+      <li><code>range-error</code></li>
+      <li><code>wrong-type-argument</code></li>
+      <li><code>invalid-value</code></li>
+      <li><code>wrong-num-of-arguments</code></li>
+      <li><code>arith-error</code></li>
+      <li><code>io-error</code></li>
+      <li><code>out-of-memory</code></li>
+      <li><code>gc-error</code></li>
+    </ul>
 
+    <nav><a href="#toc">^</a></nav>
     
     <h3 id="primitives"><i>fLisp</i> Primitives</h3>
     <p>
@@ -363,9 +385,9 @@
       <dd> These forms return a macro function. Parameter handling is the same as with lambda.</dd>
       <dt><code>(quote <var>expr</var>)</code></dt>
       <dd>Returns <var>expr</var> without evaluating it.</dd>
-      <dt><code>(catch <var>expression</var>)</code> <u>D</u></dt>
+      <dt><code>(catch <var>expr</var>)</code> <u>D</u></dt>
       <dd>
-	<p>Evaluates <var>expression</var> and returns a list with three elements:</p>
+	<p>Evaluates <var>expr</var> and returns a list with three elements:</p>
 	<dl>
 	  <dt><var>result</var></dt>
 	  <dd><code>0</code> on success or any other number indicating an error.</dd>
@@ -376,18 +398,50 @@
       <dt><code>(throw <var>result</var> <var>message</var>[ <var>object</var>])</code> <u>D</u></dt>
       <dd>
 	Throws an exception, stopping any further evaluation.  <var>result</var> is the error type
-	number, <var>message</var> is a human readable error string and <var>object</var> is the object in error, if
+	symbol, <var>message</var> is a human readable error string and <var>object</var> is the object in error, if
 	any.
       </dd>
     </dl>
 
     <h4 id="in_out">Input / Output and Others</h4>
     <dl>
-      <dt><code>(fopen <var>path</var> <var>mode</var>)</code> <u>S: open</u></dt>
-      <dd>Open file at <var>path</var> with <var>mode</var> and return a stream object</dd>
-      <dt><code>(fclose <var>stream</var>)</code> <u>S: close</u></dt>
+      <dt><code>(open <var>path</var>[ <var>mode</var>])</code> <u>S: open</u></dt>
+      <dd>
+	Open file at string <var>path</var> with string <var>mode</var> and return a stream
+	object. <var>mode</var> is <code>"r"</code>ead only by default.
+      </dd>
+      <dd>
+	<p><code>open</code> can open or create files, file descriptors and memory based streams.</p>
+	<dl>
+	  <dt>Files:</dt>
+	  <dd>
+	    <var>path</var>: path to file, <var>mode</var>: one
+	    of <code>r</code>, <code>w</code>, <code>a</code>, <code>r+</code>, <code>w+</code>, <code>a+</code> plus an
+	    optional <code>b</code> modifier.
+	  </dd>
+	  <dt>File descriptors:</dt>
+	  <dd>
+	    <var>path</var>: <code>&lt;<var>n</var></code> for reading, <code>&gt;<var>n</var></code> for
+	    writing. <var>n</var> is the number of the file descriptor. Omit <var>mode</var>.
+	  </dd>
+	  <dt>Memory streams:</dt>
+	  <dd>
+	    For reading <var>path</var> is the string to read, <var>mode</var> must be set to: <code>&lt;</code>. The
+	    name of the opened file is set to <code>&lt;STRING</code>.
+	  </dd>
+	  <dd>
+	    For writing <var>path</var> is ignored, <var>mode</var> must be set to: <code>&gt;</code>. The
+	    name of the opened file is set to <code>&gt;STRING</code>.
+	  </dd>
+	</dl>
+      </dd>
+      <dt><code>(close <var>stream</var>)</code> <u>S: close</u></dt>
       <dd>Close <var>stream</var> object</dd>
-      <dt><code>(fread</code> <code><var>stream</var>[ eof-value])</code> <u>S: read</u></dt>
+      <dt><code>(file-info <var>stream</var>)</code> <u>f</u></dt>
+      <dd>Returns <code>(<var>path</var> <var>buf</var> <var>fd</var>)</code> for <var>stream</var>. <var>buf</var> is
+	either <code>nil</code> or the text buffer of a memory stream. <var>fd</var> is either the integer
+	representation of the file descriptor or <code>nil</code> when <var>stream</var> is already closed.</dd>
+      <dt><code>(read</code> <code><var>stream</var>[ eof-value])</code> <u>S: read</u></dt>
       <dd>
 	Reads the next complete Lisp expression from <var>stream</var>.  The
 	read in object is returned.  If end of file is reached, an exception is raised, unless <var>eof-value</var> is
@@ -424,15 +478,12 @@
     <dl>
       <dt><code>(null <var>object</var>)</code></dt>
       <dd>Returns <code>t</code> if <var>object</var> is <code>nil</code>, otherwise <code>nil</code>.</dd>
-      <dt><code>(symbolp <var>object</var>)</code></dt>
-      <dd>Returns <code>t</code> if <var>object</var> is of type symbol, otherwise <code>nil</code>.</dd>
+      <dt><code>(type-of <var>object</var>)</code></dt>
+      <dd>Returns the type symbol of <var>object</var>.</dd>
+      <dt><code>(consp <var>object</var>)</code></dt>
+      <dd>Returns <code>t</code> if <var>object</var> is of type cons, otherwise <code>nil</code>.</dd>
       <dt><code>(symbol-name <var>object</var>)</code></dt>
       <dd>If <var>object</var> is of type symbol return its value as string.</dd>
-      <dt><code>(numberp <var>object</var>)</code></dt>
-      <dd>Returns <code>t</code> if <var>object</var> is of type number, otherwise <code>nil</code>.</dd>
-      <dt><code>(stringp <var>object</var>)</code></dt>
-      <dd>Returns <code>t</code> if <var>object</var> is of type string, otherwise <code>nil</code>.</dd>
-      <dt><code>(consp <var>object</var>)</code></dt>
       <dd>Returns <code>t</code> if <var>object</var> is of type cons, otherwise <code>nil</code>.</dd>
       <dt><code>(cons <var>car</var> <var>cdr</var>)</code></dt>
       <dd>Returns a new cons with the first object set to the value of <var>car</var> and the second to the value of <var>cdr</var>.</dd>
@@ -440,80 +491,103 @@
       <dd>Returns the first object of <var>cons</var>.</dd>
       <dt><code>(cdr <var>cons</var>)</code></dt>
       <dd>Returns the second object of <var>cons</var>.</dd>
-      <dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
-      <dd>Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, <code>nil</code> otherwise.</dd>
+      <dt><code>(same <var>a</var> <var>b</var>)</code></dt>
+      <dd>Returns <code>t</code> if <var>a</var> and <var>b</var> are the same object, <code>nil</code> otherwise.</dd>
     </dl>
 
     <h4 id="arithmetic_ops">Arithmetic Operations</h4>
 
     <dl>
-      <dt><code>(+[ <var>arg</var>..])</code></dt>
-      <dd>Returns the sum of all <var>arg</var>s or <code>0</code> if none is given.</dd>
-      <dt><code>(*[ <var>arg</var>..])</code></dt>
-      <dd>Returns the product of all <var>arg</var>s or <code>1</code> if none given.</dd>
-      <dt><code>(-[ <var>arg</var>..])</code></dt>
+      <dt><code>(i+ <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns the sum of <var>i</var> <var>j</var>.</dd>
+      <dt><code>(i* <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns the product of <var>i</var> <var>j</var>.</dd>
+      <dt><code>(i- <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns <var>i</var> minus <var>j</var>.</dd>
+      <dt><code>(i/ <var>i</var> <var>j</var>)</code></dt>
       <dd>
-	Returns 0 if no <var>arg</var> is given, -<var>arg</var> if only one is given, <var>arg</var> minus the sum of
-	all others otherwise.
+	Returns <var>i</var> divided by <var>j</var>. Throws <code>arith-error</code> if <var>j</var> is zero.
       </dd>
-      <dt><code>(/ <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dt><code>(i% <var>i</var> <var>j</var>)</code></dt>
       <dd>
-	Returns 1/<var>arg</var> if no <var>div</var> is given, <var>arg</var>/<var>div</var>[/<var>div</var>..] if one
-	or more <var>div</var>s are given, <code>inf</code> if one of the <var>div</var>s is <code>0</code> and the sum
-	of the signs of all operands is even, <code>-inf</code> if it is odd.
+	Returns the rest (modulo) of the integer division of <var>i</var>
+	by <var>j</var>. Throws <code>arith-error</code> if <var>j</var> is zero.
       </dd>
-      <dt><code>(% <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dt><code>(i= <var>i</var> <var>j</var>)</code></dt>
+      <dt><code>(i&lt; <var>i</var> <var>j</var>)</code></dt>
+      <dt><code>(i&gt; <var>i</var> <var>j</var>)</code></dt>
+      <dt><code>(i&lt;= <var>i</var> <var>j</var>)</code></dt>
+      <dt><code>(i&gt;= <var>i</var> <var>j</var>)</code></dt>
       <dd>
-	Returns <code>1</code> if no <var>div</var> is given, <var>arg</var>%<var>div</var>[%<var>div</var>..] if one or
-	more <var>div</var>s are given. If one of the <var>div</var>s is <code>0</code>, the program exits with an
-	arithmetic exception.
-      </dd>
-      <dt><code>(= <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&lt; <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&gt; <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&lt;= <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dt><code>(&gt;= <var>arg</var>[ <var>arg</var>..])</code></dt>
-      <dd>
-	These predicate functions apply the respective comparison operator between all <var>arg</var>s and return the
-	respective result as <code>t</code> or <code>nil</code>.  If only one <var>arg</var> is given they all
-	return <code>t</code>.
+	These predicate functions apply the respective comparison operator between <var>i</var> <var>j</var>.
       </dd>
     </dl>
 
     <h4 id="string_ops">String Operations</h4>
 
     <dl>
-      <dt><code>(string.length <var>string</var>)</code></dt>
+      <dt><code>(string-length <var>string</var>)</code></dt>
       <dd>Returns the length of <var>string</var> as a <i>number</i>.</dd>
-      <dt><code>(string.substring <var>string</var> <var>start</var> <var>end</var>)</code></dt>
-      <dd>
-	Returns the sub string from <var>string</var> which starts with the character at index <var>start</var> and ends
-	with index <var>end</var>. String indexes are zero based.
-      </dd>
-      <dt><code>(string.append <var>string1</var> <var>string2</var>)</code></dt>
+      <dt><code>(string-append <var>s1</var> <var>s2</var>)</code></dt>
       <dd>Returns a new string consisting of the concatenation of <var>string1</var> with <var>string2</var>.</dd>
+      <dt><code>(substring <var>string</var>[ <var>start</var> [<var>end</var>]])</code></dt>
+      <dd>
+	Returns the sub string from <var>string</var> which starts with the character at index <var>start</var> and
+	before index <var>end</var>. String indexes are zero based, negative indexes count from the end
+	of <var>string</var>.  If <var>end</var> is not given it defaults to the end of <var>string</var>.
+	If <var>start</var> is not given, it defaults to the start of <var>string</var>.
+      </dd>
+      <dt><code>(string-search <var>needle</var> <var>haystack</var>)</code> <u>C</u></dt>
+      <dd>
+	Returns the position of <var>needle</var> if it is contained in <var>haystack</var>,
+	otherwise <code>nil</code>.
+      </dd>
       <dt><code>(string-to-number <var>string</var>)</code></dt>
       <dd>
-	Converts <var>string</var> into a corresponding <i>number</i> object. String is interpreted as decimal based
+	Converts <var>string</var> into a corresponding <i>integer</i> object. String is interpreted as decimal based
 	integer.
       </dd>
-      <dt><code>(number-to-string <var>number</var>)</code></dt>
-      <dd>Converts <var>number</var> into a <i>string</i> object.
-      </dd>
-      <dt><code>(ascii <var>number</var>)</code></dt>
+      <dt><code>(ascii <var>integer</var>)</code></dt>
       <dd>
-	Converts <var>number</var> into a <i>string</i> with one character, which corresponds to the ASCII
-	representation of <var>number</var>.
+	Converts <var>integer</var> into a <i>string</i> with one character, which corresponds to the ASCII
+	representation of <var>integer</var>.
       </dd>
       <dt><code>(ascii-&gt;number <var>string</var>)</code></dt>
       <dd>
-	Converts the first character of <var>string</var> into a <i>number</i> which corresponds to its ASCII
+	Converts the first character of <var>string</var> into an <i>integer</i> which corresponds to its ASCII
 	value.
       </dd>
     </dl>
 
     <nav><a href="#toc">^</a></nav>
-    
+    <h3 id="double">Double Extension</h3>
+
+    <dl>
+      <dt><code>(d+ <var>x</var> <var>y</var>)</code></dt>
+      <dd>Returns the sum of <var>x</var> <var>y</var>.</dd>
+      <dt><code>(d* <var>x</var> <var>y</var>)</code></dt>
+      <dd>Returns the product of <var>x</var> <var>y</var>.</dd>
+      <dt><code>(d- <var>x</var> <var>y</var>)</code></dt>
+      <dd>Returns <var>x</var> minus <var>y</var>.</dd>
+      <dt><code>(d/ <var>arg</var>[ <var>div</var>..])</code></dt>
+      <dd>
+	Returns <var>x</var> divided by <var>y</var>, or <code>inf</code> if <var>y</var> is zero.
+      </dd>
+      <dt><code>(d% <var>x</var> <var>y</var>)</code></dt>
+      <dd>
+	Returns the rest (modulo) of the integer division of <var>x</var>
+	by <var>y</var> or <code>-nan</code> if <var>y</var> is zero.
+      </dd>
+      <dt><code>(d= <var>x</var> <var>y</var>)</code></dt>
+      <dt><code>(d&lt; <var>x</var> <var>y</var>)</code></dt>
+      <dt><code>(d&gt; <var>x</var> <var>y</var>)</code></dt>
+      <dt><code>(d&lt;= <var>x</var> <var>y</var>)</code></dt>
+      <dt><code>(d&gt;= <var>x</var> <var>y</var>)</code></dt>
+      <dd>
+	These predicate functions apply the respective comparison operator between <var>x</var> <var>y</var>.
+      </dd>
+    </dl>
+
     <nav><a href="#toc">^</a></nav>
     <h3 id="libraries">Lisp Libraries</h3>
 
@@ -546,23 +620,78 @@
       This library is built into the startup file.
     </p>
     <dl>
-      <dt><code>(list</code> [<code><var>element</var></code> ..]<code>)</code></dt>
+      <dt><code>(list</code> [<code><var>element</var></code> ..]<code>)</code> <u>C</u></dt>
       <dd>Returns the list of all provided elements.</dd>
-      <dt><code>(defmacro <var>name</var> <var>params</var> <var>body</var>)</code></dt>
-      <dt><code>(defun <var>name</var> <var>params</var> <var>body</var>)</code></dt>
+      <dt><code>(defmacro <var>name</var> <var>params</var> <var>body</var>)</code> <u>C</u></dt>
+      <dt><code>(defun <var>name</var> <var>params</var> <var>body</var>)</code> <u>C</u></dt>
       <dd>Defines and returns a macro or function, respectively.</dd>
-      <dt><code>(string <var>arg</var>)</code></dt>
+      <dt><code>(curry (<var>func</var> <var>a</var>))</code></dt>
+      <dd>
+	Returns a lambda with one parameter which returns <code>(<var>func</var> <var>a</var> <var>b</var>)</code>.
+      </dd>
+      <dt><code>(typep (<var>type</var> <var>object</var>))</code> <u>C</u></dt>
+      <dd>Returns true if <var>object</var> has <var>type</var>.</dd>
+      <dt><code>(integerp <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(stringp <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(symbolp <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(lamdap <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(macrop <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(streamp <var>object</var>)</code> <u>C</u></dt>
+      <dd>Return <code>t</code> if <var>object</var> is of the respective type, otherwise <code>nil</code>.</dd>
+      <dt><code>(numberp <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(cadr <var>list</var>)</code> <u>C</u></dt>
+      <dt>Return the second element in <var>list</var>, <code>(car (cdr <var>list</var>))</code>.</dt>
+      <dt><code>(cddr <var>list</var>)</code> <u>C</u></dt>
+      <dt>Return all elements after the second one in <var>list</var>, <code>(cdr (cdr <var>list</var>))</code>.</dt>
+      <dt><code>(caddr <var>list</var>)</code> <u>C</u></dt>
+      <dt>Return the third element in list, <code>(car (cdr (cdr <var>list</var>)))</code>.</dt>
+      <dt><code>(number-to-string <var>number</var>)</code> <u>C</u></dt>
+      <dd>Converts <var>integer</var> into a <i>string</i> object.</dd>
+      <dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
+      <dd>
+	Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, number or
+	string, <code>nil</code> otherwise.
+      </dd>
+
+      <dd>Synonym for <code>integerp</code>.</dd>
+      <dt><code>(not <var>object</var>)</code> <u>C</u></dt>
+      <dd>Logical inverse. In Lisp a synonym for <code>null</code></dd>
+      <dt><code>(fold-left <var>func</var> <var>init</var> <var>list</var>)</code> <u>Ss: fold-left</u></dt>
+      <dd>
+	Apply the binary <var>func</var>tion to <var>start</var> and the first element of <var>list</var> and then
+	recursively to the result of the previous invocation and the first element of the rest of <var>list</var>. If <var>list</var> is empty return <var>start</var>.
+      </dd>
+      <dt><code>(length <var>obj</var>)</code> <u>C</u></dt>
+      <dd>Returns the length of <var>obj</var> if it is a string or a list, otherwise throws a type exception.</dd>
+      <dt><code>(string <var>arg</var>)</code> <u>C</u></dt>
       <dd>Returns the string conversion of argument.</dd>
-      <dt><code>(concat </code>[<code><var>arg</var></code> ..]<code>)</code></dt>
+      <dt><code>(concat </code>[<code><var>arg</var></code>..]<code>)</code> <u>Ce</u></dt>
       <dd>Returns concatenation of all arguments converted to strings.</dd>
       <dt><code>(memq <var>arg</var> <var>list</var>)</code></dt>
       <dd>
 	If <var>arg</var> is contained in <var>list</var>, returns the sub list of <var>list</var> starting with the
 	first occurrence of <var>arg</var>, otherwise returns <code>nil</code>.
       </dd>
-      <dt><code>(fload </code> <code><var>stream</var>)</code></dt>
+      <dt><code>(map1 <var>func</var> <var>list</var>)</code> <u>S: mapcar</u></dt>
+      <dd>Apply func to each element in list and return a list of the results.</dd>
+      <dd><code>map1</code> is a specialized form of <code>mapcar</code> restricted to one list only.</dd>
+      <dt><code>nfold</code></dt>
+      <dt><code>coerce</code></dt>
+      <dt><code>coercec</code></dt>
+      <dt><code>fold-leftp</code></dt>
+      <dd>Helper functions for n-ary generic number type arithmetic. See below.</dd>
+      <dt><code>(let ((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code> <u>C</u></dt>
+      <dd>Bind all <var>name</var>s to the respective <var>value</var>s then evaluate body.</dd>
+      <dt><code>(let <var>label</var>((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code> <u>Cs</u></dt>
+      <dd>
+	Labelled or <q>named</q> <code>let</code>: define a local function <var>label</var> with <var>body</var> and
+	all <var>name</var>s as parameters bound to the <var>values</var>.
+      </dd>
+      <dt><code>(prog1 <var>sexp</var>[<var>sexp</var>..])</code> <u>C</u></dt>
+      <dd>Evaluate all <var>sexp</var> in turn and return the value of the first.</dd>
+      <dt><code>(fload </code> <code><var>stream</var>)</code> <u>f</u></dt>
       <dd>Reads and evaluates all Lisp objects in <var>stream</var>.</dd>
-      <dt><code>(load </code> <code><var>path</var>)</code></dt>
+      <dt><code>(load </code> <code><var>path</var>)</code> <u>C</u></dt>
       <dd>Reads and evaluates all Lisp objects in file at <var>path</var>.</dd>
       <dt><code>(provide <var>feature</var>)</code></dt>
       <dd>
@@ -577,21 +706,72 @@
       </dd>
     </dl>
 
+    <p>
+      The following arithmethic functions coerce their arguments to double if any of them is double, then they use
+      double arithmetic operators. If all arguments are integer they use integer arthmetic.
+    </p>
+    
+    <dl>
+      <dt><code>(+[ <var>num</var>..])</code></dt>
+      <dd>Returns the sum of all <var>num</var>s or <code>0</code> if none is given.</dd>
+      <dt><code>(*[ <var>num</var>..])</code></dt>
+      <dd>Returns the product of all <var>num</var>s or <code>1</code> if none given.</dd>
+      <dt><code>(-[ <var>num</var>..])</code></dt>
+      <dd>
+	Returns 0 if no <var>num</var> is given, -<var>num</var> if only one is given, <var>num</var> minus the sum of
+	all others otherwise.
+      </dd>
+      <dt><code>(/ <var>num</var>[ <var>div</var>..])</code></dt>
+      <dd>
+	Returns 1/<var>num</var> if no <var>div</var> is given, <var>num</var>/<var>div</var>[/<var>div</var>..] if one
+	or more <var>div</var>s are given, <code>inf</code> if one of the <var>div</var>s is <code>0</code> and the sum
+	of the signs of all operands is even, <code>-inf</code> if it is odd.
+      </dd>
+      <dt><code>(% <var>num</var>[ <var>div</var>..])</code></dt>
+      <dd>
+	Returns <code>1</code> if no <var>div</var> is given, <var>num</var>%<var>div</var>[%<var>div</var>..] if one or
+	more <var>div</var>s are given. If one of the <var>div</var>s is <code>0</code>, the program exits with an
+	arithmetic exception.
+      </dd>
+      <dt><code>(= <var>num</var>[ <var>num</var>..])</code></dt>
+      <dt><code>(&lt; <var>num</var>[ <var>num</var>..])</code></dt>
+      <dt><code>(&gt; <var>num</var>[ <var>num</var>..])</code></dt>
+      <dt><code>(&lt;= <var>num</var>[ <var>num</var>..])</code></dt>
+      <dt><code>(&gt;= <var>num</var>[ <var>num</var>..])</code></dt>
+      <dd>
+	These predicate functions apply the respective comparison operator between all <var>num</var>s and return the
+	respective result as <code>t</code> or <code>nil</code>.  If only one <var>num</var> is given they all
+	return <code>t</code>.
+      </dd>
+    </dl>
+
+
     <h4 id="flisp_lib">fLisp Library</h4>
     <p>
-      This library implements commonly excpected Lisp idioms, which are used in the editor libraries.
+      This library implements commonly excpected Lisp idioms. <i>fLisp</i> implements a carefully selected minimum set
+      of commonly used functions.
     </p>
     <dl>
-      <dt>not</dt>
       <dt>listp</dt>
       <dt>and</dt>
-      <dt>map1</dt>
       <dt>or</dt>
-      <dt>reduce</dt>
+      <dt><code>(reduce <var>func</var> <var>list</var> <var>start</var>)</code> <u>D</u></dt>
+      <dd>
+	<code>reduce</code> applies the binary <var>func</var> to the first element of <var>list</var>
+	and <var>start</var> and then recursively to the first element of the rest of the <var>list</var> and the result
+	of the previous invocation: it is <q>right binding</q>.
+      </dd>
+      <dd>
+	Since <code>reduce</code> is right associative and <var>start</var> is not optional, it differs significantly
+	both from Common Lisp and Scheme.
+      </dd>
       <dt>max</dt>
       <dt>min</dt>
       <dt>nthcdr</dt>
       <dt>nth</dt>
+      <dt><code>(fold-right <var>func</var> <var>end</var> <var>list</var>)</code> <u>Cs</u></dt>
+      <dt><code>(unfold <var>func</var> <var>init</var> <var>pred</var>)</code> <u>Cs</u></dt>
+      <dt><code>(iota <var>count</var>[ <var>start</var>[ <var>step</var>]])</code> <u>Cs</u></dt>
     </dl>
 
     <h4 id="std_lib">Standard Library</h4>
@@ -972,31 +1152,16 @@
     <p>
       After processing the given input, the interpreter puts a pointer to the object which is the result of the last
       evaluation into the <code>object</code> field of the interpreter structure.  The <code>result</code> field is set
-      to <code>FLISP_OK</code>, which has the integer value <code>0</code>.  The <code>message</code> field is set to
-      the empty string.
+      to the <code>nil</code> and the <code>msg_buf</code> field is set to  the empty string.
     </p>
     <p>
       fLisp sends all output to the default output stream. If <code>NULL</code> is given on initialization, output is
       suppressed altogether.
     <p>
       If an exception is thrown inside the Lisp interpreter an error message is formatted and copied to
-      the <code>message</code> buffer of the interpreter, A pointer to the object causing the error is set to
-      the <code>object</code> field. The <code>result</code> field is set to an error specific code:
+      the <code>msg_buf</code> buffer of the interpreter, A pointer to the object causing the error is set to
+      the <code>object</code> field. The <code>result</code> field is set to the respective error type symbol.
     </p>
-    <dl>
-      <dt><code>FLISP_ERROR</code></dt><dd>Generic error code.</dd>
-      <dt><code>FLISP_USER</code></dt><dd>User generated exception.</dd>
-      <dt><code>FLISP_READ_INCOMPLETE</code></dt><dd>End of file before valid Lisp expression was read in.</dd>
-      <dt><code>FLISP_READ_INVALID</code></dt><dd>Lisp expression is invalid.</dd>
-      <dt><code>FLISP_READ_RANGE</code></dt><dd>Integer or float under or overrflow.</dd>
-      <dt><code>FLISP_WRONG_TYPE</code></dt><dd>A Lisp function received an argument of wrong type.</dd>
-      <dt><code>FLISP_INVALID_VALUE</code></dt><dd>A Lisp function received an argument with invalid value.</dd>
-      <dt><code>FLISP_PARAMETER_ERROR</code></dt>
-      <dd>A macro or function invocation received an incorrect number of arguments.</dd>
-      <dt><code>FLISP_IO_ERROR</code></dt><dd>An operation on a stream failed.</dd>
-      <dt><code>FLISP_OOM</code></dt><dd>fLisp ran out of memory.</dd>
-      <dt><code>FLISP_GC</code></dt><dd>The garbage collector encountered an error.</dd>
-    </dl>
     <p>
       In this <dfn>error state</dfn> of the interpreter, the function <code>lisp_write_error()</code> can be used to
       write a standardized error message including the error object to a file descriptor of choice
@@ -1041,11 +1206,11 @@
 	</p>
       </dd>
 
-      <dt><code>(void) lisp_destroy(Interpreter *<var>interp</var>)</code></dt>
+      <dt><code>void lisp_destroy(Interpreter *<var>interp</var>)</code></dt>
       <dd>Frees all resources used by the interpreter.</dd>
       
       <dt>
-	<code>ResultCode lisp_eval(Interpreter *<var>interp</var>)</code>
+	<code>void lisp_eval(Interpreter *<var>interp</var>)</code>
       </dt>
       <dd>
 	<p>
@@ -1054,7 +1219,7 @@
 	</p>
       </dd>
       <dt>
-	<code>ResultCode lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>)</code>
+	<code>void lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>)</code>
       </dt>
       <dd>
 	Evaluates all Lisp expressions in <var>string</var>.</dd>
@@ -1066,7 +1231,7 @@
 	Format <var>object</var> into a string and write it to <var>stream</var>.  If <var>readably</var> is true, the
 	string can be read in by the interpreter and results in the same object.
       </dd>
-      <dt><code>void lisp_write_error(Interpreter *<var>interp</var>, FILE <var>*fd</var></code></dt>
+      <dt><code>void lisp_write_error(Interpreter *<var>interp</var>, FILE <var>*fd</var>)</code></dt>
       <dd>
 	Format the error <var>object</var> and the error message of the interpreter into a string and write it
 	to <var>fd</var>. The <var>object</var> is written with <var>readably</var> <code>true</code>.
@@ -1216,19 +1381,13 @@
       checking predicates in Lisp.
     </p>
     <p>
-      Make loop programming easier, by any combination of:
+      loop programming is availble via the labelled let macro. It could made easier, by any combination of:
     </p>
     <ul>
       <li>iota</li>
-      <li>apply/funcall</li>
-      <li>labelled let</li>
       <li>loop/while/for macro</li>
       <li>Demoing hand crafted loops including breaking with throw.</li>
     </ul>
-    <p>
-      apply/funcall should be implemented anyway, probably only one of them as special form. identity/always/ignore
-      should be added to one of the libraries.
-    </p>
   </body>
 </html>
 <!--

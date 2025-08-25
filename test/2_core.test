@@ -4,7 +4,7 @@
 
 export FLISPRC=../lisp/core.lsp
 
-tap 23
+tap 88
 
 # list
 IN='(list)' OUT=nil
@@ -24,6 +24,157 @@ flisp_expr 1; ok defmacro-1  simple macroexpansion
 IN="(defun f (a b) (list a b)) (f 1 2)" OUT='(1 2)'
 flisp_expr 1; ok defun-1  simple function invocation
 
+IN="((curry + 42) 1)" OUT=43
+flisp_expr 1; ok curry-1 curry sum function adds
+
+IN="(typep type-symbol t)" OUT=t
+flisp_expr 1; ok typep-1 typep of same type is t
+
+IN="(typep type-string 1)" OUT=nil
+flisp_expr 1; ok typep-1 typep of differnt type is nil
+
+IN="(integerp 42)" OUT='t'
+flisp_expr 1; ok integerp-1  integerp integer is t
+
+IN="(integerp integerp)" OUT='nil'
+flisp_expr 1; ok integerp-2  integerp lambda is nil
+
+IN='(stringp "answer")' OUT='t'
+flisp_expr 1; ok stringp-1  stringp string is t
+
+IN="(stringp stringp)" OUT='nil'
+flisp_expr 1; ok stringp-2  stringp lambda is nil
+
+IN="(symbolp 'a)" OUT='t'
+flisp_expr 1; ok symbolp-1  symbolp symbol is t
+
+IN="(symbolp symbolp)" OUT='nil'
+flisp_expr 1; ok symbolp-2  symbolp lambda is nil
+
+IN="(lambdap lambdap)" OUT='t'
+flisp_expr 1; ok lambdap-1  lambdap lambda is t
+
+IN="(lambdap 1)" OUT='nil'
+flisp_expr 1; ok lambdap-2  lambdap number is nil
+
+IN="(macrop defun)" OUT='t'
+flisp_expr 1; ok macrop-1  macrop macro is t
+
+IN="(macrop macrop)" OUT='nil'
+flisp_expr 1; ok macrop-2  macrop lambda is nil
+
+IN='(streamp (open "" ">"))' OUT=t
+flisp_expr 1; ok streamp-1  streamp stream is t
+
+IN="(streamp streamp)" OUT='nil'
+flisp_expr 1; ok streamp-2  streamp lambda is nil
+
+IN="(numberp 42)" OUT='t'
+flisp_expr 1; ok numberp-1  numberp number is t
+
+IN="(numberp numberp)" OUT='nil'
+flisp_expr 1; ok numberp-2  numberp lambda is nil
+
+IN="(cadr '(a b c d))" OUT="b"
+flisp_expr 1; ok cadr1-1 cadr returns second element
+
+IN="(cddr '(a b c d))" OUT="(c d)"
+flisp_expr 1; ok cddr1-1 cddr returns list after second element
+
+IN="(caddr '(a b c d))" OUT="c"
+flisp_expr 1; ok caddr1-1 caddr returns third element
+
+IN="(number-to-string 42)" OUT='"42"'
+flisp_expr 1; ok number-to-string-1 42 is string 42
+
+IN='(number-to-string "a")' ERR='(number-to-string number) - number expected type-integer got: type-string' OBJ=
+flisp_err 1; ok number-to-string-2 not a number fails
+
+IN='(string-to-number "42")' OUT='42'
+flisp_expr 1; ok string-to-number-1 string 42 is 42
+
+IN='(string-to-number "3.14")' OUT='3.14'
+flisp_expr 1; ok string-to-number-2 string 3.14 is 3.14
+
+IN='(string-to-number "answer")' OUT='0'
+flisp_expr 1; ok string-to-number-3 not number string is 0
+
+IN="(eq 1 1)" OUT='t'
+flisp_expr 1; ok eq-1_1  eq same num is t
+
+IN="(eq 1 2)" OUT='nil'
+flisp_expr 1; ok eq-1_2  eq different num is nil
+
+IN="(eq 1 'a)" OUT='nil'
+flisp_expr 1; ok eq-1_3  eq num other is nil
+
+IN='(eq "answer" "answer")' OUT='t'
+flisp_expr 1; ok eq-2_1  eq same string is t
+
+IN='(eq "answer" "everything")' OUT='nil'
+flisp_expr 1; ok eq-2_2  eq different string is nil
+
+IN='(eq "answer" 42)' OUT='nil'
+flisp_expr 1; ok eq-2_3  eq string other is nil
+
+IN="(eq 'a 'a)" OUT='t'
+flisp_expr 1; ok eq-3_1  eq same symbol is t
+
+IN="(eq 'a eq)" OUT='nil'
+flisp_expr 1; ok eq-3_2  eq symbol lambda is nil
+
+
+IN="(not nil)" OUT="t"
+flisp_expr 1;  ok not-1 not t is nil
+
+IN="(not t)" OUT="nil"
+flisp_expr 1;  ok not-2 not nil is t
+
+IN="(not 1)" OUT="nil"
+flisp_expr 1;  ok not-3 not number is nil
+
+IN="(fold-left + 1 nil)" OUT=1
+flisp_expr 1;  ok fold-left-1 fold-left with empty list is init
+IN="(fold-left + 1 '(2 3))" OUT=6
+flisp_expr 1;  ok fold-left-2 fold-left with list folds
+
+
+IN="(length nil)" OUT="0"
+flisp_expr 1; ok length-1 length of nil is zero
+
+IN="(length '(a b c))" OUT="3"
+flisp_expr 1; ok length-2 length of triple list is three
+
+false; ok arith \# TODO  test all of integer, double and misc arith.
+IN='(+)' OUT='0' flisp_expr 1; ok add-1 add nothing is 0
+IN='(+ 42)' OUT='42' flisp_expr 1; ok add-2 add 42  is 42
+IN='(+ 1 2 3)' OUT='6' flisp_expr 1; ok add-4 add 1 2 3 is 6
+IN='(-)' OUT='0' flisp_expr 1; ok minus-1 minus nothing is 0
+IN='(- 42)' OUT='-42' flisp_expr 1; ok minus-2 minus 42  is -42
+IN='(- 1 2 3)' OUT='-4' flisp_expr 1; ok minus-4 minus 1 2 3 is -4
+IN='(*)' OUT='1' flisp_expr 1; ok times-1 times nothing is 1
+IN='(* 42)' OUT='42' flisp_expr 1; ok times-2 times 42  is 42
+IN='(* 1 2 3)' OUT='6' flisp_expr 1; ok times-4 times 1 2 3 is 6
+IN='(/ 42.0)' OUT='0.0238095' flisp_expr 1; ok divide-1 divide 42  is 1/42
+IN='(/ 42 7 6)' OUT='1' flisp_expr 1; ok divide-3 divide 42 7 6 is 1
+IN='(% 42)' OUT='1' flisp_expr 1; ok mod-1 mod 42  is 1
+IN='(% 11 6 3)' OUT='2' flisp_expr 1; ok mod-3 mod 11 6 3 is 2
+# IN='(= 42)' OUT='t' flisp_expr 1; ok arith-equal-1 arith-equal 42  is t
+# IN='(= 7 7 7)' OUT='t' flisp_expr 1; ok arith-equal-3 arith-equal 7 7 7 is t
+# IN='(= 7 7 8)' OUT='nil' flisp_expr 1; ok arith-equal-4 arith-equal 7 7 8 is nil
+# IN='(< 42)' OUT='t' flisp_expr 1; ok less-1 less 42  is t
+# IN='(< 7 7 7)' OUT='nil' flisp_expr 1; ok less-3 less 7 7 7 is nil
+# IN='(< 1 2 3)' OUT='t' flisp_expr 1; ok less-4 less 1 2 3 is t
+# IN='(<= 42)' OUT='t' flisp_expr 1; ok less-equal-1 less-equal 42  is t
+# IN='(<= 7 7 7)' OUT='t' flisp_expr 1; ok less-equal-3 less-equal 7 7 7 is t
+# IN='(<= 7 7 6)' OUT='nil' flisp_expr 1; ok less-equal-4 less-equal 7 7 6 is nil
+# IN='(> 42)' OUT='t' flisp_expr 1; ok greater-1 greater 42  is t
+# IN='(> 7 7 7)' OUT='nil' flisp_expr 1; ok greater-3 greater 7 7 7 is nil
+# IN='(> 7 7 6)' OUT='nil' flisp_expr 1; ok greater-4 greater 7 7 6 is nil
+# IN='(>= 42)' OUT='t' flisp_expr 1; ok greater-equal-1 greater-equal 42  is t
+# IN='(>= 7 7 7)' OUT='t' flisp_expr 1; ok greater-equal-3 greater-equal 7 7 7 is t
+# IN='(>= 7 7 6)' OUT='t' flisp_expr 1; ok greater-equal-4 greater-equal 7 7 6 is t
+
 # string
 IN="(string nil)" OUT='""'
 flisp_expr 1; ok string-1 nil is empty string
@@ -42,7 +193,8 @@ flisp_expr 1; ok string-5 cons converts to concatenated strings of elements
 
 IN="(string car)" OBJ='#<Primitive car>'  ERR="cannot convert to string"
 flisp_err 1; ok string-6 lambda err\'s
-
+false; ok string-7 macro errs \# TODO
+false; ok string-8 stream errs \# TODO
 # concat
 IN="(concat 1 'a \"?\")" OUT='"1a?"'
 flisp_expr 1; ok concat-1 simple string concatenation
@@ -54,12 +206,41 @@ flisp_expr 1; ok memq-1 find object in list
 IN='(memq '\''a '\''(1 '\''two 3))' OUT=nil
 flisp_expr 1; ok memq-2 do not find object in list
 
+
+IN="(defun incr (x) (+ x 1)) (map1 incr '(1 2 3))" OUT="(2 3 4)"
+flisp_expr 1; ok map1-1 map1 incr elements in list
+
+IN="(map1 / '())" OUT="nil"
+flisp_expr 1; ok map1-2 map1 does nothing on empty list
+
+false; ok let-1 \# TODO
+
+IN='(length "")' OUT="0"
+flisp_expr 1; ok length-3 length of empty string is zero
+
+IN='(length "answer")' OUT="6"
+flisp_expr 1; ok length-1 length of answer is six
+
+
+IN="(prog1 'answer)" OUT="answer"
+flisp_expr 1; ok prog1-1 prog1 single arg is arg
+
+IN="(prog1 'answer 42)" OUT="answer"
+flisp_expr 1; ok prog1-2 prog1 two args is arg
+
 # fload
-IN='(setq f (fopen "empty.lsp" "r")) (fload f)' OUT=nil
+IN='(setq f (open "empty.lsp" "r")) (fload f)' OUT=nil
 flisp_expr 1; ok fload-1 load empty file
 
-IN='(setq f (fopen "one_word.lsp" "r")) (fload f)' OUT='"one_word"'
+IN='(setq f (open "one_word.lsp" "r")) (fload f)' OUT='"one_word"'
 flisp_expr 1; ok fload-2 load file with one word
+
+# load
+IN='(load "empty.lsp")' OUT=nil
+flisp_expr 1; ok load-1 load empty file
+
+IN='(load "one_word.lsp")' OUT='"one_word"'
+flisp_expr 1; ok load-2 load file with one word
 
 # provide
 IN="(provide)" OUT="(nil core)"
@@ -73,8 +254,8 @@ flisp_expr 1; ok provide-3 providing features a and subfeature b only prepends a
 IN="(require)" OBJ="#<Lambda (feature . args)>" ERR="(env) expects at least 1 arguments"
 flisp_err 1; ok require-1 requiring nothing errs
 
-IN="(require '_no_file)" OBJ="" ERR="errno: 2"
-flisp_err 1; ok require-2 requiring not existing features fails
+IN="(require '_no_file)" OUT="nil"
+flisp_expr 1; ok require-2 requiring not existing features returns nil
 
 IN="(require 'core)" OUT="(core)
 core"

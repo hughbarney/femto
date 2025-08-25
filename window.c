@@ -4,7 +4,7 @@
 
 int win_cnt = 0;
 
-window_t* new_window()
+window_t* new_window(void)
 {
     window_t *wp = (window_t *)malloc(sizeof(window_t));
 
@@ -28,13 +28,13 @@ void one_window(window_t *wp)
     wp->w_next = NULL;
 }
 
-void split_window()
+void split_window(void)
 {
     (void)split_current_window();
 }
 
 /* always returns the previous current window pointer */
-window_t *split_current_window()
+window_t *split_current_window(void)
 {
     window_t *wp, *wp2;
     int ntru, ntrl;
@@ -64,7 +64,7 @@ window_t *split_current_window()
     return curwp;
 }
 
-void other_window() {
+void other_window(void) {
     curwp->w_update = TRUE; /* make sure modeline gets updated */
     curwp = (curwp->w_next == NULL ? wheadp : curwp->w_next);
     curbp = curwp->w_bufp;
@@ -73,7 +73,7 @@ void other_window() {
         w2b(curwp); /* push win vars to buffer */
 }
 
-void delete_other_windows()
+void delete_other_windows(void)
 {
     if (wheadp->w_next == NULL)
         return;
@@ -151,7 +151,7 @@ window_t *popup_window(char *bname)
     return wp;
 }
 
-void mark_all_windows()
+void mark_all_windows(void)
 {
     window_t *wp;
 
@@ -159,7 +159,7 @@ void mark_all_windows()
         wp->w_update = TRUE;
 }
 
-int count_windows()
+int count_windows(void)
 {
     window_t* wp;
     int i;

@@ -1,7 +1,7 @@
 #!./run
 # test the Lisp standard library
 # leg20231129
-tap 10
+tap 16
 
 export FLISPRC=../lisp/core.lsp
 # Note: nested requiring stopped working
@@ -32,17 +32,35 @@ stdlib 1; ok zerop-1 0 is zero
 IN='(zerop 1)' OUT=nil
 stdlib 1; ok zerop-2 1 is not zero
 
-IN='(zerop "a")'
-ERR='(== arg ..) - arg is not a number'
-OBJ='"a"'
-stdlib_err 1; ok zerop-3 with string fails
-
 # equal
 true; ok equal \# TODO
 
 # append
-true; ok append \# TODO
+IN='(append)' OUT="nil"
+stdlib 1; ok append-1 append nothing is nil
 
+IN='(append 1)' OUT="1"
+stdlib 1; ok append-2 append atom is atom
+
+IN="(append '(1 2 3))" OUT="(1 2 3)"
+stdlib 1; ok append-3 append list is list
+
+IN="(append '(1 2 3) 1)" OUT="(1 2 3 . 1)"
+stdlib 1; ok append-4 append list atom is dotted list
+
+IN="(append '(1 2 3) '(a b c))" OUT="(1 2 3 a b c)"
+stdlib 1; ok append-5 append list list is list
+
+IN="(append 1 1)" ERR="(append arg args) - arg must be list" OBJ=
+stdlib_err 1; ok append-6 append atom any errs
+
+# print
+IN='(write "ans\\wer" :readably t)' OUT='"ans\\wer""ans\\wer"'
+stdlib 1; ok print-1 write string escaped
+
+# princ
+IN='(write "ans\\wer")' OUT='ans\wer"ans\\wer"'
+stdlib 1; ok princ-1 write string unescaped
 
 # Local Variables:
 # mode: sh

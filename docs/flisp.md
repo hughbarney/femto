@@ -51,13 +51,14 @@ This manual refers to version 0.6 or later of fLisp.
     3.  [Object Operations](#object_ops)
     4.  [Arithmetic Operations](#arithmetic_ops)
     5.  [String Operations](#string_ops)
-6.  [Lisp Libraries](#libraries)
+6.  [Double Extension](#double)
+7.  [Lisp Libraries](#libraries)
     1.  [Library Loading](#startup)
     2.  [Core Library](#core_lib)
     3.  [fLlisp Library](#flisp_lib)
     4.  [Standard Library](#std_lib)
     5.  [Femto Library](#femto_lib)
-7.  [Editor Extension](#editor)
+8.  [Editor Extension](#editor)
     1.  [Buffers](#buffers)
         1.  [Text manipulation](#text)
         2.  [Selection](#selection)
@@ -68,11 +69,11 @@ This manual refers to version 0.6 or later of fLisp.
         2.  [Message Line](#message_line)
         3.  [Keyboard Handling](#keyboard)
         4.  [Programming and System Interaction](#programming_system)
-8.  [Embedding fLisp](#embedding)
+9.  [Embedding fLisp](#embedding)
     1.  [Embedding Overview](#embedding)
     2.  [fLisp C Interface](#c_api)
     3.  [Building Extensions](#extensions)
-9.  [Implementation Details](#implementation)
+10. [Implementation Details](#implementation)
     1.  [Garbage Collection](#gc)
     2.  [Memory Usage](#memory)
     3.  [Future Directions](#future)
@@ -97,6 +98,35 @@ A single space is used to denote an arbitrary sequence of whitespace.
 *fLisp* does not use `[`square brackets`]` and double-dots `..` as
 syntactical elements.
 
+Variables names convey the following context:
+
+Lisp object of any type:  
+*object* *value* *o* *a* *b* *c*
+
+Program elements:  
+*params* *opt* *body* *expr* *pred*
+
+Integer:  
+*i* *j* *k*
+
+Double:  
+*x* *y* *z*
+
+Any numeric type:  
+*num* *num1* *num2*
+
+Symbol:  
+*symbol*
+
+String:  
+*string* *s* *s1* *s2* …
+
+List/Cons:  
+*cons* *l* *l1* *l2* …
+
+Stream:  
+*stream* *f*
+
 *fLisp* fancies to converge towards Emacs and Common Lisp, but includes
 also Scheme functions. Function descriptions are annotated according to
 their compatibility:
@@ -116,7 +146,7 @@ Buggy/incompatible implementation.
 
 By default compatibility with Common Lisp is annotated. The suffix
 <u>e</u> is used to indicate reference to Emacs Lisp, <u>s</u> for
-Scheme.
+Scheme. *fLisp* specific function are annotated with <u>f</u>.
 
 [^](#toc)
 
@@ -198,9 +228,8 @@ value in logical operations.
 
 *fLisp* objects have one of the following data types:
 
-<span class="dfn">number</span>  
-[double precision floating point
-number.](https://en.wikipedia.org/wiki/Double-precision_floating-point_format)
+<span class="dfn">integer</span>  
+64 bit singed integer
 
 <span class="dfn">string</span>  
 character array.
@@ -258,9 +287,9 @@ is then replaced by its object.
 #### Error handling
 
 Whenever fLisp encounters an error an exception is thrown. Exceptions
-have a non-zero result code and a human readable error message. fLisp
-does not implement stack backtracking. Exceptions are either caught on
-the top level of an evaluation or by a `catch` statement.
+have an error type symbol and a human readable error message. fLisp does
+not implement stack backtracking. Exceptions are either caught on the
+top level of an evaluation or by a `catch` statement.
 
 In the `flisp` interpreter the error message is formated as
 `error: «message»` if the error object is `nil` otherwise as
@@ -269,27 +298,27 @@ the object causing the error and *message* is the error message.
 
 When an exception occurs while calling `lisp_eval()` or
 `lisp_eval_string()` from C-code, the `object` field of the interpreter
-is set to the object causing the error, and the `result` field is set to
-the error code.
+is set to the object causing the error, the `result` field is set to the
+error type symbol and the `msg_buf` field is set to the error message.
 
 Exceptions can be thrown from within in Lisp code via the
 [`throw`](#interp_ops) function.
 
-The internally used result codes are defined in the `ResultCode` enum in
-`lisp.h` and reverse defined as Lisp symbols in the fLisp core library
-in `core.lsp`. Notable result codes:
+The following error type symbols are defined and used internally:
 
-`flisp-ok`  
-`0`: no error.
+- `end-of-file`
+- `read-incomplete`
+- `invalid-read-syntax`
+- `range-error`
+- `wrong-type-argument`
+- `invalid-value`
+- `wrong-num-of-arguments`
+- `arith-error`
+- `io-error`
+- `out-of-memory`
+- `gc-error`
 
-`flisp-error`  
-`1`: generic error.
-
-`flisp-break`  
-`3`: non local exit.
-
-`flisp-user`  
-`5`: generic error for user code.
+[^](#toc)
 
 ### *fLisp* Primitives
 
@@ -348,8 +377,8 @@ with lambda.
 `(quote «expr»)`  
 Returns *expr* without evaluating it.
 
-`(catch «expression»)` <u>D</u>  
-Evaluates *expression* and returns a list with three elements:
+`(catch «expr»)` <u>D</u>  
+Evaluates *expr* and returns a list with three elements:
 
 *result*  
 `0` on success or any other number indicating an error.
@@ -362,20 +391,46 @@ The result of the the expression or the object in error.
 
 `(throw «result» «message»[ «object»])` <u>D</u>  
 Throws an exception, stopping any further evaluation. *result* is the
-error type number, *message* is a human readable error string and
+error type symbol, *message* is a human readable error string and
 *object* is the object in error, if any.
 
 #### Input / Output and Others
 
-`(fopen «path» «mode»)` <u>S: open</u>
+`(open «path»[ «mode»])` <u>S: open</u>
 
-Open file at *path* with *mode* and return a stream object
+Open file at string *path* with string *mode* and return a stream
+object. *mode* is `"r"`ead only by default.
 
-`(fclose «stream»)` <u>S: close</u>
+`open` can open or create files, file descriptors and memory based
+streams.
+
+Files:  
+*path*: path to file, *mode*: one of `r`, `w`, `a`, `r+`, `w+`, `a+`
+plus an optional `b` modifier.
+
+File descriptors:  
+*path*: `<«n»` for reading, `>«n»` for writing. *n* is the number of the
+file descriptor. Omit *mode*.
+
+Memory streams:  
+For reading *path* is the string to read, *mode* must be set to: `<`.
+The name of the opened file is set to `<STRING`.
+
+For writing *path* is ignored, *mode* must be set to: `>`. The name of
+the opened file is set to `>STRING`.
+
+`(close «stream»)` <u>S: close</u>
 
 Close *stream* object
 
-`(fread` *stream*`[ eof-value])` <u>S: read</u>
+`(file-info «stream»)` <u>f</u>
+
+Returns `(«path» «buf» «fd»)` for *stream*. *buf* is either `nil` or the
+text buffer of a memory stream. *fd* is either the integer
+representation of the file descriptor or `nil` when *stream* is already
+closed.
+
+`(read` *stream*`[ eof-value])` <u>S: read</u>
 
 Reads the next complete Lisp expression from *stream*. The read in
 object is returned. If end of file is reached, an exception is raised,
@@ -413,19 +468,15 @@ Returns the value of the environment variable named *string*.
 `(null «object»)`  
 Returns `t` if *object* is `nil`, otherwise `nil`.
 
-`(symbolp «object»)`  
-Returns `t` if *object* is of type symbol, otherwise `nil`.
+`(type-of «object»)`  
+Returns the type symbol of *object*.
+
+`(consp «object»)`  
+Returns `t` if *object* is of type cons, otherwise `nil`.
 
 `(symbol-name «object»)`  
 If *object* is of type symbol return its value as string.
 
-`(numberp «object»)`  
-Returns `t` if *object* is of type number, otherwise `nil`.
-
-`(stringp «object»)`  
-Returns `t` if *object* is of type string, otherwise `nil`.
-
-`(consp «object»)`  
 Returns `t` if *object* is of type cons, otherwise `nil`.
 
 `(cons «car» «cdr»)`  
@@ -438,69 +489,94 @@ Returns the first object of *cons*.
 `(cdr «cons»)`  
 Returns the second object of *cons*.
 
-`(eq «a» «b»)`  
-Returns `t` if *a* and *b* evaluate to the same object, `nil` otherwise.
+`(same «a» «b»)`  
+Returns `t` if *a* and *b* are the same object, `nil` otherwise.
 
 #### Arithmetic Operations
 
-`(+[ «arg»..])`  
-Returns the sum of all *arg*s or `0` if none is given.
+`(i+ «i» «j»)`  
+Returns the sum of *i* *j*.
 
-`(*[ «arg»..])`  
-Returns the product of all *arg*s or `1` if none given.
+`(i* «i» «j»)`  
+Returns the product of *i* *j*.
 
-`(-[ «arg»..])`  
-Returns 0 if no *arg* is given, -*arg* if only one is given, *arg* minus
-the sum of all others otherwise.
+`(i- «i» «j»)`  
+Returns *i* minus *j*.
 
-`(/ «arg»[ «div»..])`  
-Returns 1/*arg* if no *div* is given, *arg*/*div*\[/*div*..\] if one or
-more *div*s are given, `inf` if one of the *div*s is `0` and the sum of
-the signs of all operands is even, `-inf` if it is odd.
+`(i/ «i» «j»)`  
+Returns *i* divided by *j*. Throws `arith-error` if *j* is zero.
 
-`(% «arg»[ «div»..])`  
-Returns `1` if no *div* is given, *arg*%*div*\[%*div*..\] if one or more
-*div*s are given. If one of the *div*s is `0`, the program exits with an
-arithmetic exception.
+`(i% «i» «j»)`  
+Returns the rest (modulo) of the integer division of *i* by *j*. Throws
+`arith-error` if *j* is zero.
 
-`(= «arg»[ «arg»..])`  
-`(< «arg»[ «arg»..])`  
-`(> «arg»[ «arg»..])`  
-`(<= «arg»[ «arg»..])`  
-`(>= «arg»[ «arg»..])`  
+`(i= «i» «j»)`  
+`(i< «i» «j»)`  
+`(i> «i» «j»)`  
+`(i<= «i» «j»)`  
+`(i>= «i» «j»)`  
 These predicate functions apply the respective comparison operator
-between all *arg*s and return the respective result as `t` or `nil`. If
-only one *arg* is given they all return `t`.
+between *i* *j*.
 
 #### String Operations
 
-`(string.length «string»)`  
+`(string-length «string»)`  
 Returns the length of *string* as a *number*.
 
-`(string.substring «string» «start» «end»)`  
-Returns the sub string from *string* which starts with the character at
-index *start* and ends with index *end*. String indexes are zero based.
-
-`(string.append «string1» «string2»)`  
+`(string-append «s1» «s2»)`  
 Returns a new string consisting of the concatenation of *string1* with
 *string2*.
 
+`(substring «string»[ «start» [«end»]])`  
+Returns the sub string from *string* which starts with the character at
+index *start* and before index *end*. String indexes are zero based,
+negative indexes count from the end of *string*. If *end* is not given
+it defaults to the end of *string*. If *start* is not given, it defaults
+to the start of *string*.
+
+`(string-search «needle» «haystack»)` <u>C</u>  
+Returns the position of *needle* if it is contained in *haystack*,
+otherwise `nil`.
+
 `(string-to-number «string»)`  
-Converts *string* into a corresponding *number* object. String is
+Converts *string* into a corresponding *integer* object. String is
 interpreted as decimal based integer.
 
-`(number-to-string «number»)`  
-Converts *number* into a *string* object.
-
-`(ascii «number»)`  
-Converts *number* into a *string* with one character, which corresponds
-to the ASCII representation of *number*.
+`(ascii «integer»)`  
+Converts *integer* into a *string* with one character, which corresponds
+to the ASCII representation of *integer*.
 
 `(ascii->number «string»)`  
-Converts the first character of *string* into a *number* which
+Converts the first character of *string* into an *integer* which
 corresponds to its ASCII value.
 
 [^](#toc)
+
+### Double Extension
+
+`(d+ «x» «y»)`  
+Returns the sum of *x* *y*.
+
+`(d* «x» «y»)`  
+Returns the product of *x* *y*.
+
+`(d- «x» «y»)`  
+Returns *x* minus *y*.
+
+`(d/ «arg»[ «div»..])`  
+Returns *x* divided by *y*, or `inf` if *y* is zero.
+
+`(d% «x» «y»)`  
+Returns the rest (modulo) of the integer division of *x* by *y* or
+`-nan` if *y* is zero.
+
+`(d= «x» «y»)`  
+`(d< «x» «y»)`  
+`(d> «x» «y»)`  
+`(d<= «x» «y»)`  
+`(d>= «x» «y»)`  
+These predicate functions apply the respective comparison operator
+between *x* *y*.
 
 [^](#toc)
 
@@ -538,27 +614,90 @@ editor
 
 This library is built into the startup file.
 
-`(list` \[*element* ..\]`)`  
+`(list` \[*element* ..\]`)` <u>C</u>  
 Returns the list of all provided elements.
 
-`(defmacro «name» «params» «body»)`  
-`(defun «name» «params» «body»)`  
+`(defmacro «name» «params» «body»)` <u>C</u>  
+`(defun «name» «params» «body»)` <u>C</u>  
 Defines and returns a macro or function, respectively.
 
-`(string «arg»)`  
+`(curry («func» «a»))`  
+Returns a lambda with one parameter which returns `(«func» «a» «b»)`.
+
+`(typep («type» «object»))` <u>C</u>  
+Returns true if *object* has *type*.
+
+`(integerp «object»)` <u>C</u>  
+`(stringp «object»)` <u>C</u>  
+`(symbolp «object»)` <u>C</u>  
+`(lamdap «object»)` <u>C</u>  
+`(macrop «object»)` <u>C</u>  
+`(streamp «object»)` <u>C</u>  
+Return `t` if *object* is of the respective type, otherwise `nil`.
+
+`(numberp «object»)` <u>C</u>  
+`(cadr «list»)` <u>C</u>  
+Return the second element in *list*, `(car (cdr «list»))`.  
+`(cddr «list»)` <u>C</u>  
+Return all elements after the second one in *list*, `(cdr (cdr «list»))`.  
+`(caddr «list»)` <u>C</u>  
+Return the third element in list, `(car (cdr (cdr «list»)))`.  
+`(number-to-string «number»)` <u>C</u>  
+Converts *integer* into a *string* object.
+
+`(eq «a» «b»)`  
+Returns `t` if *a* and *b* evaluate to the same object, number or
+string, `nil` otherwise.
+
+Synonym for `integerp`.
+
+`(not «object»)` <u>C</u>  
+Logical inverse. In Lisp a synonym for `null`
+
+`(fold-left «func» «init» «list»)` <u>Ss: fold-left</u>  
+Apply the binary *func*tion to *start* and the first element of *list*
+and then recursively to the result of the previous invocation and the
+first element of the rest of *list*. If *list* is empty return *start*.
+
+`(length «obj»)` <u>C</u>  
+Returns the length of *obj* if it is a string or a list, otherwise
+throws a type exception.
+
+`(string «arg»)` <u>C</u>  
 Returns the string conversion of argument.
 
-`(concat `\[*arg* ..\]`)`  
+`(concat `\[*arg*..\]`)` <u>Ce</u>  
 Returns concatenation of all arguments converted to strings.
 
 `(memq «arg» «list»)`  
 If *arg* is contained in *list*, returns the sub list of *list* starting
 with the first occurrence of *arg*, otherwise returns `nil`.
 
-`(fload ` *stream*`)`  
+`(map1 «func» «list»)` <u>S: mapcar</u>  
+Apply func to each element in list and return a list of the results.
+
+`map1` is a specialized form of `mapcar` restricted to one list only.
+
+`nfold`  
+`coerce`  
+`coercec`  
+`fold-leftp`  
+Helper functions for n-ary generic number type arithmetic. See below.
+
+`(let ((«name» «value»)[ («name» «value»)..]) «body»)` <u>C</u>  
+Bind all *name*s to the respective *value*s then evaluate body.
+
+`(let «label»((«name» «value»)[ («name» «value»)..]) «body»)` <u>Cs</u>  
+Labelled or “named” `let`: define a local function *label* with *body*
+and all *name*s as parameters bound to the *values*.
+
+`(prog1 «sexp»[«sexp»..])` <u>C</u>  
+Evaluate all *sexp* in turn and return the value of the first.
+
+`(fload ` *stream*`)` <u>f</u>  
 Reads and evaluates all Lisp objects in *stream*.
 
-`(load ` *path*`)`  
+`(load ` *path*`)` <u>C</u>  
 Reads and evaluates all Lisp objects in file at *path*.
 
 `(provide «feature»)`  
@@ -570,22 +709,58 @@ If the *feature* is not alreaded loaded, the file *feature*`.lsp` is
 loaded from the library path and registers the *feature* if loading was
 successful. The register is the variable *features*.
 
+The following arithmethic functions coerce their arguments to double if
+any of them is double, then they use double arithmetic operators. If all
+arguments are integer they use integer arthmetic.
+
+`(+[ «num»..])`  
+Returns the sum of all *num*s or `0` if none is given.
+
+`(*[ «num»..])`  
+Returns the product of all *num*s or `1` if none given.
+
+`(-[ «num»..])`  
+Returns 0 if no *num* is given, -*num* if only one is given, *num* minus
+the sum of all others otherwise.
+
+`(/ «num»[ «div»..])`  
+Returns 1/*num* if no *div* is given, *num*/*div*\[/*div*..\] if one or
+more *div*s are given, `inf` if one of the *div*s is `0` and the sum of
+the signs of all operands is even, `-inf` if it is odd.
+
+`(% «num»[ «div»..])`  
+Returns `1` if no *div* is given, *num*%*div*\[%*div*..\] if one or more
+*div*s are given. If one of the *div*s is `0`, the program exits with an
+arithmetic exception.
+
+`(= «num»[ «num»..])`  
+`(< «num»[ «num»..])`  
+`(> «num»[ «num»..])`  
+`(<= «num»[ «num»..])`  
+`(>= «num»[ «num»..])`  
+These predicate functions apply the respective comparison operator
+between all *num*s and return the respective result as `t` or `nil`. If
+only one *num* is given they all return `t`.
+
 #### fLisp Library
 
-This library implements commonly excpected Lisp idioms, which are used
-in the editor libraries.
-
-not
+This library implements commonly excpected Lisp idioms. *fLisp*
+implements a carefully selected minimum set of commonly used functions.
 
 listp
 
 and
 
-map1
-
 or
 
-reduce
+`(reduce «func» «list» «start»)` <u>D</u>
+
+`reduce` applies the binary *func* to the first element of *list* and
+*start* and then recursively to the first element of the rest of the
+*list* and the result of the previous invocation: it is “right binding”.
+
+Since `reduce` is right associative and *start* is not optional, it
+differs significantly both from Common Lisp and Scheme.
 
 max
 
@@ -594,6 +769,12 @@ min
 nthcdr
 
 nth
+
+`(fold-right «func» «end» «list»)` <u>Cs</u>
+
+`(unfold «func» «init» «pred»)` <u>Cs</u>
+
+`(iota «count»[ «start»[ «step»]])` <u>Cs</u>
 
 #### Standard Library
 
@@ -1005,51 +1186,16 @@ through until end of file.
 
 After processing the given input, the interpreter puts a pointer to the
 object which is the result of the last evaluation into the `object`
-field of the interpreter structure. The `result` field is set to
-`FLISP_OK`, which has the integer value `0`. The `message` field is set
-to the empty string.
+field of the interpreter structure. The `result` field is set to the
+`nil` and the `msg_buf` field is set to the empty string.
 
 fLisp sends all output to the default output stream. If `NULL` is given
 on initialization, output is suppressed altogether.
 
 If an exception is thrown inside the Lisp interpreter an error message
-is formatted and copied to the `message` buffer of the interpreter, A
+is formatted and copied to the `msg_buf` buffer of the interpreter, A
 pointer to the object causing the error is set to the `object` field.
-The `result` field is set to an error specific code:
-
-`FLISP_ERROR`  
-Generic error code.
-
-`FLISP_USER`  
-User generated exception.
-
-`FLISP_READ_INCOMPLETE`  
-End of file before valid Lisp expression was read in.
-
-`FLISP_READ_INVALID`  
-Lisp expression is invalid.
-
-`FLISP_READ_RANGE`  
-Integer or float under or overrflow.
-
-`FLISP_WRONG_TYPE`  
-A Lisp function received an argument of wrong type.
-
-`FLISP_INVALID_VALUE`  
-A Lisp function received an argument with invalid value.
-
-`FLISP_PARAMETER_ERROR`  
-A macro or function invocation received an incorrect number of
-arguments.
-
-`FLISP_IO_ERROR`  
-An operation on a stream failed.
-
-`FLISP_OOM`  
-fLisp ran out of memory.
-
-`FLISP_GC`  
-The garbage collector encountered an error.
+The `result` field is set to the respective error type symbol.
 
 In this <span class="dfn">error state</span> of the interpreter, the
 function `lisp_write_error()` can be used to write a standardized error
@@ -1092,15 +1238,15 @@ default output stream.
 *debug*  
 Debug output stream. If set to `NULL` no debug information is generated.
 
-`(void) lisp_destroy(Interpreter *«interp»)`  
+`void lisp_destroy(Interpreter *«interp»)`  
 Frees all resources used by the interpreter.
 
-`ResultCode lisp_eval(Interpreter *«interp»)`  
+`void lisp_eval(Interpreter *«interp»)`  
 Evaluates the input file set in the *input* field of the fLisp
 interpreter *interp* until end of file. If no input file is set,
 `interp` is set to a respective error state.
 
-`ResultCode lisp_eval_string(Interpreter *«interp», char *«string»)`  
+`void lisp_eval_string(Interpreter *«interp», char *«string»)`  
 Evaluates all Lisp expressions in *string*.
 
 `void lisp_write_object(Interpreter *«interp», FILE «*fd», Object *«object», bool readably)`  
@@ -1108,7 +1254,7 @@ Format *object* into a string and write it to *stream*. If *readably* is
 true, the string can be read in by the interpreter and results in the
 same object.
 
-`void lisp_write_error(Interpreter *«interp», FILE «*fd»`  
+`void lisp_write_error(Interpreter *«interp», FILE «*fd»)`  
 Format the error *object* and the error message of the interpreter into
 a string and write it to *fd*. The *object* is written with *readably*
 `true`.
@@ -1250,14 +1396,9 @@ start index.
 Implement `(type «object»)` returning symbols for each type in C and
 implement individual type checking predicates in Lisp.
 
-Make loop programming easier, by any combination of:
+loop programming is availble via the labelled let macro. It could made
+easier, by any combination of:
 
 - iota
-- apply/funcall
-- labelled let
 - loop/while/for macro
 - Demoing hand crafted loops including breaking with throw.
-
-apply/funcall should be implemented anyway, probably only one of them as
-special form. identity/always/ignore should be added to one of the
-libraries.

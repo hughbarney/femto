@@ -19,9 +19,22 @@
 	   (equal (car x) (car y))
 	   (equal (cdr x) (cdr y)))))
 
-(defun append (xs y)
+;; Note: to be enhanced
+(defun _append (xs y)
   (cond ((null xs) y)
-	(t (cons (car xs) (append (cdr xs) y)))))
+	(t (cons (car xs) (_append (cdr xs) y)))))
+
+(defun __append (xs y)
+  (cond ((null xs) y)
+	((consp xs)
+	 (cons (car xs) (_append (cdr xs) . y)))
+	(t (throw wrong-type-argument "(append arg args) - arg must be list" ))))
+
+(defun append args
+  (cond
+    ((null args) nil)
+    ((null (cdr args)) (car args))
+    (t (__append (car args) (cdr args)))))
 
 (defun print (x . args)
   (cond

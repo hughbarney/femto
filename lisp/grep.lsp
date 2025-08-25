@@ -17,7 +17,7 @@
   (setq grep-line 0)
   (setq grep-search (prompt "grep search for: " grep-search))
   (cond
-    ((> (string.length grep-search) 0)
+    ((> (string-length grep-search) 0)
      (setq grep-search-files (prompt "grep search files: " grep-search-files))
      (setq grep-query (concat grep-cmd " " grep-search " " grep-search-files))
      (shell-command grep-query)

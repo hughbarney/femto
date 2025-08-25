@@ -170,7 +170,7 @@ int delete_buffer(buffer_t *bp)
     return TRUE;
 }
 
-void next_buffer()
+void next_buffer(void)
 {
     assert(curbp != NULL);
     assert(bheadp != NULL);
@@ -204,7 +204,7 @@ char* get_buffer_modeline_name(buffer_t *bp)
     return bp->b_bname;
 }
 
-int count_buffers()
+int count_buffers(void)
 {
     buffer_t* bp;
     int i;
@@ -215,7 +215,7 @@ int count_buffers()
     return i;
 }
 
-int modified_buffers()
+int modified_buffers(void)
 {
     buffer_t* bp;
 
@@ -272,19 +272,19 @@ int save_buffer_byname(char *bname)
     return TRUE;
 }
 
-char *get_current_bufname()
+char *get_current_bufname(void)
 {
     assert(curbp != NULL);
     return get_buffer_name(curbp);
 }
 
-char *get_current_filename()
+char *get_current_filename(void)
 {
     assert(curbp != NULL);
     return get_buffer_filename(curbp);
 }
 
-char *get_current_file_extension()
+char *get_current_file_extension(void)
 {
     assert(curbp != NULL);
     static char no_extension[] = "";
@@ -297,7 +297,7 @@ char *get_current_file_extension()
     return ext;
 }
 
-void list_buffers()
+void list_buffers(void)
 {
     buffer_t *bp;
     buffer_t *list_bp;

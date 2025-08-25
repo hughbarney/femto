@@ -264,7 +264,7 @@ then select one of the following letters to operate on the file
   (copy-region)
   (set-point p)
   (setq git-status (concat "[" (git-status-to-text git-status1) ":" (git-status-to-text git-status2) "]"))
-  (setq git-name (string.trim (get-clipboard))))
+  (setq git-name (string-trim (get-clipboard))))
 
 ;;
 ;; nice lookup table for git status

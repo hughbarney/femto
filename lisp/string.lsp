@@ -2,77 +2,82 @@
 ;;  string function library
 ;;
 ;;
+;;  Built Into fLisp
+;;    (string-append s a)
+;;    (length s)
+;;    (substring s st end)
+;;    (string-search haystack needle)
+;;
 
 
 ;; trim all spaces from front of a string
-(defun string.trim.front(s)
-  (cond
-    ((= 0 (string.length s)) "")
-    ((not (eq (string.substring s 0 0) " ")) s)
-    ((< (string.length s) 2) "")
-    (t (string.trim.front (string.substring s 1 (- (string.length s) 1)))) ))
+(defun string-trim-front(s)
+  (cond ((eq (substring s 0 1) " ") (string-trim-front (substring s 1)))
+	(t s)))
 
 ;; trim all spaces from back of a string
-(defun string.trim.back(s)
-  (setq p (- (string.length s) 1))
-  (cond
-    ((= p -1) "")
-    ((not (eq (string.substring s p p) " ")) s)
-    ((< (string.length s) 2) "")
-    (t (string.trim.back (string.substring s 0 (- (string.length s) 2)))) ))
+(defun string-trim-back(s)
+  (cond  ((eq (substring s -1)  " ") (string-trim-back (substring s 0 -1)))
+	 (t s)))
 
 ;; trim spaces off front and back of a string
-(defun string.trim(s)
-  (string.trim.back (string.trim.front s)))
+(defun string-trim(s)
+  (string-trim-back (string-trim-front s)))
 
 
 ;;
-;; string.ref 
+;; string-ref , get character at position r
+;;   zero based indexing
 ;;
-(defun string.ref (s r)
-   (string.substring s r r))
+(defun string-ref (s r)
+   (substring s r (+ r 1)))
 
 
 ;;
-;; string.startswith - return t if string starts with search
+;; string-startswith - return t if string starts with search
 ;;
-(defun string.startswith (str search)
-   (eq (string.substring str  0 (- (string.length search) 1)) search))
+(defun string-startswith (str search)
+  (eq 0 (string-search search str)))
 
 
 ;;
-;; string.drop_first - return a string with the first char chopped off
-;;   return "" when we have reached the end
+;; shrink string right by dropping off the first char
 ;;
-(defun string.drop_first(s)
-  (cond
-    ((< (string.length s) 2) "")
-    (t (string.substring s 1 (- (string.length s) 1)))))
+(defun string-shrink-right(s)
+  (substring s 1))
 
 
 ;;
-;; shrink string by dropping off last char
+;; shrink string left by dropping off last char
 ;;  
-;; should rename to string.drop_last
-;;
-(defun shrink(s)
-  (cond
-    ((< (string.length s) 2) "")
-    (t (string.substring s 0 (- (string.length s) 2)))  ))
+(defun string-shrink-left(s)
+  (substring s 0 -1))
 
 
 ;;
-;; string.contains - return t if search is contained in str
+;; return first char of string
 ;;
-(defun string.contains (str search)
+(defun string-first-char(s)
+  (substring s 0 1))
+
+;;
+;; return last char of string
+;;
+(defun string-last-char(s)
+  (substring s -1))
+
+
+;;
+;; string-contains - return t if search is contained in str
+;;
+(defun string-contains (str search)
    (cond
-     ((< (string.length str) (string.length search)) nil)  
+     ((< (length str) (length search)) nil)  
      ((eq str "") nil)
      ((eq search "") nil)
-     ((string.startswith str search) t)
-     ((eq (string.drop_first str) "") nil)
-     (t (string.contains (string.drop_first str) search))))
-
+     ((string-startswith str search) t)
+     ((eq (string-shrink-right str) "") nil)
+     (t (string-contains (string-shrink-right str) search))))
 
 (provide 'string)
 

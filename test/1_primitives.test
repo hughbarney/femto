@@ -1,0 +1,465 @@
+#!./run
+# test executable and fLisp functionality
+# leg20231128: Femto
+
+export FLISPRC=
+
+tap 150
+
+[ -x ../femto ]
+ok femto-1 femto exists and is executable;
+
+(FEMTORC= FEMTO_BATCH=1 ../femto >/dev/null)
+ok femto-2 w/o femto.rc femto in batch mode succeds
+
+(: | FEMTORC=- FEMTO_BATCH=1 ../femto >/dev/null)
+ok femto-3 empty input succeeds
+
+[ -x ../flisp ]
+ok flisp-1 flisp exists and is executable;
+
+(: | FLISPRC= ../flisp)
+ok flisp-2 empty input succeeds
+
+# reader
+IN='(' ERR='unexpected end of stream in list'
+flisp_err; ok reader-1 incomplete sexp error msg
+
+IN='"' ERR='unexpected end of stream in string literal'
+flisp_err; ok reader-2 incomplete string error msg
+
+IN='\\' OBJ="nil" ERR="unexpected character, \`'"
+flisp_err; ok reader-3 unexpected character error msg
+
+IN="0" OUT='0'
+flisp_expr; ok reader-4 read number
+
+IN="t" OUT='t'
+flisp_expr; ok reader-5 read constant t
+
+IN="nil" OUT='nil'
+flisp_expr; ok reader-6 read constant nil
+
+IN="()" OUT='nil'
+flisp_expr; ok reader-7 read empty list
+
+IN="(quote a)" OUT='a'
+flisp_expr; ok reader-8 read quote-ed yields symbol
+
+IN="'a" OUT='a'
+flisp_expr; ok reader-9 read tick-quoted yields symbol
+
+IN=":a" OUT='a'
+flisp_expr; ok reader-10 read colon-quoted yields symbol
+
+IN="'(0 (\"a\" b))" OUT='(0 ("a" b))'
+flisp_expr; ok reader-11 read nested list
+
+IN="'(0 . 1)" OUT='(0 . 1)'
+flisp_expr; ok reader-12 read dotted pair
+
+IN="'(0 1 . 2)" OUT='(0 1 . 2)'
+flisp_expr; ok reader-13 read dotted list
+
+IN="'(0 1 . 2 3)" ERR="unexpected object at end of dotted list" OBJ=
+flisp_err; ok reader-14 read dotted list with extra element
+
+IN="'(0 1 .)" ERR="expected object at end of dotted list" OBJ=
+flisp_err; ok reader-15 read dotted list without cdr
+
+IN="'(" ERR="unexpected end of stream in list" OBJ=
+flisp_err; ok reader-16 read list without end
+
+# Special forms
+IN='(quote)' ERR='expects at least 1 arguments' OBJ='#<Primitive quote>'
+flisp_err; ok quote-1 w/o arg error message
+
+IN="(setq var 'val)" OUT=val
+flisp_expr; ok setq-1 assignment returns value
+
+IN="(setq var 'val) var" OUT="val"
+flisp_expr 1; ok setq-2 var evaluates to val
+
+IN='(setq)' OUT=nil
+flisp_expr; ok setq-3 no args evaluate to nil
+
+IN='(setq var1)' OBJ='#<Primitive setq>' ERR='expects a multiple of 2 arguments'
+flisp_err; ok setq-4 one arg fails
+
+EXPR="(setq var1 'val1  var2 'val2)"
+IN="$EXPR" OUT=val2
+flisp_expr 1; ok setq-5 four args returns last value
+
+IN="$EXPR var1" OUT=val1
+flisp_expr 1; ok setq-6 four args first var evaluates to first value
+
+IN="$EXPR var2" OUT=val2
+flisp_expr 1; ok setq-7 four args second var evaluates to second value
+
+IN='(progn)' OUT=nil
+flisp_expr; ok progn-1 no args evaluate to nil
+
+IN="(progn 'one)" OUT=one
+flisp_expr; ok progn-2 one arg evaluates to arg
+
+IN="(progn (write 'first) 'second)" OUT=firstsecond
+flisp_expr 2; ok progn-3 two args evaluate in sequence
+
+# cond
+IN='(cond)'  OUT=nil
+flisp_expr; ok cond-1 empty cond gives nil
+
+IN='(cond nil)' OUT=nil
+flisp_expr; ok cond-2 cond with nil gives nil
+
+IN='(cond ())' OUT=nil
+flisp_expr; ok cond-3 cond with empty list gives nil
+
+IN='(cond ("a"))' OUT='"a"'
+flisp_expr; ok cond-4 cond with single string predictate gives string
+
+IN='(cond (0))' OUT=0
+flisp_expr; ok cond-5 cond with single number predicate gives number
+
+IN='(cond (nil))' OUT=nil
+flisp_expr; ok cond-6 cond with single nil predicate gives nil
+
+IN='(cond (t))' OUT=t
+flisp_expr; ok cond-7 cond with single t predictate gives t
+
+IN='(cond ("a" "b"))' OUT='"b"'
+flisp_expr; ok cond-8 cond with two string list gives second string
+
+IN='(cond nil (t "else"))' OUT='"else"'
+flisp_expr; ok cond-9 cond with t clause
+
+IN='(cond nil nil)' OUT=nil
+flisp_expr; ok cond-10 cond with nils gives nil
+
+IN='(cond nil ())' OUT=nil
+flisp_expr; ok cond-11 cond with nil and empty list gives nil
+
+IN='(cond nil ("a"))' OUT='"a"'
+flisp_expr; ok cond-12 cond with last expresion single string list gives its value
+
+IN="(cond nil ((consp (quote (a b)))))" OUT=t
+flisp_expr; ok cond-13 cond with last expresion funcall gives result
+
+IN='(cond . "a")' ERR='(cond args) - args is not a list: arg 0' OBJ='"a"'
+flisp_err; ok cond-14 fail if not called with a cons
+
+IN='(cond "a" ())' OBJ='"a"' ERR='(cond clause ..) - is not a list: clause'
+flisp_err; ok cond-15 fail if clause is not a cons
+
+IN='(cond (nil . "a"))' ERR='unexpected dot at start of list' OBJ=
+flisp_err; ok cond-16 fail if clause is cons with car nil - captured by reader
+
+IN='(cond (t . t))' ERR='(cond (pred action) ..) action is not a list' OBJ='(t . t)'
+flisp_err; ok cond-17 fail if t and clause action is not a list
+
+# lambda
+IN='(lambda nil)' OUT="#<Lambda nil>"
+flisp_expr; ok lambda-1 arg nil
+
+IN='(lambda a nil)' OUT="#<Lambda a>"
+flisp_expr; ok lambda-2 args a nil 
+
+IN='(lambda nil nil)' OUT="#<Lambda nil>"
+flisp_expr; ok lambda-3 args nil nil 
+
+IN='(lambda (a b) nil)' OUT="#<Lambda (a b)>"
+flisp_expr; ok lambda-4 args a b
+
+IN='(lambda (a . b) nil)' OUT="#<Lambda (a . b)>"
+flisp_expr; ok lambda-5 args a . b nil 
+
+IN='(lambda (a b) a b)' OUT="#<Lambda (a b)>"
+flisp_expr; ok lambda-6 args nil nil 
+
+IN='((lambda (a b) a b) 0 "a")' OUT='"a"'
+flisp_expr; ok lambda-7 apply return b string a
+
+# macro
+IN='(macro nil)' OUT='#<Macro nil>'
+flisp_expr; ok macro-1 arg nil
+
+IN='(macro a nil)' OUT='#<Macro a>'
+flisp_expr; ok macro-2 args a nil
+
+IN='(macro (a b) nil)' OUT='#<Macro (a b)>'
+flisp_expr; ok macro-3 args a b
+
+IN='(macro (a . b) nil)' OUT='#<Macro (a . b)>'
+flisp_expr; ok macro-4 args a . b
+
+IN='((macro (a b) a b) 0 "a")' OUT='"a"'
+flisp_expr; ok macro-5  apply return b string a
+
+# macroexpand-1
+IN='(macroexpand-1 nil)' OUT='nil'
+flisp_expr; ok macroexpand-1_1  arg nil
+
+IN='(macroexpand-1 (macro a a) b)' OUT='(b)'
+flisp_expr; ok macroexpand-1_2  apply return b list b
+
+# catch
+IN='(catch nil)' OUT='(nil "" nil)'
+flisp_expr; ok catch-1_1  catch nil
+
+IN='(catch t)' OUT='(nil "" t)'
+flisp_expr; ok catch-1_2  catch t
+
+IN='(catch (i+ 3 4))' OUT='(nil "" 7)'
+flisp_expr; ok catch-1_3  catch expr
+
+IN='(catch (i/))' OUT='(wrong-num-of-arguments "expects at least 2 arguments" #<Primitive i/>)'
+flisp_expr; ok catch-1_4  catch error
+
+# Primitives
+
+## Objects
+
+IN="(null nil)" OUT="t"
+flisp_expr; ok null-1 null nil is t
+
+IN="(null t)" OUT="nil"
+flisp_expr; ok null-2 null t is nil
+
+IN="(null 1)" OUT="nil"
+flisp_expr; ok null-3 null number is nil
+
+IN="(null 'a)" OUT="nil"
+flisp_expr; ok null-4 null symbol is nil
+
+IN='(null "a")' OUT="nil"
+flisp_expr; ok null-5 null string is nil
+
+IN="(null lambda)" OUT="nil"
+flisp_expr; ok null-6 null lambda is  nil
+
+IN="(null macro)" OUT="nil"
+flisp_expr; ok null-7 null macro is  nil
+
+
+# consp
+IN='(consp nil)' OUT='nil'
+flisp_expr; ok consp-1  consp nil is nil
+
+IN='(consp 1)' OUT='nil'
+flisp_expr; ok consp-2  consp number is nil
+
+IN="(consp 'a)" OUT='nil'
+flisp_expr; ok consp-3  consp string is nil
+
+IN="(consp '(t . t))" OUT='t'
+flisp_expr; ok consp-4  consp cons is t
+
+IN="(consp '(1  2))" OUT='t'
+flisp_expr; ok consp-5  consp list is t
+
+IN="(consp consp)" OUT='nil'
+flisp_expr; ok consp-5  consp lambda is nil
+
+IN="(symbol-name 'a)" OUT='"a"'
+flisp_expr; ok symbol-name-1  symbolname is symbol as string
+
+IN="(same 1 1)" OUT='nil'
+flisp_expr; ok same-1_1  same number is false
+
+IN="(same 1 2)" OUT='nil'
+flisp_expr; ok same-1_2  different num is nil
+
+IN="(same 1 'a)" OUT='nil'
+flisp_expr; ok same-1_3  num other is nil
+
+IN='(same "answer" "answer")' OUT='nil'
+flisp_expr; ok same-2_1  same string is nil
+
+IN='(same "answer" "everything")' OUT='nil'
+flisp_expr; ok same-2_2  different string is nil
+
+IN='(same "answer" 42)' OUT='nil'
+flisp_expr; ok same-2_3  string other is nil
+
+IN="(same 'a 'a)" OUT='t'
+flisp_expr; ok same-3_1  same symbol is t
+
+IN="(same 'a same)" OUT='nil'
+flisp_expr; ok same-3_2  symbol lambda is nil
+
+IN="(same same same)" OUT='t'
+flisp_expr; ok same-3_3  same lambda is t
+
+## Cons'es
+IN="(car '(1 2))" OUT='1'
+flisp_expr; ok car-1  car returns first element
+
+# Intermezzo
+IN="(car 1)" OBJ= ERR='(car args) - arg 1 expected type-cons, got: type-integer'
+flisp_err; ok arg_check-1  argument checking '(car 1)' fails
+
+IN="(cdr '(1 2))" OUT='(2)'
+flisp_expr; ok cdr-1  cdr returns rest
+
+IN="(cons 1 'a)" OUT="(1 . a)"
+flisp_expr; ok cons-1  cons returns dottet pair
+
+# I/O
+rm -f _file_
+IN='(open "_file_" "w")' OUT=""
+flisp_expr
+[ -e _file_ ]; ok open-1 create file
+rm -f _file_
+
+echo '(open "empty.lsp")' | $FLISP | grep -q "#<Stream 0x............, empty.lsp>"
+ok open-2 open file readonly
+
+echo '(open "<0")' | $FLISP | grep -q "#<Stream 0x............, <0>"
+ok open-3 open readable file descriptor
+
+echo '(open ">1")' | $FLISP | grep -q "#<Stream 0x............, >1>"
+ok open-4 open writeable file descriptor
+
+echo '(open "any text" "<")' | $FLISP | grep -q "#<Stream 0x............, <STRING>"
+ok open-5 open memory input stream
+
+echo '(open "" ">")' | $FLISP | grep -q "#<Stream 0x............, >STRING>"
+ok open-6 open memory output stream
+
+IN='(close (open "empty.lsp"))' OUT="0"
+flisp_expr; ok close-1 close file
+
+IN='(close (open ">2"))' OUT="0"
+flisp_expr; ok close-2 close file descriptor
+
+IN='(close (open "any text" "<"))' OUT="0"
+flisp_expr; ok close-3 close memory input stream
+
+IN='(close (open "" ">"))' OUT="0"
+flisp_expr; ok close-4 close memory output stream
+
+IN='(setq f (open "abc" "<")) (cons (car (file-info f)) (car (cdr (file-info f))))' OUT='("<STRING" . "abc")'
+flisp_expr 1; ok file-info-1 file-info of memory stream contains string
+
+IN='(setq f (open "" ">")) (close f) (file-info f)' OUT='(">STRING" nil nil)'
+flisp_expr 1; ok file-info-2 file-info of closed memory stream contains nil
+
+IN='(read (open "1" "<"))' OUT="1"
+flisp_expr; ok read-1 read memory input stream
+
+IN='(read *INPUT* end-of-file)' OUT="end-of-file"
+flisp_expr; ok read-2 read with eof marker
+
+IN='(eval 1)' OUT='1'
+flisp_expr; ok eval-1 eval number is number
+
+
+IN='(write "ans\\wer")' OUT='ans\wer"ans\\wer"'
+flisp_expr; ok write-1 write string
+
+IN='(write "ans\\wer" :readably t)' OUT='"ans\\wer""ans\\wer"'
+flisp_expr; ok write-1 write string
+
+# throw
+IN="(throw 'fourty-two \"answer\")" ERR='answer' OBJ=
+flisp_err; ok throw-1_1  throw w/o object
+
+IN="(throw 'fourty-three \"answer\" 1)" ERR='answer' OBJ=1
+flisp_err; ok throw-1_2  throw with object
+
+## Math
+
+IN='(i+ 42 7)' OUT='49' flisp_expr; ok add-3 add 42 7 is 49
+IN='(i- 42 7)' OUT='35' flisp_expr; ok minus-3 minus 42 7 is 35
+IN='(i* 42 7)' OUT='294' flisp_expr; ok times-3 times 42 7 is 294
+IN='(i/ 42 7)' OUT='6' flisp_expr; ok divide-2 divide 42 7 is 6
+IN='(i% 42 5)' OUT='2' flisp_expr; ok mod-2 mod 42 5 is 2
+IN='(i= 42 7)' OUT='nil' flisp_expr; ok arith-equal-2 arith-equal 42 7 is nil
+IN='(i< 7 42)' OUT='t' flisp_expr; ok less-2 less 7 42 is t
+IN='(i<= 42 7)' OUT='nil' flisp_expr; ok less-equal-2 less-equal 42 7 is nil
+IN='(i> 42 7)' OUT='t' flisp_expr; ok greater-2 greater 42 7 is t
+IN='(i>= 7 42)' OUT='nil' flisp_expr; ok greater-equal-2 greater-equal 7 42 is t
+
+## Strings
+
+IN='(string-length "")' OUT="0" flisp_expr; ok string-length-1 length of emtpy string is 0
+IN='(string-length "answer")' OUT="6" flisp_expr; ok string-length-2  length of answer string is 6
+
+IN='(string-append "ans" "wer")' OUT='"answer"'
+flisp_expr; ok string-append-1 string append of ans wer is answer
+IN='(string-append "answer" "")' OUT='"answer"'
+flisp_expr; ok string-append-2  append answer emtpy is anser
+
+IN='(string-append "" "answer")' OUT='"answer"'
+flisp_expr; ok string-append-3  append emtpy answer is anser
+
+IN='(substring "")' OUT='""'
+flisp_expr; ok substring-1 substring empty is empty
+
+IN='(substring "answer")' OUT='"answer"'
+flisp_expr; ok substring-2 substring answer is answer
+
+IN='(substring "answer" 3)' OUT='"wer"'
+flisp_expr; ok substring-3 substring answer 3 wer
+
+IN='(substring "answer" -2)' OUT='"er"'
+flisp_expr; ok substring-4 substring answer -2 er
+
+IN='(substring "answer" 1 3)' OUT='"ns"'
+flisp_expr; ok substring-5 substring answer 1 3 ns
+
+IN='(substring "answer" 1 -3)' OUT='"ns"'
+flisp_expr; ok substring-6 substring answer 1 -3 ns
+
+IN='(substring "answer" -3 -1)' OUT='"we"'
+flisp_expr; ok substring-6 substring answer -3 -1 we
+
+IN='(substring "answer" 7)' ERR='(substring str [start [end]]) - start out of range' OBJ=
+flisp_err; ok substring-7 substring answer 7 range-error
+
+IN='(substring "answer" -7)' ERR='(substring str [start [end]]) - start out of range' OBJ=
+flisp_err; ok substring-8 substring answer -7 range-error
+
+IN='(substring "answer" 1 7)' ERR='(substring str [start [end]]) - end out of range' OBJ=
+flisp_err; ok substring-9 substring answer 1 7 range-error
+
+IN='(substring "answer" 1 -7)' ERR='(substring str [start [end]]) - end out of range' OBJ=
+flisp_err; ok substring-10 substring answer 1 7 range-error
+
+IN='(substring "answer" 2 1)' ERR='(substring str [start [end]]) - end > start' OBJ=
+flisp_err; ok substring-11 substring answer 2 1 range-error
+
+IN='(string-search "" "")' OUT='0'
+flisp_expr; ok string-search-1 emtpy string is contained in empty string at 0
+
+IN='(string-search "" "abcde")' OUT='0'
+flisp_expr; ok string-search-2 emtpy string is contained in string at 0
+
+IN='(string-search "ab" "abcde")' OUT='0'
+flisp_expr; ok string-search-3 start string is contained in string at 0
+
+IN='(string-search "bc" "abcde")' OUT='1'
+flisp_expr; ok string-search-4 not start string is contained in string at 1
+
+IN='(string-search "x" "abcde")' OUT='nil'
+flisp_expr; ok string-search-5 not contained string is nil
+
+
+false; ok  ascii \# TODO
+
+false; ok  'ascii->number' \# TODO
+
+# OS
+false; ok os.getenv \# TODO
+
+# File extension
+false; ok file extension \# TODO
+
+# Femto editor extension
+
+false; ok femto editor extension \# TODO
+
+
+# Local Variables:
+# mode: sh
+# End:
