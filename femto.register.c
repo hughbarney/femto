@@ -21,6 +21,7 @@ available to be called as lisp functions
     {"get-point-max",             0, 0, 0,         e_get_point_max},
     {"set-key",                   2, 2, TYPE_STRING, e_set_key},
     {"prompt",                    2, 2, TYPE_STRING, e_prompt},
+    {"replace-string",            3, 3, TYPE_STRING, e_replace_string_function},
     {"show-prompt",               2, 2, TYPE_STRING, e_show_prompt},
     {"eval-block",                0, 0, 0,         e_eval_block},
     {"get-buffer-name",           0, 0, 0,         e_get_buffer_name},

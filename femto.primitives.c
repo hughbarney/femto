@@ -62,6 +62,7 @@ extern int get_mode_current_buffer(char *);
 extern int save_buffer_byname(char *);
 extern int count_buffers(void);
 extern void display_prompt_and_response(char *, char *);
+extern int replace_string_function(char *, char *, int);
 extern void msg(char *,...);
 extern void clear_message_line(void);
 extern void log_message(char *);
@@ -151,6 +152,12 @@ Object *e_show_prompt(Interpreter *interp, Object **args, Object **env)
 {
     display_prompt_and_response(FLISP_ARG_ONE->string, FLISP_ARG_TWO->string);
     return t;
+}
+
+Object *e_replace_string_function(Interpreter *interp, Object **args, Object **env)
+{
+    int result = replace_string_function(FLISP_ARG_ONE->string, FLISP_ARG_TWO->string, FLISP_ARG_THREE->integer);
+    return (result == 1 ? t : nil);
 }
 
 Object *e_prompt(Interpreter *interp, Object **args, Object **env)
