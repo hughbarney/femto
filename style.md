@@ -75,4 +75,8 @@ For Lisp files lean to Emacs Lisp formatting, specifically:
 
 - Indentation is two spaces.
 - Do not use tabs.
-- Put trailing parentheses on a single line.
+- Put trailing parentheses on a single line, separated by a single
+  space:
+
+        (defun example ()
+		  (+ 3 4) )

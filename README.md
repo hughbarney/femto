@@ -18,7 +18,7 @@ Femto comes with Markdown and HTML documentation. To rebuild the
 documentation [Pandoc](https://pandoc.org/) is required. Rebuild both
 documentation formats from their respective source files by running:
 
-    make doc
+	make doc
 
 The documentation is prebuilt in this repository and can be found in
 
@@ -65,11 +65,11 @@ decending order with each further reduction of functionality. The Nano
 and Pico Emacs editors have been around for a while.
 
 * Nano means 10 to the power of minus 9
-* Pico means 10 to the power of minus 12 
+* Pico means 10 to the power of minus 12
 * Femto means 10 to power of minus 15
 * Atto means 10 to power of minus 18
 * Zepto means 10 to the power of minus 21
-* Zep is smaller version of Zepto Emacs 
+* Zep is smaller version of Zepto Emacs
 
 In Defining Atto as the lowest functional Emacs I have had to consider
 the essential feature set that makes Emacs, 'Emacs'. I have defined
@@ -114,24 +114,24 @@ For a full version history please refer to the file [CHANGE.LOG.md](./CHANGE.LOG
 ## Comparisons with Other Emacs Implementations
 
 Femto has almost the same level of functionality as MicroEmacs 3.10
-for a codebase about 15% of the size.
+for a codebase less then half of the size.
 
-    Editor         Binary   BinSize     KLOC  Files
+	Editor         Binary   BinSize     KLOC  Files
 
-    atto           atto       33002     1.9k      10
-    pEmacs         pe         59465     5.7K      16
-    Esatz-Emacs    ee         59050     5.7K      14
-    femto          femto     144008  8.4k/6.0k 24/36 **
-    GNOME          GNOME      55922     9.8k      13
-    Zile           zile      257360    11.7k      48
-    Mg             mg        585313    16.5K      50
-    uEmacs/Pk      em        147546    17.5K      34
-    Pico           pico      438534    24.0k      29
-    Nano           nano      192008    24.8K      17
-    jove           jove      248824    34.7k      94
-    Qemacs         qe        379968    36.9k      59
-    ue3.10         uemacs    171664    52.4K      16 ++
-    GNUEmacs       emacs   14632920   358.0k     186
+	atto           atto       33002     1.9k      10
+	pEmacs         pe         59465     5.7K      16
+	Esatz-Emacs    ee         59050     5.7K      14
+	femto          femto     162392  10.8k/7.6k   25/37 **
+	GNOME          GNOME      55922     9.8k      13
+	Zile           zile      257360    11.7k      48
+	Mg             mg        585313    16.5K      50
+	uEmacs/Pk      em        147546    17.5K      34
+	Pico           pico      438534    24.0k      29
+	Nano           nano      192008    24.8K      17
+	jove           jove      248824    34.7k      94
+	Qemacs         qe        379968    36.9k      59
+	ue3.10         uemacs    171664    52.4K      16 ++
+	GNUEmacs       emacs   14632920   358.0k     186
 
 Since femto 2.12 C code has been moved out to Lisp. The first number
 in the KLOC column is the line count, the second the sloccount. The
@@ -140,31 +140,34 @@ includes the required Lisp files.
 
 ## Building
 
-### Build and Installation
+### Build Debendencies
 
-These instructions should work with most versions of linux
+Debian and Ubuntu:
 
-    $ cd $HOME
-    $ mkdir -p ~/src
-    $ git clone https://github.com/hughbarney/femto.git
-    $ cd femto
-    $ sudo make install
-
-### Building on Ubuntu (using UTF8 support in ncurses / ncursesw)
-
-When building on Ubuntu you will need to install the libcurses dev package.
-NOTE: As of Femto 1.2 you will also need the libncursesw (wide) library
-
-	$ sudo apt-get install apt-file
-	$ apt-file update
-
-now search for which package would have curses.h
-
-	$ apt-file search curses.h
-
-	libncurses5-dev: /usr/include/curses.h
+Before ncurses 6 and as of Femto 1.2 you will need to install the
+libcurses dev package.
 
 	$ sudo apt-get install libncurses5-dev libncursesw5-dev
+
+Since ncurses 6:
+
+	$ sudo apt-get install ncurses-dev
+
+Alpine Linux:
+
+	$ sudo apk add ncurses-dev
+
+FreeBSD:
+
+	$ sudo pkg install devel/ncurses
+
+### Build, Test and Installation
+
+	$ git clone https://github.com/hughbarney/femto.git
+	$ cd femto
+	$ make femto
+	$ make test
+	$ sudo make install
 
 
 ## Future Enhancements
@@ -172,8 +175,6 @@ now search for which package would have curses.h
 The following enhancements are envisaged.
 
 * Directory and file manegement (Dired) functionality.  A basic start has been made with dired.lsp
-
-* Ability to configure the syntax highlighter for python
 
 * Ability to load a file in read-only-mode
 
@@ -183,9 +184,40 @@ The following enhancements are envisaged.
 * Pipe a buffer through a shell command and read the output back into a different buffer
 
 
-## Coding Style
+## Development
 
-See [STYLE.MD](./style.md)
+See the [coding style](./style.md) guide.
+
+Pandoc is required for doc generation.
+- Debian/Ubuntu: `sudo apt-get install pandoc`
+- Alpine: `sudo apk add pandoc-cli`
+- NetBSD: `sudo pkgin install pandoc-cli`
+- FreeBSD: `pkg install hs-pandoc`
+
+There is a Doxyfile to create full cross references and call graphs.
+
+Usefull build targets:
+
+- femto: build femto binary
+- flisp: build fLisp binary
+- doc: build some markdown files from Poshdoc and some html files from markdown
+- doxygen: build the Doxygen source code documentation
+- measure: count # of files and code lines
+- test: run unit tests in summary mode
+- check: run unit tests and return success if none fails
+- ftest: call femto several times with different commandline parameters.
+- val: run femto with valgrind. Logs are found in val.log
+- clean: clean up build artifacts
+- deb: build Debian package
+- install/uninstall: install/uninstall locally
+
+Make sure to run:
+
+	make clean test
+	make clean ftest
+	make clean doc
+
+before commiting code to Github.
 
 
 ## Copying

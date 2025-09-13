@@ -1,4 +1,13 @@
-BUGS encountered during fLisp refactoring and batch mode
+BUGS encountered since fLisp refactoring and batch mode
+
+funcmap.c:86:22: warning: variable 'count' set but not used [-Wunused-but-set-variable]
+   86 |     int              count = 0;
+      |                      ^
+
+lisp.c:2690:18: warning: address of stack memory associated with compound literal {type_cons, .car = io_error, .cdr = o} returned [-Wreturn-stack-address]
+ 2690 |     return      &(Object) { type_cons, .car = io_error, .cdr = o };
+      |                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 - valgrind detects several memory leaks, call with:
   FEMTO_DEBUG=0 valgrind --leak-check=full --track-origins=yes femto

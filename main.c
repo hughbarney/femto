@@ -36,13 +36,14 @@ void load_file(char *file)
         debug("failed to open file %s: %d", file, errno);
         return;
     }
-    interp->input = fd;
+    interp->input.fd = fd;
     interp->output = debug_fp;
-    lisp_eval(interp);
-    if (interp->result != nil) {
-        // Note: the error object can be printed with lisp_write_object
-        debug("failed to load file %s: %s\n", file, interp->msg_buf);
+    lisp_eval(interp, NULL);
+    if (FLISP_RESULT_CODE(interp) != nil) {
+        debug("failed to load file %s:\n", file);
         lisp_write_error(interp, debug_fp);
+        if (FLISP_RESULT_CODE(interp) == out_of_memory)
+            fatal("OOM, exiting..");
     }
     if (fclose(fd))
         debug("failed to close file %s\n", file);
@@ -51,7 +52,7 @@ void load_file(char *file)
 int main(int argc, char **argv)
 {
     char *envv, *library_path, *init_file;
-    
+
     batch_mode = ((envv=getenv("FEMTO_BATCH")) != NULL && strcmp(envv, "0"));
     debug_mode = ((envv=getenv("FEMTO_DEBUG")) != NULL && strcmp(envv, "0"));
 
@@ -79,7 +80,7 @@ int main(int argc, char **argv)
     setup_keys();
 
     /* Lisp interpreter */
-    interp = lisp_new(FLISP_MEMORY_SIZE, argv, library_path, NULL, NULL, debug_fp);
+    interp = lisp_new(argv, library_path, NULL, NULL, debug_fp);
     if (interp == NULL)
         fatal("fLisp initialization failed");
 
@@ -149,16 +150,18 @@ char *eval_string(bool do_format, char *format, ...)
 
     prev = interp->output;  // Note: save for double invocation with user defined functions.
     interp->output = open_memstream(&output, &len);
-    lisp_eval_string(interp, input);
-    if (interp->result == nil)
-        return output;
+    lisp_eval(interp, input);
     if (interp->output)
         fflush(interp->output);
+    if (FLISP_RESULT_CODE(interp) == nil)
+        return output;
     msg_lisp_err(interp);
     if (debug_mode) {
         lisp_write_error(interp, debug_fp);
         debug("=> %s\n", output);
     }
+    if (FLISP_RESULT_CODE(interp) == out_of_memory)
+        fatal("OOM, exiting..");
     free_lisp_output();
     return NULL;
 }

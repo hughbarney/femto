@@ -1,9 +1,10 @@
-#!./run
+#!./test# -*- mode: sh -*-
 # test the fLisp library
 # leg20231129: Femto
-tap 56
 
-export FLISPRC=../lisp/core.lsp
+tap 69
+
+export FLISPRC=../flisp.rc
 flisplib() { IN="(require 'flisp) $IN" flisp_expr "$@"; }
 flisplib_err() { IN="(require 'flisp) $IN" flisp_err "$@"; }
 
@@ -160,25 +161,41 @@ IN='(min 1 2 3)' OUT=1
 flisplib 1; ok min-6 with more then two args
 
 IN='(nthcdr -1 nil)'
-ERR="negativ index"
+ERR="negative index"
 OBJ='-1'
 flisplib_err 1; ok nthcdr-1 negativ index fails
 
 IN="(nthcdr 0 '(a b c))" OUT='(a b c)'
-flisplib 1; ok nthcdr-2 0 index yields list
+flisplib 1; ok nthcdr-2 0 index is list
 
 IN="(nthcdr 2 '(a b c))" OUT='(c)'
-flisplib 1; ok nthcdr-3 last index yields last element list
+flisplib 1; ok nthcdr-3 last index is last element
 
 IN="(nthcdr 40 '(a b c))" OUT=nil
-flisplib 1; ok nthcdr-4 index over length yields nil
+flisplib 1; ok nthcdr-4 index over length is nil
+
+IN="(nthcdr 40 nil)" OUT=nil
+flisplib 1; ok nthcdr-5 of nil is nil
+
+IN="(nthcdr 1 '(2 . 3))" OUT=3
+flisplib 1; ok nthcdr-6 of 1 of cons is cdr
+
+IN="(nthcdr null nil)"
+ERR="(nthcdr i l) - i expected type-integer, got: type-primitive"
+OBJ='#<Primitive null>'
+flisplib_err 1; ok nthcdr-7 wrong index type fails
+
+IN="(nthcdr 1 null)"
+ERR="(nthcdr i l) - l expected type-cons, got: type-primitive"
+OBJ='#<Primitive null>'
+flisplib_err 1; ok nthcdr-8 wrong list type fails
 
 IN="(nth 1 '(a b c))" OUT=b
 flisplib 1; ok nth-1 yields element
 
 false; ok foldr-1 \# TODO
 
-false; ok unfold-1 \# TODO
+true; ok unfold-1 \# TODO unfold is tested by its application in iota
 
 IN="(iota 5)" OUT="(0 1 2 3 4)"
 flisplib 1; ok iota-1 iota count gives count
@@ -189,7 +206,31 @@ flisplib 1; ok iota-1 iota count start gives count from start
 IN="(iota 5 10 2)" OUT="(10 12 14 16 18)"
 flisplib 1; ok iota-1 iota count step gives count from start by step
 
+# atom
+IN='(atom 0)' OUT=t
+flisplib 1; ok atom-1 number is atom
 
-# Local Variables:
-# mode: sh
-# End:
+IN='(atom "a")' OUT=t
+flisplib 1; ok atom-2 string is atom
+
+IN="(atom 'symbol)" OUT=t
+flisplib 1; ok atom-3 symbol is atom
+
+IN='(atom nil)' OUT=t
+flisplib 1; ok atom-4 nil is atom
+
+IN="(atom '(0 'b))" OUT=nil
+flisplib 1; ok atom-5 list is not atom
+
+# zerop
+IN='(zerop 0)' OUT=t
+flisplib 1; ok zerop-1 0 is zero
+
+IN='(zerop 1)' OUT=nil
+flisplib 1; ok zerop-2 1 is not zero
+
+# if
+false; ok if \# TODO
+
+# equal
+false; ok equal \# TODO

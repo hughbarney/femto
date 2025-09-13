@@ -5,7 +5,6 @@
 ;;
 
 (require 'femto)
-(require 'stdlib)
 
 ;;
 ;; set to empty

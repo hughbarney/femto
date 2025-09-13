@@ -8,20 +8,20 @@
 > — Antoine de Saint-Exupery
 
 *fLisp* is a tiny yet practical interpreter for a dialect of the Lisp
-programming language. It is used as extension language for the
-[Femto](https://github.com/hughbarney/femto) text editor.
+programming language. It can be embedded into other applications and is
+extensible via C libraries. *fLisp* is used as extension language for
+the *Femto* text editor, see the [editor extension
+manual](editor.html) [(Markdown)](editor.md) for details.
 
-*fLisp* is hosted in the Femto
-[Github](https://github.com/hughbarney/femto) repository, it is released
-to the public domain.
+*fLisp* is hosted in the *Femto*
+[Github](https://github.com/hughbarney/femto) repository and released to
+the public domain.
 
 *fLisp* is a Lisp-1 interpreter with Scheme like lexical scoping,
-tailcall optimization and other Scheme influences.
-
-*fLisp* originates from [Tiny-Lisp by
-matp](https://github.com/matp/tiny-lisp) (pre 2014), was integrated into
-[Femto](https://github.com/hughbarney/femto) by Hugh Barney (pre 2016)
-and compacted by Georg Lehner in 2023.
+tailcall optimization and other Scheme influences. *fLisp* originates
+from [Tiny-Lisp by matp](https://github.com/matp/tiny-lisp) (pre 2014),
+was integrated into [Femto](https://github.com/hughbarney/femto) by Hugh
+Barney (pre 2016) and extended by Georg Lehner since 2023.
 
 This is a reference manual. If you want to learn about Lisp programming
 use other resources eg.
@@ -32,7 +32,7 @@ use other resources eg.
   or
 - [The Scheme Programming Language](https://www.scheme.org/).
 
-This manual refers to version 0.6 or later of fLisp.
+This manual refers to version 0.13 or later of fLisp.
 
 ### Table of Contents
 
@@ -50,33 +50,17 @@ This manual refers to version 0.6 or later of fLisp.
     2.  [Input / Output and Others](#in_out)
     3.  [Object Operations](#object_ops)
     4.  [Arithmetic Operations](#arithmetic_ops)
-    5.  [String Operations](#string_ops)
-6.  [Double Extension](#double)
+    5.  [Bitwise Integer Operations](#bitwise_ops)
+    6.  [String Operations](#string_ops)
+6.  [Extensions](#extend)
+    1.  [File Extension](#file)
+    2.  [Double Extension](#double)
 7.  [Lisp Libraries](#libraries)
     1.  [Library Loading](#startup)
     2.  [Core Library](#core_lib)
     3.  [fLlisp Library](#flisp_lib)
-    4.  [Standard Library](#std_lib)
-    5.  [Femto Library](#femto_lib)
-8.  [Editor Extension](#editor)
-    1.  [Buffers](#buffers)
-        1.  [Text manipulation](#text)
-        2.  [Selection](#selection)
-        3.  [Cursor Movement](#cursor)
-        4.  [Buffer management](#buffer_management)
-    2.  [User Interaction](#ui)
-        1.  [Window Handling"](#windows)
-        2.  [Message Line](#message_line)
-        3.  [Keyboard Handling](#keyboard)
-        4.  [Programming and System Interaction](#programming_system)
-9.  [Embedding fLisp](#embedding)
-    1.  [Embedding Overview](#embedding)
-    2.  [fLisp C Interface](#c_api)
-    3.  [Building Extensions](#extensions)
-10. [Implementation Details](#implementation)
-    1.  [Garbage Collection](#gc)
-    2.  [Memory Usage](#memory)
-    3.  [Future Directions](#future)
+8.  [fLisp Embedding and
+    Development](develop.html) [(Markdown)](develop.md)
 
 #### Notation Convention
 
@@ -98,13 +82,13 @@ A single space is used to denote an arbitrary sequence of whitespace.
 *fLisp* does not use `[`square brackets`]` and double-dots `..` as
 syntactical elements.
 
-Variables names convey the following context:
+Variable names convey the following context:
 
 Lisp object of any type:  
 *object* *value* *o* *a* *b* *c*
 
 Program elements:  
-*params* *opt* *body* *expr* *pred*
+*arg* *args* *params* *opt* *body* *expr* *pred* *p*
 
 Integer:  
 *i* *j* *k*
@@ -113,7 +97,7 @@ Double:
 *x* *y* *z*
 
 Any numeric type:  
-*num* *num1* *num2*
+*n* *n1* *n2*
 
 Symbol:  
 *symbol*
@@ -125,7 +109,10 @@ List/Cons:
 *cons* *l* *l1* *l2* …
 
 Stream:  
-*stream* *f*
+*stream* *f* *fd*
+
+Function/lambda:  
+*f*
 
 *fLisp* fancies to converge towards Emacs and Common Lisp, but includes
 also Scheme functions. Function descriptions are annotated according to
@@ -144,9 +131,10 @@ Lisp or Scheme.
 <u>B</u>  
 Buggy/incompatible implementation.
 
-By default compatibility with Common Lisp is annotated. The suffix
-<u>e</u> is used to indicate reference to Emacs Lisp, <u>s</u> for
-Scheme. *fLisp* specific function are annotated with <u>f</u>.
+Compatibility with Emacs is omitted. By default compatibility with
+Common Lisp is annotated. The suffix <u>e</u> is used to indicate
+reference to Emacs Lisp, <u>s</u> for Scheme. *fLisp* specific function
+are annotated with <u>f</u>.
 
 [^](#toc)
 
@@ -287,22 +275,11 @@ is then replaced by its object.
 #### Error handling
 
 Whenever fLisp encounters an error an exception is thrown. Exceptions
-have an error type symbol and a human readable error message. fLisp does
-not implement stack backtracking. Exceptions are either caught on the
-top level of an evaluation or by a `catch` statement.
-
-In the `flisp` interpreter the error message is formated as
-`error: «message»` if the error object is `nil` otherwise as
-`error: '«object»', «message»`, where *object* is the serialization of
-the object causing the error and *message* is the error message.
-
-When an exception occurs while calling `lisp_eval()` or
-`lisp_eval_string()` from C-code, the `object` field of the interpreter
-is set to the object causing the error, the `result` field is set to the
-error type symbol and the `msg_buf` field is set to the error message.
-
-Exceptions can be thrown from within in Lisp code via the
-[`throw`](#interp_ops) function.
+have an <span class="dfn">error type</span> symbol a human readable
+<span class="dfn">error message</span> and the <span class="dfn">object
+in error</span>, which is nil with generic errors. fLisp does not
+implement stack backtracking. Exceptions are either caught on the top
+level of an evaluation or by a [`catch`](#interp_ops) statement.
 
 The following error type symbols are defined and used internally:
 
@@ -317,6 +294,14 @@ The following error type symbols are defined and used internally:
 - `io-error`
 - `out-of-memory`
 - `gc-error`
+
+Exceptions can be thrown via the [`throw`](#interp_ops) function. As
+long as applicable use one of the existing error codes with `throw`.
+
+*fLisp* outputs an error message formated as `error: «message»` if the
+error object is `nil` otherwise as `error: '«object»', «message»`, where
+*object* is the serialization of the object causing the error. *message*
+is the error message.
 
 [^](#toc)
 
@@ -340,11 +325,13 @@ is tested. If *pred* evaluates not to `nil` and if there is no *action*
 the value of *pred* is returned, otherwise `(progn «action» ..)` is
 returned and no more *clause*s are evaluated.
 
-`(setq «symbol» «value»[ «symbol» «value»..])`  
-Create or update named objects: If *symbol* is the name of an existing
-named object in the current or a parent environment the named object is
-set to *value*, if no symbol with this name exists, a new one is created
-in the top level environment. `setq` returns the last *value*.
+`(bind «symbol» «value»[ «globalp»)` ⇒ *value*  
+Create or update *symbol* and bind it to *value*. Return value. First
+*symbol* is looked up in the current environment, then recursively in
+the parent environments. If it is not found, it is created in the
+current environment as long as *globalp* is `nil` or omitted. If
+*globalp* is not `nil` *symbol* is always created in the global (top
+level) environment.
 
 `(define «symbol» «value»[ «symbol» «value»..])` <u>Ss: define, let</u>  
 Create or update named objects: If *symbol* is the name of an existing
@@ -380,8 +367,8 @@ Returns *expr* without evaluating it.
 `(catch «expr»)` <u>D</u>  
 Evaluates *expr* and returns a list with three elements:
 
-*result*  
-`0` on success or any other number indicating an error.
+*error_type*  
+`nil` on success or an error type symbol.
 
 *message*  
 A human readable error message.
@@ -396,8 +383,7 @@ error type symbol, *message* is a human readable error string and
 
 #### Input / Output and Others
 
-`(open «path»[ «mode»])` <u>S: open</u>
-
+`(open «path»[ «mode»])` <u>S: open</u>  
 Open file at string *path* with string *mode* and return a stream
 object. *mode* is `"r"`ead only by default.
 
@@ -419,49 +405,29 @@ The name of the opened file is set to `<STRING`.
 For writing *path* is ignored, *mode* must be set to: `>`. The name of
 the opened file is set to `>STRING`.
 
-`(close «stream»)` <u>S: close</u>
-
+`(close «stream»)` <u>S: close</u>  
 Close *stream* object
 
-`(file-info «stream»)` <u>f</u>
-
+`(file-info «stream»)` <u>f</u>  
 Returns `(«path» «buf» «fd»)` for *stream*. *buf* is either `nil` or the
 text buffer of a memory stream. *fd* is either the integer
 representation of the file descriptor or `nil` when *stream* is already
 closed.
 
-`(read` *stream*`[ eof-value])` <u>S: read</u>
-
+`(read` *stream*`[ eof-value])` <u>S: read</u>  
 Reads the next complete Lisp expression from *stream*. The read in
 object is returned. If end of file is reached, an exception is raised,
 unless *eof-value* is not `nil`. In that case `eof-value` is returned.
 
-`(write «object»[ «keys»..]]`
-
-*keys*:
-
-`:stream` *stream*
-
-`:readably` *flag*
-
+`(write «object»[ «readably»[ «fd»]]` → object  
 Formats *object* into a string and writes it to the default output
-stream. With key `:stream` output is written to the given stream. With
-key `:readable` not `nil` output is formatted in a way which which gives
-the same object when read again. `write` returns the *object*.
+stream. When *readably* is not `nil` output is formatted in a way which
+which gives the same object when read again. When stream *fd* is given
+output is written to the given stream else to the output stream. `write`
+returns the *object*.
 
-`(eval «object»)`
-
+`(eval «object»)`  
 Evaluates *object* and returns the result.
-
-`(system «string»)`
-
-Executes the
-[system(1)](https://man7.org/linux/man-pages/man3/system.3.html)
-function with *string* as parameter.
-
-`(os.getenv «string») `
-
-Returns the value of the environment variable named *string*.
 
 #### Object Operations
 
@@ -518,6 +484,26 @@ Returns the rest (modulo) of the integer division of *i* by *j*. Throws
 These predicate functions apply the respective comparison operator
 between *i* *j*.
 
+#### Bitwise Integer Operations
+
+`(& «i» «j»)`  
+Returns the bitwise and operation on *i* and *j*.
+
+`(| «i» «j»)`  
+Returns the bitwise or operation on *i* and *j*.
+
+`(^ «i» «j»)`  
+Returns the bitwise xor operation on *i* and *j*.
+
+`(<< «i» «j»)`  
+Returns *i* shift left by *j* bits.
+
+`(>> «i» «j»)`  
+Returns *i* shift right by *j* bits.
+
+`(~ «i»)`  
+Returns the bitwise negation of *i*.
+
 #### String Operations
 
 `(string-length «string»)`  
@@ -538,10 +524,6 @@ to the start of *string*.
 Returns the position of *needle* if it is contained in *haystack*,
 otherwise `nil`.
 
-`(string-to-number «string»)`  
-Converts *string* into a corresponding *integer* object. String is
-interpreted as decimal based integer.
-
 `(ascii «integer»)`  
 Converts *integer* into a *string* with one character, which corresponds
 to the ASCII representation of *integer*.
@@ -549,6 +531,60 @@ to the ASCII representation of *integer*.
 `(ascii->number «string»)`  
 Converts the first character of *string* into an *integer* which
 corresponds to its ASCII value.
+
+[^](#toc)
+
+### File Extension
+
+<span class="mark">Tbd. carry over comprehensive documentation from
+`file.c`</span>
+
+`(fflush[ «stream»])`  
+Flush *stream*, output or all streams
+
+`(fseek «stream» «offset»[ «relativep»])`  
+Seek position *offset* in *stream* or input. If *offset* is negative
+seek from end, if *relativep* is not null seek from current position, be
+default seek from start
+
+`(ftell[ «stream»])`  
+Return current position in *stream* or input.
+
+`(feof[ «stream»])`  
+Return `end-of-file` if stream or input are exhausted, else `nil`
+
+`(fgetc[ «stream»])`  
+Return the next character from *stream* or input.
+
+`(fungetc «i»[ «stream»])`  
+`ungetc()` integer *i* as char to *stream* or input.
+
+`(fgets[ «stream»])`  
+Read a line or up to `INPUT_FMT_BUFSIZ` from *stream* or input.
+
+`(fstat «path»[ «linkp»])`  
+Get information about file at *path*.
+
+`(fttyp[ «fd»])`  
+Return true if input or stream *fd* is associated with a TTY.
+
+`(fmkdir «path»[ «mode»])`  
+Create directory at *path* with *mode*.
+
+`(popen «line»[ «mode»])`  
+Run command line and read from/write to it
+
+`(pclose «stream»)`  
+Close a *stream* opened with `(popen)`
+
+`(system «string»)` ⇒ *exit_code*  
+Execute *string* as command line of a system shell subpprocess according
+to the [system(1)](https://man7.org/linux/man-pages/man3/system.3.html)
+and return the shell *exit_code* as integer.
+
+`(getenv «name»)` ⇒ *value*  
+Return the value of the environment variable *name* as string. If *name*
+does not exist return `nil`.
 
 [^](#toc)
 
@@ -589,15 +625,15 @@ default location and name of this <span class="dfn">startup file</span>
 are hardcoded in the binary and can be overwritten with environment
 variables:
 
-Library path  
-femto: `/usr/local/share/femto`, `FEMTOLIB`
-
-flisp: `/usr/local/share/flisp`, `FLISPLIB`
-
 Startup file  
 femto: `femto.rc`, `FEMTORC`
 
 flisp: `flisp.rc`, `FLISPRC`
+
+Library path  
+femto: `/usr/local/share/femto`, `FEMTOLIB`
+
+flisp: `/usr/local/share/flisp`, `FLISPLIB`
 
 The library path is exposed to the Lisp interpreter as the variable
 `script_dir`.
@@ -607,12 +643,23 @@ allows to load Lisp files from the library path conveniently and without
 repetition. The command to load the file `example.lsp` from the library
 is `(require 'example)`.
 
-Femto provides a set of libraries, some of them are required by the
-editor
+*fLisp* provides the following set of libraries:
+
+core  
+Integrated in the `.rc` files, always loaded. The core library
+implements the minimum required Lisp features for loading libraries.
+
+flisp  
+Implements expected standard Lisp functions and additions expected by
+`femto` and `flisp`.
+
+string  
+String manipulation library.
+
+The *Femto* specific libraries are described together with the
+[editor](editor.html) [(Markdown)](editor.md) extension.
 
 #### Core Library
-
-This library is built into the startup file.
 
 `(list` \[*element* ..\]`)` <u>C</u>  
 Returns the list of all provided elements.
@@ -621,6 +668,12 @@ Returns the list of all provided elements.
 `(defun «name» «params» «body»)` <u>C</u>  
 Defines and returns a macro or function, respectively.
 
+`(setq «symbol» «value»[ «symbol» «value»..])`  
+Create or update named objects: If *symbol* is the name of an existing
+named object in the current or a parent environment the named object is
+set to *value*, if no symbol with this name exists, a new one is created
+in the top level environment. `setq` returns the last *value*.
+
 `(curry («func» «a»))`  
 Returns a lambda with one parameter which returns `(«func» «a» «b»)`.
 
@@ -628,6 +681,7 @@ Returns a lambda with one parameter which returns `(«func» «a» «b»)`.
 Returns true if *object* has *type*.
 
 `(integerp «object»)` <u>C</u>  
+`(doublep «object»)` <u>C</u>  
 `(stringp «object»)` <u>C</u>  
 `(symbolp «object»)` <u>C</u>  
 `(lamdap «object»)` <u>C</u>  
@@ -636,28 +690,53 @@ Returns true if *object* has *type*.
 Return `t` if *object* is of the respective type, otherwise `nil`.
 
 `(numberp «object»)` <u>C</u>  
+Return `t` if *object* is integer or double, otherwise `nil`.
+
 `(cadr «list»)` <u>C</u>  
 Return the second element in *list*, `(car (cdr «list»))`.  
 `(cddr «list»)` <u>C</u>  
 Return all elements after the second one in *list*, `(cdr (cdr «list»))`.  
 `(caddr «list»)` <u>C</u>  
 Return the third element in list, `(car (cdr (cdr «list»)))`.  
-`(number-to-string «number»)` <u>C</u>  
+`(append [list ..][ a])`  
+Append all elements in all *list*s into a single list. If atom *a* is
+present, make it a dotted list terminating with *a*.
+
+`(fold-left «func» «init» «list»)` <u>Ss: fold-left</u>  
+Apply the binary *func*tion to *start* and the first element of *list*
+and then recursively to the result of the previous invocation and the
+first element of the rest of *list*. If *list* is empty return *start*.
+
+`(flip «func»)` <u>f</u>  
+Returns a lambda which calls binary *func* with it's two arguments
+reversed (flipped).
+
+`(reverse «l»)`  
+Returns a list with all elements of *l* in reverse order
+
+`(apply «f» [«arg» ..][ l])`  
+If *arg* is a single list call lambda *f* with all its elements as
+parameters, else call *f* with all *arg*s as parameters. If list *l* is
+present append all its elements to the parameter list.
+
+`(print «o»[ «fd»])`  
+`write` object *o* `:readably` to stream *fd* or output.
+
+`(princ «o»[ «fd»])`  
+`write` object *o* as is to stream *fd* or output.
+
+`(string-to-number «string»)`  
+Converts *string* into a corresponding *integer* object. String is
+interpreted as decimal based integer.
+
 Converts *integer* into a *string* object.
 
 `(eq «a» «b»)`  
 Returns `t` if *a* and *b* evaluate to the same object, number or
 string, `nil` otherwise.
 
-Synonym for `integerp`.
-
 `(not «object»)` <u>C</u>  
 Logical inverse. In Lisp a synonym for `null`
-
-`(fold-left «func» «init» «list»)` <u>Ss: fold-left</u>  
-Apply the binary *func*tion to *start* and the first element of *list*
-and then recursively to the result of the previous invocation and the
-first element of the rest of *list*. If *list* is empty return *start*.
 
 `(length «obj»)` <u>C</u>  
 Returns the length of *obj* if it is a string or a list, otherwise
@@ -673,16 +752,31 @@ Returns concatenation of all arguments converted to strings.
 If *arg* is contained in *list*, returns the sub list of *list* starting
 with the first occurrence of *arg*, otherwise returns `nil`.
 
-`(map1 «func» «list»)` <u>S: mapcar</u>  
-Apply func to each element in list and return a list of the results.
+`(mapcar «func» «list»)` <u>Se, Dc</u>  
+Apply *func* to each element in list and return the list of results.
 
-`map1` is a specialized form of `mapcar` restricted to one list only.
+In Elisp func has to be quoted, in CL variadic *func* operates on a list
+of lists.
 
-`nfold`  
-`coerce`  
-`coercec`  
-`fold-leftp`  
-Helper functions for n-ary generic number type arithmetic. See below.
+`(nfold «f» «i» «l»)`  
+“Number fold”: `left-fold`s binary function *f* on list *l* with initial
+value *i*. Helper function for n-ary generic number type arithmetic.
+
+`(coerce ifunc dfunc x y)`  
+If *x* and *y* are `type-integer` apply binary integer arithmetic
+function *ifunc* to them and return the result. If any of them is
+`type-double` apply binary double arithmethich function *dfunc* instead.
+Helper function for n-ary generic number type arithmetic.
+
+`(coercec «ifunc» «dfunc»)`  
+“Coerce curry”: return a lambda `coerce`ing parameters *x* and *y* and
+applying *ifunc* or *dfunc* respectively. Helper function for n-ary
+generic number type arithmetic.
+
+`(fold-leftp «predicate» «start» «list»)`  
+“Predicate fold”: `fold-left` binary function *predicate* to *list* with
+initial value *start*. Returns `t` if *list* is empty. Helper functions
+for n-ary generic number type comparison.
 
 `(let ((«name» «value»)[ («name» «value»)..]) «body»)` <u>C</u>  
 Bind all *name*s to the respective *value*s then evaluate body.
@@ -747,11 +841,19 @@ only one *num* is given they all return `t`.
 This library implements commonly excpected Lisp idioms. *fLisp*
 implements a carefully selected minimum set of commonly used functions.
 
-listp
+`(listp «o»)` <u>D</u>
 
-and
+Returns true if *o* is `nil` or a *cons*.
 
-or
+`(and[ o..])`
+
+Returns `t` or the last object *o* if none is given or all evaluate to
+non `nil`, `nil` otherwise.
+
+`(or[ o..])`
+
+Returns `nil` if all objects o are `nil`, otherwise returns the first
+object which evaluates to non `nil`.
 
 `(reduce «func» «list» «start»)` <u>D</u>
 
@@ -762,643 +864,52 @@ or
 Since `reduce` is right associative and *start* is not optional, it
 differs significantly both from Common Lisp and Scheme.
 
-max
+`(max «n»[ «n»..])`
 
-min
+`(min «n»[ «n»..])`
 
-nthcdr
+Return the biggest/smallest number of all given *n*s.
 
-nth
+`(nthcdr «i» «l»)`
 
-`(fold-right «func» «end» «list»)` <u>Cs</u>
+Return sub list of *l* starting from zero-based *i*th element to the
+last.
 
-`(unfold «func» «init» «pred»)` <u>Cs</u>
+`(nth «i» «l»)`
+
+Return zero-based *i*th element of list *l*
+
+`(fold-right «f» «o» «l»)` <u>Cs</u>
+
+Apply binary function *f* to last element of *l* and *o*, then
+recursively to the previous element and the result.
+
+`(unfold «f» «o» «p»)` <u>Cs</u>
+
+Create a list starting with *o* followed by the result of successive
+application of *f* to *o* until applying *p* to the result is not `nil`
+anymore.
 
 `(iota «count»[ «start»[ «step»]])` <u>Cs</u>
 
-#### Standard Library
+Create a list of *count* numbers starting with *start* or `0` if not
+given by successively adding *step* or `1` if not given.
 
-This library implements some Common Lisp functions, which are not used
-in the editor libraries. They are provided for reference.
+`(atom «o»)`
 
-atom
+`t` if *o* is not a *cons*.
 
-zerop
+`(zerop «x»)`
 
-if
+`t` if number *x* is zero.
 
-equal
+`(if «p» «then»[ «else»)`
 
-append
+Evaluate *then* if predicate *p* evaluates to not `nil`, else evaluate
+*else*.
 
-print
+`(equal «o1» «o2»)`
 
-princ
-
-#### Femto Library
-
-This library implements helper function required by the Femto editor. It
-is written only in Lisp idioms provided by fLisp itself plus the [fLisp
-Library](#flisp_lib).
+Return `nil` if *o1* and *o2* are not isomorphic.
 
 [^](#toc)
-
-### Editor Extension
-
-The editor extensions introduces several types of objects/functionality:
-
-- <span class="dfn">Buffers</span> hold text
-- <span class="dfn">Windows</span> display buffer contents to the user
-- <span class="dfn">Keyboard Input</span> allows the user to interact
-  with buffers and windows
-- The <span class="dfn">Message Line</span> gives feedback to the user
-- Several other function for operating system or user interaction
-
-#### Buffers
-
-This section describes the buffer related functions added by Femto to
-fLisp. The description is separated in function related to buffer
-management and text manipulation. Text manipulation always operates on
-the <span class="dfn">current buffer</span>. Buffer management creates,
-deletes buffers, or selects one of the existing buffers as the current
-buffer.
-
-Buffers store text and allow to manipulate it. A buffer has the
-following properties:
-
-*name*  
-Buffers are identified by their name. If a buffer name is enclosed in
-`*`asterisks`*` the buffer receives special treatment.
-
-*text*  
-zero or more characters.
-
-*point*  
-The position in the text where text manipulation takes place. The first
-position in the text is 0. Note: in Emacs the first position is 1.
-
-*mark*  
-An optional second position in the text. If the *mark* is set, the text
-between *point* and *mark* is called the
-<span class="dfn">selection</span> or <span class="dfn">region</span>.
-
-*filename*  
-If set the buffer is associated with the respective file.
-
-*flags*  
-Different flags determine the behavior of the buffer. Editor specific
-flags: `special`, `modified`.
-
-Mode flags determine the syntax highlighter mode: `cmode` and `lispmode`
-are available. If none is set `text` mode is used for syntax
-hightlighting.
-
-In the following, any mention to one of them refers to the respective
-current buffers property.
-
-##### Text manipulation
-
-`(insert-string «string»)`  
-Inserts *string* before *point*. <u>S: insert</u>.
-
-`(insert-file-contents-literally «string» `\[*flag*\]`)`  
-Inserts the file *string* after *point*. If *flag* is not nil the buffer
-is marked as not modified. <u>B</u>
-
-Note: Currently the flag is forced to nil. The function should return
-`(«filename» «count»)` but it returns a flag indicating if the operation
-succeeded.
-
-`(erase-buffer)`  
-Erases all text in the current buffer. <u>C</u>
-
-`(delete)`  
-Deletes the character after *point*. <u>S: delete-char</u>
-
-`(backspace)`  
-Deletes the character to the left of *point*. <u>S:
-delete-backward-char</u>
-
-`(get-char)`  
-Returns the character at *point*. <u>S: get-byte</u>
-
-`(copy-region)`  
-Copies *region* to the *clipboard*. <u>S: copy-region-as-kill</u>
-
-`(kill-region)`  
-Deletes the text in the *region* and copies it to the *clipboard*.
-<u>D</u>
-
-`(yank)`  
-Pastes the *clipboard* before *point*. <u>C</u>
-
-##### Selection
-
-`(set-mark)`  
-Sets *mark* to *point*. <u>D</u>
-
-`(get-mark)`  
-Returns the position of *mark*, -1 if *mark* is unset. <u>S: mark</u>
-
-`(get-point)`  
-Returns the position of *point*. <u>S: point</u>
-
-`(get-point-max)`  
-Returns the maximum accessible value of point in the current buffer.
-<u>S: point-max</u>
-
-`(set-clipboard «variable»)`  
-`Sets «clipboard» to the contents of «variable».` <u>S:
-gui-set-selection</u>
-
-`(get-clipboard)`  
-Returns the *clipboard* contents. <u>S: gui-get-selection</u>
-
-##### Cursor Movement
-
-`(set-point «number»)`  
-Sets the point to in the current buffer to the position *number*. <u>S:
-goto-char</u>
-
-`(goto-line «number»)`  
-Sets the point in the current buffer to the first character on line
-*number*. <u>S: goto-line</u>, not an Elisp function.
-
-`(search-forward «string»)`  
-Searches for *string* in the current buffer, starting from point
-forward. If string is found, sets the point after the first occurrence
-of *string* and returns `t`, otherwise leaves point alone and returns
-`nil`. <u>D</u>
-
-`(search-backward «string»)`  
-Searches for *string* in the current buffer, starting from point
-backwards. If string is found, sets the point before the first
-occurrence of *string* and returns `t`, otherwise leaves point alone and
-returns `nil`. <u>D</u>
-
-`(beginning-of-buffer)`  
-Sets the point in the current buffer to the first buffer position,
-leaving mark in its current position. <u>C</u>
-
-`(end-of-buffer)`  
-Sets the point in the current buffer to the last buffer position,
-leaving mark in its current position. <u>C</u>
-
-`(beginning-of-line)`  
-Sets point before the first character of the current line, leaving mark
-in its current position. <u>S: move-beginning-of-line</u>
-
-`(end-of-line)`  
-Sets point after the last character of the current line, i.e. before the
-end-of-line character sequence, leaving mark in its current position.
-<u>S: move-end-of-line</u>
-
-`(forward-word)`  
-Moves the point in the current buffer forward before the first char of
-the next word. If there is no word left the point is set to the end of
-the buffer. If the point is already at the start or within a word, the
-current word is skipped. <u>D</u>: **Note**: Elisp moves to the *end* of
-the the next word.
-
-`(backward-word)`  
-Moves the point in the current buffer backward after the last char of
-the previous word. If there is no word left the point is set to the
-beginning of the buffer. If the point is already at the end or within a
-word, the current word is skipped. <u>D</u>: **Note**: Elisp moves to
-the *beginning* of the previous word.
-
-`(forward-char)`  
-Moves the point in the current buffer one character forward, but not
-past the end of the buffer. <u>C</u>
-
-`(backward-char)`  
-Moves the point in the current buffer one character backward, but not
-before the end of the buffer. <u>C</u>
-
-`(forward-page)`  
-Moves the point of the current buffer to the beginning of the last
-visible line of the associated screen and scrolls the screen up to show
-it as the first line. <u>S: scroll-up</u>
-
-`(backward-page)`  
-Moves the point of the current buffer to the beginning of the first
-visible line of the associated screen and scrolls the screen down to
-show it as the last line. <u>S: scroll-down</u>
-
-`(next-line)`  
-Moves the point in the current buffer to the same character position in
-the next line, or to the end of the next line if there are not enough
-characters. In the last line of the buffer moves the point to the end of
-the buffer. <u>C</u>
-
-`(previous-line)`  
-Moves the point in the current buffer to the same character position in
-the previous line, or to the end of the previous line if there are not
-enough characters. In the first line of the buffer the point is not
-moved. <u>C</u>
-
-##### Buffer management
-
-`(list-buffers)`  
-Lists all the buffers in a buffer called `*buffers*`.
-
-`(get-buffer-count)`  
-Returns the number of buffers, includes all special buffers and
-`*buffers*`.
-
-`(select-buffer «string»)`  
-Makes the buffer named *string* the current buffer. Note: <u>C</u> to
-`set-buffer` in Elisp.
-
-`(rename-buffer «string»)`  
-Rename the current buffer to *string*. <u>C</u>
-
-`(kill-buffer «string»)`  
-Kill the buffer names *string*. Unsaved changes are discarded. <u>C</u>
-
-`(get-buffer-name)`  
-Return the name of the current buffer. Note: <u>C</u> to `buffer-name`
-in Elisp.
-
-`(add-mode-global «string»)`  
-Sets global mode *string* for all buffers. Currently the only global
-mode is <span class="kbd">undo</span>.
-
-`(add-mode «string»)`  
-Set a flag for the current buffer.
-
-`(delete-mode «string»)`  
-Reset a flag for the current buffer.
-
-`(find-file «string»)`  
-Loads file with path *string* into a new buffer. After loading
-`(read-hook «string»)` is called. <u>C</u>
-
-`(save-buffer «string»)`  
-Saves the buffer named *string* to disk. <u>C</u>
-
-#### User Interaction
-
-This section lists function related to window and message line
-manipulation, keyboard input and system interaction.
-
-##### Window Handling
-
-`(delete-other-windows)`  
-Make current window the only window. <u>C</u>
-
-`(split-window)`  
-Splits the current window. Creates a new window for the current buffer.
-<u>C</u>
-
-`(other-window)`  
-Moves the cursor to the next window down on the screen. Makes the buffer
-in that window the current buffer. <u>D</u>
-
-Note: Elisp `other-window` has a required parameter *count*, which
-specifies the number of windows to move down or up.
-
-`(update-display)`  
-Updates all modified windows.
-
-`(refresh)`  
-Updates all windows by marking them modified and calling
-`update-display`.
-
-##### Message Line
-
-`(message «string»)`  
-Displays *string* in the message line. <u>D</u>
-
-`(clear-message-line)`  
-Displays the empty string in the message line.
-
-`(prompt «prompt» «default»)`  
-Displays *prompt* in the command line and sets *default* as initial
-value for the user response. The user can edit the response. When
-hitting return, the final response is returned.
-
-`(show-prompt «prompt» «default»)`  
-Displays *prompt* and *default* in the command line, but does not allow
-editing. Returns `t`.
-
-`(prompt-filename «prompt»)`  
-Displays *prompt* in the command line and allows to enter or search for
-a file name. Returns the relative path to the selected file name or the
-response typed by the user.
-
-##### Keyboard Handling
-
-`(set-key «key-name» «lisp-func»)`  
-Binds key key-name to the lisp function *lisp-func*.
-
-`(get-key-name)`  
-Returns the name of the currently pressed key, eg: `c-k` for control-k.
-
-`(get-key-funcname)`  
-Return the name of the function bound to the currently pressed key.
-
-`(execute-key)`  
-Executes the function of the last bound key. <span class="mark">Tbd.
-bound or pressed?</span>
-
-`(describe-bindings)`  
-Creates a listing of all current key bindings, in a buffer named
-`*help*` and displays it in a new window. <u>C</u>
-
-`(describe-functions)`  
-Creates a listing of all functions bound to keys in a buffer named
-`*help*` and displays it in a new window.
-
-`(getch)`  
-Waits for a key to be pressed and returns the key as string. See also
-`get-key-name`, `get-key-funcname` and `execute-key`.
-
-##### Programming and System Interaction
-
-`(exit)`  
-Exit Femto without saving modified buffers.
-
-`(eval-block)`  
-Evaluates the *region* in the current buffer, inserts the result at
-*point* and returns it. If *mark* in the current buffer is before
-*point* `eval-block` evaluates this *region* and inserts the result at
-*point*. If *point* is before *mark* `eval-block` does nothing but
-returning `t`.
-
-`(log-message «string»)`  
-Logs *string* to the `*messages*` buffer.
-
-`(log-debug «string»)`  
-Logs string to the file `debug.out`.
-
-`(get-version-string)`  
-Returns the complete version string of Femto, including the copyright.
-
-[^](#toc)
-
-### Embedding fLisp
-
-#### Embedding Overview
-
-fLisp can be embedded into a C application. Two examples of embedding
-are the \`femto\` editor and the simplistic \`flisp\` command line Lisp
-interpreter.
-
-Currently embedding can only be done by extending the build system.
-Application specific binary Lisp extensions are stored in separated C
-files and the interface code is conditionally included into the `lisp.c`
-file. Two extensions are provided: the Femto extension which provides
-the editor functionality and the file extension which provides access to
-the low level stream I/O functions and adds some more.
-
-fLisp exposes the following public interface functions:
-
-`lisp_new()`  
-Create a new interpreter.
-
-`lisp_destroy()`  
-Destroy an interpreter, releasing resources.
-
-`lisp_eval()`  
-Evaluate input stream until exhausted or error.
-
-`lisp_eval_string()`  
-Evaluate given string until exhausted or error.
-
-`lisp_write_object()`  
-Format and write object to file descriptor.
-
-`lisp_write_error()`  
-Format and write the error object and error message of an interpreter to
-a file descriptor.
-
-Different flows of operation can be implemented. The Femto editor
-initializes the interpreter without input/output file descriptors and
-sends strings of Lisp commands to the interpreter, either when a key is
-pressed or upon explicit request via the editor interface.
-
-The `flisp` command line interpreter sets `stdout` as the default output
-file descriptors of the fLisp interpreter and feeds it with strings of
-lines read from the terminal. If the standard input is not a terminal
-`stdin` is set as the default input file descriptor and fLisp reads it
-through until end of file.
-
-After processing the given input, the interpreter puts a pointer to the
-object which is the result of the last evaluation into the `object`
-field of the interpreter structure. The `result` field is set to the
-`nil` and the `msg_buf` field is set to the empty string.
-
-fLisp sends all output to the default output stream. If `NULL` is given
-on initialization, output is suppressed altogether.
-
-If an exception is thrown inside the Lisp interpreter an error message
-is formatted and copied to the `msg_buf` buffer of the interpreter, A
-pointer to the object causing the error is set to the `object` field.
-The `result` field is set to the respective error type symbol.
-
-In this <span class="dfn">error state</span> of the interpreter, the
-function `lisp_write_error()` can be used to write a standardized error
-message including the error object to a file descriptor of choice
-
-#### fLisp C Interface
-
-*Interpreter*` *lisp_new(int «size», char **«argv», char *«library_path», FILE *input, FILE *output, FILE* debug)`  
-`lisp_new()` creates and initializes an fLisp interpreter. The initial
-environment contains the following symbols:
-
-*argv0*  
-The string stored in `*«argv»[0]`, if any
-
-*argv*  
-The list of strings stored in *argv*
-
-*script_dir*  
-The string stored in *library_path*
-
-A pointer to an *Interpreter* struct is returned, which is used to
-operate the interpreter.
-
-The other arguments to `lisp_new()` are:
-
-*size*  
-Memory size to allocate for the Lisp objects. This is divided into two
-pages for garbage collection. Only one page is used by the interpreter
-at any moment.
-
-*input*  
-Default input stream. If *input* is set to `NULL`, the input stream has
-to be specified for each invocation of `lisp_eval()`.
-
-*output*  
-Default output stream. If *output* is set to `NULL` a memory stream is
-created at the first invocation of the interpreter and set as the
-default output stream.
-
-*debug*  
-Debug output stream. If set to `NULL` no debug information is generated.
-
-`void lisp_destroy(Interpreter *«interp»)`  
-Frees all resources used by the interpreter.
-
-`void lisp_eval(Interpreter *«interp»)`  
-Evaluates the input file set in the *input* field of the fLisp
-interpreter *interp* until end of file. If no input file is set,
-`interp` is set to a respective error state.
-
-`void lisp_eval_string(Interpreter *«interp», char *«string»)`  
-Evaluates all Lisp expressions in *string*.
-
-`void lisp_write_object(Interpreter *«interp», FILE «*fd», Object *«object», bool readably)`  
-Format *object* into a string and write it to *stream*. If *readably* is
-true, the string can be read in by the interpreter and results in the
-same object.
-
-`void lisp_write_error(Interpreter *«interp», FILE «*fd»)`  
-Format the error *object* and the error message of the interpreter into
-a string and write it to *fd*. The *object* is written with *readably*
-`true`.
-
-<span class="mark">Note: currently only creating one interpreter has
-been tested.</span>
-
-#### Building Extensions
-
-An extensions has to create C functions with the signature:
-`Object *«primitive»(Interpreter *interp, Object **args, Object **env)`,
-where *primitive* is a distinct name in C space. This function has to be
-added to the global variable `primitives` in the following format:
-`{"«name»", «argMin», «argMax», «primitive»}`. Here *name* is a distinct
-name in Lisp space.
-
-*interp* is the fLisp interpreter in which *primitive* is executed.
-*argMin* is the minimum number of arguments, *argMax* is the maximum
-number of arguments allowed for the function. If *argMax* is a negative
-number, arguments must be given in tuples of *argMax* and the number of
-tuples is not restricted.
-
-When creating more then one new objects within a primitive, care has to
-be taken to register them with the garbage collector. Registration is
-started with the `GC_CHECKPOINT` CPP macro. `GC_TRACE(«name», «value»`
-creates an object variable *name*, sets it to *value* and registers it
-with the garbage collector. The macro `GC_RELEASE` must be called to
-finalize the registration. The convenience macro `GC_RETURN(«object»)`
-calls `GC_RELEASE` and returns *object*.
-
-Some CPP macros are provided to simplify argument validation in
-primitives, all of them receive the *name* of the primitive as a
-parameter:
-
-`TWO_STRING_ARGS(«name»)`  
-Assures that the first two arguments are of type string. They are
-assigned to the `Object *` variables *first* and *second*.
-
-`ONE_STRING_ARG(«name»)`  
-Assures that the first argument is of type string. It is assigned to the
-`Object *` variable *arg*.
-
-`ONE_NUMBER_ARG(«name»)`  
-Assures that the first argument is of type number. It is assigned to the
-`Object *` variable *num*.
-
-`ONE_STREAM_ARG(«name»)`  
-Assures that the first argument is of type stream. It is assigned to the
-`Object *` variable *stream*.
-
-[^](#toc)
-
-### Implementation Details
-
-#### Garbage Collection
-
-fLisp implements Cheney's copying garbage collector, with which memory
-is divided into two equal halves (semi spaces): from- and to-space.
-From-space is where new objects are allocated, whereas to-space is used
-during garbage collection.
-
-When garbage collection is performed, objects that are still in use
-(live) are copied from from-space to to-space. To-space then becomes the
-new from-space and vice versa, thereby discarding all objects that have
-not been copied.
-
-Our garbage collector takes as input a list of root objects. Objects
-that can be reached by recursively traversing this list are considered
-live and will be moved to to-space. When we move an object, we must also
-update its pointer within the list to point to the objects new location
-in memory.
-
-However, this implies that our interpreter cannot use raw pointers to
-objects in any function that might trigger garbage collection (or risk
-causing a SEGV when accessing an object that has been moved). Instead,
-objects must be added to the list and then only accessed through the
-pointer inside the list.
-
-Thus, whenever we would have used a raw pointer to an object, we use a
-pointer to the pointer inside the list instead:
-
-          function:              pointer to pointer inside list (Object **)
-          |
-          v
-          list of root objects:  pointer to object (Object *)
-          |
-          v
-          semi space:             object in memory
-        
-
-*GC_TRACE* adds an object to the list and declares a variable which
-points to the objects pointer inside the list.
-
-*GC_TRACE*`(«gcX», «X»)`: add object *X* to the list and declare
-`Object **«gcX»` to point to the pointer to *X* inside the list.
-
-Information about the garbage collection process and memory status is
-written to the debug file descriptor.
-
-#### Memory Usage
-
-Some compile time adjustable limits in `lisp.h`:
-
-Input buffer  
-2048, `INPUT_FMT_BUFSIZ`, size of the formatting buffer for
-`lisp_eval()`.
-
-Output buffer  
-2048, `WRITE_FMT_BUFSIZ`, size of the output and message formatting
-buffer.
-
-fLisp can live with as little as 300k object memory. The Femto editor
-requires 16M since the “OXO” game requires a lot of memory.
-
-#### Future Directions
-
-The two memory pages should be separated and the second one should be
-allocated only during garbage collection. When memory runs out, the
-garbage collection should be restarted with an increased capacity of the
-new page.
-
-It is now possible to catch exceptions within Lisp code and exceptions
-return differentiated error codes and use POSIX stream I/O. This,
-together with the `(eval)` primitive would allow to write the repl
-directly in Lisp, and reading and eval'ing until no more “incomplete
-input” result codes are returned.
-
-Integer arithmetic would be sufficient for all current purposes and
-increase portability and speed while reducing size.
-
-The file extension only contains `(fflush)`, `(ftell)` and `(fgetc)` and
-could easily be extended into something useful. `(fstat)` would be most
-pressing for improving `femto.rc` and `flisp.rc`.
-
-The string library should implement Elisp `substring` to replace
-`string.substring` and a simplified version of `string-search` without
-start index.
-
-Implement `(type «object»)` returning symbols for each type in C and
-implement individual type checking predicates in Lisp.
-
-loop programming is availble via the labelled let macro. It could made
-easier, by any combination of:
-
-- iota
-- loop/while/for macro
-- Demoing hand crafted loops including breaking with throw.

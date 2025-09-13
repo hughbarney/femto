@@ -90,7 +90,7 @@
 ;next-line
 ;number-to-string
 ;numberp
-;os.getenv
+;getenv
 ;other-window
 ;page-down
 ;page-up

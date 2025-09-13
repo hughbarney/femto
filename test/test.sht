@@ -1,0 +1,30 @@
+;; -*-Lisp-*-
+;;
+;; flisp/femto test suite startup file
+
+$(cat lisp/core.lsp)
+
+(require 'flisp)
+
+(load "tap.lsp") ; poor mans test framework
+
+(defun usage ()
+  (pr "test [testsuite ..]  - run the named testsuites
+test -a  - run all testsuites
+test [-?|-h|-help]  - this help text"))
+
+(defun argv-opt (o)
+  (cond
+    ((null o))
+    ((memq o '("-?" "-h" "--help")) (usage))
+    ((tap o))))
+
+(defun argv-parse (opts)
+  (cond
+    ((null opts))
+    (t
+     (argv-opt (car opts))
+     (argv-parse (cdr opts)))))
+
+(cond ((null argv) (usage))
+      ((argv-parse argv)))

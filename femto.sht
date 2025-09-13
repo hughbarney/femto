@@ -13,9 +13,7 @@ $(cat lisp/core.lsp)
 
 ;; Batch mode processing and Femto editor startup
 
-(setq
- ~ (os.getenv "HOME")
- env-batch-mode (os.getenv "FEMTO_BATCH"))
+(setq env-batch-mode (getenv "FEMTO_BATCH"))
 
 (cond
   ((eq "0" env-batch-mode) (require 'startup))

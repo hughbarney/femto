@@ -1,10 +1,11 @@
-#!./run
+#!./test # -*- mode: sh -*-
+#
 # test executable and fLisp functionality
 # leg20231128: Femto
 
 export FLISPRC=
 
-tap 150
+tap 175
 
 [ -x ../femto ]
 ok femto-1 femto exists and is executable;
@@ -12,7 +13,7 @@ ok femto-1 femto exists and is executable;
 (FEMTORC= FEMTO_BATCH=1 ../femto >/dev/null)
 ok femto-2 w/o femto.rc femto in batch mode succeds
 
-(: | FEMTORC=- FEMTO_BATCH=1 ../femto >/dev/null)
+(: | FEMTORC= FEMTO_BATCH=1 ../femto >/dev/null)
 ok femto-3 empty input succeeds
 
 [ -x ../flisp ]
@@ -28,11 +29,26 @@ flisp_err; ok reader-1 incomplete sexp error msg
 IN='"' ERR='unexpected end of stream in string literal'
 flisp_err; ok reader-2 incomplete string error msg
 
-IN='\\' OBJ="nil" ERR="unexpected character, \`'"
+IN='}' OBJ="" ERR="unexpected character: '}'"
 flisp_err; ok reader-3 unexpected character error msg
 
 IN="0" OUT='0'
-flisp_expr; ok reader-4 read number
+flisp_expr; ok reader-4-1 read integer 0
+
+IN="10" OUT='10'
+flisp_expr; ok reader-4-2 read integer 10
+
+IN="010" OUT='8'
+flisp_expr; ok reader-4-3 read integer octal 10 is 8
+
+IN="0x10" OUT='16'
+flisp_expr; ok reader-4-4 read integer hex 10 is 16
+
+IN=".1" OUT='0.1'
+flisp_expr; ok reader-4-5 read double .1 is 0.1
+
+IN="3.14" OUT='3.14'
+flisp_expr; ok reader-4-6 read double 3.14 is 3.14
 
 IN="t" OUT='t'
 flisp_expr; ok reader-5 read constant t
@@ -74,27 +90,20 @@ flisp_err; ok reader-16 read list without end
 IN='(quote)' ERR='expects at least 1 arguments' OBJ='#<Primitive quote>'
 flisp_err; ok quote-1 w/o arg error message
 
-IN="(setq var 'val)" OUT=val
-flisp_expr; ok setq-1 assignment returns value
+IN="(bind var 'val)" OUT=val
+flisp_expr; ok bind-2 assignment returns value
 
-IN="(setq var 'val) var" OUT="val"
-flisp_expr 1; ok setq-2 var evaluates to val
+IN="(bind var 'val) var" OUT="val"
+flisp_expr 1; ok bind-3 var evaluates to val
 
-IN='(setq)' OUT=nil
-flisp_expr; ok setq-3 no args evaluate to nil
+IN='(bind var1)' OBJ='#<Primitive bind>' ERR='expects at least 2 arguments'
+flisp_err; ok bind-4 one arg fails
 
-IN='(setq var1)' OBJ='#<Primitive setq>' ERR='expects a multiple of 2 arguments'
-flisp_err; ok setq-4 one arg fails
+IN="(bind var1 3) ((lambda () (bind var1 2))) var1" OUT=3
+flisp_expr 1; ok setq-5 local bind does not set outer variable.
 
-EXPR="(setq var1 'val1  var2 'val2)"
-IN="$EXPR" OUT=val2
-flisp_expr 1; ok setq-5 four args returns last value
-
-IN="$EXPR var1" OUT=val1
-flisp_expr 1; ok setq-6 four args first var evaluates to first value
-
-IN="$EXPR var2" OUT=val2
-flisp_expr 1; ok setq-7 four args second var evaluates to second value
+IN="(bind var1 3) ((lambda () (bind var1 2 t))) var1" OUT=2
+flisp_expr 1; ok setq-4 global bind does not set outer variable.
 
 IN='(progn)' OUT=nil
 flisp_expr; ok progn-1 no args evaluate to nil
@@ -179,6 +188,10 @@ flisp_expr; ok lambda-6 args nil nil
 IN='((lambda (a b) a b) 0 "a")' OUT='"a"'
 flisp_expr; ok lambda-7 apply return b string a
 
+# Time for memory allocator test
+#IN='(setq r (lambda args (r args))) (r)' OBJ='out of memory, 48 bytes' ERR='48 bytes'
+#flisp_err 1; ok memory-1 exhausting memory exits with error code
+
 # macro
 IN='(macro nil)' OUT='#<Macro nil>'
 flisp_expr; ok macro-1 arg nil
@@ -212,7 +225,7 @@ flisp_expr; ok catch-1_2  catch t
 IN='(catch (i+ 3 4))' OUT='(nil "" 7)'
 flisp_expr; ok catch-1_3  catch expr
 
-IN='(catch (i/))' OUT='(wrong-num-of-arguments "expects at least 2 arguments" #<Primitive i/>)'
+IN='(catch (i/))' OUT='(wrong-number-of-arguments "expects at least 2 arguments" #<Primitive i/>)'
 flisp_expr; ok catch-1_4  catch error
 
 # Primitives
@@ -311,19 +324,19 @@ flisp_expr
 [ -e _file_ ]; ok open-1 create file
 rm -f _file_
 
-echo '(open "empty.lsp")' | $FLISP | grep -q "#<Stream 0x............, empty.lsp>"
+RESULT=$(echo '(open "empty.lsp")' | $FLISP | grep -E '#<Stream [0-9A-F]{8,} empty.lsp>')
 ok open-2 open file readonly
 
-echo '(open "<0")' | $FLISP | grep -q "#<Stream 0x............, <0>"
+RESULT=$(echo '(open "<0")' | $FLISP | grep -E "#<Stream [0-9A-F]{8,} <0>")
 ok open-3 open readable file descriptor
 
-echo '(open ">1")' | $FLISP | grep -q "#<Stream 0x............, >1>"
+RESULT=$(echo '(open ">1")' | $FLISP | grep -E "#<Stream [0-9A-F]{8,} >1>")
 ok open-4 open writeable file descriptor
 
-echo '(open "any text" "<")' | $FLISP | grep -q "#<Stream 0x............, <STRING>"
+RESULT=$(echo '(open "any text" "<")' | $FLISP | grep -E "#<Stream [0-9A-F]{8,} <STRING>")
 ok open-5 open memory input stream
 
-echo '(open "" ">")' | $FLISP | grep -q "#<Stream 0x............, >STRING>"
+RESULT=$(echo '(open "" ">")' | $FLISP | grep -E "#<Stream [0-9A-F]{8,} >STRING>")
 ok open-6 open memory output stream
 
 IN='(close (open "empty.lsp"))' OUT="0"
@@ -338,10 +351,10 @@ flisp_expr; ok close-3 close memory input stream
 IN='(close (open "" ">"))' OUT="0"
 flisp_expr; ok close-4 close memory output stream
 
-IN='(setq f (open "abc" "<")) (cons (car (file-info f)) (car (cdr (file-info f))))' OUT='("<STRING" . "abc")'
+IN='(bind f (open "abc" "<")) (cons (car (file-info f)) (car (cdr (file-info f))))' OUT='("<STRING" . "abc")'
 flisp_expr 1; ok file-info-1 file-info of memory stream contains string
 
-IN='(setq f (open "" ">")) (close f) (file-info f)' OUT='(">STRING" nil nil)'
+IN='(bind f (open "" ">")) (close f) (file-info f)' OUT='(">STRING" nil nil)'
 flisp_expr 1; ok file-info-2 file-info of closed memory stream contains nil
 
 IN='(read (open "1" "<"))' OUT="1"
@@ -357,7 +370,7 @@ flisp_expr; ok eval-1 eval number is number
 IN='(write "ans\\wer")' OUT='ans\wer"ans\\wer"'
 flisp_expr; ok write-1 write string
 
-IN='(write "ans\\wer" :readably t)' OUT='"ans\\wer""ans\\wer"'
+IN='(write "ans\\wer" t)' OUT='"ans\\wer""ans\\wer"'
 flisp_expr; ok write-1 write string
 
 # throw
@@ -367,18 +380,26 @@ flisp_err; ok throw-1_1  throw w/o object
 IN="(throw 'fourty-three \"answer\" 1)" ERR='answer' OBJ=1
 flisp_err; ok throw-1_2  throw with object
 
-## Math
+## Integer arithmetic
 
-IN='(i+ 42 7)' OUT='49' flisp_expr; ok add-3 add 42 7 is 49
-IN='(i- 42 7)' OUT='35' flisp_expr; ok minus-3 minus 42 7 is 35
-IN='(i* 42 7)' OUT='294' flisp_expr; ok times-3 times 42 7 is 294
-IN='(i/ 42 7)' OUT='6' flisp_expr; ok divide-2 divide 42 7 is 6
-IN='(i% 42 5)' OUT='2' flisp_expr; ok mod-2 mod 42 5 is 2
-IN='(i= 42 7)' OUT='nil' flisp_expr; ok arith-equal-2 arith-equal 42 7 is nil
-IN='(i< 7 42)' OUT='t' flisp_expr; ok less-2 less 7 42 is t
-IN='(i<= 42 7)' OUT='nil' flisp_expr; ok less-equal-2 less-equal 42 7 is nil
-IN='(i> 42 7)' OUT='t' flisp_expr; ok greater-2 greater 42 7 is t
-IN='(i>= 7 42)' OUT='nil' flisp_expr; ok greater-equal-2 greater-equal 7 42 is t
+IN='(i+ 42 7)' OUT='49' flisp_expr; ok add-1 add 42 7 is 49
+IN='(i- 42 7)' OUT='35' flisp_expr; ok minus-1 minus 42 7 is 35
+IN='(i* 42 7)' OUT='294' flisp_expr; ok times-1 times 42 7 is 294
+IN='(i/ 42 7)' OUT='6' flisp_expr; ok divide-1 divide 42 7 is 6
+IN='(i% 42 5)' OUT='2' flisp_expr; ok mod-1 mod 42 5 is 2
+IN='(i= 42 7)' OUT='nil' flisp_expr; ok arith-equal-1 arith-equal 42 7 is nil
+IN='(i< 7 42)' OUT='t' flisp_expr; ok less-1 less 7 42 is t
+IN='(i<= 42 7)' OUT='nil' flisp_expr; ok less-equal-1 less-equal 42 7 is nil
+IN='(i> 42 7)' OUT='t' flisp_expr; ok greater-1 greater 42 7 is t
+IN='(i>= 7 42)' OUT='nil' flisp_expr; ok greater-equal-1 greater-equal 7 42 is t
+
+## Integer bitwise
+IN='(& 7 2)' OUT='2' flisp_expr; ok and-1 and 7 2 is 2
+IN='(| 2 5)' OUT='7' flisp_expr; ok or-1 or 2 5 is 7
+IN='(^ 2 7)' OUT='5' flisp_expr; ok xor-1  xor 2 7 is 5
+IN='(<< 1 3)' OUT='8' flisp_expr; ok left-shift-1 left shift 1 3 is 8
+IN='(>> 8 3)' OUT='1' flisp_expr; ok right-shift-1 right shift 8 3 is 1
+IN='(~ 7)' OUT='-8' flisp_expr; ok not-1 not 7 is -8
 
 ## Strings
 
@@ -414,19 +435,19 @@ flisp_expr; ok substring-6 substring answer 1 -3 ns
 IN='(substring "answer" -3 -1)' OUT='"we"'
 flisp_expr; ok substring-6 substring answer -3 -1 we
 
-IN='(substring "answer" 7)' ERR='(substring str [start [end]]) - start out of range' OBJ=
+IN='(substring "answer" 7)' ERR='(substring string [start [end]]) - start out of range' OBJ=
 flisp_err; ok substring-7 substring answer 7 range-error
 
-IN='(substring "answer" -7)' ERR='(substring str [start [end]]) - start out of range' OBJ=
+IN='(substring "answer" -7)' ERR='(substring string [start [end]]) - start out of range' OBJ=
 flisp_err; ok substring-8 substring answer -7 range-error
 
-IN='(substring "answer" 1 7)' ERR='(substring str [start [end]]) - end out of range' OBJ=
+IN='(substring "answer" 1 7)' ERR='(substring string [start [end]]) - end out of range' OBJ=
 flisp_err; ok substring-9 substring answer 1 7 range-error
 
-IN='(substring "answer" 1 -7)' ERR='(substring str [start [end]]) - end out of range' OBJ=
+IN='(substring "answer" 1 -7)' ERR='(substring string [start [end]]) - end out of range' OBJ=
 flisp_err; ok substring-10 substring answer 1 7 range-error
 
-IN='(substring "answer" 2 1)' ERR='(substring str [start [end]]) - end > start' OBJ=
+IN='(substring "answer" 2 1)' ERR='(substring string [start [end]]) - end > start' OBJ=
 flisp_err; ok substring-11 substring answer 2 1 range-error
 
 IN='(string-search "" "")' OUT='0'
@@ -453,13 +474,38 @@ false; ok  'ascii->number' \# TODO
 false; ok os.getenv \# TODO
 
 # File extension
-false; ok file extension \# TODO
+false; ok fflush \# TODO
+false; ok fseek \# TODO
+false; ok ftell \# TODO
+false; ok feof \# TODO
+false; ok fgetc \# TODO
+false; ok fungetc \# TODO
+false; ok fgets \# TODO
 
-# Femto editor extension
+IN='(type-of (fstat "five_lines.txt"))' OUT='type-cons'
+flisp_expr; ok file-fstat-1 existing file returns data
 
-false; ok femto editor extension \# TODO
+IN='(fstat "_unknown_")' ERR='(fstat path[ linkp]): No such file or directory' OBJ='"_unknown_"'
+flisp_err; ok file-fstat-1 existing file returns data
 
+IN='(fttyp (open "/dev/tty"))' OUT='t'
+flisp_expr; ok file-fttyp-1 console is tty
 
-# Local Variables:
-# mode: sh
-# End:
+IN='(fttyp (open "answer" "<"))' OUT='nil'
+flisp_expr; ok file-fttyp-2
+
+false; ok fmkdir \# TODO
+false; ok popen \# TODO
+false; ok pclose \# TODO
+
+IN='(system "true")' OUT='0'
+flisp_expr; ok file-system-1 shell command true returns successfully
+
+IN='(system "/..,")' OUT=32512
+flisp_expr 2>/dev/null; ok file-system-2 not existing shell command fails
+
+IN='(getenv "HOME")' OUT="\"$HOME\""
+flisp_expr; ok file-getenv-1 known variable returns value string
+
+IN='(getenv "?")' OUT=nil
+flisp_expr; ok file-getenv-2 unknown variable returns nil

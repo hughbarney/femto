@@ -3,11 +3,23 @@
 ;; Core fLisp extensions
 ;;
 
-(setq list (lambda args args))
+(bind list (lambda args args) t)
 
-(setq defmacro
+(bind defmacro
       (macro (name params . body)
-	     (list (quote setq) name (list (quote macro) params . body))))
+	     (list 'bind name (list (quote macro) params . body) 't) )
+      t )
+
+(defmacro setq args
+  (cond (args
+	 (cond ((null (cdr args))
+		(throw wrong-number-of-arguments "(setq [s v ..]) expects a multiple of 2 arguments") )
+	       ((null (cdr (cdr args)))
+		(list 'bind (car args) (car (cdr args)) t) )
+	       (t
+		(list 'progn
+		      (list 'setq (car args) (car (cdr args)))
+		      (cons 'setq (cdr (cdr args))) ))))))
 
 (defmacro defun (name params . body)
   (list (quote setq) name (list (quote lambda) params . body)))
@@ -33,16 +45,50 @@
 (defun cddr (l) (cdr (cdr l)))
 (defun caddr (l) (car (cdr (cdr l))))
 
-(defun number-to-string (num)
+;;; https://www.scheme.com/tspl2d/objects.html#g2052
+(defun append lists
+  (let f ((ls nil) (lists lists))
+       (cond
+	 ((null lists) ls)
+         (t
+	  (let g ((ls ls))
+	       (cond
+		 ((null ls) (f (car lists) (cdr lists)))
+                 (t
+		  (cond ((not (consp ls))
+			 (throw invalid-value
+			   (concat "(append lists) - list expected type-list, got " (type-of ls))
+			   ls)))
+		  (cons (car ls) (g (cdr ls)))) ))))))
+
+
+(defun fold-left (f i l)
+  (cond ((null l) i)
+	(t (fold-left f (f i (car l)) (cdr l))) ))
+
+(defun flip (func)  (lambda (o1 o2) (func o2 o1)))
+(defun reverse (l)  (fold-left (flip cons) nil l))
+
+(defun apply (f . args)
   (cond
-    ((numberp num)
-     (let ((f (open "" ">")))
-       (write num :stream f)
-       (prog1
-	   (cadr (file-info f))
-	 (close f))))
-    (t 	(throw wrong-type-argument
-	  (concat "(number-to-string number) - number expected " type-integer " got: " (type-of num))))))
+    ((null args) (f))
+    (t
+     (let ((rev (reverse args)))
+       (cond
+	 ((consp (car rev))
+          ;; if last element is list splice it
+	  (eval (cons f (append (reverse (cdr rev)) (car rev)))) )
+	 (t (f . args)) )))))
+
+(defun print (o . fd)
+  (cond
+    ((null fd) (write o t))
+    (t (write o t car fd)) ))
+
+(defun princ (o . fd)
+  (cond
+    ((null fd) (write o nil))
+    (t (write o nil (car fd))) ))
 
 (defun string-to-number (string)
   (let ((f (open string "<")) (result nil))
@@ -63,10 +109,6 @@
 
 (setq not null)
 
-(defun fold-left (f i l)
-  (cond ((null l) i)
-	(t (fold-left f (f i (car l)) (cdr l))) ))
-
 (defun length (o)
   (cond
     ((null o) 0)
@@ -76,16 +118,19 @@
     (t (throw wrong-type-argument "(length object) - expected type-cons or type-string" o))))
 
 
-(defun string (s)
+(defun string (o)
   ;; Convert argument to string.
   ;; Common Lisp
   (cond
-    ((eq nil s) "")
-    ((numberp s) (number-to-string s))
-    ((stringp s) s)
-    ((symbolp s) (symbol-name s))
-    ((consp s) (string-append (string (car s)) (string (cdr s))))
-    (t (throw wrong-type-argument "cannot convert to string" s))))
+    ((eq nil o) "")
+    ((stringp o) o)
+    ((symbolp o) (symbol-name o))
+    ((consp o) (string-append (string (car o)) (string (cdr o))))
+    (t (let ((f (open "" ">")))
+	 (write o t f)
+	 (prog1
+	     (cadr (file-info f))
+	   (close f) )))))
 
 (defun concat args
   ;; Concatenate all arguments to a string.
@@ -99,13 +144,12 @@
   ;; If object o in list l return sublist of l starting with o, else nil.
   ;; Elisp
   (cond
-    ((eq nil o) nil)
     ((eq nil l) nil)
     ((eq o (car l)) l)
     (t (memq o (cdr l)))))
 
-(defun map1 (func xs)
-  (cond (xs (cons (func (car xs)) (map1 func (cdr xs))))))
+(defun mapcar (func xs)
+  (cond (xs (cons (func (car xs)) (mapcar func (cdr xs))))))
 
 ;;; Wrap all math to Integer operations
 (defun nfold (f i l);  (3)  (1 2 3)
@@ -147,8 +191,8 @@
 ;;; bindings: (car args)
 ;;; body:     (cdr args)
 	(cons ; apply
-	 (cons 'lambda (cons (map1 car (car args)) (cdr args))) ; (lambda (names) body)
-	 (map1 cadr (car args)))) ; (values)
+	 (cons 'lambda (cons (mapcar car (car args)) (cdr args))) ; (lambda (names) body)
+	 (mapcar cadr (car args)))) ; (values)
        (t (throw wrong-type-argument "let: first argument neither label nor binding" (car args)))))
     ((symbolp (car args))
 ;;; label:    (car args)
@@ -156,9 +200,10 @@
 ;;; body:     (cddr args)
      (list
       (list 'lambda '()
-	    (list 'define (car args)
-		  (cons 'lambda (cons (map1 car (cadr args)) (cddr args))))
-	    (cons (car args) (map1 cadr (cadr args))))))
+;;;	    (list 'define (car args)
+	    (list 'bind (car args)
+		  (cons 'lambda (cons (mapcar car (cadr args)) (cddr args))))
+	    (cons (car args) (mapcar cadr (cadr args))))))
     (t (throw wrong-type-argument "let: first argument neither label nor binding" (car args)))))
 
 (defun prog1 (arg . args) arg)

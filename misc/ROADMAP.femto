@@ -1,0 +1,31 @@
+-*- mode: markdown; fill-column: 80 -*-
+
+# Next
+
+- Fix file save bug by using
+  fmkdir. https://github.com/hughbarney/femto/issues/14
+- Make fLisp read from /dev/null to avoid:
+  https://github.com/hughbarney/femto/issues/10
+- Documentation
+  - https://github.com/hughbarney/femto/issues/40
+  - https://github.com/hughbarney/femto/issues/39
+  - https://github.com/hughbarney/femto/issues/37
+  - https://github.com/hughbarney/femto/issues/36
+- Close:
+  - https://github.com/hughbarney/femto/issues/1
+
+# Future
+- Pipe a buffer through a shell command and read the output back into a
+  different buffer.
+- Refactor include system
+  - rename main.c to femto.c
+  - rename header.h to femto.h
+- Change eval_block to eval_region.
+- Find out how to build on NetBSD: problem is ncurses libraries
+- Improve/support batch mode: output = stdout.
+- Implement per buffer keymaps.
+- Write a test file for all lisp functions.
+
+# femto 2.24.2
+
+- Make femto.rc use fstat instead of (system "test -f")

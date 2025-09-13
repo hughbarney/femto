@@ -1,22 +1,11 @@
-#!./run
-# test executable and dired functionality
-# Created By Hugh Barney 24 August 2025
+;; -*- mode: lisp -*-
 
-# we set the FLISPRC to dired.lsp, not sure ?
-export FLISPRC=../lisp/dired.lsp
+(require 'dired)
 
-# The tap value should be set to the number of tests in the file
-tap 2
+(defun de-up-dir-1 ()
+  (eq (de-up-dir "/home/hugh") "/home"))
+(tap-register "de-dir-up-1 moves up 1 subdir" de-up-dir-1)
 
-# define sub functions to be used in this test file
-stringlib() { IN="(require 'string) $IN" flisp_expr "$@"; }
-stringlib_err() { IN="(require 'string) $IN" flisp_err "$@"; }
-
-# test 1
-IN='(de-dir-up "/home/hugh")' OUT='"/home"'
-stringlib 1; ok de-dir-up-1 moves up 1 subdir
-
-# test 2, check that de-dir-up returns / when there is only 1 character in the path
-IN='(de-dir-up "/")' OUT='"/"'
-stringlib 2; ok de-dir-up-2 1 char path returns root
-
+(defun de-up-dir-2 ()
+  (eq (de-up-dir "/") "/"))
+(tap-register "de-up-dir-2 root returns root"  de-up-dir-2)

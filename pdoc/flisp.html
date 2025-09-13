@@ -21,20 +21,19 @@
       <p>&mdash; Antoine de Saint-Exupery</p>
     </blockquote>
     <p>
-      <i>fLisp</i> is a tiny yet practical interpreter for a dialect of the Lisp programming language. It is used as
-      extension language for the <a href="https://github.com/hughbarney/femto">Femto</a> text editor.
+      <i>fLisp</i> is a tiny yet practical interpreter for a dialect of the Lisp programming language. It can be
+      embedded into other applications and is extensible via C libraries. <i>fLisp</i> is used as extension language for
+      the <i>Femto</i> text editor, see the <a href="editor.html">editor extension
+      manual</a> <a href="editor.md">(Markdown)</a> for details.
     </p>
     <p>
-      <i>fLisp</i> is hosted in the Femto <a href="https://github.com/hughbarney/femto">Github</a> repository, it is
+      <i>fLisp</i> is hosted in the <i>Femto</i> <a href="https://github.com/hughbarney/femto">Github</a> repository and
       released to the public domain.
     <p>
       <i>fLisp</i> is a Lisp-1 interpreter with Scheme like lexical scoping, tailcall optimization and other Scheme
-      influences.
-    </p>
-    <p>
-      <i>fLisp</i> originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre 2014), was
-      integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barney (pre 2016) and compacted by
-      Georg Lehner in 2023.
+      influences.  <i>fLisp</i> originates from <a href="https://github.com/matp/tiny-lisp">Tiny-Lisp by matp </a>(pre
+      2014), was integrated into <a href="https://github.com/hughbarney/femto">Femto</a> by Hugh Barney (pre 2016) and
+      extended by Georg Lehner since 2023.
     </p>
     <p>This is a reference manual. If you want to learn about Lisp programming use other resources eg.</p>
     <ul>
@@ -46,7 +45,7 @@
       <li><a href="https://www.scheme.org/">The Scheme Programming Language</a>.</li>
     </ul>
 
-    This manual refers to version 0.6 or later of fLisp.
+    This manual refers to version 0.13 or later of fLisp.
     
     <h3 id="toc">Table of Contents</h3>
     <ol>
@@ -67,48 +66,23 @@
 	<li><a href="#in_out">Input / Output and Others</a></li>
 	<li><a href="#object_ops">Object Operations</a></li>
 	<li><a href="#arithmetic_ops">Arithmetic Operations</a></li>
+	<li><a href="#bitwise_ops">Bitwise Integer Operations</a></li>
 	<li><a href="#string_ops">String Operations</a></li>
       </ol>
-      <li><a href="#double">Double Extension</a></li>
+      <li><a href="#extend">Extensions</a></li>
+      <ol>
+	<li><a href="#file">File Extension</a></li>
+	<li><a href="#double">Double Extension</a></li>
+      </ol>
       <li><a href="#libraries">Lisp Libraries</a></li>
       <ol>
 	<li><a href="#startup">Library Loading</a></li>
 	<li><a href="#core_lib">Core Library</a></li>
 	<li><a href="#flisp_lib">fLlisp Library</a></li>
-	<li><a href="#std_lib">Standard Library</a></li>
-	<li><a href="#femto_lib">Femto Library</a></li>
       </ol>
-      <li><a href="#editor">Editor Extension</a></li>
-      <ol>
-	<li><a href="#buffers">Buffers</a></li>
-	<ol>
-	  <li><a href="#text">Text manipulation</a></li>
-	  <li><a href="#selection">Selection</a></li>
-	  <li><a href="#cursor">Cursor Movement</a></li>
-	  <li><a href="#buffer_management">Buffer management</a></li>
-	</ol>
-	<li><a href="#ui">User Interaction</a></li>
-	<ol>
-	  <li><a href="#windows">Window Handling"</a></li>
-	  <li><a href="#message_line">Message Line</a></li>
-	  <li><a href="#keyboard">Keyboard Handling</a></li>
-	  <li><a href="#programming_system">Programming and System Interaction</a></li>
-	</ol>
-      </ol>
-      <li><a href="#embedding">Embedding fLisp</a></li>
-      <ol>
-	<li><a href="#embedding">Embedding Overview</a></li>
-	<li><a href="#c_api">fLisp C Interface</a></li>
-	<li><a href="#extensions">Building Extensions</a></li>
-      </ol>
-      <li><a href="#implementation">Implementation Details</a></li>
-      <ol>
-	<li><a href="#gc">Garbage Collection</a></li>
-	<li><a href="#memory">Memory Usage</a></li>
-	<li><a href="#future">Future Directions</a></li>
-      </ol>
+      <li><a href="develop.html">fLisp Embedding and Development</a> <a href="develop.md">(Markdown)</a></li>
     </ol>
-
+    
     <h4 id="notation">Notation Convention</h4>
     <p>We use the following notation rule to describe the <i>fLisp</i> syntax:</p>
     <dl>
@@ -128,19 +102,19 @@
       syntactical elements.
     </p>
     <p>
-      Variables names convey the following context:
+      Variable names convey the following context:
     </p>
     <dl>
       <dt>Lisp object of any type:</dt>
       <dd><var>object</var> <var>value</var> <var>o</var> <var>a</var> <var>b</var> <var>c</var></dd>
       <dt>Program elements:</dt>
-      <dd><var>params</var> <var>opt</var> <var>body</var> <var>expr</var> <var>pred</var></dd>
+      <dd><var>arg</var> <var>args</var> <var>params</var> <var>opt</var> <var>body</var> <var>expr</var> <var>pred</var> <var>p</var></dd>
       <dt>Integer:</dt>
       <dd><var>i</var> <var>j</var> <var>k</var></dd>
       <dt>Double:</dt>
       <dd><var>x</var> <var>y</var> <var>z</var></dd>
       <dt>Any numeric type:</dt>
-      <dd><var>num</var> <var>num1</var> <var>num2</var></dd>
+      <dd><var>n</var> <var>n1</var> <var>n2</var></dd>
       <dt>Symbol:</dt>
       <dd><var>symbol</var></dd>
       <dt>String:</dt>
@@ -148,7 +122,9 @@
       <dt>List/Cons:</dt>
       <dd><var>cons</var> <var>l</var> <var>l1</var> <var>l2</var> …</dd>
       <dt>Stream:</dt>
-      <dd><var>stream</var> <var>f</var></dd>
+      <dd><var>stream</var> <var>f</var> <var>fd</var></dd>
+      <dt>Function/lambda:</dt>
+      <dd><var>f</var></dd>
     </dl>
     <p>
       <i>fLisp</i> fancies to converge towards Emacs and Common Lisp, but includes also Scheme functions.  Function
@@ -165,8 +141,9 @@
       <dd>Buggy/incompatible implementation.</dd>
     </dl>
     <p>
-      By default compatibility with Common Lisp is annotated. The suffix <u>e</u> is used to indicate reference to Emacs
-      Lisp, <u>s</u> for Scheme.  <var>fLisp</var> specific function are annotated with <u>f</u>.
+      Compatibility with Emacs is omitted. By default compatibility with Common Lisp is annotated. The suffix <u>e</u>
+      is used to indicate reference to Emacs Lisp, <u>s</u> for Scheme.  <var>fLisp</var> specific function are
+      annotated with <u>f</u>.
     </p>
     <nav><a href="#toc">^</a></nav>
 
@@ -288,24 +265,10 @@
     </p>
     <h4 id="exceptions">Error handling</h4>
     <p>
-      Whenever fLisp encounters an error an exception is thrown. Exceptions have an error type symbol and a human
-      readable error message. fLisp does not implement stack backtracking. Exceptions are either caught on the top level
-      of an evaluation or by a <code>catch</code> statement.
-    </p>
-    <p>
-      In the <code>flisp</code> interpreter the error message is formated as <code>error: <var>message</var></code> if
-      the error object is <code>nil</code> otherwise as <code>error: '<var>object</var>', <var>message</var></code>,
-      where <var>object</var> is the serialization of the object causing the error and <var>message</var> is the error
-      message.
-    </p>
-    <p>
-      When an exception occurs while calling <code>lisp_eval()</code> or <code>lisp_eval_string()</code> from C-code,
-      the <code>object</code> field of the interpreter is set to the object causing the error, the <code>result</code>
-      field is set to the error type symbol and the <code>msg_buf</code> field is set to the error message.
-    </p>
-    <p>
-      Exceptions can be thrown from within in Lisp code via the <a href="#interp_ops"><code>throw</code></a>
-      function.
+      Whenever fLisp encounters an error an exception is thrown. Exceptions have an <dfn>error type</dfn> symbol a human
+      readable <dfn>error message</dfn> and the <dfn>object in error</dfn>, which is nil with generic errors. fLisp does
+      not implement stack backtracking. Exceptions are either caught on the top level of an evaluation or by
+      a <a href="#interp_ops"><code>catch</code></a> statement.
     </p>
     <p>
       The following error type symbols are defined and used internally:
@@ -323,7 +286,18 @@
       <li><code>out-of-memory</code></li>
       <li><code>gc-error</code></li>
     </ul>
-
+    <p>
+      Exceptions can be thrown via the <a href="#interp_ops"><code>throw</code></a> function. As long as applicable use
+      one of the existing error codes with <code>throw</code>.
+    </p>
+    <p>
+      <i>fLisp</i> outputs an error message formated as <code>error: <var>message</var></code> if the error object
+      is <code>nil</code> otherwise as <code>error: '<var>object</var>', <var>message</var></code>,
+      where <var>object</var> is the serialization of the object causing the error. <var>message</var> is the error
+      message.
+    </p>
+    
+    
     <nav><a href="#toc">^</a></nav>
     
     <h3 id="primitives"><i>fLisp</i> Primitives</h3>
@@ -349,11 +323,13 @@
 	no <var>action</var> the value of <var>pred</var> is returned, otherwise <code>(progn <var>action</var> ..)</code>
 	is returned and no more <var>clause</var>s are evaluated.
       </dd>
-      <dt><code>(setq <var>symbol</var> <var>value</var>[ <var>symbol</var> <var>value</var>..])</code></dt>
+      <dt><code>(bind <var>symbol</var> <var>value</var>[ <var>globalp</var>)</code> ⇒ <var>value</var></dt>
       <dd>
-	Create or update named objects: If <var>symbol</var> is the name of an existing named object in the current or a
-	parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is
-	created in the top level environment. <code>setq</code> returns the last <var>value</var>.
+	Create or update <var>symbol</var> and bind it to <var>value</var>. Return value.  First <var>symbol</var> is
+	looked up in the current environment, then recursively in the parent environments. If it is not found, it is
+	created in the current environment as long as <var>globalp</var> is <code>nil</code> or
+	omitted. If <var>globalp</var> is not <code>nil</code> <var>symbol</var> is always created in the global (top
+	level) environment.
       </dd>
       <dt><code>(define <var>symbol</var> <var>value</var>[ <var>symbol</var> <var>value</var>..])</code> <u>Ss: define, let</u></dt>
       <dd>
@@ -389,8 +365,8 @@
       <dd>
 	<p>Evaluates <var>expr</var> and returns a list with three elements:</p>
 	<dl>
-	  <dt><var>result</var></dt>
-	  <dd><code>0</code> on success or any other number indicating an error.</dd>
+	  <dt><var>error_type</var></dt>
+	  <dd><code>nil</code> on success or an error type symbol.</dd>
 	  <dt><var>message</var></dt><dd>A human readable error message.</dd>
 	  <dt><var>object</var></dt><dd>The result of the the expression or the object in error.</dd>
 	</dl>
@@ -447,31 +423,16 @@
 	read in object is returned.  If end of file is reached, an exception is raised, unless <var>eof-value</var> is
 	not <code>nil</code>. In that case <code>eof-value</code> is returned.
       </dd>
-      <dt><code>(write <var>object</var>[ <var>keys</var>..]]</code>
-      </dt>
-      <dd><code><var>keys</var></code>:</dd>
+      <dt><code>(write <var>object</var>[ <var>readably</var>[ <var>fd</var>]]</code> → object</dt>
       <dd>
-	<dl>
-	  <dt><code>:stream</code> <code><var>stream</var></code></dt>
-	  <dt><code>:readably</code> <code><var>flag</var></code></dt>
-	</dl>
-      </dd>
-      <dd>
-	Formats <var>object</var> into a string and writes it to the default output stream. With
-	key <code>:stream</code>  output is written to the given stream.  With key <code>:readable</code>
-	not <code>nil</code> output is formatted in a way which which gives the same object when read again.
+	Formats <var>object</var> into a string and writes it to the default output stream. When <var>readably</var> is
+	not <code>nil</code> output is formatted in a way which which gives the same object when read again.  When
+	stream <var>fd</var> is given output is written to the given stream else to the output stream.
 	<code>write</code> returns the <var>object</var>.
       </dd>
       <dt><code>(eval <var>object</var>)</code></dt>
       <dd>Evaluates <var>object</var> and returns the result.</dd>
 
-      <dt><code>(system <var>string</var>)</code></dt>
-      <dd>
-	Executes the <a href="https://man7.org/linux/man-pages/man3/system.3.html">system(1)</a> function
-	with <var>string</var> as parameter.
-      </dd>
-      <dt><code>(os.getenv <var>string</var>) </code></dt>
-      <dd>Returns the value of the environment variable named <var>string</var>.</dd>
     </dl>    
 
     <h4 id="object_ops">Object Operations</h4>
@@ -523,6 +484,23 @@
       </dd>
     </dl>
 
+    <h4 id="bitwise_ops">Bitwise Integer Operations</h4>
+
+    <dl>
+      <dt><code>(& <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns the bitwise and operation on <var>i</var> and <var>j</var>.</dd>
+      <dt><code>(| <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns the bitwise or operation on <var>i</var> and <var>j</var>.</dd>
+      <dt><code>(^ <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns the bitwise xor operation on <var>i</var> and <var>j</var>.</dd>
+      <dt><code>(&lt;&lt; <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns <var>i</var> shift left by <var>j</var> bits.</dd>
+      <dt><code>(&gt;&gt; <var>i</var> <var>j</var>)</code></dt>
+      <dd>Returns <var>i</var> shift right by <var>j</var> bits.</dd>
+      <dt><code>(~ <var>i</var>)</code></dt>
+      <dd>Returns the bitwise negation of <var>i</var>.</dd>
+    </dl>
+
     <h4 id="string_ops">String Operations</h4>
 
     <dl>
@@ -542,11 +520,6 @@
 	Returns the position of <var>needle</var> if it is contained in <var>haystack</var>,
 	otherwise <code>nil</code>.
       </dd>
-      <dt><code>(string-to-number <var>string</var>)</code></dt>
-      <dd>
-	Converts <var>string</var> into a corresponding <i>integer</i> object. String is interpreted as decimal based
-	integer.
-      </dd>
       <dt><code>(ascii <var>integer</var>)</code></dt>
       <dd>
 	Converts <var>integer</var> into a <i>string</i> with one character, which corresponds to the ASCII
@@ -560,6 +533,49 @@
     </dl>
 
     <nav><a href="#toc">^</a></nav>
+    <h3 id="file">File Extension</h3>
+
+    <p><mark>Tbd. carry over comprehensive documentation from <code>file.c</code></mark></p>
+    <dl>
+      <dt><code>(fflush[ <var>stream</var>])</code></dt>
+      <dd>Flush <var>stream</var>, output or all streams</dd>
+      <dt><code>(fseek <var>stream</var> <var>offset</var>[ <var>relativep</var>])</code></dt>
+      <dd>Seek position <var>offset</var> in <var>stream</var> or input. If <var>offset</var> is negative seek from end,
+      if <var>relativep</var> is not null seek from current position, be default seek from start</dd>
+      <dt><code>(ftell[ <var>stream</var>])</code></dt>
+      <dd>Return current position in <var>stream</var> or input.</dd>
+      <dt><code>(feof[ <var>stream</var>])</code></dt>
+      <dd>Return <code>end-of-file</code> if stream or input are exhausted, else <code>nil</code></dd>
+      <dt><code>(fgetc[ <var>stream</var>])</code></dt>
+      <dd>Return the next character from <var>stream</var> or input.</dd>
+      <dt><code>(fungetc <var>i</var>[ <var>stream</var>])</code></dt>
+      <dd><code>ungetc()</code> integer <var>i</var> as char to <var>stream</var> or input.</dd>
+      <dt><code>(fgets[ <var>stream</var>])</code></dt>
+      <dd>Read a line or up to <code>INPUT_FMT_BUFSIZ</code> from <var>stream</var> or input.</dd>
+      <dt><code>(fstat <var>path</var>[ <var>linkp</var>])</code></dt>
+      <dd>Get information about file at <var>path</var>.</dd>
+      <dt><code>(fttyp[ <var>fd</var>])</code></dt>
+      <dd>Return true if input or stream <var>fd</var> is associated with a TTY.</dd>
+      <dt><code>(fmkdir <var>path</var>[ <var>mode</var>])</code></dt>
+      <dd>Create directory at <var>path</var> with <var>mode</var>.</dd>
+      <dt><code>(popen <var>line</var>[ <var>mode</var>])</code></dt>
+      <dd>Run command line and read from/write to it</dd>
+      <dt><code>(pclose <var>stream</var>)</code></dt>
+      <dd>Close a <var>stream</var> opened with <code>(popen)</code></dd>
+      <dt><code>(system <var>string</var>)</code> ⇒ <var>exit_code</var></dt>
+      <dd>
+	Execute <var>string</var> as command line of a system shell subpprocess according to
+	the <a href="https://man7.org/linux/man-pages/man3/system.3.html">system(1)</a> and return the
+	shell <var>exit_code</var> as integer.
+      </dd>
+      <dt><code>(getenv <var>name</var>)</code> ⇒ <var>value</var></dt>
+      <dd>
+	Return the value of the environment variable <var>name</var> as string. If <var>name</var> does not exist
+	return <code>nil</code>.
+      </dd>
+    </dl>
+      
+      <nav><a href="#toc">^</a></nav>
     <h3 id="double">Double Extension</h3>
 
     <dl>
@@ -598,12 +614,12 @@
       variables:
     </p>
     <dl>
-      <dt>Library path</dt>
-      <dd>femto: <code>/usr/local/share/femto</code>, <code>FEMTOLIB</code></dd>
-      <dd>flisp: <code>/usr/local/share/flisp</code>, <code>FLISPLIB</code></dd>
       <dt>Startup file</dt>
       <dd>femto: <code>femto.rc</code>, <code>FEMTORC</code></dd>
       <dd>flisp: <code>flisp.rc</code>, <code>FLISPRC</code></dd>
+      <dt>Library path</dt>
+      <dd>femto: <code>/usr/local/share/femto</code>, <code>FEMTOLIB</code></dd>
+      <dd>flisp: <code>/usr/local/share/flisp</code>, <code>FLISPLIB</code></dd>
     </dl>
     <p>
       The library path is exposed to the Lisp interpreter as the variable <code>script_dir</code>.
@@ -613,18 +629,38 @@
       path conveniently and without repetition.  The command to load the file <code>example.lsp</code> from the
       library is <code>(require &apos;example)</code>.
     </p>
-    <p>Femto provides a set of libraries, some of them are required by the editor</p>
+    <p><i>fLisp</i> provides the following set of libraries:</p>
+    <dl>
+      <dt>core</dt>
+      <dd>
+	Integrated in the <code>.rc</code> files, always loaded. The core library implements the minimum required Lisp
+	features for loading libraries.
+      </dd>
+      <dt>flisp</dt>
+      <dd>
+	Implements expected standard Lisp functions and additions expected by <code>femto</code> and <code>flisp</code>.
+      </dd>
+      <dt>string</dt><dd>String manipulation library.</dd>
+    </dl>
 
-    <h4 id="core_lib">Core Library</h4>
     <p>
-      This library is built into the startup file.
+      The <i>Femto</i> specific libraries are described together with
+      the <a href="editor.html">editor</a> <a href="editor.md">(Markdown)</a> extension.
     </p>
+    
+    <h4 id="core_lib">Core Library</h4>
     <dl>
       <dt><code>(list</code> [<code><var>element</var></code> ..]<code>)</code> <u>C</u></dt>
       <dd>Returns the list of all provided elements.</dd>
       <dt><code>(defmacro <var>name</var> <var>params</var> <var>body</var>)</code> <u>C</u></dt>
       <dt><code>(defun <var>name</var> <var>params</var> <var>body</var>)</code> <u>C</u></dt>
       <dd>Defines and returns a macro or function, respectively.</dd>
+      <dt><code>(setq <var>symbol</var> <var>value</var>[ <var>symbol</var> <var>value</var>..])</code></dt>
+      <dd>
+	Create or update named objects: If <var>symbol</var> is the name of an existing named object in the current or a
+	parent environment the named object is set to <var>value</var>, if no symbol with this name exists, a new one is
+	created in the top level environment. <code>setq</code> returns the last <var>value</var>.
+      </dd>
       <dt><code>(curry (<var>func</var> <var>a</var>))</code></dt>
       <dd>
 	Returns a lambda with one parameter which returns <code>(<var>func</var> <var>a</var> <var>b</var>)</code>.
@@ -632,6 +668,7 @@
       <dt><code>(typep (<var>type</var> <var>object</var>))</code> <u>C</u></dt>
       <dd>Returns true if <var>object</var> has <var>type</var>.</dd>
       <dt><code>(integerp <var>object</var>)</code> <u>C</u></dt>
+      <dt><code>(doublep <var>object</var>)</code> <u>C</u></dt>
       <dt><code>(stringp <var>object</var>)</code> <u>C</u></dt>
       <dt><code>(symbolp <var>object</var>)</code> <u>C</u></dt>
       <dt><code>(lamdap <var>object</var>)</code> <u>C</u></dt>
@@ -639,28 +676,52 @@
       <dt><code>(streamp <var>object</var>)</code> <u>C</u></dt>
       <dd>Return <code>t</code> if <var>object</var> is of the respective type, otherwise <code>nil</code>.</dd>
       <dt><code>(numberp <var>object</var>)</code> <u>C</u></dt>
+      <dd>Return <code>t</code> if <var>object</var> is integer or double, otherwise <code>nil</code>.</dd>
       <dt><code>(cadr <var>list</var>)</code> <u>C</u></dt>
       <dt>Return the second element in <var>list</var>, <code>(car (cdr <var>list</var>))</code>.</dt>
       <dt><code>(cddr <var>list</var>)</code> <u>C</u></dt>
       <dt>Return all elements after the second one in <var>list</var>, <code>(cdr (cdr <var>list</var>))</code>.</dt>
       <dt><code>(caddr <var>list</var>)</code> <u>C</u></dt>
       <dt>Return the third element in list, <code>(car (cdr (cdr <var>list</var>)))</code>.</dt>
-      <dt><code>(number-to-string <var>number</var>)</code> <u>C</u></dt>
+      <dt><code>(append [list ..][ a])</code></dt>
+      <dd>
+	Append all elements in all <var>list</var>s into a single list. If atom <var>a</var> is present, make it a
+	dotted list terminating with <var>a</var>.
+      </dd>
+      <dt><code>(fold-left <var>func</var> <var>init</var> <var>list</var>)</code> <u>Ss: fold-left</u></dt>
+      <dd>
+	Apply the binary <var>func</var>tion to <var>start</var> and the first element of <var>list</var> and then
+	recursively to the result of the previous invocation and the first element of the rest
+	of <var>list</var>. If <var>list</var> is empty return <var>start</var>.
+      </dd>
+      <dt><code>(flip <var>func</var>)</code> <u>f</u></dt>
+      <dd>Returns a lambda which calls binary <var>func</var> with it's two arguments reversed (flipped).</dd>
+      <dt><code>(reverse <var>l</var>)</code></dt>
+      <dd>Returns a list with all elements of <var>l</var> in reverse order</dd>
+      <dt><code>(apply <var>f</var> [<var>arg</var> ..][ l])</code></dt>
+      <dd>
+	If <var>arg</var> is a single list call lambda <var>f</var> with all its elements as parameters, else
+	call <var>f</var> with all <var>arg</var>s as parameters. If list <var>l</var> is present append all its
+	elements to the parameter list.
+      </dd>
+      <dt><code>(print <var>o</var>[ <var>fd</var>])</code></dt>
+      <dd><code>write</code> object <var>o</var> <code>:readably</code> to stream <var>fd</var> or output.</dd>
+      <dt><code>(princ <var>o</var>[ <var>fd</var>])</code></dt>
+      <dd><code>write</code> object <var>o</var> as is to stream <var>fd</var> or output.</dd>
+
+      <dt><code>(string-to-number <var>string</var>)</code></dt>
+      <dd>
+	Converts <var>string</var> into a corresponding <i>integer</i> object. String is interpreted as decimal based
+	integer.
+      </dd>
       <dd>Converts <var>integer</var> into a <i>string</i> object.</dd>
       <dt><code>(eq <var>a</var> <var>b</var>)</code></dt>
       <dd>
 	Returns <code>t</code> if <var>a</var> and <var>b</var> evaluate to the same object, number or
 	string, <code>nil</code> otherwise.
       </dd>
-
-      <dd>Synonym for <code>integerp</code>.</dd>
       <dt><code>(not <var>object</var>)</code> <u>C</u></dt>
       <dd>Logical inverse. In Lisp a synonym for <code>null</code></dd>
-      <dt><code>(fold-left <var>func</var> <var>init</var> <var>list</var>)</code> <u>Ss: fold-left</u></dt>
-      <dd>
-	Apply the binary <var>func</var>tion to <var>start</var> and the first element of <var>list</var> and then
-	recursively to the result of the previous invocation and the first element of the rest of <var>list</var>. If <var>list</var> is empty return <var>start</var>.
-      </dd>
       <dt><code>(length <var>obj</var>)</code> <u>C</u></dt>
       <dd>Returns the length of <var>obj</var> if it is a string or a list, otherwise throws a type exception.</dd>
       <dt><code>(string <var>arg</var>)</code> <u>C</u></dt>
@@ -672,14 +733,31 @@
 	If <var>arg</var> is contained in <var>list</var>, returns the sub list of <var>list</var> starting with the
 	first occurrence of <var>arg</var>, otherwise returns <code>nil</code>.
       </dd>
-      <dt><code>(map1 <var>func</var> <var>list</var>)</code> <u>S: mapcar</u></dt>
-      <dd>Apply func to each element in list and return a list of the results.</dd>
-      <dd><code>map1</code> is a specialized form of <code>mapcar</code> restricted to one list only.</dd>
-      <dt><code>nfold</code></dt>
-      <dt><code>coerce</code></dt>
-      <dt><code>coercec</code></dt>
-      <dt><code>fold-leftp</code></dt>
-      <dd>Helper functions for n-ary generic number type arithmetic. See below.</dd>
+      <dt><code>(mapcar <var>func</var> <var>list</var>)</code> <u>Se, Dc</u></dt>
+      <dd>Apply <var>func</var> to each element in list and return the list of results.</dd>
+      <dd>In Elisp func has to be quoted, in CL variadic <var>func</var> operates on a list of lists.</dd>
+      <dt><code>(nfold <var>f</var> <var>i</var> <var>l</var>)</code></dt>
+      <dd>
+	<q>Number fold</q>: <code>left-fold</code>s binary function <var>f</var> on list <var>l</var> with initial
+	value <var>i</var>. Helper function for n-ary generic number type arithmetic.
+      </dd>     
+      <dt><code>(coerce ifunc dfunc x y)</code></dt>
+      <dd>
+	If <var>x</var> and <var>y</var> are <code>type-integer</code> apply binary integer arithmetic
+	function <var>ifunc</var> to them and return the result. If any of them is <code>type-double</code> apply binary
+	double arithmethich function <var>dfunc</var> instead. Helper function for n-ary generic number type arithmetic.
+      </dd>
+      <dt><code>(coercec <var>ifunc</var> <var>dfunc</var>)</code></dt>
+      <dd>
+	<q>Coerce curry</q>: return a lambda <code>coerce</code>ing parameters <var>x</var> and <var>y</var> and
+	applying <var>ifunc</var> or <var>dfunc</var> respectively. Helper function for n-ary generic number type arithmetic.
+      </dd>
+      <dt><code>(fold-leftp <var>predicate</var> <var>start</var> <var>list</var>)</code></dt>
+      <dd>
+	<q>Predicate fold</q>: <code>fold-left</code> binary function <var>predicate</var> to <var>list</var> with
+	initial value <var>start</var>. Returns <code>t</code> if <var>list</var> is empty. Helper functions for n-ary
+	generic number type comparison.
+      </dd>
       <dt><code>(let ((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code> <u>C</u></dt>
       <dd>Bind all <var>name</var>s to the respective <var>value</var>s then evaluate body.</dd>
       <dt><code>(let <var>label</var>((<var>name</var> <var>value</var>)[ (<var>name</var> <var>value</var>)..]) <var>body</var>)</code> <u>Cs</u></dt>
@@ -752,9 +830,18 @@
       of commonly used functions.
     </p>
     <dl>
-      <dt>listp</dt>
-      <dt>and</dt>
-      <dt>or</dt>
+      <dt><code>(listp <var>o</var>)</code> <u>D</u></dt>
+      <dd>Returns true if <var>o</var> is <code>nil</code> or a <i>cons</i>.</dd>
+      <dt><code>(and[ o..])</code></dt>
+      <dd>
+	Returns <code>t</code> or the last object <var>o</var> if none is given or all evaluate to non
+	<code>nil</code>, <code>nil</code> otherwise.
+      </dd>
+      <dt><code>(or[ o..])</code></dt>
+      <dd>
+	Returns <code>nil</code> if all objects <var></var>o are <code>nil</code>, otherwise returns the first object
+	which evaluates to non <code>nil</code>.
+      </dd>
       <dt><code>(reduce <var>func</var> <var>list</var> <var>start</var>)</code> <u>D</u></dt>
       <dd>
 	<code>reduce</code> applies the binary <var>func</var> to the first element of <var>list</var>
@@ -765,629 +852,42 @@
 	Since <code>reduce</code> is right associative and <var>start</var> is not optional, it differs significantly
 	both from Common Lisp and Scheme.
       </dd>
-      <dt>max</dt>
-      <dt>min</dt>
-      <dt>nthcdr</dt>
-      <dt>nth</dt>
-      <dt><code>(fold-right <var>func</var> <var>end</var> <var>list</var>)</code> <u>Cs</u></dt>
-      <dt><code>(unfold <var>func</var> <var>init</var> <var>pred</var>)</code> <u>Cs</u></dt>
+      <dt><code>(max <var>n</var>[ <var>n</var>..])</code></dt>
+      <dt><code>(min <var>n</var>[ <var>n</var>..])</code></dt>
+      <dd>Return the biggest/smallest number of all given <var>n</var>s.</dd>
+      <dt><code>(nthcdr <var>i</var> <var>l</var>)</code></dt>
+      <dd>Return sub list of <var>l</var> starting from zero-based <var>i</var>th element to the last.</dd>
+      <dt><code>(nth <var>i</var> <var>l</var>)</code></dt>
+      <dd>Return zero-based <var>i</var>th element of list <var>l</var></dd>
+      <dt><code>(fold-right <var>f</var> <var>o</var> <var>l</var>)</code> <u>Cs</u></dt>
+      <dd>
+	Apply binary function <var>f</var> to last element of <var>l</var> and <var>o</var>, then recursively to the
+	previous element and the result.
+      </dd>
+      <dt><code>(unfold <var>f</var> <var>o</var> <var>p</var>)</code> <u>Cs</u></dt>
+      <dd>
+	Create a list starting with <var>o</var> followed by the result of successive application of <var>f</var>
+	to <var>o</var> until applying <var>p</var> to the result is not <code>nil</code> anymore.
+      </dd>
       <dt><code>(iota <var>count</var>[ <var>start</var>[ <var>step</var>]])</code> <u>Cs</u></dt>
-    </dl>
-
-    <h4 id="std_lib">Standard Library</h4>
-    <p>
-      This library implements some Common Lisp functions, which are not used in the editor libraries.  They are provided
-      for reference.
-    </p>
-    <dl>
-      <dt>atom</dt>
-      <dt>zerop</dt>
-      <dt>if</dt>
-      <dt>equal</dt>
-      <dt>append</dt>
-      <dt>print</dt>
-      <dt>princ</dt>
-    </dl>
-
-    <h4 id="femto_lib">Femto Library</h4>
-    <p>
-      This library implements helper function required by the Femto editor. It is written only in Lisp idioms provided
-      by fLisp itself plus the <a href="#flisp_lib">fLisp Library</a>.
-    </p>
-    
-    <nav><a href="#toc">^</a></nav>
-    <h3 id="editor">Editor Extension</h3>
-
-    <p>The editor extensions introduces several types of objects/functionality:</p>
-    <ul>
-      <li><dfn>Buffers</dfn> hold text</li>
-      <li><dfn>Windows</dfn> display buffer contents to the user</li>
-      <li><dfn>Keyboard Input</dfn> allows the user to interact with buffers and windows</li>
-      <li>The <dfn>Message Line</dfn> gives feedback to the user</li>
-      <li>Several other function for operating system or user interaction</li>
-    </ul>
-
-    <h4 id="buffers">Buffers</h4>
-
-    <p>
-      This section describes the buffer related functions added by Femto to fLisp. The description is separated in
-      function related to buffer management and text manipulation.  Text manipulation always operates on
-      the <dfn>current buffer</dfn>. Buffer management creates, deletes buffers, or selects one of the existing buffers
-      as the current buffer.
-    </p>
-
-    <p>Buffers store text and allow to manipulate it. A buffer has the following properties:</p>
-    <dl>
-      <dt><var>name</var></dt>
       <dd>
-	Buffers are identified by their name. If a buffer name is enclosed in <samp>*</samp>asterisks<samp>*</samp> the
-	buffer receives special treatment.
+	Create a list of <var>count</var> numbers starting with <var>start</var> or <code>0</code> if not given by
+	successively adding <var>step</var> or <code>1</code> if not given.
       </dd>
-      <dt><var>text</var></dt>
-      <dd>zero or more characters.</dd>
-      <dt><var>point</var></dt>
+      <dt><code>(atom <var>o</var>)</code></dt>
+      <dd><code>t</code> if <var>o</var> is not a <i>cons</i>.</dd>
+      <dt><code>(zerop <var>x</var>)</code></dt>
+      <dd><code>t</code> if number <var>x</var> is zero.</dd>
+      <dt><code>(if <var>p</var> <var>then</var>[ <var>else</var>)</code></dt>
       <dd>
-	The position in the text where text manipulation takes place. The first position in the text is 0. Note:
-	in Emacs the first position is 1.
+	Evaluate <var>then</var> if predicate <var>p</var> evaluates to not <code>nil</code>, else
+	evaluate <var>else</var>.
       </dd>
-      <dt><var>mark</var></dt>
-      <dd>
-	An optional second position in the text. If the <var>mark</var> is set, the text between <var>point</var>
-	and <var>mark</var> is called the <dfn>selection</dfn> or <dfn>region</dfn>.
-      </dd>
-      <dt><var>filename</var></dt>
-      <dd>If set the buffer is associated with the respective file.</dd>
-      <dt><var>flags</var></dt>
-      <dd>
-	Different flags determine the behavior of the buffer. Editor specific
-	flags: <code>special</code>, <code>modified</code>.
-      </dd>
-      <dd>Mode flags determine the syntax highlighter mode: <code>cmode</code> and <code>lispmode</code> are
-      available. If none is set <code>text</code> mode is used for syntax hightlighting.</dd>
-    </dl>
-
-    <p>In the following, any mention to one of them refers to the respective current buffers property.</p>
-    
-    <h5 id="text">Text manipulation</h5>
-
-    <dl>
-      <dt><code>(insert-string <var>string</var>)</code></dt>
-      <dd>Inserts <var>string</var> before <var>point</var>. <u>S: insert</u>.</dd>
-      <dt><code>(insert-file-contents-literally <var>string</var> </code>[<code><var>flag</var></code>]<code>)</code></dt>
-      <dd>
-	Inserts the file <var>string</var> after <var>point</var>. If <var>flag</var> is not nil the buffer is marked as not
-	modified. <u>B</u>
-      </dd>
-      <dd>
-	<p>
-	  Note: Currently the flag is forced to nil. The function should
-	  return <code>(<var>filename</var> <var>count</var>)</code> but it returns a flag indicating if the operation
-	  succeeded.
-	</p>
-      </dd>
-      <dt><code>(erase-buffer)</code></dt>
-      <dd>Erases all text in the current buffer. <u>C</u></dd>
-      <dt><code>(delete)</code></dt>
-      <dd>Deletes the character after <var>point</var>. <u>S: delete-char</u></dd>
-      <dt><code>(backspace)</code></dt>
-      <dd>Deletes the character to the left of <var>point</var>. <u>S: delete-backward-char</u></dd>
-      <dt><code>(get-char)</code></dt>
-      <dd>Returns the character at <var>point</var>. <u>S: get-byte</u></dd>
-      <dt><code>(copy-region)</code></dt>
-      <dd>Copies <var>region</var> to the <var>clipboard</var>. <u>S: copy-region-as-kill</u></dd>
-      <dt><code>(kill-region)</code></dt>
-      <dd>Deletes the text in the <var>region</var> and copies it to the <var>clipboard</var>. <u>D</u></dd>
-      <dt><code>(yank)</code></dt>
-      <dd>Pastes the <var>clipboard</var> before <var>point</var>. <u>C</u></dd>
-    </dl>
-
-    <h5 id="selection">Selection</h5>
-
-    <dl>
-      <dt><code>(set-mark)</code></dt>
-      <dd>Sets <var>mark</var> to <var>point</var>. <u>D</u></dd>
-      <dt><code>(get-mark)</code></dt>
-      <dd>Returns the position of <var>mark</var>, -1 if <var>mark</var> is unset. <u>S: mark</u></dd>
-      <dt><code>(get-point)</code></dt>
-      <dd>Returns the position of <var>point</var>. <u>S: point</u></dd>
-      <dt><code>(get-point-max)</code></dt>
-      <dd>Returns the maximum accessible value of point in the current buffer. <u>S: point-max</u></dd>
-      <dt><code>(set-clipboard <var>variable</var>)</code></dt>
-      <dd><code>Sets <var>clipboard</var> to the contents of <var>variable</var>.</code> <u>S: gui-set-selection</u></dd>
-      <dt><code>(get-clipboard)</code></dt>
-      <dd>Returns the <var>clipboard</var> contents.  <u>S: gui-get-selection</u></dd>
-    </dl>
-
-    <h5 id="cursor">Cursor Movement</h5>
-
-    <dl>
-      <dt><code>(set-point <var>number</var>)</code></dt>
-      <dd>Sets the point to in the current buffer to the position <var>number</var>. <u>S: goto-char</u></dd>
-      <dt><code>(goto-line <var>number</var>)</code></dt>
-      <dd>
-	Sets the point in the current buffer to the first character on line <var>number</var>. <u>S: goto-line</u>, not
-	an Elisp function.
-      </dd>
-      <dt><code>(search-forward <var>string</var>)</code></dt>
-      <dd>
-	Searches for <var>string</var> in the current buffer, starting from point forward. If string is found, sets the
-	point after the first occurrence of <var>string</var> and returns <samp>t</samp>, otherwise leaves point alone
-	and returns <samp>nil</samp>. <u>D</u>
-      </dd>
-      <dt><code>(search-backward <var>string</var>)</code></dt>
-      <dd>
-	Searches for <var>string</var> in the current buffer, starting from point backwards. If string is found, sets
-	the point before the first occurrence of <var>string</var> and returns <samp>t</samp>, otherwise leaves point
-	alone and returns <samp>nil</samp>. <u>D</u>
-      </dd>
-      <dt><code>(beginning-of-buffer)</code></dt>
-      <dd>
-	Sets the point in the current buffer to the first buffer position, leaving mark in its current
-	position. <u>C</u>
-      </dd>
-      <dt><code>(end-of-buffer)</code></dt>
-      <dd>
-	Sets the point in the current buffer to the last buffer position, leaving mark in its current position. <u>C</u>
-      </dd>
-      <dt><code>(beginning-of-line)</code></dt>
-      <dd>
-	Sets point before the first character of the current line, leaving mark in its current position. <u>S:
-	  move-beginning-of-line</u>
-      </dd>
-      <dt><code>(end-of-line)</code></dt>
-      <dd>
-	Sets point after the last character of the current line, i.e. before the end-of-line character sequence, leaving
-	mark in its current position. <u>S: move-end-of-line</u>
-      </dd>
-      <dt><code>(forward-word)</code></dt>
-      <dd>
-	Moves the point in the current buffer forward before the first char of the next word. If there is no word left
-	the point is set to the end of the buffer. If the point is already at the start or within a word, the current
-	word is skipped. <u>D</u>: <b>Note</b>: Elisp moves to the <em>end</em> of the the next word.
-      </dd>
-      <dt><code>(backward-word)</code></dt>
-      <dd>
-	Moves the point in the current buffer backward after the last char of the previous word. If there is no word
-	left the point is set to the beginning of the buffer. If the point is already at the end or within a word, the
-	current word is skipped. <u>D</u>: <b>Note</b>: Elisp moves to the <em>beginning</em> of the previous word.
-      </dd>
-      <dt><code>(forward-char)</code></dt>
-      <dd>Moves the point in the current buffer one character forward, but not past the end of the buffer. <u>C</u></dd>
-      <dt><code>(backward-char)</code></dt>
-      <dd>
-	Moves the point in the current buffer one character backward, but not before the end of the
-	buffer. <u>C</u>
-      </dd> 
-      <dt><code>(forward-page)</code></dt>
-      <dd>
-	Moves the point of the current buffer to the beginning of the last visible line of the associated screen and
-	scrolls the screen up to show it as the first line. <u>S: scroll-up</u>
-      </dd>
-      <dt><code>(backward-page)</code></dt>
-      <dd>
-	Moves the point of the current buffer to the beginning of the first visible line of the associated screen and
-	scrolls the screen down to show it as the last line. <u>S: scroll-down</u>
-      </dd>
-      <dt><code>(next-line)</code></dt>
-      <dd>
-	Moves the point in the current buffer to the same character position in the next line, or to the end of the next
-	line if there are not enough characters. In the last line of the buffer moves the point to the end of the
-	buffer. <u>C</u>
-      </dd>
-      <dt><code>(previous-line)</code></dt>
-      <dd>
-	Moves the point in the current buffer to the same character position in the previous line, or to the end of the
-	previous line if there are not enough characters. In the first line of the buffer the point is not
-	moved. <u>C</u>
-      </dd>
-    </dl>
-
-    <h5 id="buffer_management">Buffer management</h5>
-
-    <dl>
-      <dt><code>(list-buffers)</code></dt>
-      <dd>Lists all the buffers in a buffer called <samp>*buffers*</samp>.</dd>
-      <dt><code>(get-buffer-count)</code></dt>
-      <dd>Returns the number of buffers, includes all special buffers and <samp>*buffers*</samp>.</dd>
-      <dt><code>(select-buffer <var>string</var>)</code></dt>
-      <dd>Makes the buffer named <var>string</var> the current buffer. Note: <u>C</u> to <code>set-buffer</code> in Elisp.</dd>
-      <dt><code>(rename-buffer <var>string</var>)</code></dt>
-      <dd>Rename the current buffer to <var>string</var>. <u>C</u></dd>
-      <dt><code>(kill-buffer <var>string</var>)</code></dt>
-      <dd>Kill the buffer names <var>string</var>. Unsaved changes are discarded. <u>C</u></dd>
-      <dt><code>(get-buffer-name)</code></dt>
-      <dd>Return the name of the current buffer. Note: <u>C</u> to <code>buffer-name</code> in Elisp.</dd>
-      <dt><code>(add-mode-global <var>string</var>)</code></dt>
-      <dd>Sets global mode <var>string</var> for all buffers. Currently the only global mode is <kbd>undo</kbd>.</dd>
-      <dt><code>(add-mode <var>string</var>)</code></dt>
-      <dd>Set a flag for the current buffer.</dd>
-      <dt><code>(delete-mode <var>string</var>)</code></dt>
-      <dd>Reset a flag for the current buffer.</dd>
-      <dt><code>(find-file <var>string</var>)</code></dt>
-      <dd>
-	Loads file with path <var>string</var> into a new buffer. After
-	loading <code>(read-hook <var>string</var>)</code> is called. <u>C</u>
-      </dd>
-      <dt><code>(save-buffer <var>string</var>)</code></dt>
-      <dd>Saves the buffer named <var>string</var> to disk. <u>C</u></dd>
-    </dl>
-
-    <h4 id="ui">User Interaction</h4>
-
-    <p>
-      This section lists function related to window and message line manipulation, keyboard input and system
-      interaction.
-    </p>
-
-    <h5 id="windows">Window Handling</h5>
-
-    <dl>
-      <dt><code>(delete-other-windows)</code></dt>
-      <dd>Make current window the only window. <u>C</u></dd>
-      <dt><code>(split-window)</code></dt>
-      <dd>Splits the current window. Creates a new window for the current buffer. <u>C</u></dd>
-      <dt><code>(other-window)</code></dt>
-      <dd>
-	Moves the cursor to the next window down on the screen. Makes the buffer in that window the current
-	buffer. <u>D</u>
-      </dd> 
-      <dd>
-	<p>Note: Elisp <code>other-window</code> has a required parameter <var>count</var>, which specifies the number
-	  of windows to move down or up.
-	</p>
-      </dd>
-      <dt><code>(update-display)</code></dt>
-      <dd>Updates all modified windows.</dd>
-      <dt><code>(refresh)</code></dt>
-      <dd>Updates all windows by marking them modified and calling <code>update-display</code>.</dd>
-    </dl>
-
-    <h5 id="message_line">Message Line</h5>
-    <dl>
-      <dt><code>(message <var>string</var>)</code></dt>
-      <dd>Displays <var>string</var> in the message line. <u>D</u></dd>
-      <dt><code>(clear-message-line)</code></dt>
-      <dd>Displays the empty string in the message line.</dd>
-      <dt><code>(prompt <var>prompt</var> <var>default</var>)</code></dt>
-      <dd>
-	Displays <var>prompt</var> in the command line and sets <var>default</var> as initial value for the user
-	response. The user can edit the response. When hitting return, the final response is returned.
-      </dd>
-      <dt><code>(show-prompt <var>prompt</var> <var>default</var>)</code></dt>
-      <dd>
-	Displays <var>prompt</var> and <var>default</var> in the command line, but does not allow
-	editing. Returns <code>t</code>.
-      </dd>
-      <dt><code>(prompt-filename <var>prompt</var>)</code></dt>
-      <dd>
-	Displays <var>prompt</var> in the command line and allows to enter or search for a file name. Returns the
-	relative path to the selected file name or the response typed by the user.
-      </dd>
-    </dl>
-
-    <h5 id="keyboard">Keyboard Handling</h5>
-
-    <dl>
-      <dt><code>(set-key <var>key-name</var> <var>lisp-func</var>)</code></dt>
-      <dd>Binds key key-name to the lisp function <var>lisp-func</var>.</dd>
-      <dt><code>(get-key-name)</code></dt>
-      <dd>Returns the name of the currently pressed key, eg: <samp>c-k</samp> for control-k.</dd>
-      <dt><code>(get-key-funcname)</code></dt>
-      <dd>Return the name of the function bound to the currently pressed key.</dd>
-      <dt><code>(execute-key)</code></dt>
-      <dd>Executes the function of the last bound key. <mark>Tbd. bound or pressed?</mark></dd>
-      <dt><code>(describe-bindings)</code></dt>
-      <dd>
-	Creates a listing of all current key bindings, in a buffer named <samp>*help*</samp> and displays it in a new
-	window. <u>C</u>
-      </dd>
-      <dt><code>(describe-functions)</code></dt>
-      <dd>
-	Creates a listing of all functions bound to keys in a buffer named <samp>*help*</samp> and displays it in a new
-	window.
-      </dd>
-      <dt><code>(getch)</code></dt>
-      <dd>
-	Waits for a key to be pressed and returns the key as string. See
-	also <code>get-key-name</code>, <code>get-key-funcname</code> and <code>execute-key</code>.
-      </dd>
-    </dl>
-
-    <h5 id="programming_system">Programming and System Interaction</h5>
-
-    <dl>
-      <dt><code>(exit)</code></dt>
-      <dd>Exit Femto without saving modified buffers.</dd>
-      <dt><code>(eval-block)</code></dt>
-      <dd>
-	Evaluates the <var>region</var> in the current buffer, inserts the result at <var>point</var> and returns
-	it. If <var>mark</var> in the current buffer is before <var>point</var> <code>eval-block</code> evaluates
-	this <var>region</var> and inserts the result at <var>point</var>. If <var>point</var> is
-	before <var>mark</var> <code>eval-block</code> does nothing but returning <samp>t</samp>.
-      </dd>
-      <dt><code>(log-message <var>string</var>)</code></dt>
-      <dd>Logs <var>string</var> to the <samp>*messages*</samp> buffer. </dd>
-      <dt><code>(log-debug <var>string</var>)</code></dt>
-      <dd>Logs string to the file <code>debug.out</code>.</dd>
-      <dt><code>(get-version-string)</code></dt>
-      <dd>Returns the complete version string of Femto, including the copyright.</dd>
-    </dl>
+      <dt><code>(equal <var>o1</var> <var>o2</var>)</code></dt>
+      <dd>Return <code>nil</code> if <var>o1</var> and <var>o2</var> are not isomorphic.</dd>
 
     <nav><a href="#toc">^</a></nav>
-    <h3 id="embedding">Embedding fLisp</h3>
-    <h4 id="embed_overview">Embedding Overview</h4>
     
-    <p>
-      fLisp can be embedded into a C application.  Two examples of embedding are the `femto` editor and the simplistic
-      `flisp` command line Lisp interpreter.
-    <p>
-    <p>
-      Currently embedding can only be done by extending the build system.  Application specific binary Lisp extensions
-      are stored in separated C files and the interface code is conditionally included into the <code>lisp.c</code>
-      file.  Two extensions are provided: the Femto extension which provides the editor functionality and the file
-      extension which provides access to the low level stream I/O functions and adds some more.
-    </p>
-    fLisp exposes the following public interface functions:
-    </p>
-    <dl>
-      <dt><code>lisp_new()</code></dt><dd>Create a new interpreter.</dd>
-      <dt><code>lisp_destroy()</code></dt><dd>Destroy an interpreter, releasing resources.</dd>
-      <dt><code>lisp_eval()</code></dt><dd>Evaluate input stream until exhausted or error.</dd>
-      <dt><code>lisp_eval_string()</code></dt><dd>Evaluate given string until exhausted or error.</dd>
-      <dt><code>lisp_write_object()</code></dt><dd>Format and write object to file descriptor.</dd>
-      <dt><code>lisp_write_error()</code></dt>
-      <dd>Format and write the error object and error message of an interpreter to a file descriptor.</dd>
-    </dl>
-    <p>
-      Different flows of operation can be implemented. The Femto editor initializes the interpreter without input/output
-      file descriptors and sends strings of Lisp commands to the interpreter, either when a key is pressed or upon
-      explicit request via the editor interface.
-    </p>
-    <p>
-      The <code>flisp</code> command line interpreter sets <code>stdout</code> as the default output file descriptors of
-      the fLisp interpreter and feeds it with strings of lines read from the terminal. If the standard input is not a
-      terminal <code>stdin</code> is set as the default input file descriptor and fLisp reads it through until end of
-      file.
-    </p>
-    <p>
-      After processing the given input, the interpreter puts a pointer to the object which is the result of the last
-      evaluation into the <code>object</code> field of the interpreter structure.  The <code>result</code> field is set
-      to the <code>nil</code> and the <code>msg_buf</code> field is set to  the empty string.
-    </p>
-    <p>
-      fLisp sends all output to the default output stream. If <code>NULL</code> is given on initialization, output is
-      suppressed altogether.
-    <p>
-      If an exception is thrown inside the Lisp interpreter an error message is formatted and copied to
-      the <code>msg_buf</code> buffer of the interpreter, A pointer to the object causing the error is set to
-      the <code>object</code> field. The <code>result</code> field is set to the respective error type symbol.
-    </p>
-    <p>
-      In this <dfn>error state</dfn> of the interpreter, the function <code>lisp_write_error()</code> can be used to
-      write a standardized error message including the error object to a file descriptor of choice
-    </p>
-    
-    <h4 id="c_api">fLisp C Interface</h4>
-    <dl>
-      <dt><code><var>Interpreter</var> *lisp_new(int <var>size</var>, char **<var>argv</var>, char
-	  *<var>library_path</var>, FILE *input, FILE *output, FILE* debug)</code></dt>
-      <dd>
-	<p><code>lisp_new()</code> creates and initializes an fLisp interpreter.  The initial environment contains the
-	  following symbols:
-	</p>
-	<dl>
-	  <dt><var>argv0</var></dt><dd>The string stored in <code>*<var>argv</var>[0]</code>, if any</dd>
-	  <dt><var>argv</var></dt><dd>The list of strings stored in <code><var>argv</var></code></dd>
-	  <dt><var>script_dir</var></dt><dd>The string stored in <code><var>library_path</var></code></dd>
-	</dl>
-	<p>A pointer to an <var>Interpreter</var> struct is returned, which is used to operate the interpreter.</p>
-      </dd>
-      <dd>
-	<p>
-	  The other arguments to <code>lisp_new()</code> are:
-	  <dl>
-	    <dt><var>size</var></dt>
-	    <dd>
-	      Memory size to allocate for the Lisp objects.  This is divided into two pages for garbage
-	      collection. Only one page is used by the interpreter at any moment.
-	    </dd>
-	    <dt><var>input</var></dt>
-	    <dd>
-	      Default input stream. If <var>input</var> is set to <code>NULL</code>, the input stream has to be
-	      specified for each invocation of <code>lisp_eval()</code>.
-	    </dd>
-	    <dt><var>output</var></dt>
-	    <dd>
-	      Default output stream. If <var>output</var> is set to <code>NULL</code> a memory stream is created at the
-	      first invocation of the interpreter and set as the default output stream.
-	      <dt><var>debug</var></dt>
-	    <dd>Debug output stream. If set to <code>NULL</code> no debug information is generated.</dd>
-	  </dl>
-	</p>
-      </dd>
-
-      <dt><code>void lisp_destroy(Interpreter *<var>interp</var>)</code></dt>
-      <dd>Frees all resources used by the interpreter.</dd>
-      
-      <dt>
-	<code>void lisp_eval(Interpreter *<var>interp</var>)</code>
-      </dt>
-      <dd>
-	<p>
-	  Evaluates the input file set in the <var>input</var> field of the fLisp interpreter <var>interp</var> until
-	  end of file.  If no input file is set, <code>interp</code> is set to a respective error state.
-	</p>
-      </dd>
-      <dt>
-	<code>void lisp_eval_string(Interpreter *<var>interp</var>, char *<var>string</var>)</code>
-      </dt>
-      <dd>
-	Evaluates all Lisp expressions in <var>string</var>.</dd>
-      <dt>
-	<code>void lisp_write_object(Interpreter *<var>interp</var>, FILE <var>*fd</var>, Object *<var>object</var>,
-	  bool readably)</code>
-      </dt>
-      <dd>
-	Format <var>object</var> into a string and write it to <var>stream</var>.  If <var>readably</var> is true, the
-	string can be read in by the interpreter and results in the same object.
-      </dd>
-      <dt><code>void lisp_write_error(Interpreter *<var>interp</var>, FILE <var>*fd</var>)</code></dt>
-      <dd>
-	Format the error <var>object</var> and the error message of the interpreter into a string and write it
-	to <var>fd</var>. The <var>object</var> is written with <var>readably</var> <code>true</code>.
-      </dd>
-    </dl>
-    
-    <p><mark>Note: currently only creating one interpreter has been tested.</mark></p>
-
-    <h4 id="extensions">Building Extensions</h4>
-
-    <p>
-      An extensions has to create C functions with the
-      signature: <code>Object *<var>primitive</var>(Interpreter *interp, Object **args, Object **env)</code>,
-      where <var>primitive</var> is a distinct name in C space. This function has to be added to the global
-      variable <code>primitives</code> in the following
-      format: <code>{&quot;<var>name</var>&quot;, <var>argMin</var>, <var>argMax</var>, <var>primitive</var>}</code>. Here
-      <var>name</var> is a distinct name in Lisp space.
-    </p>
-    <p>
-      <var>interp</var> is the fLisp interpreter in which <var>primitive</var> is executed.
-      <var>argMin</var> is the minimum number of arguments, <var>argMax</var> is the maximum number of arguments allowed
-      for the function.  If <var>argMax</var> is a negative number, arguments must be given in tuples
-      of <var>argMax</var> and the number of tuples is not restricted.
-    </p>
-    <p>
-      When creating more then one new objects within a primitive, care has to be taken to register them with the garbage
-      collector.  Registration is started with the
-      <code>GC_CHECKPOINT</code> CPP macro. <code>GC_TRACE(<var>name</var>, <var>value</var></code> creates an object
-      variable <var>name</var>, sets it to <var>value</var> and registers it with the garbage collector.  The
-      macro <code>GC_RELEASE</code> must be called to finalize the registration.  The convenience
-      macro <code>GC_RETURN(<var>object</var>)</code> calls <code>GC_RELEASE</code> and returns <var>object</var>.
-    </p>
-    <p>
-      Some CPP macros are provided to simplify argument validation in primitives, all of them receive
-      the <var>name</var> of the primitive as a parameter:
-    </p>
-    <dl>
-      <dt><code>TWO_STRING_ARGS(<var>name</var>)</code></dt>
-      <dd>
-	Assures that the first two arguments are of type string.  They are assigned to the <code>Object *</code>
-	variables <var>first</var> and <var>second</var>.
-      </dd>
-      <dt><code>ONE_STRING_ARG(<var>name</var>)</code></dt>
-      <dd>
-	Assures that the first argument is of type string. It is assigned to the <code>Object *</code>
-	variable <var>arg</var>.
-      </dd>
-      <dt><code>ONE_NUMBER_ARG(<var>name</var>)</code></dt>
-      <dd>
-	Assures that the first argument is of type number. It is assigned to the <code>Object *</code>
-	variable <var>num</var>.
-      </dd>
-      <dt><code>ONE_STREAM_ARG(<var>name</var>)</code></dt>
-      <dd>
-	Assures that the first argument is of type stream. It is assigned to the <code>Object *</code>
-	variable <var>stream</var>.
-      </dd>
-    </dl>
-    
-    <nav><a href="#toc">^</a></nav>
-    <h3 id="implementation">Implementation Details</h3>
-
-    <h4 id="gc">Garbage Collection</h4>
-    <p>
-      fLisp implements Cheney&apos;s copying garbage collector, with which memory is divided into two equal halves
-      (semi spaces): from- and to-space. From-space is where new objects are allocated, whereas to-space is used during
-      garbage collection.
-    </p>
-    <p>
-      When garbage collection is performed, objects that are still in use (live) are copied from from-space to
-      to-space. To-space then becomes the new from-space and vice versa, thereby discarding all objects that have not
-      been copied.
-    </p>
-    <p>
-      Our garbage collector takes as input a list of root objects. Objects that can be reached by recursively traversing
-      this list are considered live and will be moved to to-space. When we move an object, we must also update its
-      pointer within the list to point to the objects new location in memory.
-    </p>
-    <p>
-      However, this implies that our interpreter cannot use raw pointers to objects in any function that might trigger
-      garbage collection (or risk causing a SEGV when accessing an object that has been moved). Instead, objects must be
-      added to the list and then only accessed through the pointer inside the list.
-    </p>
-    <p>
-      Thus, whenever we would have used a raw pointer to an object, we use a pointer to the pointer inside the list
-      instead:
-    </p>
-    <pre>
-      function:              pointer to pointer inside list (Object **)
-      |
-      v
-      list of root objects:  pointer to object (Object *)
-      |
-      v
-      semi space:             object in memory
-    </pre>
-    <p>
-      <code><var>GC_TRACE</var></code> adds an object to the list and declares a variable which points to the objects
-      pointer inside the list.
-    </p>
-    <p>
-      <code><var>GC_TRACE</var>(<var>gcX</var>, <var>X</var>)</code>: add object <var>X</var> to the list and
-      declare <code>Object **<var>gcX</var></code> to point to the pointer to <var>X</var> inside the list.
-    </p>
-    <p>
-      Information about the garbage collection process and memory status is written to the debug file descriptor.
-    </p>
-    
-    <h4 id="memory">Memory Usage</h4>
-    <p>
-      Some compile time adjustable limits in <code>lisp.h</code>:
-    </p>
-    <dl>
-      <dt>Input buffer</dt><dd>2048, <code>INPUT_FMT_BUFSIZ</code>, size of the formatting buffer for <code>lisp_eval()</code>.</dd>
-      <dt>Output buffer</dt><dd>2048, <code>WRITE_FMT_BUFSIZ</code>, size of the output and message formatting buffer.</dd>
-    </dl>
-    <p>
-      fLisp can live with as little as 300k object memory. The Femto editor requires 16M since the <q>OXO</q> game requires a lot of memory.
-    </p>
-
-    <h4 id="future">Future Directions</h4>
-    <p>
-      The two memory pages should be separated and the second one should be allocated only during garbage collection.
-      When memory runs out, the garbage collection should be restarted with an increased capacity of the new page.
-    </p>
-    <p>
-      It is now possible to catch exceptions within Lisp code and exceptions return differentiated error codes and use
-      POSIX stream I/O.  This, together with the <code>(eval)</code> primitive would allow to write the repl directly in
-      Lisp, and reading and eval&apos;ing until no more <q>incomplete
-      input</q> result codes are returned.
-    </p>
-    <p>
-      Integer arithmetic would be sufficient for all current purposes and increase portability and speed while reducing
-      size.
-    </p>
-    <p>
-      The file extension only contains <code>(fflush)</code>,  <code>(ftell)</code> and  <code>(fgetc)</code> and could
-      easily be extended into something useful. <code>(fstat)</code> would be most pressing for
-      improving <code>femto.rc</code> and <code>flisp.rc</code>.
-    </p>
-    <p>
-      The string library should implement Elisp <code>substring</code> to replace <code>string.substring</code> and a
-      simplified version of <code>string-search</code> without start index.
-    </p>
-    <p>
-      Implement <code>(type <var>object</var>)</code> returning symbols for each type in C and implement individual type
-      checking predicates in Lisp.
-    </p>
-    <p>
-      loop programming is availble via the labelled let macro. It could made easier, by any combination of:
-    </p>
-    <ul>
-      <li>iota</li>
-      <li>loop/while/for macro</li>
-      <li>Demoing hand crafted loops including breaking with throw.</li>
-    </ul>
   </body>
 </html>
 <!--

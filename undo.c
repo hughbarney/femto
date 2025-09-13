@@ -467,11 +467,13 @@ void dump_undos(buffer_t *bp)
             remove_control_chars(buf1);
             safe_strncpy((char *)buf2, (char *)rep, 20);
             remove_control_chars(buf2);
-            sprintf(report_line, "%03d %6s %9ld %4d %s -> %s\n",  ++count, get_undo_type_name(prev), prev->u_point, size, buf1, buf2);
+            sprintf(report_line, "%03d %6s %9"PRId64" %4d %s -> %s\n",
+                    ++count, get_undo_type_name(prev), prev->u_point, size, buf1, buf2);
         } else {
             safe_strncpy((char *)buf1, (char *)str, 40);
             remove_control_chars(buf1);
-            sprintf(report_line, "%03d %6s %9ld %4d %s\n",  ++count, get_undo_type_name(prev), prev->u_point, size, buf1);
+            sprintf(report_line, "%03d %6s %9"PRId64" %4d %s\n",
+                    ++count, get_undo_type_name(prev), prev->u_point, size, buf1);
         }
 
         insert_string(report_line);

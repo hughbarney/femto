@@ -1,6 +1,3 @@
-#ifndef DOUBLE_C
-#define DOUBLE_C
-
 #include <errno.h>
 #include <stdlib.h>
 #include <math.h>
@@ -91,8 +88,6 @@ Object *doubleMod(Interpreter *interp, Object **args, Object **env)
 {
     return newDouble(interp, fmod(FLISP_ARG_ONE->number, FLISP_ARG_TWO->number));
 }
-
-#endif
 
 /*
  * Local Variables:

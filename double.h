@@ -10,7 +10,7 @@ extern Object *double_one;
 
 extern Object *newDouble(Interpreter *, double);
 extern Object *readDouble(Interpreter *);
-extern Object *readNumberOrSymbol(Interpreter *, FILE *);
+
 extern Object *integerFromDouble(Interpreter *, Object **, Object **);
 extern Object *doubleFromInteger(Interpreter *, Object **, Object **);
 extern Object *doubleAdd(Interpreter *, Object **, Object **);

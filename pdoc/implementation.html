@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+  <head>
+    <title>fLisp Implementation Details</title>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta content="Emacs, editor, Lisp, tiny, reference, manual" name="keywords" />
+    <meta content="Reference and user manual for the fLisp programming language and interpreter" name="description" />
+    <meta content="Georg Lehner &lt;jorge@magma-soft.at&gt;" name="author" />
+    <meta content="2023" name="copyright" />
+  </head>
+  <body>
+    <h1>fLisp Implementation Details</h1>
+
+    <a href="flisp.html">fLisp Manual</a> <a href="flisp.md">(Markdown)</a>
+    
+    <h3 id="toc">Table of Contents</h3>
+    <ol>
+      <ol>
+	<li><a href="#gc">Garbage Collection</a></li>
+	<li><a href="#memory">Memory Usage</a></li>
+	<li><a href="#future">Future Directions</a></li>
+      </ol>
+    </ol>
+
+    
+    <h3 id="implementation">Implementation Details</h3>
+    
+    <h4 id="gc">Garbage Collection</h4>
+    <p>
+      <i>fLisp</i> implements Cheney&apos;s copying garbage collector, with which memory is divided into two equal
+      halves (semi spaces): from- and to-space. From-space is where new objects are allocated, whereas to-space is used
+      during garbage collection. The from-space part of the memory is also called the <dfn>Lisp object space</dfn>.
+    </p>
+    <p>
+      When garbage collection is performed, objects that are still in use (live) are copied from from-space to
+      to-space. To-space then becomes the new from-space and vice versa, thereby discarding all objects that have not
+      been copied.
+    </p>
+    <p>
+      Our garbage collector takes as input a list of root objects. Objects that can be reached by recursively traversing
+      this list are considered live and will be moved to to-space. When we move an object, we must also update its
+      pointer within the list to point to the objects new location in memory.
+    </p>
+    <p>
+      However, this implies that our interpreter cannot use raw pointers to objects in any function that might trigger
+      garbage collection (or risk causing a SEGV when accessing an object that has been moved). Instead, objects must be
+      added to the list and then only accessed through the pointer inside the list.
+    </p>
+    <p>
+      Thus, whenever we would have used a raw pointer to an object, we use a pointer to the pointer inside the list
+      instead:
+    </p>
+    <pre>
+      function:              pointer to pointer inside list (Object **)
+      |
+      v
+      list of root objects:  pointer to object (Object *)
+      |
+      v
+      semi space:             object in memory
+    </pre>
+    <p>
+      <code><var>GC_TRACE</var></code> adds an object to the list and declares a variable which points to the objects
+      pointer inside the list.
+    </p>
+    <p>
+      <code><var>GC_TRACE</var>(<var>gcX</var>, <var>X</var>)</code>: add object <var>X</var> to the list and
+      declare <code>Object **<var>gcX</var></code> to point to the pointer to <var>X</var> inside the list.
+    </p>
+    <p>
+      Information about the garbage collection process and memory status is written to the debug file descriptor.
+    </p>
+    <h4 id="memory">Memory Allocation</h4>
+    <p>
+      Object allocation adjusts the size of the Lisp object space on demand: If after garbage collection the free space
+      is less then the required memory plus some reserved space for exception reporting, the memory is increased by a
+      multiple of the amount specified in the C-macro <code>FLISP_MEMORY_INC</code>, defined in <code>lisp.h</code>. The
+      multiple is calculated to hold at least the additional requested space.
+    <p>
+      <code>lisp_new()</code> allocates <code>FLISP_MIN_MEMORY</code>, defined in <code>lisp.h</code>, and then
+      allocates all initial objects without taking care of garbage collection. Then it prints out the amount of Lisp
+      object space consumed to the debug file descriptor.  For <i>fLisp</i> this is currently about 21 kB,
+      for <i>femto</i> about 34 kB.
+    </p>
+    <p>
+      In order to reduce garbage collection frequency, especially during startup, one can
+      set <code>FLISP_INITIAL_MEMORY</code> to a desired additional amount of memory to allocate on startup.
+    <p>
+      Some other compile time adjustable limits in <code>lisp.h</code>:
+    </p>
+    <dl>
+      <dt>Input buffer</dt>
+      <dd>
+	2048, <code>INPUT_FMT_BUFSIZ</code>, size of the formatting buffer for <code>lisp_eval()</code> and for the
+	input buffer of <code>(fgets)</code>.
+      </dd>
+      <dt>Output buffer</dt><dd>2048, <code>WRITE_FMT_BUFSIZ</code>, size of the output and message formatting buffer.</dd>
+    </dl>
+    <p>
+      <i>fLisp</i> can live with as little as 50k object memory up to startup. The Femto editor requires much more
+      memory because of the needs of the <q>OXO</q> game.
+    </p>
+
+    <h4 id="future">Future Directions</h4>
+    <p>
+      Loops are availble via the labelled let macro and supported by <code>iota</code>. It could made easier, by any
+      combination of:
+    </p>
+    <ul>
+      <li>loop/while/for macro</li>
+      <li>Demoing hand crafted loops including breaking with throw.</li>
+    </ul>
+    <p>Implement backquote and friends.</p>
+    <p>Pluggable extensions.</p>
+    <p>Take away more things.</p>
+
+    <nav><a href="#toc">^</a></nav>
+  </body>
+</html>
+<!--
+    Emacs:
+    Local Variables:
+    fill-column: 120
+    End:
+  -->

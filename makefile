@@ -7,7 +7,7 @@ CPP     = cpp
 #CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DNDEBUG
 CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE
 #CFLAGS += -O2 -std=c11 -Wall -pedantic -pedantic-errors
-CFLAGS += -O0 -std=c11 -Wall -pedantic -pedantic-errors -g
+CFLAGS += -O0 -std=c11 -Wall -pedantic -pedantic-errors -Werror=format-security -Wformat -g
 LD      = cc
 LDFLAGS =
 LIBS    = -lncursesw -lm
@@ -28,9 +28,9 @@ INITFILE = $(SCRIPTDIR)/femto.rc
 
 OBJ = command.o display.o complete.o data.o gap.o key.o search.o	\
 	buffer.o replace.o window.o undo.o funcmap.o utils.o hilite.o	\
-	femto_lisp.o double.o main.o
+	femto_lisp.o file.o double.o main.o
 
-FLISP_OBJ = flisp.o lisp.o double.o
+FLISP_OBJ = flisp.o lisp.o double.o file.o
 FLISP_LIBS = -lm
 BINARIES = femto flisp
 RC_FILES = femto.rc flisp.rc
@@ -40,17 +40,21 @@ LISPFILES = femto.rc lisp/startup.lsp lisp/defmacro.lsp			\
 	lisp/oxo.lsp lisp/flisp.lsp lisp/femto.lsp lisp/info.lsp        \
 	lisp/string.lsp
 
-FLISPFILES = flisp.rc lisp/flisp.lsp lisp/stdlib.lsp
+FLISPFILES = flisp.rc lisp/flisp.lsp
+FLISPSOURCES = lisp.c lisp.h double.c double.h file.c file.h
 
 DOCFILES = BUGS CHANGE.LOG.md README.md pdoc/flisp.html
-MOREDOCS = README.html docs/flisp.md docs/femto.md
+MOREDOCS = README.html docs/flisp.md docs/develop.md docs/femto.md 	\
+	docs/editor.md
+FLISP_DOCFILES = README.flisp.md docs/flisp.md pdoc/flisp.html 		\
+	docs/develop.md pdoc/develop.html docs/editor.md 		\
+	pdoc/editor.html
 
-FLISP_DOCFILES = README.flisp.md docs/flisp.md pdoc/flisp.html
 
-
-.SUFFIXES: .rc .sht
+.SUFFIXES: .rc .sht  .md .html
 .sht.rc:
 	./sht $*.sht >$@
+
 
 # Artifacts
 all: femto
@@ -82,7 +86,10 @@ femto: $(OBJ) femto.rc
 femto.rc: femto.sht lisp/core.lsp
 
 femto_lisp.o: lisp.c femto.register.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -D FLISP_DOUBLE_EXTENSION -c lisp.c -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_FEMTO_EXTENSION -D FLISP_FILE_EXTENSION -D FLISP_DOUBLE_EXTENSION -c lisp.c -o $@
+
+file.o: file.c file.h lisp.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_DOUBLE_EXTENSION -c $<
 
 flisp: $(FLISP_OBJ) flisp.rc
 	$(LD) $(LDFLAGS) -o $@ $(FLISP_OBJ) $(FLISP_LIBS)
@@ -138,6 +145,12 @@ doc: $(MOREDOCS)
 docs/flisp.md: pdoc/flisp.html pdoc/h2m.lua
 	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
 
+docs/develop.md: pdoc/develop.html pdoc/h2m.lua
+	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
+
+docs/editor.md: pdoc/editor.html pdoc/h2m.lua
+	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
+
 docs/femto.md: pdoc/femto.html pdoc/h2m.lua
 	pandoc -o $@ -t gfm -L pdoc/h2m.lua $<
 
@@ -159,20 +172,26 @@ flv: flisp FORCE
 frama-c: FORCE
 	frama-c -c11 -cpp-extra-args="-I$(frama-c -print-path)/libc -I/usr/include -I." -kernel-msg-key pp -metrics *.c
 
-measure: strip FORCE
+measure: $(RC_FILES) $(BINARIES) strip FORCE
+	@ln -s femto.rc femto.lsp
+	@ln -s flisp.rc flisp.lsp
 	@echo Total
-	@echo binsize: $$(set -- $$(ls -l femto); echo $$5)
-	@echo C-lines: $$(cat *.c *.h | wc -l)
-	@echo linecount: $$(cat *.c *.h $(LISPFILES) | wc -l)
-	@echo sloccount: $$(set -- $$(which sloccount >/dev/null && { sloccount *.c *.h $(LISPFILES) | grep ansic=; }); echo $$3)
-	@echo files: $$(ls *.c *.h $(LISPFILES) | wc -l)
-	@echo C-files: $$(ls *.c *.h | wc -l)
+	@echo "binsize:      " $$(set -- $$(ls -l femto); echo $$5)
+	@echo "C/Lisp lines: " $$(cat *.c *.h | wc -l) / $$(cat $(LISPFILES) | wc -l)
+	@echo "Total lines:  " $$(cat *.c *.h $(LISPFILES) | wc -l)
+	@echo "Total slocs:  " $$(set -- $$(which sloccount >/dev/null && { sloccount *.c *.h femto.lsp $(LISPFILES) | grep ansic=; }); echo $$3)
+	@echo "C/Lisp files: " $$(ls *.c *.h | wc -l) / $$(echo $(LISPFILES) | wc -w)
+	@echo "Total files:  " $$(ls *.c *.h $(LISPFILES) | wc -l)
 	@echo Minimum
-	@echo flisp: $$(cat flisp.c | wc -l)
-	@echo flispsloc: $$(set -- $$(which sloccount >/dev/null && { sloccount flisp.c | grep ansic=; }); echo $$3)
-	@echo linecount: $$(cat *.c *.h $(LISPFILES) | wc -l)
-	@echo sloccount: $$(set -- $$(which sloccount >/dev/null && { sloccount *.c *.h *.rc $(LISPFILES) | grep ansic=; }); echo $$3)
-	@echo files: $$(ls *.c *.h $(LISPFILES) | wc -l)
+	@echo "binsize:      " $$(set -- $$(ls -l flisp); echo $$5)
+	@echo "flisp:        " $$(cat flisp.c | wc -l)
+	@echo "flispsloc:    " $$(set -- $$(which sloccount >/dev/null && { sloccount flisp.c | grep ansic=; }); echo $$3)
+	@echo "C-lines:      " $$(cat $(FLISPSOURCES) | wc -l)
+	@echo "Lisp-lines:   " $$(cat $(FLISPFILES) | wc -l)
+	@echo "sloccount:    " $$(set -- $$(which sloccount >/dev/null && { sloccount flisp.lsp $(FLISPSOURCES) $(FLISPFILES) | grep ansic=; }); echo $$3)
+	@echo "C-files:      " $$(ls $(FLISPSOURCES) | wc -l)
+	@echo "Lisp-files:   " $$(ls $(FLISPFILES) | wc -l)
+	@rm femto.lsp flisp.lsp
 
 run: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto
@@ -180,9 +199,22 @@ run: femto FORCE
 splint: FORCE
 	splint +posixlib -macrovarprefix "M_" *.c *.h
 
-test: flisp femto FORCE
-	(cd test && SUMMARY=1 ./run)
+test: flisp femto test/test.rc FORCE
+	@(cd test && ./test -as)
 
+# Exit 1 if any testsuite fails
+check: flisp femto test/test.rc FORCE
+	@(cd test && ./test -sa | grep tests, | \
+	while read RESULT; do \
+	   RESULT=$${RESULT#* tests, }; \
+	   RESULT=$${RESULT% failures*}; \
+	   [ "$$RESULT" = 0 ] || { echo failed >&2; exit 1; } \
+        done )
+
+test/test.rc: test/test.sht lisp/core.lsp
+
+
+# Manually test femto invocation and review syntax highlighting
 ftest: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto _no_file_
@@ -191,25 +223,21 @@ ftest: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +8 lisp.c
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +6 lisp/core.lsp
 
-test_core: test/core.lsp flisp
-	<$< FLISPRC= FLISPLIB= ./flisp > test/core.now &&  sed 's/Stream 0x\(.\+\),/Stream /' test/core.now | diff -q - test/core.out
-test/core.out: test/core.lsp flisp
-	<$< FLISPRC= FLISPLIB= ./flisp | sed 's/Stream 0x\(.\+\),/Stream /' > test/core.out
-
 val: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1 valgrind ./femto 2> val.log
 
 # Install/package
-strip: femto FORCE
-	strip femto
+strip: femto flisp FORCE
+	strip femto flisp
 
 clean: FORCE
 	-$(RM) -f $(OBJ) $(FLISP_OBJ) $(BINARIES) $(RC_FILES)
 	-$(RM) -rf doxygen
 	-$(RM) -f $(MOREDOCS)
-	-$(RM) -f val.log debug.out f.log test/f.log
+	-$(RM) -f val.log debug.out f.log
 	-$(RM) -rf debian/femto debian/files \
 		debian/femto.debhelper.log debian/femto.substvars
+	-$(RM) -f test/test.rc  test/debug.out
 
 deb: FORCE
 	dpkg-buildpackage -b -us -uc
