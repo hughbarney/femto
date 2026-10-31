@@ -87,4 +87,3 @@ The editor uses a buffer-gap model (`gap.c`). Global types, state, and prototype
 - No GNU-only make/sed/shell constructs in build scripts
 - Build: `make && make flisp`   Test: `make test`
 - Links Apple's system `-lncurses` (ncurses 6, wide-char capable); the makefile picks `-lncursesw` elsewhere via `uname -s`
-- Known test failures that are not port issues: `6_string.test` 20-23 (functions renamed in 49cc0d1), `7_dired.test` (rc file lacks core.lsp)

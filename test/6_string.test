@@ -71,17 +71,17 @@ IN='(string-startswith "abcde" "cd")' OUT='nil'
 stringlib 1; ok string-startswith-4 string starts not with start string is nil
 
 
-IN='(string-drop_first "")' OUT='""'
-stringlib 1; ok string-drop_first-1 drop from empty string is empty string
+IN='(string-shrink-right "")' OUT='""'
+stringlib 1; ok string-shrink-right-1 drop from empty string is empty string
 
-IN='(string-drop_first "abcde")' OUT='"bcde"'
-stringlib 1; ok string-drop_first-2 drop from string is on char less
+IN='(string-shrink-right "abcde")' OUT='"bcde"'
+stringlib 1; ok string-shrink-right-2 drop from string is on char less
 
-IN='(shrink "")' OUT='""'
-stringlib 1; ok string-shrink-1 shrink from empty string is empty string
+IN='(string-shrink-left "")' OUT='""'
+stringlib 1; ok string-shrink-left-1 shrink from empty string is empty string
 
-IN='(shrink "abcde")' OUT='"abcd"'
-stringlib 1; ok string-shrink-2 shrink from string is on char less
+IN='(string-shrink-left "abcde")' OUT='"abcd"'
+stringlib 1; ok string-shrink-left-2 shrink from string is on char less
 
 IN='(string-contains "" "")' OUT='nil'
 stringlib 1; ok string-contains-1 emtpy string is not  contained in empty string
