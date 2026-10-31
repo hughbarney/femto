@@ -242,8 +242,9 @@ functionality.
   like key bindings
 - `describe-key`, `find_end_p`, `find_start_p`, `find_and_eval_sexp`,
   `show-startup-message`
-- `string.trim.front` `s`, `string.trim.back` `s`, `string.trim` `s`,
-  `shrink` `s` - string operations
+- `string-trim-front` `s`, `string-trim-back` `s`, `string-trim` `s`,
+  `string-shrink-left` `s`, `string-shrink-right` `s` - string
+  operations
 - `repeat` `n func` - Lisp functions
 - `is_ctl_g` `k`, `is_escape` `k`, `is_backspace` `k`, `is_ctl_s` `k`,
   `is_control_char` `k` - helper functions
