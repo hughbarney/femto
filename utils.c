@@ -7,9 +7,6 @@
 #include "header.h"
 
 
-extern int errno;
-
-
 /*
  * Take a file name, and fabricate a buffer name.
  */

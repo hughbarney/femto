@@ -414,10 +414,12 @@ Object *memoryAllocObject(Interpreter *interp, Object *type, size_t size)
 
     // allocate from- and to-space
     if (!interp->memory->fromSpace) {
-        if (!(interp->memory->fromSpace = mmap(NULL, interp->memory->capacity * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0))) {
+        void *space = mmap(NULL, interp->memory->capacity * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (space == MAP_FAILED) {
             if (!interp->catch) return nil;
             exception(interp, out_of_memory, "mmap() failed, %s", strerror(errno));
         }
+        interp->memory->fromSpace = space;
         interp->memory->toSpace = (char *)interp->memory->fromSpace + interp->memory->capacity;
     }
     // run garbage collection if capacity exceeded
@@ -2684,10 +2686,13 @@ void cerf(Interpreter *interp, FILE *fd)
 
 Object *openInputStreamError(void)
 {
-    Object *m = &(Object) { type_string, .string = "alloc stream failed" };
-    Object *o = &(Object) { type_cons, .car = nil, .cdr = nil };
-    o =         &(Object) { type_cons, .car = m, .cdr = o };
-    return      &(Object) { type_cons, .car = io_error, .cdr = o };
+    /* static storage: the result must outlive this call */
+    static Object m, o1, o2, err;
+    m =   (Object) { type_string, .string = "alloc stream failed" };
+    o1 =  (Object) { type_cons, .car = nil, .cdr = nil };
+    o2 =  (Object) { type_cons, .car = &m, .cdr = &o1 };
+    err = (Object) { type_cons, .car = io_error, .cdr = &o2 };
+    return &err;
 }
 
 void lisp_eval3(Interpreter *interp, char *input)
