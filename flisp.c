@@ -10,7 +10,7 @@
 #include "lisp.h"
 
 // Specify in kByte.
-#define FLISP_MEMORY_SIZE   400
+#define FLISP_MEMORY_SIZE   1024  /* KiB; libraries + dired need >400 */
 // less then this is too small for femto.lsp
 
 

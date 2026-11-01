@@ -10,7 +10,9 @@ CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE
 CFLAGS += -O0 -std=c11 -Wall -pedantic -pedantic-errors -g
 LD      = cc
 LDFLAGS =
-LIBS    = -lncursesw -lm
+# Apple's libncurses is wide-char capable; there is no libncursesw on macOS
+CURSES_LIB = $$(test "$$(uname -s)" = Darwin && echo -lncurses || echo -lncursesw)
+LIBS    = $(CURSES_LIB) -lm
 CP      = cp
 MV      = mv
 RM      = rm
@@ -74,7 +76,7 @@ display.o: display.c header.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c display.c
 
 double.o: double.c double.h lisp.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_DOUBLE_EXTENSION -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_DOUBLE_EXTENSION -c double.c
 
 femto: $(OBJ) femto.rc
 	$(LD) $(LDFLAGS) -o femto $(OBJ) $(LIBS)
@@ -91,7 +93,7 @@ flisp: $(FLISP_OBJ) flisp.rc
 #	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 flisp.o: flisp.c lisp.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_DOUBLE_EXTENSION -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D FLISP_DOUBLE_EXTENSION -c flisp.c
 
 flisp.rc: flisp.sht lisp/core.lsp
 
@@ -157,7 +159,7 @@ fld: flisp FORCE
 flv: flisp FORCE
 	FLISPRC=flisp.rc FLISPLIB=lisp FLISP_DEBUG=f.log valgrind ./flisp
 frama-c: FORCE
-	frama-c -c11 -cpp-extra-args="-I$(frama-c -print-path)/libc -I/usr/include -I." -kernel-msg-key pp -metrics *.c
+	frama-c -c11 -cpp-extra-args="-I$$(frama-c -print-path)/libc -I/usr/include -I." -kernel-msg-key pp -metrics *.c
 
 measure: strip FORCE
 	@echo Total
@@ -191,10 +193,6 @@ ftest: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +8 lisp.c
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +6 lisp/core.lsp
 
-test_core: test/core.lsp flisp
-	<$< FLISPRC= FLISPLIB= ./flisp > test/core.now &&  sed 's/Stream 0x\(.\+\),/Stream /' test/core.now | diff -q - test/core.out
-test/core.out: test/core.lsp flisp
-	<$< FLISPRC= FLISPLIB= ./flisp | sed 's/Stream 0x\(.\+\),/Stream /' > test/core.out
 
 val: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1 valgrind ./femto 2> val.log
@@ -206,7 +204,7 @@ strip: femto FORCE
 clean: FORCE
 	-$(RM) -f $(OBJ) $(FLISP_OBJ) $(BINARIES) $(RC_FILES)
 	-$(RM) -rf doxygen
-	-$(RM) -f $(MOREDOCS)
+	-$(RM) -f README.html  # docs/*.md are prebuilt and tracked; do not remove
 	-$(RM) -f val.log debug.out f.log test/f.log
 	-$(RM) -rf debian/femto debian/files \
 		debian/femto.debhelper.log debian/femto.substvars

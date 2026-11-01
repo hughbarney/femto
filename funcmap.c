@@ -83,7 +83,6 @@ string_list_t *match_functions(const char *fname)
     command_t       *fn;
     string_list_t   *head, *sl;
     int         len;
-    int              count = 0;
 
     len = strlen(fname);
     head = NULL;
@@ -98,7 +97,6 @@ string_list_t *match_functions(const char *fname)
             sl->string = strdup(fn->c_name);
             sl->next = head;
             head = sl;
-            count++;
         }
     }
     return head;

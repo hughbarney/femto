@@ -4,6 +4,9 @@
  * Derived from: Anthony's Editor January 93, (Public Domain 1991, 1993 by Anthony Howe)
  */
 #define _XOPEN_SOURCE 500
+#ifdef __APPLE__
+#define _DARWIN_C_SOURCE  /* _XOPEN_SOURCE 500 hides strdup() etc. on Darwin */
+#endif
 #include <locale.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -14,8 +17,8 @@
 #include <limits.h>
 #include <string.h>
 #include <wchar.h>
+#include <inttypes.h>
 #include "lisp.h"
-int mkstemp(char *);
 
 #define E_NAME          "femto"
 #define E_VERSION       "2.24"

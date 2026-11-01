@@ -15,9 +15,19 @@ void gui(void); /* The GUI loop used in interactive mode */
 
 static Interpreter *interp;
 char debug_file[] = "debug.out";
-FILE *prev, *debug_fp = NULL;
-char* output;
-size_t len;
+FILE *debug_fp = NULL;
+
+/* eval_string() can be re-entered: a Lisp command may call a C function
+ * (e.g. find-file -> readhook) that evaluates Lisp again.  Each level
+ * gets its own output stream and buffer, popped by free_lisp_output(). */
+#define EVAL_DEPTH_MAX 32
+static struct eval_frame {
+    FILE *fd;       /* this level's memory output stream */
+    FILE *prev;     /* interp->output to restore when popped */
+    char *buf;
+    size_t len;
+} eval_stack[EVAL_DEPTH_MAX];
+static int eval_depth = 0;
 
 /** Lisp eval a file
  *
@@ -138,7 +148,7 @@ char *eval_string(bool do_format, char *format, ...)
         va_start(args, format);
         size = vsnprintf (buf, sizeof(buf), format, args);
         va_end(args);
-        if (size > INPUT_FMT_BUFSIZ) {
+        if (size < 0 || size >= INPUT_FMT_BUFSIZ) {
             msg("input string larger then %d", INPUT_FMT_BUFSIZ);
             return NULL;
         }
@@ -147,28 +157,43 @@ char *eval_string(bool do_format, char *format, ...)
         input = format;
     }
 
-    prev = interp->output;  // Note: save for double invocation with user defined functions.
-    interp->output = open_memstream(&output, &len);
+    if (eval_depth >= EVAL_DEPTH_MAX) {
+        msg("lisp evaluation nested too deeply");
+        return NULL;
+    }
+    struct eval_frame *f = &eval_stack[eval_depth];
+    f->buf = NULL;
+    f->len = 0;
+    if ((f->fd = open_memstream(&f->buf, &f->len)) == NULL) {
+        msg("failed to allocate lisp output buffer");
+        return NULL;
+    }
+    f->prev = interp->output;
+    interp->output = f->fd;
+    eval_depth++;
+
     lisp_eval_string(interp, input);
+    fflush(f->fd);  /* f->buf is only valid after a flush */
     if (interp->result == nil)
-        return output;
-    if (interp->output)
-        fflush(interp->output);
+        return f->buf;
     msg_lisp_err(interp);
     if (debug_mode) {
         lisp_write_error(interp, debug_fp);
-        debug("=> %s\n", output);
+        debug("=> %s\n", f->buf);
     }
     free_lisp_output();
     return NULL;
 }
+
+/* Release the output of the innermost eval_string() call. */
 void free_lisp_output(void)
 {
-    if (!interp->output)
+    if (eval_depth == 0)
         return;
-    fclose(interp->output);
-    free(output);
-    interp->output = prev;
+    struct eval_frame *f = &eval_stack[--eval_depth];
+    fclose(f->fd);
+    free(f->buf);
+    interp->output = f->prev;
 }
 
 void gui(void)

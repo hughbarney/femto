@@ -167,6 +167,19 @@ now search for which package would have curses.h
 	$ sudo apt-get install libncurses5-dev libncursesw5-dev
 
 
+### Building on macOS
+
+Install the Xcode command line tools (`xcode-select --install`), then:
+
+    $ make && make flisp
+    $ make test
+
+The build links against the system ncurses (`-lncurses`), which supports
+UTF-8; Homebrew is not needed. To use Meta (Alt) key bindings in
+Terminal.app, enable *Settings > Profiles > Keyboard > Use Option as
+Meta key*; in iTerm2 set the Option key to *Esc+*.
+
+
 ## Future Enhancements
 
 The following enhancements are envisaged.
