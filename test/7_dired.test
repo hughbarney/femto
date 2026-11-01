@@ -5,7 +5,7 @@
 export FLISPRC=../lisp/core.lsp
 
 # The tap value should be set to the number of tests in the file
-tap 2
+tap 5
 
 # define sub functions to be used in this test file
 diredlib() { IN="(require 'string) (require 'dired) $IN" flisp_expr "$@"; }
@@ -18,3 +18,13 @@ diredlib 1; ok de-up-dir-1 moves up 1 subdir
 IN='(de-up-dir "/")' OUT='"/"'
 diredlib 1; ok de-up-dir-2 1 char path returns root
 
+
+# de-drop-fields: the name is everything after the 8 `ls -la` fields
+IN="(de-drop-fields \"  drwxr-xr-x@  3 rick  staff   96 Nov  1 08:26 Mobile Documents\" 8)" OUT='"Mobile Documents"'
+diredlib 1; ok de-drop-fields-1 name with spaces
+
+IN="(de-drop-fields \"  lrwxr-xr-x   1 rick  staff   24 Dec 17  2024 docs -> /Users/rick/Mobile Documents\" 8)" OUT='"docs -> /Users/rick/Mobile Documents"'
+diredlib 1; ok de-drop-fields-2 symlink keeps its target
+
+IN="(de-shell-quote \"/tmp/rick's dir\")" OUT="\"'/tmp/rick'\\\\''s dir'\""
+diredlib 1; ok de-shell-quote-1 embedded single quote is escaped
