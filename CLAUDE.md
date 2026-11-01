@@ -19,7 +19,6 @@ make flisp           # build the standalone interpreter (also generates flisp.rc
 make test            # build both, run every test/*.test with a TAP summary
 make run             # run femto against the in-tree Lisp: FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1
 make fl              # run the flisp REPL against the in-tree Lisp (debug log goes to f.log)
-make test_core       # diff flisp output of test/core.lsp against test/core.out
 make doc             # regenerate docs/*.md and README.html (needs pandoc)
 make clean
 ```

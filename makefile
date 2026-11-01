@@ -193,10 +193,6 @@ ftest: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +8 lisp.c
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1  ./femto +6 lisp/core.lsp
 
-test_core: test/core.lsp flisp
-	<test/core.lsp FLISPRC= FLISPLIB= ./flisp > test/core.now &&  sed 's/Stream 0x\(..*\),/Stream /' test/core.now | diff -q - test/core.out
-test/core.out: test/core.lsp flisp
-	<test/core.lsp FLISPRC= FLISPLIB= ./flisp | sed 's/Stream 0x\(..*\),/Stream /' > test/core.out
 
 val: femto FORCE
 	FEMTORC=femto.rc FEMTOLIB=lisp FEMTO_DEBUG=1 valgrind ./femto 2> val.log

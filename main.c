@@ -148,7 +148,7 @@ char *eval_string(bool do_format, char *format, ...)
         va_start(args, format);
         size = vsnprintf (buf, sizeof(buf), format, args);
         va_end(args);
-        if (size > INPUT_FMT_BUFSIZ) {
+        if (size < 0 || size >= INPUT_FMT_BUFSIZ) {
             msg("input string larger then %d", INPUT_FMT_BUFSIZ);
             return NULL;
         }

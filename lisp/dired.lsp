@@ -27,7 +27,6 @@
 (setq dired-ls-cmd "ls -la ")
 (setq dired-buffer "*dired*")
 (setq de-obuf "*scratch*")
-(setq de-name-start-col 47)
 (setq de-dir-start-col 2)
 (setq de-line 1)
 (setq de-name "")
